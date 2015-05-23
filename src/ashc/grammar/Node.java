@@ -277,6 +277,20 @@ public abstract class Node {
 	}
 
     }
+    
+    public static class NodeLong extends Node implements IExpression {
+	public long val;
+
+	public NodeLong(final long val) {
+	    this.val = val;
+	}
+
+	@Override
+	public String toString() {
+	    return "NodeLong [val=" + val + "]";
+	}
+
+    }
 
     public static class NodeFloat extends Node implements IExpression {
 	public float val;

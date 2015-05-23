@@ -26,6 +26,7 @@ import ashc.grammar.Node.NodeFuncDec;
 import ashc.grammar.Node.NodeImport;
 import ashc.grammar.Node.NodeInteger;
 import ashc.grammar.Node.NodeInterfaceDec;
+import ashc.grammar.Node.NodeLong;
 import ashc.grammar.Node.NodeModifier;
 import ashc.grammar.Node.NodePackage;
 import ashc.grammar.Node.NodePrefix;
@@ -353,7 +354,7 @@ public class Parser {
     }
 
     private IExpression parsePrimaryExpression() throws UnexpectedTokenException {
-	Token next = expect(TokenType.ID, TokenType.THIS, TokenType.UNARYOP, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
+	Token next = expect(TokenType.ID, TokenType.THIS, TokenType.UNARYOP, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.LONG, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
 	IExpression expr = null;
 
 	switch (next.type) {
@@ -382,6 +383,9 @@ public class Parser {
 		break;
 	    case INT:
 		expr = new NodeInteger(Integer.parseInt(next.data, 10));
+		break;
+	    case LONG:
+		expr = new NodeLong(Long.parseLong(next.data));
 		break;
 	    case FLOAT:
 		expr = new NodeFloat(Float.parseFloat(next.data));
