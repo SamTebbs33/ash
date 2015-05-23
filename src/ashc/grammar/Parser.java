@@ -2,42 +2,8 @@ package ashc.grammar;
 
 import java.util.LinkedList;
 
-import ashc.grammar.Lexer.InvalidTokenException;
-import ashc.grammar.Lexer.Token;
-import ashc.grammar.Lexer.TokenType;
-import ashc.grammar.Lexer.UnexpectedTokenException;
-import ashc.grammar.Node.IExpression;
-import ashc.grammar.Node.IFuncStmt;
-import ashc.grammar.Node.NodeArg;
-import ashc.grammar.Node.NodeArgs;
-import ashc.grammar.Node.NodeBinary;
-import ashc.grammar.Node.NodeBool;
-import ashc.grammar.Node.NodeChar;
-import ashc.grammar.Node.NodeClassBlock;
-import ashc.grammar.Node.NodeClassDec;
-import ashc.grammar.Node.NodeDouble;
-import ashc.grammar.Node.NodeEnumDec;
-import ashc.grammar.Node.NodeExprs;
-import ashc.grammar.Node.NodeFile;
-import ashc.grammar.Node.NodeFloat;
-import ashc.grammar.Node.NodeFuncBlock;
-import ashc.grammar.Node.NodeFuncCall;
-import ashc.grammar.Node.NodeFuncDec;
-import ashc.grammar.Node.NodeImport;
-import ashc.grammar.Node.NodeInteger;
-import ashc.grammar.Node.NodeInterfaceDec;
-import ashc.grammar.Node.NodeModifier;
-import ashc.grammar.Node.NodePackage;
-import ashc.grammar.Node.NodePrefix;
-import ashc.grammar.Node.NodeQualifiedName;
-import ashc.grammar.Node.NodeString;
-import ashc.grammar.Node.NodeTernary;
-import ashc.grammar.Node.NodeType;
-import ashc.grammar.Node.NodeTypeDec;
-import ashc.grammar.Node.NodeTypes;
-import ashc.grammar.Node.NodeUnary;
-import ashc.grammar.Node.NodeVarDec;
-import ashc.grammar.Node.NodeVariable;
+import ashc.grammar.Lexer.*;
+import ashc.grammar.Node.*;
 
 /**
  * Ash
@@ -351,6 +317,9 @@ public class Parser {
 	Token next = getNext();
 	
 	switch(next.type){
+	    // Postfix unary expression
+	    case UNARYOP:
+		    return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
 	    case QUESTIONMARK:
 		IExpression exprTrue = parseExpression();
 		expect(TokenType.COLON);
