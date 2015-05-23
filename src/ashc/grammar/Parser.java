@@ -295,40 +295,51 @@ public class Parser {
 
     private IExpression parsePrimaryExpression() throws UnexpectedTokenException{
 	Token next = expect(TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
+	IExpression expr = null;
+	
 	switch(next.type){
 	    case PARENL:
-		IExpression expr = parseExpression();
+		expr = parseExpression();
 		expect(TokenType.PARENR);
-		return expr;
-	    
+		break;
 	    case OCTINT:
-		return new NodeInteger(Integer.parseInt(next.data, 8));
-		
+		expr = new NodeInteger(Integer.parseInt(next.data, 8));
+		break;
 	    case HEXINT:
-		return new NodeInteger(Integer.parseInt(next.data, 16));
-		
+		expr =  new NodeInteger(Integer.parseInt(next.data, 16));
+		break;
 	    case BININT:
-		return new NodeInteger(Integer.parseInt(next.data, 2));
-		
+		expr =  new NodeInteger(Integer.parseInt(next.data, 2));
+		break;
 	    case INT:
-		return new NodeInteger(Integer.parseInt(next.data, 10));
-		
+		expr = new NodeInteger(Integer.parseInt(next.data, 10));
+		break;
 	    case FLOAT:
-		return new NodeFloat(Float.parseFloat(next.data));
-		
+		expr =  new NodeFloat(Float.parseFloat(next.data));
+		break;
 	    case DOUBLE:
-		return new NodeDouble(Double.parseDouble(next.data));
-		
+		expr =  new NodeDouble(Double.parseDouble(next.data));
+		break;
 	    case STRING:
-		return new NodeString(next.data.substring(1, next.data.length()-1));
-		
+		expr =  new NodeString(next.data.substring(1, next.data.length()-1));
+		break;
 	    case CHAR:
-		return new NodeChar(next.data.charAt(1));
-		
+		expr =  new NodeChar(next.data.charAt(1));
+		break;
 	    case BOOL:
-		return new NodeBool(next.data.equals("true"));
+		expr =  new NodeBool(next.data.equals("true"));
+		break;
 	}
-	return null;
+	if(expr != null){
+	    next = getNext();
+	    switch(next.type){
+		case BINARYOP:
+		    return new NodeBinary(expr, next.data, parsePrimaryExpression());
+		default:
+		    rewind();
+	    }
+	}
+	return expr;
     }
     
     private IExpression parseExpression() throws UnexpectedTokenException {
@@ -336,8 +347,6 @@ public class Parser {
 	Token next = getNext();
 	
 	switch(next.type){
-	    case BINARYOP:
-		return new NodeBinary(expr, next.data, parseExpression());
 	    case QUESTIONMARK:
 		IExpression exprTrue = parseExpression();
 		expect(TokenType.COLON);
