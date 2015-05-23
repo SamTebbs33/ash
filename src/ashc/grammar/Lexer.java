@@ -22,7 +22,7 @@ public class Lexer {
 	// The ERROR token type must be the last one, as it matches anything
 	// that isn't matched by other tokens
 	COMMENT("(//.+)|(/\\*(.|[\r\n])*?\\*/)", "comment"), // Source:
-							     // http://blog.ostermiller.org/find-comment
+	// http://blog.ostermiller.org/find-comment
 	OCTINT("0o[0-7]+", "octal integer"),
 	BININT("0b[0|1]+", "binary integer"),
 	HEXINT("0x[0-9a-fA-F]+", "hexadecimal integer"),
@@ -35,6 +35,7 @@ public class Lexer {
 	BOOL("true|false", "boolean"),
 
 	ARROW("=>", "throws arrow"),
+	LAMBDAARROW("->", "lambda arrow"),
 	PARENL("\\(", "left parenthesis"),
 	PARENR("\\)", "right parenthesis"),
 	BRACEL("\\{", "left brace"),
@@ -49,35 +50,35 @@ public class Lexer {
 	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
 	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>=",
 		"compound assignment operator"),
-	BINARYOP("<=|>=|==|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|",
-		"binary operator"),
-	ASSIGNOP("=", "assignment operator"),
-	WHITESPACE("[\n\t ]+", "whitespace"),
+		BINARYOP("<=|>=|==|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|",
+			"binary operator"),
+			ASSIGNOP("=", "assignment operator"),
+			WHITESPACE("[\n\t ]+", "whitespace"),
 
-	VAR("var"),
-	CONST("const"),
-	FUNC("func"),
-	CLASS("class"),
-	ENUM("enum"),
-	INTERFACE("interface"),
-	IMPORT("import"),
-	PACKAGE("package"),
-	RETURN("return"),
+			VAR("var"),
+			CONST("const"),
+			FUNC("func"),
+			CLASS("class"),
+			ENUM("enum"),
+			INTERFACE("interface"),
+			IMPORT("import"),
+			PACKAGE("package"),
+			RETURN("return"),
 
-	PUBLIC("public"),
-	PRIVATE("private"),
-	PROTECTED("protected"),
-	FINAL("final"),
-	REQUIRED("required"),
-	NATIVE("native"),
-	OVERRIDE("override"),
-	STANDARD("standard"),
-	STATIC("static"),
-	THIS("this"),
+			PUBLIC("public"),
+			PRIVATE("private"),
+			PROTECTED("protected"),
+			FINAL("final"),
+			REQUIRED("required"),
+			NATIVE("native"),
+			OVERRIDE("override"),
+			STANDARD("standard"),
+			STATIC("static"),
+			THIS("this"),
 
-	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),
-	EOF("\\Z"),
-	ERROR(".*", "error");
+			ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),
+			EOF("\\Z", "end of file"),
+			ERROR(".*", "error");
 
 	public String regex, typeName;
 

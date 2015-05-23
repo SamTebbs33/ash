@@ -77,7 +77,7 @@ public class Parser {
 	    System.err.printf("Error:%d:%d-%d %s%n", line, colStart, colEnd, e.msg);
 
 	    // Print out the line and location of the error
-	    System.out.println(lexer.lines.get(line - 1));
+	    System.out.println(lexer.lines.get(line - (line > lexer.lines.size() ? 2 : 1)));
 	    for (int i = 0; i < colStart - 1; i++)
 		System.out.print(" ");
 	    System.out.print("^");
@@ -92,9 +92,9 @@ public class Parser {
 
     /**
      * Return the next token, or null if we have passed the EOF token
-    * @return {@link Token}
-    * @throws UnexpectedTokenException
-    *
+     * @return {@link Token}
+     * @throws UnexpectedTokenException
+     *
      */
     private Token getNext() throws UnexpectedTokenException {
 	if (pointer < tokens.size()) {
@@ -108,8 +108,8 @@ public class Parser {
 
     /**
      * Move back one token
-    * 
-    *
+     * 
+     *
      */
     private void rewind() {
 	pointer--;
@@ -117,19 +117,21 @@ public class Parser {
 
     /**
      * Move back by **a** tokens
-    * @param a
-    *
+     * @param a
+     *
      */
     private void rewind(final int a) {
 	pointer -= a;
     }
 
     /**
-     * Expect the next token to have the same type as the argument and return it, else throw an error
-    * @param t - The token type expected
-    * @return {@link Token}
-    * @throws UnexpectedTokenException
-    *
+     * Expect the next token to have the same type as the argument and return
+     * it, else throw an error
+     * @param t
+     *        - The token type expected
+     * @return {@link Token}
+     * @throws UnexpectedTokenException
+     *
      */
     private Token expect(final TokenType t) throws UnexpectedTokenException {
 	final Token token = getNext();
@@ -138,11 +140,13 @@ public class Parser {
     }
 
     /**
-     * Expect the next token to have the same type as any one of the arguments and return it, else throw an error
-    * @param t - The token types expected
-    * @return {@link Token}
-    * @throws UnexpectedTokenException
-    *
+     * Expect the next token to have the same type as any one of the arguments
+     * and return it, else throw an error
+     * @param t
+     *        - The token types expected
+     * @return {@link Token}
+     * @throws UnexpectedTokenException
+     *
      */
     private Token expect(final TokenType... t) throws UnexpectedTokenException {
 	final Token token = getNext();
@@ -158,9 +162,9 @@ public class Parser {
 
     /**
      * Parse an optional list of import declarations
-    * @return {@link LinkedList}
-    * @throws UnexpectedTokenException
-    *
+     * @return {@link LinkedList}
+     * @throws UnexpectedTokenException
+     *
      */
     private LinkedList<NodeImport> parseImports() throws UnexpectedTokenException {
 	final LinkedList<NodeImport> imports = new LinkedList<Node.NodeImport>();
@@ -174,9 +178,9 @@ public class Parser {
 
     /**
      * Parses and returns a qualified name node
-    * @return {@link NodeQualifiedName}
-    * @throws UnexpectedTokenException
-    *
+     * @return {@link NodeQualifiedName}
+     * @throws UnexpectedTokenException
+     *
      */
     private NodeQualifiedName parseQualifiedName() throws UnexpectedTokenException {
 	Token id = expect(TokenType.ID);
@@ -192,9 +196,9 @@ public class Parser {
 
     /**
      * Parses and returns an optional package declaration
-    * @return {@link NodePackage}
-    * @throws UnexpectedTokenException
-    *
+     * @return {@link NodePackage}
+     * @throws UnexpectedTokenException
+     *
      */
     private NodePackage parsePackage() throws UnexpectedTokenException {
 	if (getNext().type == TokenType.PACKAGE) {
@@ -207,9 +211,9 @@ public class Parser {
 
     /**
      * Returns true if the argument is a modifier token type
-    * @param boolean
-    * @return
-    *
+     * @param boolean
+     * @return
+     *
      */
     private boolean isModifier(final TokenType type) {
 	return type == TokenType.PUBLIC || type == TokenType.PRIVATE || type == TokenType.PROTECTED || type == TokenType.FINAL || type == TokenType.REQUIRED || type == TokenType.NATIVE || type == TokenType.OVERRIDE || type == TokenType.STANDARD || type == TokenType.STATIC;
@@ -278,7 +282,7 @@ public class Parser {
 	final NodeArgs args = parseArgs();
 	NodeType type = null, throwsType = null;
 	NodeFuncBlock block = new NodeFuncBlock();
-	expect(TokenType.COLON, TokenType.ARROW, TokenType.ASSIGNOP, TokenType.BRACEL);
+	expect(TokenType.COLON, TokenType.ARROW, TokenType.LAMBDAARROW, TokenType.BRACEL);
 	rewind();
 
 	if (getNext().type == TokenType.COLON) type = parseType();
@@ -294,13 +298,12 @@ public class Parser {
 
     private NodeFuncBlock parseFuncBlock() throws UnexpectedTokenException {
 	final NodeFuncBlock block = new NodeFuncBlock();
-	final Token token = expect(TokenType.ASSIGNOP, TokenType.BRACEL);
+	final Token token = expect(TokenType.LAMBDAARROW, TokenType.BRACEL);
 	if (token.type == TokenType.BRACEL) while (getNext().type != TokenType.BRACER) {
 	    rewind();
 	    block.add(parseFuncStmt());
 	}
 	else {
-	    rewind();
 	    block.add(parseFuncStmt());
 	}
 	return block;
@@ -344,7 +347,7 @@ public class Parser {
 	Token next;
 	do {
 	    final IExpression expr = parseExpression();
-	    //System.out.println(expr);
+	    // System.out.println(expr);
 	    exprs.add(expr);
 	    next = getNext();
 	} while (next.type == TokenType.COMMA);
@@ -420,7 +423,7 @@ public class Parser {
 	final Token next = getNext();
 
 	switch (next.type) {
-	// Postfix unary expression
+	    // Postfix unary expression
 	    case UNARYOP:
 		return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
 	    case QUESTIONMARK:

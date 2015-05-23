@@ -22,6 +22,12 @@ public abstract class Node {
 
     }
 
+    public void preAnalyse() {
+
+    }
+
+    public boolean analyse(){return true;}
+
     public static interface IFuncStmt {
 
     }
@@ -34,6 +40,11 @@ public abstract class Node {
 
 	public NodeFile() {
 	    super();
+	}
+
+	@Override
+	public boolean analyse() {
+	    return false;
 	}
 
     }
@@ -211,7 +222,8 @@ public abstract class Node {
 
     }
 
-    public static class NodePrefix extends Node implements IFuncStmt, IExpression {
+    public static class NodePrefix extends Node implements IFuncStmt,
+	    IExpression {
 
 	public NodePrefix(final int line, final int column) {
 	    super(line, column);
@@ -277,7 +289,7 @@ public abstract class Node {
 	}
 
     }
-    
+
     public static class NodeLong extends Node implements IExpression {
 	public long val;
 
@@ -412,9 +424,9 @@ public abstract class Node {
 	}
 
     }
-    
+
     public static class NodeThis extends Node implements IExpression {
-	public NodeThis(int line, int column) {
+	public NodeThis(final int line, final int column) {
 	    super(line, column);
 	}
     }
