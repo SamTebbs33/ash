@@ -15,12 +15,15 @@ import ashc.grammar.Parser;
 public class AshMain {
 
     public static void main(final String[] args) throws FileNotFoundException, IOException {
-	long time = System.currentTimeMillis();
+	long start = System.currentTimeMillis();
 	final Lexer lexer = new Lexer(new BufferedReader(new FileReader(new File("lex.txt"))));
+	System.out.printf("Created lexer: %d ms\n", System.currentTimeMillis()-start);
+	start = System.currentTimeMillis();
 	final Parser parser = new Parser(lexer);
+	System.out.printf("Created parser: %d ms\n", System.currentTimeMillis()-start);
+	start = System.currentTimeMillis();
 	parser.start();
-	time = System.currentTimeMillis() - time;
-	System.out.printf("Time: %d ms\n", time);
+	System.out.printf("Parsed: %d ms\n", System.currentTimeMillis()-start);
     }
 
 }

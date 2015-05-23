@@ -57,7 +57,7 @@ public class Parser {
 	while (true)
 	    try {
 		final Token token = lexer.getNextToken();
-		if (token == null) break; // EOF
+		if (token == null) break; // we have passed EOF
 		tokens.add(token);
 	    } catch (final InvalidTokenException e) {
 		System.err.printf("Error:%d:%d Invalid token (%s)%n", e.line, e.column, e.data);
@@ -344,7 +344,7 @@ public class Parser {
 	Token next;
 	do {
 	    final IExpression expr = parseExpression();
-	    System.out.println(expr);
+	    //System.out.println(expr);
 	    exprs.add(expr);
 	    next = getNext();
 	} while (next.type == TokenType.COMMA);
