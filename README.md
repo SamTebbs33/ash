@@ -1,2 +1,2 @@
-# ash
+# Ash
 The Ash programming language
