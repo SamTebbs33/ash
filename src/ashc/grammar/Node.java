@@ -211,7 +211,7 @@ public abstract class Node {
 
     }
 
-    public static class NodePrefix extends Node implements IFuncStmt {
+    public static class NodePrefix extends Node implements IFuncStmt, IExpression {
 
 	public NodePrefix(final int line, final int column) {
 	    super(line, column);

@@ -353,10 +353,14 @@ public class Parser {
     }
 
     private IExpression parsePrimaryExpression() throws UnexpectedTokenException {
-	Token next = expect(TokenType.THIS, TokenType.UNARYOP, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
+	Token next = expect(TokenType.ID, TokenType.THIS, TokenType.UNARYOP, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
 	IExpression expr = null;
 
 	switch (next.type) {
+	    case ID:
+		rewind();
+		expr = parsePrefix();
+		break;
 	    case THIS:
 		expr = new NodeThis(next.line, next.columnStart);
 		break;
