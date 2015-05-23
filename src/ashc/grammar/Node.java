@@ -23,7 +23,6 @@ public abstract class Node {
     }
 
     public void preAnalyse() {
-
     }
 
     public boolean analyse(){return true;}
