@@ -35,6 +35,7 @@ import ashc.grammar.Node.NodeTernary;
 import ashc.grammar.Node.NodeType;
 import ashc.grammar.Node.NodeTypeDec;
 import ashc.grammar.Node.NodeTypes;
+import ashc.grammar.Node.NodeUnary;
 import ashc.grammar.Node.NodeVarDec;
 import ashc.grammar.Node.NodeVariable;
 
@@ -294,10 +295,13 @@ public class Parser {
     }
 
     private IExpression parsePrimaryExpression() throws UnexpectedTokenException{
-	Token next = expect(TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
+	Token next = expect(TokenType.UNARYOP, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
 	IExpression expr = null;
 	
 	switch(next.type){
+	    case UNARYOP:
+		expr = new NodeUnary(next.line, next.columnStart, parsePrimaryExpression(), next.data, true);
+		break;
 	    case PARENL:
 		expr = parseExpression();
 		expect(TokenType.PARENR);

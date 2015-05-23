@@ -241,7 +241,7 @@ public abstract class Node {
 
 	@Override
 	public String toString() {
-	    return String.format("%s.%s()", prefix, id);
+	    return "NodeFuncCall [id=" + id + ", args=" + args + ", prefix=" + prefix + "]";
 	}
 
     }
@@ -259,7 +259,7 @@ public abstract class Node {
 
 	@Override
 	public String toString() {
-	    return String.format("%s.%s", prefix, id);
+	    return "NodeVariable [id=" + id + ", prefix=" + prefix + "]";
 	}
 
     }
@@ -271,7 +271,7 @@ public abstract class Node {
 	}
 	@Override
 	public String toString() {
-	    return "Integer: " + val;
+	    return "NodeInteger [val=" + val + "]";
 	}
 	
     }
@@ -283,8 +283,9 @@ public abstract class Node {
 	}
 	@Override
 	public String toString() {
-	    return "Float: " + val;
+	    return "NodeFloat [val=" + val + "]";
 	}
+	
     }
     
     public static class NodeDouble extends Node implements IExpression {
@@ -294,8 +295,9 @@ public abstract class Node {
 	}
 	@Override
 	public String toString() {
-	    return "Double: " + val;
+	    return "NodeDouble [val=" + val + "]";
 	}
+	
     }
     
     public static class NodeString extends Node implements IExpression {
@@ -305,8 +307,9 @@ public abstract class Node {
 	}
 	@Override
 	public String toString() {
-	    return "String: " + val;
+	    return "NodeString [val=" + val + "]";
 	}
+	
     }
     
     public static class NodeBool extends Node implements IExpression {
@@ -316,8 +319,9 @@ public abstract class Node {
 	}
 	@Override
 	public String toString() {
-	    return "Bool: " + val;
+	    return "NodeBool [val=" + val + "]";
 	}
+	
     }
     
     public static class NodeChar extends Node implements IExpression {
@@ -325,6 +329,11 @@ public abstract class Node {
 	public NodeChar(char val){
 	    this.val = val;
 	}
+	@Override
+	public String toString() {
+	    return "NodeChar [val=" + val + "]";
+	}
+	
     }
     
     public static class NodeTernary extends Node implements IExpression {
@@ -336,8 +345,9 @@ public abstract class Node {
 	}
 	@Override
 	public String toString() {
-	    return String.format("Ternary: (%s ? %s : %s)", expr, exprTrue, exprFalse);
+	    return "NodeTernary [expr=" + expr + ", exprTrue=" + exprTrue + ", exprFalse=" + exprFalse + "]";
 	}
+	
     }
     
     public static class NodeBinary extends Node implements IExpression {
@@ -350,8 +360,25 @@ public abstract class Node {
 	}
 	@Override
 	public String toString() {
-	    return String.format("Binary: (%s %s %s)", expr1, operator, expr2);
+	    return "NodeBinary [expr1=" + expr1 + ", expr2=" + expr2 + ", operator=" + operator + "]";
 	}
+    }
+    
+    public static class NodeUnary extends Node implements IExpression {
+	public IExpression expr;
+	public String operator;
+	public boolean prefix;
+	public NodeUnary(int line, int column, IExpression expr, String operator, boolean prefix) {
+	    super(line, column);
+	    this.expr = expr;
+	    this.operator = operator;
+	    this.prefix = prefix;
+	}
+	@Override
+	public String toString() {
+	    return "NodeUnary [expr=" + expr + ", operator=" + operator + ", prefix=" + prefix + "]";
+	}
+	
     }
 
 }
