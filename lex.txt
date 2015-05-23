@@ -1,5 +1,5 @@
 class Test {
 	func foo(){
-		f(11 ? (1+1*4/8 ) : 2)
+		a++
 	}
 }

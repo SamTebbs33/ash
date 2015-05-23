@@ -263,122 +263,146 @@ public abstract class Node {
 	}
 
     }
-    
+
     public static class NodeInteger extends Node implements IExpression {
 	public int val;
-	public NodeInteger(int val){
+
+	public NodeInteger(final int val) {
 	    this.val = val;
 	}
+
 	@Override
 	public String toString() {
 	    return "NodeInteger [val=" + val + "]";
 	}
-	
+
     }
-    
+
     public static class NodeFloat extends Node implements IExpression {
 	public float val;
-	public NodeFloat(float val){
+
+	public NodeFloat(final float val) {
 	    this.val = val;
 	}
+
 	@Override
 	public String toString() {
 	    return "NodeFloat [val=" + val + "]";
 	}
-	
+
     }
-    
+
     public static class NodeDouble extends Node implements IExpression {
 	public double val;
-	public NodeDouble(double val){
+
+	public NodeDouble(final double val) {
 	    this.val = val;
 	}
+
 	@Override
 	public String toString() {
 	    return "NodeDouble [val=" + val + "]";
 	}
-	
+
     }
-    
+
     public static class NodeString extends Node implements IExpression {
 	public String val;
-	public NodeString(String val){
+
+	public NodeString(final String val) {
 	    this.val = val;
 	}
+
 	@Override
 	public String toString() {
 	    return "NodeString [val=" + val + "]";
 	}
-	
+
     }
-    
+
     public static class NodeBool extends Node implements IExpression {
 	public boolean val;
-	public NodeBool(boolean val){
+
+	public NodeBool(final boolean val) {
 	    this.val = val;
 	}
+
 	@Override
 	public String toString() {
 	    return "NodeBool [val=" + val + "]";
 	}
-	
+
     }
-    
+
     public static class NodeChar extends Node implements IExpression {
 	public char val;
-	public NodeChar(char val){
+
+	public NodeChar(final char val) {
 	    this.val = val;
 	}
+
 	@Override
 	public String toString() {
 	    return "NodeChar [val=" + val + "]";
 	}
-	
+
     }
-    
+
     public static class NodeTernary extends Node implements IExpression {
 	public IExpression expr, exprTrue, exprFalse;
-	public NodeTernary(IExpression expr, IExpression exprTrue, IExpression exprFalse){
+
+	public NodeTernary(final IExpression expr, final IExpression exprTrue, final IExpression exprFalse) {
 	    this.expr = expr;
 	    this.exprTrue = exprTrue;
 	    this.exprFalse = exprFalse;
 	}
+
 	@Override
 	public String toString() {
 	    return "NodeTernary [expr=" + expr + ", exprTrue=" + exprTrue + ", exprFalse=" + exprFalse + "]";
 	}
-	
+
     }
-    
+
     public static class NodeBinary extends Node implements IExpression {
 	public IExpression expr1, expr2;
 	public String operator;
-	public NodeBinary(IExpression expr1, String operator, IExpression expr2){
+
+	public NodeBinary(final IExpression expr1, final String operator, final IExpression expr2) {
 	    this.expr1 = expr1;
 	    this.expr2 = expr2;
 	    this.operator = operator;
 	}
+
 	@Override
 	public String toString() {
 	    return "NodeBinary [expr1=" + expr1 + ", expr2=" + expr2 + ", operator=" + operator + "]";
 	}
     }
-    
+
     public static class NodeUnary extends Node implements IExpression {
 	public IExpression expr;
 	public String operator;
 	public boolean prefix;
-	public NodeUnary(int line, int column, IExpression expr, String operator, boolean prefix) {
+
+	public NodeUnary(final int line, final int column, final IExpression expr, final String operator, final boolean prefix) {
 	    super(line, column);
 	    this.expr = expr;
 	    this.operator = operator;
 	    this.prefix = prefix;
 	}
+
 	@Override
 	public String toString() {
 	    return "NodeUnary [expr=" + expr + ", operator=" + operator + ", prefix=" + prefix + "]";
 	}
-	
+
+    }
+    
+    public static class NodeThis extends Node implements IExpression {
+	public NodeThis(int line, int column) {
+	    super(line, column);
+	}
     }
 
 }

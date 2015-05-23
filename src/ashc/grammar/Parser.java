@@ -2,8 +2,43 @@ package ashc.grammar;
 
 import java.util.LinkedList;
 
-import ashc.grammar.Lexer.*;
-import ashc.grammar.Node.*;
+import ashc.grammar.Lexer.InvalidTokenException;
+import ashc.grammar.Lexer.Token;
+import ashc.grammar.Lexer.TokenType;
+import ashc.grammar.Lexer.UnexpectedTokenException;
+import ashc.grammar.Node.IExpression;
+import ashc.grammar.Node.IFuncStmt;
+import ashc.grammar.Node.NodeArg;
+import ashc.grammar.Node.NodeArgs;
+import ashc.grammar.Node.NodeBinary;
+import ashc.grammar.Node.NodeBool;
+import ashc.grammar.Node.NodeChar;
+import ashc.grammar.Node.NodeClassBlock;
+import ashc.grammar.Node.NodeClassDec;
+import ashc.grammar.Node.NodeDouble;
+import ashc.grammar.Node.NodeEnumDec;
+import ashc.grammar.Node.NodeExprs;
+import ashc.grammar.Node.NodeFile;
+import ashc.grammar.Node.NodeFloat;
+import ashc.grammar.Node.NodeFuncBlock;
+import ashc.grammar.Node.NodeFuncCall;
+import ashc.grammar.Node.NodeFuncDec;
+import ashc.grammar.Node.NodeImport;
+import ashc.grammar.Node.NodeInteger;
+import ashc.grammar.Node.NodeInterfaceDec;
+import ashc.grammar.Node.NodeModifier;
+import ashc.grammar.Node.NodePackage;
+import ashc.grammar.Node.NodePrefix;
+import ashc.grammar.Node.NodeQualifiedName;
+import ashc.grammar.Node.NodeString;
+import ashc.grammar.Node.NodeTernary;
+import ashc.grammar.Node.NodeThis;
+import ashc.grammar.Node.NodeType;
+import ashc.grammar.Node.NodeTypeDec;
+import ashc.grammar.Node.NodeTypes;
+import ashc.grammar.Node.NodeUnary;
+import ashc.grammar.Node.NodeVarDec;
+import ashc.grammar.Node.NodeVariable;
 
 /**
  * Ash
@@ -13,7 +48,7 @@ import ashc.grammar.Node.*;
 public class Parser {
 
     private final LinkedList<Token> tokens = new LinkedList<Token>();
-    private Lexer lexer;
+    private final Lexer lexer;
     private int pointer = 0, line = 1, column = 1;
 
     public Parser(final Lexer lexer) {
@@ -21,30 +56,45 @@ public class Parser {
 	while (true)
 	    try {
 		final Token token = lexer.getNextToken();
-		if (token == null) break;
+		if (token == null) break; // EOF
 		tokens.add(token);
 	    } catch (final InvalidTokenException e) {
 		System.err.printf("Error:%d:%d Invalid token (%s)%n", e.line, e.column, e.data);
 	    }
     }
 
+    /**
+     * Start the parser and return an AST node representing the file
+     * @return NodeFile
+     *
+     */
     public NodeFile start() {
 	try {
 	    return parseFile();
 	} catch (final UnexpectedTokenException e) {
-	    int line = e.token.line, colStart = e.token.columnStart, colEnd = e.token.columnEnd;
+	    final int line = e.token.line, colStart = e.token.columnStart, colEnd = e.token.columnEnd;
 	    System.err.printf("Error:%d:%d-%d %s%n", line, colStart, colEnd, e.msg);
-	    System.out.println(lexer.lines.get(line-1));
-	    for(int i = 0; i < colStart - 1; i++) System.out.print(" ");
+
+	    // Print out the line and location of the error
+	    System.out.println(lexer.lines.get(line - 1));
+	    for (int i = 0; i < colStart - 1; i++)
+		System.out.print(" ");
 	    System.out.print("^");
-	    if(colEnd - colStart > 1){
-		for(int i = colStart; i < colEnd-2; i++) System.out.print("-");
+	    if (colEnd - colStart > 1) {
+		for (int i = colStart; i < colEnd - 2; i++)
+		    System.out.print("-");
 		System.out.println("^");
-	    }else System.out.println();
+	    } else System.out.println();
 	}
 	return null;
     }
 
+    /**
+     * Return the next token, or null if we have passed the EOF token
+    * @return {@link Token}
+    * @throws UnexpectedTokenException
+    *
+     */
     private Token getNext() throws UnexpectedTokenException {
 	if (pointer < tokens.size()) {
 	    final Token t = tokens.get(pointer++);
@@ -55,20 +105,44 @@ public class Parser {
 	return null;
     }
 
+    /**
+     * Move back one token
+    * 
+    *
+     */
     private void rewind() {
 	pointer--;
     }
 
+    /**
+     * Move back by **a** tokens
+    * @param a
+    *
+     */
     private void rewind(final int a) {
 	pointer -= a;
     }
 
+    /**
+     * Expect the next token to have the same type as the argument and return it, else throw an error
+    * @param t - The token type expected
+    * @return {@link Token}
+    * @throws UnexpectedTokenException
+    *
+     */
     private Token expect(final TokenType t) throws UnexpectedTokenException {
 	final Token token = getNext();
 	if (token.type != t) throw new UnexpectedTokenException(token, t);
 	return token;
     }
 
+    /**
+     * Expect the next token to have the same type as any one of the arguments and return it, else throw an error
+    * @param t - The token types expected
+    * @return {@link Token}
+    * @throws UnexpectedTokenException
+    *
+     */
     private Token expect(final TokenType... t) throws UnexpectedTokenException {
 	final Token token = getNext();
 	boolean found = false;
@@ -81,6 +155,12 @@ public class Parser {
 	return token;
     }
 
+    /**
+     * Parse an optional list of import declarations
+    * @return {@link LinkedList}
+    * @throws UnexpectedTokenException
+    *
+     */
     private LinkedList<NodeImport> parseImports() throws UnexpectedTokenException {
 	final LinkedList<NodeImport> imports = new LinkedList<Node.NodeImport>();
 	while (getNext().type == TokenType.IMPORT) {
@@ -92,7 +172,10 @@ public class Parser {
     }
 
     /**
-     * id (.id)*
+     * Parses and returns a qualified name node
+    * @return {@link NodeQualifiedName}
+    * @throws UnexpectedTokenException
+    *
      */
     private NodeQualifiedName parseQualifiedName() throws UnexpectedTokenException {
 	Token id = expect(TokenType.ID);
@@ -107,7 +190,10 @@ public class Parser {
     }
 
     /**
-     * package qualifiedName
+     * Parses and returns an optional package declaration
+    * @return {@link NodePackage}
+    * @throws UnexpectedTokenException
+    *
      */
     private NodePackage parsePackage() throws UnexpectedTokenException {
 	if (getNext().type == TokenType.PACKAGE) {
@@ -118,6 +204,12 @@ public class Parser {
 	return null;
     }
 
+    /**
+     * Returns true if the argument is a modifier token type
+    * @param boolean
+    * @return
+    *
+     */
     private boolean isModifier(final TokenType type) {
 	return type == TokenType.PUBLIC || type == TokenType.PRIVATE || type == TokenType.PROTECTED || type == TokenType.FINAL || type == TokenType.REQUIRED || type == TokenType.NATIVE || type == TokenType.OVERRIDE || type == TokenType.STANDARD || type == TokenType.STATIC;
     }
@@ -250,7 +342,7 @@ public class Parser {
 	expect(TokenType.PARENL);
 	Token next;
 	do {
-	    IExpression expr = parseExpression();
+	    final IExpression expr = parseExpression();
 	    System.out.println(expr);
 	    exprs.add(expr);
 	    next = getNext();
@@ -260,11 +352,14 @@ public class Parser {
 	return exprs;
     }
 
-    private IExpression parsePrimaryExpression() throws UnexpectedTokenException{
-	Token next = expect(TokenType.UNARYOP, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
+    private IExpression parsePrimaryExpression() throws UnexpectedTokenException {
+	Token next = expect(TokenType.THIS, TokenType.UNARYOP, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
 	IExpression expr = null;
-	
-	switch(next.type){
+
+	switch (next.type) {
+	    case THIS:
+		expr = new NodeThis(next.line, next.columnStart);
+		break;
 	    case UNARYOP:
 		expr = new NodeUnary(next.line, next.columnStart, parsePrimaryExpression(), next.data, true);
 		break;
@@ -276,33 +371,33 @@ public class Parser {
 		expr = new NodeInteger(Integer.parseInt(next.data, 8));
 		break;
 	    case HEXINT:
-		expr =  new NodeInteger(Integer.parseInt(next.data, 16));
+		expr = new NodeInteger(Integer.parseInt(next.data, 16));
 		break;
 	    case BININT:
-		expr =  new NodeInteger(Integer.parseInt(next.data, 2));
+		expr = new NodeInteger(Integer.parseInt(next.data, 2));
 		break;
 	    case INT:
 		expr = new NodeInteger(Integer.parseInt(next.data, 10));
 		break;
 	    case FLOAT:
-		expr =  new NodeFloat(Float.parseFloat(next.data));
+		expr = new NodeFloat(Float.parseFloat(next.data));
 		break;
 	    case DOUBLE:
-		expr =  new NodeDouble(Double.parseDouble(next.data));
+		expr = new NodeDouble(Double.parseDouble(next.data));
 		break;
 	    case STRING:
-		expr =  new NodeString(next.data.substring(1, next.data.length()-1));
+		expr = new NodeString(next.data.substring(1, next.data.length() - 1));
 		break;
 	    case CHAR:
-		expr =  new NodeChar(next.data.charAt(1));
+		expr = new NodeChar(next.data.charAt(1));
 		break;
 	    case BOOL:
-		expr =  new NodeBool(next.data.equals("true"));
+		expr = new NodeBool(next.data.equals("true"));
 		break;
 	}
-	if(expr != null){
+	if (expr != null) {
 	    next = getNext();
-	    switch(next.type){
+	    switch (next.type) {
 		case BINARYOP:
 		    return new NodeBinary(expr, next.data, parsePrimaryExpression());
 		default:
@@ -311,17 +406,17 @@ public class Parser {
 	}
 	return expr;
     }
-    
+
     private IExpression parseExpression() throws UnexpectedTokenException {
 	final IExpression expr = parsePrimaryExpression();
-	Token next = getNext();
-	
-	switch(next.type){
-	    // Postfix unary expression
+	final Token next = getNext();
+
+	switch (next.type) {
+	// Postfix unary expression
 	    case UNARYOP:
-		    return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
+		return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
 	    case QUESTIONMARK:
-		IExpression exprTrue = parseExpression();
+		final IExpression exprTrue = parseExpression();
 		expect(TokenType.COLON);
 		return new NodeTernary(expr, exprTrue, parseExpression());
 	}

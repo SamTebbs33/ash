@@ -21,7 +21,8 @@ public class Lexer {
     public static enum TokenType {
 	// The ERROR token type must be the last one, as it matches anything
 	// that isn't matched by other tokens
-	COMMENT("(//.+)|(/\\*(.|[\r\n])*?\\*/)", "comment"), // Source: http://blog.ostermiller.org/find-comment
+	COMMENT("(//.+)|(/\\*(.|[\r\n])*?\\*/)", "comment"), // Source:
+							     // http://blog.ostermiller.org/find-comment
 	OCTINT("0o[0-7]+", "octal integer"),
 	BININT("0b[0|1]+", "binary integer"),
 	HEXINT("0x[0-9a-fA-F]+", "hexadecimal integer"),
@@ -45,8 +46,10 @@ public class Lexer {
 	COLON(":", "colon"),
 
 	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
-	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>=", "compound assignment operator"),
-	BINARYOP("<=|>=|==|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|", "binary operator"),
+	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>=",
+		"compound assignment operator"),
+	BINARYOP("<=|>=|==|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|",
+		"binary operator"),
 	ASSIGNOP("=", "assignment operator"),
 	WHITESPACE("[\n\t ]+", "whitespace"),
 
@@ -69,6 +72,7 @@ public class Lexer {
 	OVERRIDE("override"),
 	STANDARD("standard"),
 	STATIC("static"),
+	THIS("this"),
 
 	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),
 	EOF("\\Z"),
@@ -91,11 +95,11 @@ public class Lexer {
 	public String data;
 	public int line, columnStart, columnEnd;
 
-	public Token(final TokenType type, final String data, final int line, final int column, int columnEnd) {
+	public Token(final TokenType type, final String data, final int line, final int column, final int columnEnd) {
 	    this.type = type;
 	    this.data = data;
 	    this.line = line;
-	    this.columnStart = column;
+	    columnStart = column;
 	    this.columnEnd = columnEnd;
 	}
 
