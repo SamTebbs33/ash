@@ -44,18 +44,20 @@ public class QualifiedName {
 	return name;
     }
 
-    public String toString(){
+    @Override
+    public String toString() {
 	String str = "";
-	for(int i = 0; i < sections.size() - 1; i++) str += sections.get(i) + ".";
+	for (int i = 0; i < sections.size() - 1; i++)
+	    str += sections.get(i) + ".";
 	str += sections.getLast();
 	return str;
     }
 
-    public static QualifiedName fromPath(String path) {
+    public static QualifiedName fromPath(final String path) {
 	final QualifiedName name = new QualifiedName("");
 	for (final String str : path.split("\\."))
 	    name.add(str);
 	return name;
     }
-    
+
 }

@@ -1,6 +1,7 @@
 package ashc.semantics;
 
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.Stack;
 
 import ashc.load.TypeImporter;
@@ -32,9 +33,7 @@ public class Semantics {
 	    clsName = clsName.replace("[", "");
 	    arrDims = arrDims - clsName.length();
 	    final String shortName = clsName.substring(clsName.lastIndexOf('.') + 1);
-	    if (clsName.charAt(0) == 'L'){
-		TypeImporter.loadClass(clsName.substring(1).replace(";", ""));
-	    }
+	    if (clsName.charAt(0) == 'L') TypeImporter.loadClass(clsName.substring(1).replace(";", ""));
 	    return new TypeI(shortName, arrDims);
 	}
 
@@ -53,12 +52,17 @@ public class Semantics {
 	typeNameMap.put(shortName, qualifiedName);
     }
 
-    public static void bindName(QualifiedName qualifiedName) {
+    public static void bindName(final QualifiedName qualifiedName) {
 	bindName(qualifiedName.shortName, qualifiedName);
     }
 
-    public static boolean bindingExists(String shortName) {
+    public static boolean bindingExists(final String shortName) {
 	return typeNameMap.containsKey(shortName);
+    }
+
+    public static Optional<Type> getType(final String id) {
+	final QualifiedName typeName = typeNameMap.get(id);
+	return typeName != null ? Optional.of(types.get(typeName)) : Optional.empty();
     }
 
 }

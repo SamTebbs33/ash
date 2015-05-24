@@ -1,15 +1,24 @@
 package ashc.grammar;
 
-import static ashc.error.Error.*;
-import static ashc.error.Error.EnumError.*;
+import static ashc.error.Error.semanticError;
+import static ashc.error.Error.EnumError.CANNOT_EXTEND_FINAL_TYPE;
+import static ashc.error.Error.EnumError.CANNOT_EXTEND_TYPE;
+import static ashc.error.Error.EnumError.TYPE_ALREADY_EXISTS;
+import static ashc.error.Error.EnumError.TYPE_ALREADY_IMPORTED;
+import static ashc.error.Error.EnumError.TYPE_DOES_NOT_EXIST;
 
+import java.lang.reflect.Modifier;
 import java.util.LinkedList;
+import java.util.Optional;
 
 import ashc.grammar.Lexer.Token;
 import ashc.load.TypeImporter;
+import ashc.semantics.Member.EnumType;
+import ashc.semantics.Member.Type;
 import ashc.semantics.QualifiedName;
 import ashc.semantics.Scope;
 import ashc.semantics.Semantics;
+import ashc.util.BitOp;
 
 /**
  * Ash
@@ -144,7 +153,7 @@ public abstract class Node {
     }
 
     public static class NodeClassDec extends NodeTypeDec {
-	
+
 	LinkedList<NodeModifier> mods;
 	Token id;
 	NodeArgs args;
@@ -163,10 +172,22 @@ public abstract class Node {
 	    this.types = types;
 	    this.block = block;
 	}
-	
+
 	@Override
 	public void preAnalyse() {
-	    if(Semantics.bindingExists(id.data)) semanticError(line, column, TYPE_ALREADY_EXISTS, id.data);
+	    // Ensure that the type being declared doesn't already exist
+	    if (Semantics.bindingExists(id.data)) semanticError(line, column, TYPE_ALREADY_EXISTS, id.data);
+	    // Ensure the super-types are valid
+	    if (types != null){
+		for (final NodeType typeNode : types.types) {
+		    final Optional<Type> typeOpt = Semantics.getType(typeNode.id);
+		    if (!typeOpt.isPresent()) semanticError(line, column, TYPE_DOES_NOT_EXIST, typeNode.id);
+
+		    final Type type = typeOpt.get();
+		    if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
+		    if (type.type == EnumType.ENUM) semanticError(line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
+		}
+	    }
 	}
 
     }
@@ -307,7 +328,7 @@ public abstract class Node {
     }
 
     public static class NodePrefix extends Node implements IFuncStmt,
-	    IExpression {
+    IExpression {
 
 	public NodePrefix(final int line, final int column) {
 	    super(line, column);

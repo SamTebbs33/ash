@@ -10,17 +10,22 @@ public class Error {
 
     public static enum EnumError {
 	TYPE_ALREADY_EXISTS("Type already exists (%s)"),
-	TYPE_ALREADY_IMPORTED("Type has already been imported (%s)");
-	
+	TYPE_ALREADY_IMPORTED("Type has already been imported (%s)"),
+	TYPE_DOES_NOT_EXIST("Type doesn't exist (%s)"),
+
+	CANNOT_EXTEND_FINAL_TYPE("Cannot extend a final type (%s)"),
+	CANNOT_EXTEND_TYPE("%s %s cannot extend %s %s (%s)");
+
 	public String format;
-	private EnumError(String format){
+
+	private EnumError(final String format) {
 	    this.format = format;
 	}
     }
 
-    public static void semanticError(final int line, final int column, EnumError error, final String... args) {
+    public static void semanticError(final int line, final int column, final EnumError error, final String... args) {
 	System.err.printf("Error [%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
-	System.err.printf(error.format + "%n", (Object[])args);
+	System.err.printf(error.format + "%n", (Object[]) args);
     }
 
 }

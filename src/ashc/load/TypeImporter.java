@@ -18,9 +18,9 @@ public class TypeImporter {
     public static ClassLoader loader = ClassLoader.getSystemClassLoader();
 
     public static boolean loadClass(final String path) {
-	String shortName = path.substring(path.lastIndexOf('.')+1);
+	final String shortName = path.substring(path.lastIndexOf('.') + 1);
 	// Check if it's already been imported
-	if(Semantics.bindingExists(shortName)) return true;
+	if (Semantics.bindingExists(shortName)) return true;
 	try {
 	    final Class<?> cls = loader.loadClass(path);
 	    final EnumType enumType = cls.isEnum() ? EnumType.ENUM : cls.isInterface() ? EnumType.INTERFACE : EnumType.CLASS;
