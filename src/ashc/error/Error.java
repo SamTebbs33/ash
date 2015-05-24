@@ -1,5 +1,6 @@
 package ashc.error;
 
+import ashc.grammar.Node;
 import ashc.main.AshCompiler;
 
 /**
@@ -28,6 +29,11 @@ public class Error {
     public static void semanticError(final int line, final int column, final EnumError error, final String... args) {
 	System.err.printf("Error [%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
 	System.err.printf(error.format + "%n", (Object[]) args);
+    }
+    
+    public static void semanticError(Node node, final int line, final int column, final EnumError error, final String... args) {
+	node.errored = true;
+	semanticError(line, column, error, args);
     }
 
 }

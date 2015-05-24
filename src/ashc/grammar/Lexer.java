@@ -28,7 +28,7 @@ public class Lexer {
 	HEXINT("0x[0-9a-fA-F]+", "hexadecimal integer"),
 	FLOAT("-?[0-9]+\\.[0-9]+f", "float"),
 	DOUBLE("-?[0-9]+\\.[0-9]+", "double"),
-	LONG("-?[0-9]+L"),
+	LONG("-?[0-9]+L", "long"),
 	INT("-?[0-9]+", "integer"),
 	STRING("\".*\"", "string"),
 	CHAR("\'.\'", "character"),

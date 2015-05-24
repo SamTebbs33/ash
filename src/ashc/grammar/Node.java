@@ -173,7 +173,7 @@ public abstract class Node {
 	@Override
 	public void preAnalyse() {
 	    // Ensure that the type being declared doesn't already exist
-	    if (Semantics.bindingExists(id.data)) semanticError(line, column, TYPE_ALREADY_EXISTS, id.data);
+	    if (Semantics.bindingExists(id.data)) semanticError(this, line, column, TYPE_ALREADY_EXISTS, id.data);
 	    QualifiedName name = Scope.getNamespace();
 	    name.add(id.data);
 	    
@@ -182,7 +182,7 @@ public abstract class Node {
 		for(NodeModifier modNode : mods){
 		    int mod = modNode.asInt();
 		    // Check if the modifier has already been added, else add to "modifiers"
-		    if(BitOp.and(modifiers, mod)) semanticError(line, column, DUPLICATE_MODIFIERS, modNode.mod);
+		    if(BitOp.and(modifiers, mod)) semanticError(this, line, column, DUPLICATE_MODIFIERS, modNode.mod);
 		    else modifiers |= mod;
 		}
 	    }
@@ -198,8 +198,8 @@ public abstract class Node {
 		    if (!typeOpt.isPresent()) semanticError(line, column, TYPE_DOES_NOT_EXIST, typeNode.id);
 
 		    final Type type = typeOpt.get();
-		    if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
-		    if (type.type == EnumType.ENUM) semanticError(line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
+		    if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
+		    if (type.type == EnumType.ENUM) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
 		}
 	    }
 	}
@@ -267,6 +267,7 @@ public abstract class Node {
 
 	String id;
 	public int arrDims;
+	public boolean optional;
 
 	public NodeType(final String data) {
 	    id = data;
@@ -328,7 +329,43 @@ public abstract class Node {
     }
 
     public static class NodeVarDec extends Node implements IFuncStmt {
-
+	public LinkedList<NodeModifier> mods;
+	public String keyword;
+	public String id;
+	public NodeVarDec(int line, int column, LinkedList<NodeModifier> mods, String keyword, String id) {
+	    super(line, column);
+	    this.mods = mods;
+	    this.keyword = keyword;
+	    this.id = id;
+	}
+	
+    }
+    
+    public static class NodeVarDecExplicit extends NodeVarDec {
+	public NodeType type;
+	public NodeVarDecExplicit(int line, int column, LinkedList<NodeModifier> mods, String keyword, String id, NodeType type) {
+	    super(line, column, mods, keyword, id);
+	    this.type = type;
+	}
+	
+    }
+    
+    public static class NodeVarDecExplicitAssign extends NodeVarDecExplicit {
+	public IExpression expr;
+	public NodeVarDecExplicitAssign(int line, int column, LinkedList<NodeModifier> mods, String keyword, String id, NodeType type, IExpression expr) {
+	    super(line, column, mods, keyword, id, type);
+	    this.expr = expr;
+	}
+	
+    }
+    
+    public static class NodeVarDecImplicit extends NodeVarDec {
+	public IExpression expr;
+	public NodeVarDecImplicit(int line, int column, LinkedList<NodeModifier> mods, String keyword, String id, IExpression expr) {
+	    super(line, column, mods, keyword, id);
+	    this.expr = expr;
+	}
+	
     }
 
     public static class NodeFuncBlock extends Node {

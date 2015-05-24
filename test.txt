@@ -1,4 +1,9 @@
 import java.lang.reflect.Modifier
 
 class Test : Modifier {
+
+	public func foo(){
+	
+	}
+
 }

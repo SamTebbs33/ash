@@ -39,6 +39,9 @@ import ashc.grammar.Node.NodeTypeDec;
 import ashc.grammar.Node.NodeTypes;
 import ashc.grammar.Node.NodeUnary;
 import ashc.grammar.Node.NodeVarDec;
+import ashc.grammar.Node.NodeVarDecExplicit;
+import ashc.grammar.Node.NodeVarDecExplicitAssign;
+import ashc.grammar.Node.NodeVarDecImplicit;
 import ashc.grammar.Node.NodeVariable;
 
 /**
@@ -388,7 +391,7 @@ public class Parser {
 		expr = new NodeInteger(Integer.parseInt(next.data, 10));
 		break;
 	    case LONG:
-		expr = new NodeLong(Long.parseLong(next.data));
+		expr = new NodeLong(Long.parseLong(next.data.substring(0, next.data.length()-1)));
 		break;
 	    case FLOAT:
 		expr = new NodeFloat(Float.parseFloat(next.data));
@@ -436,9 +439,23 @@ public class Parser {
     }
 
     private NodeVarDec parseVarDec(final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
-	expect(TokenType.CONST, TokenType.VAR);
-	expect(TokenType.ID);
-	return null;
+	Token keyword = expect(TokenType.CONST, TokenType.VAR);
+	Token id = expect(TokenType.ID);
+	Token next = expect(TokenType.COLON, TokenType.ASSIGNOP);
+	NodeVarDec varDec;
+	TokenType type = next.type;
+	if(type == TokenType.COLON){
+	    NodeType nodeType = parseType();
+	    varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType);
+	    next = getNext();
+	    type = next.type;
+	    if(type == TokenType.ASSIGNOP){
+		varDec = new NodeVarDecExplicitAssign(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, parseExpression());
+	    }else rewind();
+	}else{
+	    varDec = new NodeVarDecImplicit(id.line, id.columnStart, mods, keyword.data, id.data, parseExpression());
+	}
+	return varDec;
     }
 
     private NodeTypes parseTypes() throws UnexpectedTokenException {
@@ -473,6 +490,8 @@ public class Parser {
     private NodeType parseType() throws UnexpectedTokenException {
 	final Token id = expect(TokenType.ID);
 	final NodeType type = new NodeType(id.data);
+	if(getNext().type == TokenType.QUESTIONMARK) type.optional = true;
+	else rewind();
 	while (getNext().type == TokenType.BRACKETL) {
 	    expect(TokenType.BRACKETR);
 	    type.arrDims++;
