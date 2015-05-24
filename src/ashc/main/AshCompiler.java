@@ -1,4 +1,5 @@
 package ashc.main;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,11 +22,13 @@ public class AshCompiler {
     private final Parser parser;
     private final Lexer lexer;
     private NodeFile fileNode;
-    
+    public String relFilePath;
+
     public static Stack<AshCompiler> compilers = new Stack<AshCompiler>();
 
-    public AshCompiler(final File file) throws FileNotFoundException, IOException {
-	lexer = new Lexer(new BufferedReader(new FileReader(file)));
+    public AshCompiler(final String relFilePath) throws FileNotFoundException, IOException {
+	this.relFilePath = relFilePath;
+	lexer = new Lexer(new BufferedReader(new FileReader(new File(relFilePath))));
 	parser = new Parser(lexer);
 	compilers.push(this);
     }
@@ -41,8 +44,8 @@ public class AshCompiler {
     public void analyse() {
 	if (fileNode != null) fileNode.analyse();
     }
-    
-    public static AshCompiler get(){
+
+    public static AshCompiler get() {
 	return compilers.peek();
     }
 

@@ -7,19 +7,23 @@ import static ashc.main.AshCompiler.get;
  * @author samtebbs, 15:08:08 - 23 May 2015
  */
 public class Scope {
-    
+
     public QualifiedName namespace;
 
-    public Scope(QualifiedName namespace) {
+    public Scope(final QualifiedName namespace) {
 	this.namespace = namespace;
     }
-    
-    public static Scope getScope(){
+
+    public static Scope getScope() {
 	return get().scopeStack.peek();
     }
-    
-    public static QualifiedName getNamespace(){
+
+    public static QualifiedName getNamespace() {
 	return getScope().namespace;
+    }
+
+    public static void push(final Scope scope) {
+	get().scopeStack.push(scope);
     }
 
 }

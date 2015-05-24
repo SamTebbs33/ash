@@ -1,5 +1,5 @@
 package ashc.main;
-import java.io.File;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
@@ -11,7 +11,7 @@ import java.io.IOException;
 public class AshMain {
 
     public static void main(final String[] args) throws FileNotFoundException, IOException {
-	final AshCompiler compiler = new AshCompiler(new File(args[0]));
+	final AshCompiler compiler = new AshCompiler(args[0]);
 	compiler.parse();
 	compiler.preAnalyse();
 	compiler.analyse();

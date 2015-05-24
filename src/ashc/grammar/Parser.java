@@ -77,15 +77,17 @@ public class Parser {
 	    System.err.printf("Error:%d:%d-%d %s%n", line, colStart, colEnd, e.msg);
 
 	    // Print out the line and location of the error
-	    System.out.println(lexer.lines.get(line - (line > lexer.lines.size() ? 2 : 1)));
-	    for (int i = 0; i < colStart - 1; i++)
-		System.out.print(" ");
-	    System.out.print("^");
-	    if (colEnd - colStart > 1) {
-		for (int i = colStart; i < colEnd - 2; i++)
-		    System.out.print("-");
-		System.out.println("^");
-	    } else System.out.println();
+	    if (line <= lexer.lines.size()) {
+		System.out.println(lexer.lines.get(line - 1));
+		for (int i = 0; i < colStart - 1; i++)
+		    System.out.print(" ");
+		System.out.print("^");
+		if (colEnd - colStart > 1) {
+		    for (int i = colStart; i < colEnd - 2; i++)
+			System.out.print("-");
+		    System.out.println("^");
+		} else System.out.println();
+	    }
 	}
 	return null;
     }
@@ -108,7 +110,7 @@ public class Parser {
 
     /**
      * Move back one token
-     * 
+     *
      *
      */
     private void rewind() {
@@ -173,7 +175,7 @@ public class Parser {
 	    imports.add(new NodeImport(line, column, name));
 	}
 	rewind();
-	return null;
+	return imports;
     }
 
     /**
@@ -191,7 +193,7 @@ public class Parser {
 	    name.add(id.data);
 	}
 	rewind();
-	return null;
+	return name;
     }
 
     /**
@@ -303,9 +305,7 @@ public class Parser {
 	    rewind();
 	    block.add(parseFuncStmt());
 	}
-	else {
-	    block.add(parseFuncStmt());
-	}
+	else block.add(parseFuncStmt());
 	return block;
     }
 
@@ -522,10 +522,10 @@ public class Parser {
     }
 
     private NodeFile parseFile() throws UnexpectedTokenException {
-	parsePackage();
-	parseImports();
-	parseTypeDecs();
-	return null;
+	final NodePackage pkg = parsePackage();
+	final LinkedList<NodeImport> imports = parseImports();
+	final LinkedList<NodeTypeDec> typeDecs = parseTypeDecs();
+	return new NodeFile(pkg, imports, typeDecs);
     }
 
 }

@@ -1,8 +1,15 @@
 package ashc.grammar;
 
+import static ashc.error.Error.*;
+import static ashc.error.Error.EnumError.*;
+
 import java.util.LinkedList;
 
 import ashc.grammar.Lexer.Token;
+import ashc.load.TypeImporter;
+import ashc.semantics.QualifiedName;
+import ashc.semantics.Scope;
+import ashc.semantics.Semantics;
 
 /**
  * Ash
@@ -12,6 +19,7 @@ import ashc.grammar.Lexer.Token;
 public abstract class Node {
 
     public int line, column;
+    public boolean errored;
 
     public Node(final int line, final int column) {
 	this.line = line;
@@ -22,10 +30,11 @@ public abstract class Node {
 
     }
 
-    public void preAnalyse() {
-    }
+    public void preAnalyse() {}
 
-    public boolean analyse(){return true;}
+    public boolean analyse() {
+	return true;
+    }
 
     public static interface IFuncStmt {
 
@@ -37,8 +46,34 @@ public abstract class Node {
 
     public static class NodeFile extends Node {
 
+	public NodePackage pkg;
+	public LinkedList<NodeImport> imports;
+	public LinkedList<NodeTypeDec> typeDecs;
+
 	public NodeFile() {
 	    super();
+	}
+
+	public NodeFile(final NodePackage pkg, final LinkedList<NodeImport> imports, final LinkedList<NodeTypeDec> typeDecs) {
+	    this.pkg = pkg;
+	    this.imports = imports;
+	    this.typeDecs = typeDecs;
+	}
+
+	@Override
+	public void preAnalyse() {
+	    final QualifiedName name = new QualifiedName("");
+	    if (pkg != null) {
+		pkg.preAnalyse();
+		final NodeQualifiedName pkgName = pkg.qualifiedName;
+		for (final String section : pkgName.paths)
+		    name.add(section);
+	    }
+	    Scope.push(new Scope(name));
+	    if (imports != null) for (final NodeImport i : imports)
+		i.preAnalyse();
+	    if (typeDecs != null) for (final NodeTypeDec t : typeDecs)
+		t.preAnalyse();
 	}
 
 	@Override
@@ -57,6 +92,9 @@ public abstract class Node {
 	    this.qualifiedName = qualifiedName;
 	}
 
+	@Override
+	public void preAnalyse() {}
+
     }
 
     public static class NodeImport extends Node {
@@ -66,6 +104,13 @@ public abstract class Node {
 	public NodeImport(final int line, final int column, final NodeQualifiedName qualifiedName) {
 	    super(line, column);
 	    this.qualifiedName = qualifiedName;
+	}
+
+	@Override
+	public void preAnalyse() {
+	    // Test if the type has already been imported
+	    if (Semantics.typeExists(qualifiedName.shortName)) semanticError(line, column, TYPE_ALREADY_IMPORTED, qualifiedName.shortName);
+	    else TypeImporter.loadClass(qualifiedName.toString());
 	}
 
     }
@@ -83,6 +128,11 @@ public abstract class Node {
 	    this.mods = mods;
 	}
 
+	@Override
+	public boolean analyse() {
+	    return super.analyse();
+	}
+
     }
 
     public static class NodeModifier extends Node {
@@ -94,6 +144,12 @@ public abstract class Node {
     }
 
     public static class NodeClassDec extends NodeTypeDec {
+	
+	LinkedList<NodeModifier> mods;
+	Token id;
+	NodeArgs args;
+	NodeTypes types;
+	NodeClassBlock block;
 
 	public NodeClassDec(final int line, final int column) {
 	    super(line, column);
@@ -101,6 +157,16 @@ public abstract class Node {
 
 	public NodeClassDec(final int line, final int column, final LinkedList<NodeModifier> mods, final Token id, final NodeArgs args, final NodeTypes types, final NodeClassBlock block) {
 	    super(line, column, mods);
+	    this.mods = mods;
+	    this.id = id;
+	    this.args = args;
+	    this.types = types;
+	    this.block = block;
+	}
+	
+	@Override
+	public void preAnalyse() {
+	    if(Semantics.bindingExists(id.data)) semanticError(line, column, TYPE_ALREADY_EXISTS, id.data);
 	}
 
     }
@@ -176,13 +242,32 @@ public abstract class Node {
     public static class NodeQualifiedName extends Node {
 
 	LinkedList<String> paths = new LinkedList<String>();
+	public String shortName;
 
 	public NodeQualifiedName(final int line, final int column) {
 	    super(line, column);
 	}
 
+	public String toDirString() {
+	    final StringBuffer sb = new StringBuffer();
+	    for (int i = 0; i < paths.size() - 1; i++)
+		sb.append(paths.get(i) + "/");
+	    sb.append(paths.get(paths.size() - 1));
+	    return sb.toString();
+	}
+
+	@Override
+	public String toString() {
+	    final StringBuffer sb = new StringBuffer();
+	    for (int i = 0; i < paths.size() - 1; i++)
+		sb.append(paths.get(i) + ".");
+	    sb.append(paths.get(paths.size() - 1));
+	    return sb.toString();
+	}
+
 	public void add(final String data) {
 	    paths.add(data);
+	    shortName = data;
 	}
 
     }

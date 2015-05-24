@@ -165,6 +165,7 @@ public class Lexer {
 	final Pattern patterns = Pattern.compile(patternStr.substring(1));
 
 	matcher = patterns.matcher(lineBuffer.toString());
+	reader.close();
     }
 
     public Token getNextToken() throws InvalidTokenException {

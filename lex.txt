@@ -1,3 +1,4 @@
-class Test {
-	func foo() : int -> foo(a)
+import java.lang.String
+
+class Object {
 }
