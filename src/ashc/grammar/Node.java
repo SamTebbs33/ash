@@ -1,11 +1,7 @@
 package ashc.grammar;
 
 import static ashc.error.Error.semanticError;
-import static ashc.error.Error.EnumError.CANNOT_EXTEND_FINAL_TYPE;
-import static ashc.error.Error.EnumError.CANNOT_EXTEND_TYPE;
-import static ashc.error.Error.EnumError.TYPE_ALREADY_EXISTS;
-import static ashc.error.Error.EnumError.TYPE_ALREADY_IMPORTED;
-import static ashc.error.Error.EnumError.TYPE_DOES_NOT_EXIST;
+import static ashc.error.Error.EnumError.*;
 
 import java.lang.reflect.Modifier;
 import java.util.LinkedList;
@@ -41,8 +37,7 @@ public abstract class Node {
 
     public void preAnalyse() {}
 
-    public boolean analyse() {
-	return true;
+    public void analyse() {
     }
 
     public static interface IFuncStmt {
@@ -86,8 +81,7 @@ public abstract class Node {
 	}
 
 	@Override
-	public boolean analyse() {
-	    return false;
+	public void analyse() {
 	}
 
     }
@@ -138,8 +132,7 @@ public abstract class Node {
 	}
 
 	@Override
-	public boolean analyse() {
-	    return super.analyse();
+	public void analyse() {
 	}
 
     }
@@ -149,6 +142,10 @@ public abstract class Node {
 
 	public NodeModifier(final int line, final int column, final String mod) {
 	    this.mod = mod;
+	}
+
+	public int asInt() {
+	    return 0;
 	}
     }
 
@@ -177,7 +174,24 @@ public abstract class Node {
 	public void preAnalyse() {
 	    // Ensure that the type being declared doesn't already exist
 	    if (Semantics.bindingExists(id.data)) semanticError(line, column, TYPE_ALREADY_EXISTS, id.data);
-	    // Ensure the super-types are valid
+	    QualifiedName name = Scope.getNamespace();
+	    name.add(id.data);
+	    
+	    int modifiers = 0;
+	    if(mods != null){
+		for(NodeModifier modNode : mods){
+		    int mod = modNode.asInt();
+		    // Check if the modifier has already been added, else add to "modifiers"
+		    if(BitOp.and(modifiers, mod)) semanticError(line, column, DUPLICATE_MODIFIERS, modNode.mod);
+		    else modifiers |= mod;
+		}
+	    }
+	    Semantics.addType(new Type(name, modifiers, EnumType.CLASS));
+	}
+	
+	@Override
+	public void analyse(){
+	 // Ensure the super-types are valid
 	    if (types != null){
 		for (final NodeType typeNode : types.types) {
 		    final Optional<Type> typeOpt = Semantics.getType(typeNode.id);
