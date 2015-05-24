@@ -40,7 +40,7 @@ public class Semantics {
     }
 
     public static boolean typeExists(final String typeName) {
-	return typeNameMap.containsKey(typeName);
+	return EnumPrimitive.isPrimitive(typeName) || typeNameMap.containsKey(typeName);
     }
 
     public static void addType(final Type type) {

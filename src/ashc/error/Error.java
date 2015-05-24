@@ -19,7 +19,8 @@ public class Error {
 	
 	DUPLICATE_MODIFIERS("Duplicate modifiers (%s)"),
 	DUPLICATE_ARGUMENTS("Duplicate arguments (%s)"),
-	DUPLICATE_TYPES("Duplicate types (%s)");
+	DUPLICATE_TYPES("Duplicate types (%s)"),
+	PRIMTIVE_CANNOT_BE_OPTIONAL("A primitive type cannot be optional (%s)");
 
 	public String format;
 

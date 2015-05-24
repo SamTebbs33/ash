@@ -11,6 +11,7 @@ import ashc.grammar.Lexer.Token;
 import ashc.load.TypeImporter;
 import ashc.semantics.Member.EnumType;
 import ashc.semantics.Member.Type;
+import ashc.semantics.Primitives;
 import ashc.semantics.QualifiedName;
 import ashc.semantics.Scope;
 import ashc.semantics.Semantics;
@@ -285,6 +286,18 @@ public abstract class Node {
 	public void add(final NodeFuncDec funcDec) {
 	    funcDecs.add(funcDec);
 	}
+	
+	@Override
+	public void preAnalyse() {
+	    for(NodeVarDec varDec : varDecs) varDec.preAnalyse();
+	    for(NodeFuncDec funcDec : funcDecs) funcDec.preAnalyse();
+	}
+	
+	@Override
+	public void analyse() {
+	    for(NodeVarDec varDec : varDecs) varDec.analyse();
+	    for(NodeFuncDec funcDec : funcDecs) funcDec.analyse();
+	}
 
     }
 
@@ -296,6 +309,12 @@ public abstract class Node {
 
 	public NodeType(final String data) {
 	    id = data;
+	}
+	
+	@Override
+	public void analyse() {
+	    if(Semantics.typeExists(id)) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
+	    if(Primitives.isPrimitive(id) && optional) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
 	}
 
     }
