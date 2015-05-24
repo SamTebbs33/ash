@@ -195,11 +195,13 @@ public abstract class Node {
 	    if (types != null){
 		for (final NodeType typeNode : types.types) {
 		    final Optional<Type> typeOpt = Semantics.getType(typeNode.id);
+		    
 		    if (!typeOpt.isPresent()) semanticError(line, column, TYPE_DOES_NOT_EXIST, typeNode.id);
-
-		    final Type type = typeOpt.get();
-		    if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
-		    if (type.type == EnumType.ENUM) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
+		    else{
+			final Type type = typeOpt.get();
+		    	if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
+		    	if (type.type == EnumType.ENUM) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
+		    }
 		}
 	    }
 	}
@@ -231,6 +233,12 @@ public abstract class Node {
 	    this.id = id;
 	    this.type = type;
 	}
+
+	@Override
+	public void analyse() {
+	    type.analyse();
+	}
+	
     }
 
     public static class NodeArgs extends Node {
@@ -238,6 +246,14 @@ public abstract class Node {
 
 	public void add(final NodeArg arg) {
 	    args.add(arg);
+	}
+	
+	@Override
+	public void analyse() {
+	    for(NodeArg arg : args){
+		arg.analyse();
+		for(NodeArg arg2 : args) if(arg.id.equals(arg2.id)) semanticError(this, line, column, DUPLICATE_ARGUMENTS, arg2.id);
+	    }
 	}
     }
 
@@ -247,6 +263,15 @@ public abstract class Node {
 	public void add(final NodeType type) {
 	    types.add(type);
 	}
+
+	@Override
+	public void analyse() {
+	    for(NodeType type : types){
+		type.analyse();
+		for(NodeType type2 : types) if(type.id.equals(type2.id)) semanticError(this, line, column, DUPLICATE_TYPES, type.id);
+	    }
+	}
+	
     }
 
     public static class NodeClassBlock extends Node {
