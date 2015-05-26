@@ -525,8 +525,21 @@ public class Parser {
 	return new NodeEnumBlock(line, column, instances, parseClassBlock());
     }
 
-    private NodeInterfaceDec parseInterfaceDec(final LinkedList<NodeModifier> mods) {
-	return null;
+    private NodeInterfaceDec parseInterfaceDec(final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
+	final Token id = expect(TokenType.ID);
+	NodeArgs args = null;
+	NodeTypes types = null;
+
+	if (getNext().type == TokenType.PARENL) {
+	    rewind();
+	    args = parseArgs();
+	} else rewind();
+
+	if (getNext().type == TokenType.COLON) types = parseTypes();
+	else rewind();
+
+	final NodeClassBlock block = parseClassBlock();
+	return new NodeInterfaceDec(id.line, id.columnStart, mods, id, args, types, block);
     }
 
     private NodeTypeDec parseTypeDec() throws UnexpectedTokenException {

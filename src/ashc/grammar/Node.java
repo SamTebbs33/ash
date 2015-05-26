@@ -251,9 +251,44 @@ public abstract class Node {
     }
 
     public static class NodeInterfaceDec extends NodeTypeDec {
+	
+	LinkedList<NodeModifier> mods;
+	Token id;
+	NodeArgs args;
+	NodeTypes types;
+	NodeClassBlock block;
 
-	public NodeInterfaceDec(final int line, final int column) {
-	    super(line, column);
+	public NodeInterfaceDec(final int line, final int column, final LinkedList<NodeModifier> mods, final Token id, final NodeArgs args, final NodeTypes types, final NodeClassBlock block) {
+	    super(line, column, mods);
+	    this.mods = mods;
+	    this.id = id;
+	    this.args = args;
+	    this.types = types;
+	    this.block = block;
+	}
+	
+	@Override
+	public void preAnalyse() {
+	    // Ensure that the type being declared doesn't already exist
+	    if (Semantics.bindingExists(id.data)) semanticError(this, line, column, TYPE_ALREADY_EXISTS, id.data);
+	    final QualifiedName name = Scope.getNamespace();
+	    name.add(id.data);
+
+	    int modifiers = 0;
+	    if (mods != null) for (final NodeModifier modNode : mods) {
+		final int mod = modNode.asInt();
+		// Check if the modifier has already been added, else add to
+		// "modifiers"
+		if (BitOp.and(modifiers, mod)) semanticError(this, line, column, DUPLICATE_MODIFIERS, modNode.mod);
+		else modifiers |= mod;
+	    }
+
+	    if (types != null) for (final NodeType type : types.types)
+		if (type.optional) semanticError(this, line, column, CANNOT_EXTENDS_OPTIONAL_TYPE, type.id);
+
+	    Semantics.addType(new Type(name, modifiers, EnumType.INTERFACE));
+	    block.preAnalyse();
+	    Semantics.exitType();
 	}
 
     }
