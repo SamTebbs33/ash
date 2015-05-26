@@ -28,6 +28,15 @@ public class Semantics {
 	    this.arrDims = arrDims;
 	    this.optional = optional;
 	}
+	
+	public TypeI(EnumPrimitive primitive){
+	    this.shortName = primitive.ashName;
+	}
+	
+	public TypeI(EnumPrimitive primitive, int arrDims){
+	    this.shortName = primitive.ashName;
+	    this.arrDims = arrDims;
+	}
 
 	public static TypeI fromClass(final Class cls) {
 	    String clsName = cls.getName();

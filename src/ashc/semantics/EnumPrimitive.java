@@ -14,7 +14,7 @@ public enum EnumPrimitive {
     DOUBLE("float64", "double"),
     CHAR("char", "char"),
     BOOL("bool", "boolean");
-
+    
     public String ashName, javaName;
 
     private EnumPrimitive(final String ashName, final String javaName) {
@@ -26,6 +26,12 @@ public enum EnumPrimitive {
 	for (final EnumPrimitive p : EnumPrimitive.values())
 	    if (p.ashName.equals(typeName)) return true;
 	return false;
+    }
+    
+    public static EnumPrimitive getPrimitive(String name){
+	for (final EnumPrimitive p : EnumPrimitive.values())
+	    if (p.ashName.equals(name)) return p;
+	return null;
     }
 
 }

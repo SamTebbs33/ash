@@ -656,7 +656,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return null;
+	    return new TypeI(EnumPrimitive.INT);
 	}
 
     }
@@ -675,7 +675,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return null;
+	    return new TypeI(EnumPrimitive.LONG);
 	}
 
     }
@@ -694,7 +694,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return null;
+	    return new TypeI(EnumPrimitive.FLOAT);
 	}
 
     }
@@ -713,7 +713,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return null;
+	    return new TypeI(EnumPrimitive.DOUBLE);
 	}
 
     }
@@ -732,7 +732,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return null;
+	    return new TypeI("String", 0, false);
 	}
 
     }
@@ -751,7 +751,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return null;
+	    return new TypeI(EnumPrimitive.BOOL);
 	}
 
     }
@@ -770,7 +770,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return null;
+	    return new TypeI(EnumPrimitive.CHAR);
 	}
 
     }
