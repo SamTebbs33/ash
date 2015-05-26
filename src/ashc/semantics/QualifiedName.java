@@ -59,5 +59,12 @@ public class QualifiedName {
 	    name.add(str);
 	return name;
     }
+    
+    public boolean equals(Object obj){
+	if(obj instanceof QualifiedName){
+	    return sections.equals(((QualifiedName)obj).sections);
+	}
+	return false;
+    }
 
 }

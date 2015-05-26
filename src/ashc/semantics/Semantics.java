@@ -37,6 +37,19 @@ public class Semantics {
 	    if (clsName.charAt(0) == 'L') TypeImporter.loadClass(clsName.substring(1).replace(";", ""));
 	    return new TypeI(shortName, arrDims);
 	}
+	
+	public boolean equals(Object obj){
+	    if(obj instanceof TypeI){
+		TypeI type = (TypeI)obj;
+		return type.shortName.equals(shortName) && type.arrDims == arrDims;
+	    }
+	    return false;
+	}
+
+	@Override
+	public String toString() {
+	    return "TypeI [shortName=" + shortName + ", arrDims=" + arrDims + "]";
+	}
 
     }
 
@@ -68,6 +81,10 @@ public class Semantics {
 
     public static boolean funcExists(Function func) {
 	return typeStack.peek().functions.contains(func);
+    }
+
+    public static void addFunc(Function func) {
+	typeStack.peek().functions.add(func);
     }
 
 }

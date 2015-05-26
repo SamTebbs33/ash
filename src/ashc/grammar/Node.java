@@ -16,6 +16,7 @@ import ashc.semantics.EnumPrimitive;
 import ashc.semantics.QualifiedName;
 import ashc.semantics.Scope;
 import ashc.semantics.Semantics;
+import ashc.semantics.Semantics.TypeI;
 import ashc.util.BitOp;
 
 /**
@@ -193,6 +194,7 @@ public abstract class Node {
 	    if(types != null) for(NodeType type : types.types) if(type.optional) semanticError(this, line, column, CANNOT_EXTENDS_OPTIONAL_TYPE, type.id);
 	    
 	    Semantics.addType(new Type(name, modifiers, EnumType.CLASS));
+	    block.preAnalyse();
 	}
 	
 	@Override
@@ -382,9 +384,10 @@ public abstract class Node {
 	    int modifiers = 0;
 	    for(NodeModifier mod : mods) modifiers |= mod.asInt();
 	    Function func = new Function(name, modifiers);
+	    for(NodeArg arg : args.args) func.parameters.add(new TypeI(arg.type.id, arg.type.arrDims));
 	    if(!Semantics.funcExists(func)){
-		
-	    }
+		Semantics.addFunc(func);
+	    }else semanticError(this, line, column, FUNC_ALREADY_EXISTS, id);
 	}
 
 	@Override

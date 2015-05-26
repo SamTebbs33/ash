@@ -13,6 +13,8 @@ public class Error {
 	TYPE_ALREADY_EXISTS("Type already exists (%s)"),
 	TYPE_ALREADY_IMPORTED("Type has already been imported (%s)"),
 	TYPE_DOES_NOT_EXIST("Type doesn't exist (%s)"),
+	
+	FUNC_ALREADY_EXISTS("Function already exists (%s)"),
 
 	CANNOT_EXTEND_FINAL_TYPE("Cannot extend a final type (%s)"),
 	CANNOT_EXTEND_TYPE("%s %s cannot extend %s %s (%s)"),

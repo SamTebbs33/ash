@@ -66,6 +66,25 @@ public class Member {
 	    func.returnType = TypeI.fromClass(method.getReturnType());
 	    return func;
 	}
+	
+	public boolean equals(Object obj){
+	    if(obj instanceof Function){
+		Function func = (Function)obj;
+		return qualifiedName.equals(func.qualifiedName) && paramsAreEqual(func.parameters);
+	    }
+	    return false;
+	}
+
+	private boolean paramsAreEqual(LinkedList<TypeI> params2) {
+	    if(parameters.size() != params2.size()) return false;
+	    for(int i = 0; i < Math.min(parameters.size(), params2.size()); i++) if(!parameters.get(i).equals(params2.get(i))) return false;
+	    return true;
+	}
+
+	@Override
+	public String toString() {
+	    return "Function [parameters=" + parameters + ", returnType=" + returnType + ", qualifiedName=" + qualifiedName + ", modifiers=" + modifiers + "]";
+	}
 
     }
 
