@@ -11,7 +11,7 @@ import ashc.grammar.Lexer.Token;
 import ashc.load.TypeImporter;
 import ashc.semantics.Member.EnumType;
 import ashc.semantics.Member.Type;
-import ashc.semantics.Primitives;
+import ashc.semantics.EnumPrimitive;
 import ashc.semantics.QualifiedName;
 import ashc.semantics.Scope;
 import ashc.semantics.Semantics;
@@ -187,6 +187,9 @@ public abstract class Node {
 		    else modifiers |= mod;
 		}
 	    }
+	    
+	    if(types != null) for(NodeType type : types.types) if(type.optional) semanticError(this, line, column, CANNOT_EXTENDS_OPTIONAL_TYPE, type.id);
+	    
 	    Semantics.addType(new Type(name, modifiers, EnumType.CLASS));
 	}
 	
@@ -314,7 +317,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    if(Semantics.typeExists(id)) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
-	    if(Primitives.isPrimitive(id) && optional) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
+	    if(EnumPrimitive.isPrimitive(id) && optional) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
 	}
 
     }

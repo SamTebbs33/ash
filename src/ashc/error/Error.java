@@ -16,10 +16,12 @@ public class Error {
 
 	CANNOT_EXTEND_FINAL_TYPE("Cannot extend a final type (%s)"),
 	CANNOT_EXTEND_TYPE("%s %s cannot extend %s %s (%s)"),
+	CANNOT_EXTENDS_OPTIONAL_TYPE("Cannot extend an optional type (%s)"),
 	
 	DUPLICATE_MODIFIERS("Duplicate modifiers (%s)"),
 	DUPLICATE_ARGUMENTS("Duplicate arguments (%s)"),
 	DUPLICATE_TYPES("Duplicate types (%s)"),
+	
 	PRIMTIVE_CANNOT_BE_OPTIONAL("A primitive type cannot be optional (%s)");
 
 	public String format;
