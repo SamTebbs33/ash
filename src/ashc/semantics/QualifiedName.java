@@ -1,6 +1,6 @@
 package ashc.semantics;
 
-import java.util.LinkedList;
+import java.util.*;
 
 /**
  * Ash
@@ -59,11 +59,10 @@ public class QualifiedName {
 	    name.add(str);
 	return name;
     }
-    
-    public boolean equals(Object obj){
-	if(obj instanceof QualifiedName){
-	    return sections.equals(((QualifiedName)obj).sections);
-	}
+
+    @Override
+    public boolean equals(final Object obj) {
+	if (obj instanceof QualifiedName) return sections.equals(((QualifiedName) obj).sections);
 	return false;
     }
 

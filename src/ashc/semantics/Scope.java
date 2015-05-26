@@ -1,6 +1,6 @@
 package ashc.semantics;
 
-import static ashc.main.AshCompiler.get;
+import static ashc.main.AshCompiler.*;
 
 /**
  * Ash

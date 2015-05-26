@@ -1,10 +1,9 @@
 package ashc.semantics;
 
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.Stack;
+import java.util.*;
 
-import ashc.load.TypeImporter;
+import ashc.load.*;
+import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 
@@ -22,10 +21,12 @@ public class Semantics {
 
 	public String shortName;
 	public int arrDims;
+	public boolean optional;
 
-	public TypeI(final String shortName, final int arrDims) {
+	public TypeI(final String shortName, final int arrDims, final boolean optional) {
 	    this.shortName = shortName;
 	    this.arrDims = arrDims;
+	    this.optional = optional;
 	}
 
 	public static TypeI fromClass(final Class cls) {
@@ -35,12 +36,13 @@ public class Semantics {
 	    arrDims = arrDims - clsName.length();
 	    final String shortName = clsName.substring(clsName.lastIndexOf('.') + 1);
 	    if (clsName.charAt(0) == 'L') TypeImporter.loadClass(clsName.substring(1).replace(";", ""));
-	    return new TypeI(shortName, arrDims);
+	    return new TypeI(shortName, arrDims, false);
 	}
-	
-	public boolean equals(Object obj){
-	    if(obj instanceof TypeI){
-		TypeI type = (TypeI)obj;
+
+	@Override
+	public boolean equals(final Object obj) {
+	    if (obj instanceof TypeI) {
+		final TypeI type = (TypeI) obj;
 		return type.shortName.equals(shortName) && type.arrDims == arrDims;
 	    }
 	    return false;
@@ -61,8 +63,8 @@ public class Semantics {
 	types.put(type.qualifiedName, type);
 	typeStack.push(type);
     }
-    
-    public static void exitType(){
+
+    public static void exitType() {
 	typeStack.pop();
     }
 
@@ -83,12 +85,22 @@ public class Semantics {
 	return typeName != null ? Optional.of(types.get(typeName)) : Optional.empty();
     }
 
-    public static boolean funcExists(Function func) {
+    public static boolean funcExists(final Function func) {
 	return typeStack.peek().functions.contains(func);
     }
 
-    public static void addFunc(Function func) {
+    public static void addFunc(final Function func) {
 	typeStack.peek().functions.add(func);
+    }
+
+    public static boolean fieldExists(final Field field) {
+	for (final Field f : typeStack.peek().fields)
+	    if (f.equals(field)) return true;
+	return false;
+    }
+
+    public static void addField(final Field field) {
+	typeStack.peek().fields.add(field);
     }
 
 }

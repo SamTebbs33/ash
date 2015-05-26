@@ -1,9 +1,7 @@
 import java.lang.Object
 
-class Test : Object, Object  {
+class Test : Object {
 
-	public func foo(ch : char){
-		ch *= "sam"
-	}
+	public var a : int
 
 }

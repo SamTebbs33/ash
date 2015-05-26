@@ -1,9 +1,49 @@
 package ashc.grammar;
 
-import java.util.LinkedList;
+import java.util.*;
 
-import ashc.grammar.Lexer.*;
-import ashc.grammar.Node.*;
+import ashc.grammar.Lexer.InvalidTokenException;
+import ashc.grammar.Lexer.Token;
+import ashc.grammar.Lexer.TokenType;
+import ashc.grammar.Lexer.UnexpectedTokenException;
+import ashc.grammar.Node.IExpression;
+import ashc.grammar.Node.IFuncStmt;
+import ashc.grammar.Node.NodeArg;
+import ashc.grammar.Node.NodeArgs;
+import ashc.grammar.Node.NodeBinary;
+import ashc.grammar.Node.NodeBool;
+import ashc.grammar.Node.NodeChar;
+import ashc.grammar.Node.NodeClassBlock;
+import ashc.grammar.Node.NodeClassDec;
+import ashc.grammar.Node.NodeDouble;
+import ashc.grammar.Node.NodeEnumDec;
+import ashc.grammar.Node.NodeExprs;
+import ashc.grammar.Node.NodeFile;
+import ashc.grammar.Node.NodeFloat;
+import ashc.grammar.Node.NodeFuncBlock;
+import ashc.grammar.Node.NodeFuncCall;
+import ashc.grammar.Node.NodeFuncDec;
+import ashc.grammar.Node.NodeImport;
+import ashc.grammar.Node.NodeInteger;
+import ashc.grammar.Node.NodeInterfaceDec;
+import ashc.grammar.Node.NodeLong;
+import ashc.grammar.Node.NodeModifier;
+import ashc.grammar.Node.NodePackage;
+import ashc.grammar.Node.NodePrefix;
+import ashc.grammar.Node.NodeQualifiedName;
+import ashc.grammar.Node.NodeString;
+import ashc.grammar.Node.NodeTernary;
+import ashc.grammar.Node.NodeThis;
+import ashc.grammar.Node.NodeType;
+import ashc.grammar.Node.NodeTypeDec;
+import ashc.grammar.Node.NodeTypes;
+import ashc.grammar.Node.NodeUnary;
+import ashc.grammar.Node.NodeVarAssign;
+import ashc.grammar.Node.NodeVarDec;
+import ashc.grammar.Node.NodeVarDecExplicit;
+import ashc.grammar.Node.NodeVarDecExplicitAssign;
+import ashc.grammar.Node.NodeVarDecImplicit;
+import ashc.grammar.Node.NodeVariable;
 
 /**
  * Ash
@@ -278,11 +318,11 @@ public class Parser {
 	rewind();
 	switch (token.type) {
 	    case ID:
-		IFuncStmt stmt = parsePrefix();
-		if(stmt instanceof NodeVariable){
-		    Token assignOp = expect(TokenType.ASSIGNOP, TokenType.COMPOUNDASSIGNOP);
-		    return new NodeVarAssign(assignOp.line, assignOp.columnStart, (NodeVariable)stmt, assignOp.data, parseExpression());
-		}else return stmt;
+		final IFuncStmt stmt = parsePrefix();
+		if (stmt instanceof NodeVariable) {
+		    final Token assignOp = expect(TokenType.ASSIGNOP, TokenType.COMPOUNDASSIGNOP);
+		    return new NodeVarAssign(assignOp.line, assignOp.columnStart, (NodeVariable) stmt, assignOp.data, parseExpression());
+		} else return stmt;
 	    case VAR:
 	    case CONST:
 		return parseVarDec(null);
@@ -356,7 +396,7 @@ public class Parser {
 		expr = new NodeInteger(Integer.parseInt(next.data, 10));
 		break;
 	    case LONG:
-		expr = new NodeLong(Long.parseLong(next.data.substring(0, next.data.length()-1)));
+		expr = new NodeLong(Long.parseLong(next.data.substring(0, next.data.length() - 1)));
 		break;
 	    case FLOAT:
 		expr = new NodeFloat(Float.parseFloat(next.data));
@@ -391,7 +431,7 @@ public class Parser {
 	final Token next = getNext();
 
 	switch (next.type) {
-	// Postfix unary expression
+	    // Postfix unary expression
 	    case UNARYOP:
 		return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
 	    case QUESTIONMARK:
@@ -404,22 +444,19 @@ public class Parser {
     }
 
     private NodeVarDec parseVarDec(final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
-	Token keyword = expect(TokenType.CONST, TokenType.VAR);
-	Token id = expect(TokenType.ID);
+	final Token keyword = expect(TokenType.CONST, TokenType.VAR);
+	final Token id = expect(TokenType.ID);
 	Token next = expect(TokenType.COLON, TokenType.ASSIGNOP);
 	NodeVarDec varDec;
 	TokenType type = next.type;
-	if(type == TokenType.COLON){
-	    NodeType nodeType = parseType();
+	if (type == TokenType.COLON) {
+	    final NodeType nodeType = parseType();
 	    varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType);
 	    next = getNext();
 	    type = next.type;
-	    if(type == TokenType.ASSIGNOP){
-		varDec = new NodeVarDecExplicitAssign(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, parseExpression());
-	    }else rewind();
-	}else{
-	    varDec = new NodeVarDecImplicit(id.line, id.columnStart, mods, keyword.data, id.data, parseExpression());
-	}
+	    if (type == TokenType.ASSIGNOP) varDec = new NodeVarDecExplicitAssign(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, parseExpression());
+	    else rewind();
+	} else varDec = new NodeVarDecImplicit(id.line, id.columnStart, mods, keyword.data, id.data, parseExpression());
 	return varDec;
     }
 
@@ -455,7 +492,7 @@ public class Parser {
     private NodeType parseType() throws UnexpectedTokenException {
 	final Token id = expect(TokenType.ID);
 	final NodeType type = new NodeType(id.data);
-	if(getNext().type == TokenType.QUESTIONMARK) type.optional = true;
+	if (getNext().type == TokenType.QUESTIONMARK) type.optional = true;
 	else rewind();
 	while (getNext().type == TokenType.BRACKETL) {
 	    expect(TokenType.BRACKETR);

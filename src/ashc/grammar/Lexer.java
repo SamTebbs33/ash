@@ -1,10 +1,8 @@
 package ashc.grammar;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.util.LinkedList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.*;
+import java.util.*;
+import java.util.regex.*;
 
 /**
  * Ash
@@ -50,35 +48,35 @@ public class Lexer {
 	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
 	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>=",
 		"compound assignment operator"),
-	BINARYOP("<=|>=|==|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|",
-		"binary operator"),
-	ASSIGNOP("=", "assignment operator"),
-	WHITESPACE("[\n\t ]+", "whitespace"),
+		BINARYOP("<=|>=|==|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|",
+			"binary operator"),
+			ASSIGNOP("=", "assignment operator"),
+			WHITESPACE("[\n\t ]+", "whitespace"),
 
-	VAR("var"),
-	CONST("const"),
-	FUNC("func"),
-	CLASS("class"),
-	ENUM("enum"),
-	INTERFACE("interface"),
-	IMPORT("import"),
-	PACKAGE("package"),
-	RETURN("return"),
+			VAR("var"),
+			CONST("const"),
+			FUNC("func"),
+			CLASS("class"),
+			ENUM("enum"),
+			INTERFACE("interface"),
+			IMPORT("import"),
+			PACKAGE("package"),
+			RETURN("return"),
 
-	PUBLIC("public"),
-	PRIVATE("private"),
-	PROTECTED("protected"),
-	FINAL("final"),
-	REQUIRED("required"),
-	NATIVE("native"),
-	OVERRIDE("override"),
-	STANDARD("standard"),
-	STATIC("static"),
-	THIS("this"),
+			PUBLIC("public"),
+			PRIVATE("private"),
+			PROTECTED("protected"),
+			FINAL("final"),
+			REQUIRED("required"),
+			NATIVE("native"),
+			OVERRIDE("override"),
+			STANDARD("standard"),
+			STATIC("static"),
+			THIS("this"),
 
-	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),
-	EOF("\\Z", "end of file"),
-	ERROR(".*", "error");
+			ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),
+			EOF("\\Z", "end of file"),
+			ERROR(".*", "error");
 
 	public String regex, typeName;
 
@@ -189,6 +187,10 @@ public class Lexer {
 			    }
 			continue;
 		    } else if (type == TokenType.ERROR) throw new InvalidTokenException(data, line, column);
+		    else if (type == TokenType.COMMENT) {
+			column += data.length();
+			continue;
+		    }
 		    final Token t = new Token(type, data, line, column, column + data.length());
 		    column += data.length();
 		    return t;

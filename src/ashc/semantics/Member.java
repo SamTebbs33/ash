@@ -1,8 +1,7 @@
 package ashc.semantics;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.util.LinkedList;
+import java.lang.reflect.*;
+import java.util.*;
 
 import ashc.semantics.Semantics.TypeI;
 
@@ -66,18 +65,20 @@ public class Member {
 	    func.returnType = TypeI.fromClass(method.getReturnType());
 	    return func;
 	}
-	
-	public boolean equals(Object obj){
-	    if(obj instanceof Function){
-		Function func = (Function)obj;
+
+	@Override
+	public boolean equals(final Object obj) {
+	    if (obj instanceof Function) {
+		final Function func = (Function) obj;
 		return qualifiedName.equals(func.qualifiedName) && paramsAreEqual(func.parameters);
 	    }
 	    return false;
 	}
 
-	private boolean paramsAreEqual(LinkedList<TypeI> params2) {
-	    if(parameters.size() != params2.size()) return false;
-	    for(int i = 0; i < Math.min(parameters.size(), params2.size()); i++) if(!parameters.get(i).equals(params2.get(i))) return false;
+	private boolean paramsAreEqual(final LinkedList<TypeI> params2) {
+	    if (parameters.size() != params2.size()) return false;
+	    for (int i = 0; i < Math.min(parameters.size(), params2.size()); i++)
+		if (!parameters.get(i).equals(params2.get(i))) return false;
 	    return true;
 	}
 
@@ -103,6 +104,12 @@ public class Member {
 	    final QualifiedName name = QualifiedName.fromClass(field.getDeclaringClass());
 	    name.add(field.getName());
 	    return new Field(name, mods, type);
+	}
+
+	@Override
+	public boolean equals(final Object obj) {
+	    if (obj instanceof Field) return ((Field) obj).qualifiedName.equals(qualifiedName);
+	    return false;
 	}
 
     }

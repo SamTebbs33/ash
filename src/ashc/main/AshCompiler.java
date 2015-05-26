@@ -1,16 +1,11 @@
 package ashc.main;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Stack;
+import java.io.*;
+import java.util.*;
 
-import ashc.grammar.Lexer;
+import ashc.grammar.*;
 import ashc.grammar.Node.NodeFile;
-import ashc.grammar.Parser;
-import ashc.semantics.Scope;
+import ashc.semantics.*;
 
 /**
  * Ash

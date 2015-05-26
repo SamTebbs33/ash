@@ -1,13 +1,11 @@
 package ashc.load;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 
 import ashc.semantics.Member.EnumType;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
-import ashc.semantics.QualifiedName;
-import ashc.semantics.Semantics;
+import ashc.semantics.*;
 
 /**
  * Ash

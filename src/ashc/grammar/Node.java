@@ -1,23 +1,20 @@
 package ashc.grammar;
 
-import static ashc.error.Error.semanticError;
+import static ashc.error.Error.*;
 import static ashc.error.Error.EnumError.*;
 
-import java.lang.reflect.Modifier;
-import java.util.LinkedList;
-import java.util.Optional;
+import java.lang.reflect.*;
+import java.util.*;
 
 import ashc.grammar.Lexer.Token;
-import ashc.load.TypeImporter;
+import ashc.load.*;
+import ashc.semantics.*;
 import ashc.semantics.Member.EnumType;
+import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
-import ashc.semantics.EnumPrimitive;
-import ashc.semantics.QualifiedName;
-import ashc.semantics.Scope;
-import ashc.semantics.Semantics;
 import ashc.semantics.Semantics.TypeI;
-import ashc.util.BitOp;
+import ashc.util.*;
 
 /**
  * Ash
@@ -40,14 +37,15 @@ public abstract class Node {
 
     public void preAnalyse() {}
 
-    public void analyse() {
-    }
+    public void analyse() {}
 
     public static interface IFuncStmt {
 
     }
 
     public static interface IExpression {
+
+	TypeI getExprType();
 
     }
 
@@ -84,8 +82,7 @@ public abstract class Node {
 	}
 
 	@Override
-	public void analyse() {
-	}
+	public void analyse() {}
 
     }
 
@@ -135,8 +132,7 @@ public abstract class Node {
 	}
 
 	@Override
-	public void analyse() {
-	}
+	public void analyse() {}
 
     }
 
@@ -148,13 +144,14 @@ public abstract class Node {
 	}
 
 	public int asInt() {
-	    for(EnumModifier modifier : EnumModifier.values()) if(modifier.name().equalsIgnoreCase(mod)) return modifier.intVal;
+	    for (final EnumModifier modifier : EnumModifier.values())
+		if (modifier.name().equalsIgnoreCase(mod)) return modifier.intVal;
 	    return 0;
 	}
     }
 
     public static class NodeClassDec extends NodeTypeDec {
- 
+
 	LinkedList<NodeModifier> mods;
 	Token id;
 	NodeArgs args;
@@ -178,39 +175,37 @@ public abstract class Node {
 	public void preAnalyse() {
 	    // Ensure that the type being declared doesn't already exist
 	    if (Semantics.bindingExists(id.data)) semanticError(this, line, column, TYPE_ALREADY_EXISTS, id.data);
-	    QualifiedName name = Scope.getNamespace();
+	    final QualifiedName name = Scope.getNamespace();
 	    name.add(id.data);
-	    
+
 	    int modifiers = 0;
-	    if(mods != null){
-		for(NodeModifier modNode : mods){
-		    int mod = modNode.asInt();
-		    // Check if the modifier has already been added, else add to "modifiers"
-		    if(BitOp.and(modifiers, mod)) semanticError(this, line, column, DUPLICATE_MODIFIERS, modNode.mod);
-		    else modifiers |= mod;
-		}
+	    if (mods != null) for (final NodeModifier modNode : mods) {
+		final int mod = modNode.asInt();
+		// Check if the modifier has already been added, else add to
+		// "modifiers"
+		if (BitOp.and(modifiers, mod)) semanticError(this, line, column, DUPLICATE_MODIFIERS, modNode.mod);
+		else modifiers |= mod;
 	    }
-	    
-	    if(types != null) for(NodeType type : types.types) if(type.optional) semanticError(this, line, column, CANNOT_EXTENDS_OPTIONAL_TYPE, type.id);
-	    
+
+	    if (types != null) for (final NodeType type : types.types)
+		if (type.optional) semanticError(this, line, column, CANNOT_EXTENDS_OPTIONAL_TYPE, type.id);
+
 	    Semantics.addType(new Type(name, modifiers, EnumType.CLASS));
 	    block.preAnalyse();
 	    Semantics.exitType();
 	}
-	
+
 	@Override
-	public void analyse(){
-	 // Ensure the super-types are valid
-	    if (types != null){
-		for (final NodeType typeNode : types.types) {
-		    final Optional<Type> typeOpt = Semantics.getType(typeNode.id);
-		    
-		    if (!typeOpt.isPresent()) semanticError(line, column, TYPE_DOES_NOT_EXIST, typeNode.id);
-		    else{
-			final Type type = typeOpt.get();
-		    	if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
-		    	if (type.type == EnumType.ENUM) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
-		    }
+	public void analyse() {
+	    // Ensure the super-types are valid
+	    if (types != null) for (final NodeType typeNode : types.types) {
+		final Optional<Type> typeOpt = Semantics.getType(typeNode.id);
+
+		if (!typeOpt.isPresent()) semanticError(line, column, TYPE_DOES_NOT_EXIST, typeNode.id);
+		else {
+		    final Type type = typeOpt.get();
+		    if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
+		    if (type.type == EnumType.ENUM) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
 		}
 	    }
 	}
@@ -247,7 +242,7 @@ public abstract class Node {
 	public void analyse() {
 	    type.analyse();
 	}
-	
+
     }
 
     public static class NodeArgs extends Node {
@@ -256,12 +251,13 @@ public abstract class Node {
 	public void add(final NodeArg arg) {
 	    args.add(arg);
 	}
-	
+
 	@Override
 	public void analyse() {
-	    for(NodeArg arg : args){
+	    for (final NodeArg arg : args) {
 		arg.analyse();
-		for(NodeArg arg2 : args) if(arg.id.equals(arg2.id)) semanticError(this, line, column, DUPLICATE_ARGUMENTS, arg2.id);
+		for (final NodeArg arg2 : args)
+		    if (arg.id.equals(arg2.id)) semanticError(this, line, column, DUPLICATE_ARGUMENTS, arg2.id);
 	    }
 	}
     }
@@ -275,12 +271,13 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    for(NodeType type : types){
+	    for (final NodeType type : types) {
 		type.analyse();
-		for(NodeType type2 : types) if(type.id.equals(type2.id)) semanticError(this, line, column, DUPLICATE_TYPES, type.id);
+		for (final NodeType type2 : types)
+		    if (type.id.equals(type2.id)) semanticError(this, line, column, DUPLICATE_TYPES, type.id);
 	    }
 	}
-	
+
     }
 
     public static class NodeClassBlock extends Node {
@@ -294,17 +291,21 @@ public abstract class Node {
 	public void add(final NodeFuncDec funcDec) {
 	    funcDecs.add(funcDec);
 	}
-	
+
 	@Override
 	public void preAnalyse() {
-	    for(NodeVarDec varDec : varDecs) varDec.preAnalyse();
-	    for(NodeFuncDec funcDec : funcDecs) funcDec.preAnalyse();
+	    for (final NodeVarDec varDec : varDecs)
+		varDec.preAnalyse();
+	    for (final NodeFuncDec funcDec : funcDecs)
+		funcDec.preAnalyse();
 	}
-	
+
 	@Override
 	public void analyse() {
-	    for(NodeVarDec varDec : varDecs) varDec.analyse();
-	    for(NodeFuncDec funcDec : funcDecs) funcDec.analyse();
+	    for (final NodeVarDec varDec : varDecs)
+		varDec.analyse();
+	    for (final NodeFuncDec funcDec : funcDecs)
+		funcDec.analyse();
 	}
 
     }
@@ -318,11 +319,11 @@ public abstract class Node {
 	public NodeType(final String data) {
 	    id = data;
 	}
-	
+
 	@Override
 	public void analyse() {
-	    if(Semantics.typeExists(id)) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
-	    if(EnumPrimitive.isPrimitive(id) && optional) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
+	    if (Semantics.typeExists(id)) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
+	    if (EnumPrimitive.isPrimitive(id) && optional) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
 	}
 
     }
@@ -380,15 +381,16 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {
-	    QualifiedName name = Scope.getNamespace().copy();
+	    final QualifiedName name = Scope.getNamespace().copy();
 	    name.add(id);
 	    int modifiers = 0;
-	    for(NodeModifier mod : mods) modifiers |= mod.asInt();
-	    Function func = new Function(name, modifiers);
-	    for(NodeArg arg : args.args) func.parameters.add(new TypeI(arg.type.id, arg.type.arrDims));
-	    if(!Semantics.funcExists(func)){
-		Semantics.addFunc(func);
-	    }else semanticError(this, line, column, FUNC_ALREADY_EXISTS, id);
+	    for (final NodeModifier mod : mods)
+		modifiers |= mod.asInt();
+	    final Function func = new Function(name, modifiers);
+	    for (final NodeArg arg : args.args)
+		func.parameters.add(new TypeI(arg.type.id, arg.type.arrDims, arg.type.optional));
+	    if (!Semantics.funcExists(func)) Semantics.addFunc(func);
+	    else semanticError(this, line, column, FUNC_ALREADY_EXISTS, id);
 	}
 
 	@Override
@@ -402,40 +404,73 @@ public abstract class Node {
 	public LinkedList<NodeModifier> mods;
 	public String keyword;
 	public String id;
-	public NodeVarDec(int line, int column, LinkedList<NodeModifier> mods, String keyword, String id) {
+
+	public NodeVarDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id) {
 	    super(line, column);
 	    this.mods = mods;
 	    this.keyword = keyword;
 	    this.id = id;
 	}
-	
+
     }
-    
+
     public static class NodeVarDecExplicit extends NodeVarDec {
 	public NodeType type;
-	public NodeVarDecExplicit(int line, int column, LinkedList<NodeModifier> mods, String keyword, String id, NodeType type) {
+
+	public NodeVarDecExplicit(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, final NodeType type) {
 	    super(line, column, mods, keyword, id);
 	    this.type = type;
 	}
-	
+
+	@Override
+	public void preAnalyse() {
+	    final QualifiedName name = Semantics.typeStack.peek().qualifiedName.copy();
+	    name.add(id);
+	    int modifiers = 0;
+	    for (final NodeModifier mod : mods)
+		modifiers |= mod.asInt();
+	    final Field field = new Field(name, modifiers, new TypeI(type.id, type.arrDims, type.optional));
+	    if (!Semantics.fieldExists(field)) Semantics.addField(field);
+	    else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
+	}
+
     }
-    
+
     public static class NodeVarDecExplicitAssign extends NodeVarDecExplicit {
 	public IExpression expr;
-	public NodeVarDecExplicitAssign(int line, int column, LinkedList<NodeModifier> mods, String keyword, String id, NodeType type, IExpression expr) {
+
+	public NodeVarDecExplicitAssign(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, final NodeType type, final IExpression expr) {
 	    super(line, column, mods, keyword, id, type);
 	    this.expr = expr;
 	}
-	
+
+	@Override
+	public void analyse() {
+	    super.analyse();
+	}
+
     }
-    
+
     public static class NodeVarDecImplicit extends NodeVarDec {
 	public IExpression expr;
-	public NodeVarDecImplicit(int line, int column, LinkedList<NodeModifier> mods, String keyword, String id, IExpression expr) {
+
+	public NodeVarDecImplicit(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, final IExpression expr) {
 	    super(line, column, mods, keyword, id);
 	    this.expr = expr;
 	}
-	
+
+	@Override
+	public void preAnalyse() {
+	    final QualifiedName name = Semantics.typeStack.peek().qualifiedName.copy();
+	    name.add(id);
+	    int modifiers = 0;
+	    for (final NodeModifier mod : mods)
+		modifiers |= mod.asInt();
+	    final Field field = new Field(name, modifiers, expr.getExprType());
+	    if (!Semantics.fieldExists(field)) Semantics.addField(field);
+	    else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
+	}
+
     }
 
     public static class NodeFuncBlock extends Node {
@@ -449,10 +484,15 @@ public abstract class Node {
     }
 
     public static class NodePrefix extends Node implements IFuncStmt,
-    IExpression {
+	    IExpression {
 
 	public NodePrefix(final int line, final int column) {
 	    super(line, column);
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    return null;
 	}
 
     }
@@ -501,12 +541,13 @@ public abstract class Node {
 	}
 
     }
-    
+
     public static class NodeVarAssign extends Node implements IFuncStmt {
 	public NodeVariable var;
 	public String assignOp;
 	public IExpression expr;
-	public NodeVarAssign(int line, int column, NodeVariable var, String assignOp, IExpression expr) {
+
+	public NodeVarAssign(final int line, final int column, final NodeVariable var, final String assignOp, final IExpression expr) {
 	    super(line, column);
 	    this.var = var;
 	    this.assignOp = assignOp;
@@ -526,6 +567,11 @@ public abstract class Node {
 	    return "NodeInteger [val=" + val + "]";
 	}
 
+	@Override
+	public TypeI getExprType() {
+	    return null;
+	}
+
     }
 
     public static class NodeLong extends Node implements IExpression {
@@ -538,6 +584,11 @@ public abstract class Node {
 	@Override
 	public String toString() {
 	    return "NodeLong [val=" + val + "]";
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    return null;
 	}
 
     }
@@ -554,6 +605,11 @@ public abstract class Node {
 	    return "NodeFloat [val=" + val + "]";
 	}
 
+	@Override
+	public TypeI getExprType() {
+	    return null;
+	}
+
     }
 
     public static class NodeDouble extends Node implements IExpression {
@@ -566,6 +622,11 @@ public abstract class Node {
 	@Override
 	public String toString() {
 	    return "NodeDouble [val=" + val + "]";
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    return null;
 	}
 
     }
@@ -582,6 +643,11 @@ public abstract class Node {
 	    return "NodeString [val=" + val + "]";
 	}
 
+	@Override
+	public TypeI getExprType() {
+	    return null;
+	}
+
     }
 
     public static class NodeBool extends Node implements IExpression {
@@ -596,6 +662,11 @@ public abstract class Node {
 	    return "NodeBool [val=" + val + "]";
 	}
 
+	@Override
+	public TypeI getExprType() {
+	    return null;
+	}
+
     }
 
     public static class NodeChar extends Node implements IExpression {
@@ -608,6 +679,11 @@ public abstract class Node {
 	@Override
 	public String toString() {
 	    return "NodeChar [val=" + val + "]";
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    return null;
 	}
 
     }
@@ -626,6 +702,11 @@ public abstract class Node {
 	    return "NodeTernary [expr=" + expr + ", exprTrue=" + exprTrue + ", exprFalse=" + exprFalse + "]";
 	}
 
+	@Override
+	public TypeI getExprType() {
+	    return null;
+	}
+
     }
 
     public static class NodeBinary extends Node implements IExpression {
@@ -641,6 +722,11 @@ public abstract class Node {
 	@Override
 	public String toString() {
 	    return "NodeBinary [expr1=" + expr1 + ", expr2=" + expr2 + ", operator=" + operator + "]";
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    return null;
 	}
     }
 
@@ -661,11 +747,21 @@ public abstract class Node {
 	    return "NodeUnary [expr=" + expr + ", operator=" + operator + ", prefix=" + prefix + "]";
 	}
 
+	@Override
+	public TypeI getExprType() {
+	    return null;
+	}
+
     }
 
     public static class NodeThis extends Node implements IExpression {
 	public NodeThis(final int line, final int column) {
 	    super(line, column);
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    return null;
 	}
     }
 
