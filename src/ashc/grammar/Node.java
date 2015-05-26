@@ -213,9 +213,39 @@ public abstract class Node {
     }
 
     public static class NodeEnumDec extends NodeTypeDec {
+	
+	LinkedList<NodeModifier> mods;
+	Token id;
+	NodeArgs args;
+	NodeEnumBlock block;
 
-	public NodeEnumDec(final int line, final int column) {
+	public NodeEnumDec(final int line, final int column, LinkedList<NodeModifier> mods, Token id, NodeArgs args, NodeEnumBlock block) {
 	    super(line, column);
+	    this.mods = mods;
+	    this.args = args;
+	    this.id = id;
+	    this.block = block;
+	}
+	
+	@Override
+	public void preAnalyse() {
+	    // Ensure that the type being declared doesn't already exist
+	    if (Semantics.bindingExists(id.data)) semanticError(this, line, column, TYPE_ALREADY_EXISTS, id.data);
+	    final QualifiedName name = Scope.getNamespace();
+	    name.add(id.data);
+
+	    int modifiers = 0;
+	    if (mods != null) for (final NodeModifier modNode : mods) {
+		final int mod = modNode.asInt();
+		// Check if the modifier has already been added, else add to
+		// "modifiers"
+		if (BitOp.and(modifiers, mod)) semanticError(this, line, column, DUPLICATE_MODIFIERS, modNode.mod);
+		else modifiers |= mod;
+	    }
+
+	    Semantics.addType(new Type(name, modifiers, EnumType.ENUM));
+	    block.preAnalyse();
+	    Semantics.exitType();
 	}
 
     }
@@ -308,6 +338,28 @@ public abstract class Node {
 		funcDec.analyse();
 	}
 
+    }
+    
+    public static class NodeEnumBlock extends Node {
+	public LinkedList<NodeEnumInstance> instances;
+	public NodeClassBlock block;
+	public NodeEnumBlock(int line, int column, LinkedList<NodeEnumInstance> instances, NodeClassBlock block) {
+	    super(line, column);
+	    this.instances = instances;
+	    this.block = block;
+	}
+	
+    }
+    
+    public static class NodeEnumInstance extends Node {
+	public NodeExprs exprs;
+	public String id;
+
+	public NodeEnumInstance(int line, int column, Token id, NodeExprs exprs) {
+	    super(line, column);
+	    this.exprs = exprs;
+	    this.id = id.data;
+	}
     }
 
     public static class NodeType extends Node {

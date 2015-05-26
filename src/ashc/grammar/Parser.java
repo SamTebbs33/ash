@@ -16,7 +16,9 @@ import ashc.grammar.Node.NodeChar;
 import ashc.grammar.Node.NodeClassBlock;
 import ashc.grammar.Node.NodeClassDec;
 import ashc.grammar.Node.NodeDouble;
+import ashc.grammar.Node.NodeEnumBlock;
 import ashc.grammar.Node.NodeEnumDec;
+import ashc.grammar.Node.NodeEnumInstance;
 import ashc.grammar.Node.NodeExprs;
 import ashc.grammar.Node.NodeFile;
 import ashc.grammar.Node.NodeFloat;
@@ -502,8 +504,25 @@ public class Parser {
 	return type;
     }
 
-    private NodeEnumDec parseEnumDec(final LinkedList<NodeModifier> mods) {
-	return null;
+    private NodeEnumDec parseEnumDec(final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
+	final Token id = expect(TokenType.ID);
+	NodeArgs args = null;
+
+	if (getNext().type == TokenType.PARENL) {
+	    rewind();
+	    args = parseArgs();
+	} else rewind();
+
+	final NodeEnumBlock block = parseEnumBlock();
+	return new NodeEnumDec(id.line, id.columnStart, mods, id, args, block);
+    }
+    
+    private NodeEnumBlock parseEnumBlock() throws UnexpectedTokenException{
+	LinkedList<NodeEnumInstance> instances = new LinkedList<Node.NodeEnumInstance>();
+	instances.add(parseEnumInstance());
+	while(getNext().type == TokenType.COMMA) instances.add(parseEnumInstance());
+	rewind();
+	return new NodeEnumBlock(line, column, instances, parseClassBlock());
     }
 
     private NodeInterfaceDec parseInterfaceDec(final LinkedList<NodeModifier> mods) {
@@ -547,6 +566,16 @@ public class Parser {
 	final LinkedList<NodeImport> imports = parseImports();
 	final LinkedList<NodeTypeDec> typeDecs = parseTypeDecs();
 	return new NodeFile(pkg, imports, typeDecs);
+    }
+    
+    private NodeEnumInstance parseEnumInstance() throws UnexpectedTokenException{
+	Token id = expect(TokenType.ID);
+	if(getNext().type == TokenType.PARENL){
+	    rewind();
+	    return new NodeEnumInstance(id.line, id.columnStart, id, parseCallArgs());
+	}
+	rewind();
+	return new NodeEnumInstance(id.line, id.columnStart, id, null);
     }
 
 }
