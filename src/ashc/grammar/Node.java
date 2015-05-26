@@ -836,7 +836,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return null;
+	    return expr.getExprType();
 	}
 
     }
@@ -848,7 +848,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return null;
+	    return new TypeI(Semantics.typeStack.peek().qualifiedName.shortName, 0, false);
 	}
     }
 
