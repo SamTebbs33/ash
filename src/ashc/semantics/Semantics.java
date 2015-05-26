@@ -61,6 +61,10 @@ public class Semantics {
 	types.put(type.qualifiedName, type);
 	typeStack.push(type);
     }
+    
+    public static void exitType(){
+	typeStack.pop();
+    }
 
     public static void bindName(final String shortName, final QualifiedName qualifiedName) {
 	typeNameMap.put(shortName, qualifiedName);

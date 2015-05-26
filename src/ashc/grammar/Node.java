@@ -195,6 +195,7 @@ public abstract class Node {
 	    
 	    Semantics.addType(new Type(name, modifiers, EnumType.CLASS));
 	    block.preAnalyse();
+	    Semantics.exitType();
 	}
 	
 	@Override
@@ -499,6 +500,18 @@ public abstract class Node {
 	    return "NodeVariable [id=" + id + ", prefix=" + prefix + "]";
 	}
 
+    }
+    
+    public static class NodeVarAssign extends Node implements IFuncStmt {
+	public NodeVariable var;
+	public String assignOp;
+	public IExpression expr;
+	public NodeVarAssign(int line, int column, NodeVariable var, String assignOp, IExpression expr) {
+	    super(line, column);
+	    this.var = var;
+	    this.assignOp = assignOp;
+	    this.expr = expr;
+	}
     }
 
     public static class NodeInteger extends Node implements IExpression {

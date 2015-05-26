@@ -3,7 +3,7 @@ import java.lang.Object
 class Test : Object, Object  {
 
 	public func foo(ch : char){
-		var a = "sam"
+		ch *= "sam"
 	}
 
 }
