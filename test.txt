@@ -1,6 +1,6 @@
-import java.lang.reflect.Modifier
+import java.lang.Object
 
-class Test : Modifier {
+class Test : Object, Object  {
 
 	public func foo(){
 		var a = "sam"
