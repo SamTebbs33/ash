@@ -562,6 +562,7 @@ public abstract class Node {
 
     public static class NodeFuncBlock extends Node {
 
+	public IExpression singleLineExpr;
 	LinkedList<IFuncStmt> stmts = new LinkedList<IFuncStmt>();
 
 	public void add(final IFuncStmt funcStmt) {

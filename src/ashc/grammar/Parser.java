@@ -311,7 +311,7 @@ public class Parser {
 	    rewind();
 	    block.add(parseFuncStmt());
 	}
-	else block.add(parseFuncStmt());
+	else block.singleLineExpr = parseExpression();
 	return block;
     }
 
