@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.Stack;
 
 import ashc.load.TypeImporter;
+import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 
 /**
@@ -63,6 +64,10 @@ public class Semantics {
     public static Optional<Type> getType(final String id) {
 	final QualifiedName typeName = typeNameMap.get(id);
 	return typeName != null ? Optional.of(types.get(typeName)) : Optional.empty();
+    }
+
+    public static boolean funcExists(Function func) {
+	return typeStack.peek().functions.contains(func);
     }
 
 }

@@ -10,6 +10,7 @@ import java.util.Optional;
 import ashc.grammar.Lexer.Token;
 import ashc.load.TypeImporter;
 import ashc.semantics.Member.EnumType;
+import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.EnumPrimitive;
 import ashc.semantics.QualifiedName;
@@ -146,12 +147,13 @@ public abstract class Node {
 	}
 
 	public int asInt() {
+	    for(EnumModifier modifier : EnumModifier.values()) if(modifier.name().equalsIgnoreCase(mod)) return modifier.intVal;
 	    return 0;
 	}
     }
 
     public static class NodeClassDec extends NodeTypeDec {
-
+ 
 	LinkedList<NodeModifier> mods;
 	Token id;
 	NodeArgs args;
@@ -371,6 +373,23 @@ public abstract class Node {
 	    this.type = type;
 	    this.throwsType = throwsType;
 	    this.block = block;
+	}
+
+	@Override
+	public void preAnalyse() {
+	    QualifiedName name = Scope.getNamespace().copy();
+	    name.add(id);
+	    int modifiers = 0;
+	    for(NodeModifier mod : mods) modifiers |= mod.asInt();
+	    Function func = new Function(name, modifiers);
+	    if(!Semantics.funcExists(func)){
+		
+	    }
+	}
+
+	@Override
+	public void analyse() {
+	    super.analyse();
 	}
 
     }
