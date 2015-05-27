@@ -14,7 +14,7 @@ public enum EnumPrimitive {
     SHORT("int16", "short"),
     BYTE("int8", "byte"),
     CHAR("char", "char");
-    
+
     public String ashName, javaName;
 
     private EnumPrimitive(final String ashName, final String javaName) {
@@ -27,8 +27,8 @@ public enum EnumPrimitive {
 	    if (p.ashName.equals(typeName)) return true;
 	return false;
     }
-    
-    public static EnumPrimitive getPrimitive(String name){
+
+    public static EnumPrimitive getPrimitive(final String name) {
 	for (final EnumPrimitive p : EnumPrimitive.values())
 	    if (p.ashName.equals(name)) return p;
 	return null;

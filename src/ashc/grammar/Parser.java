@@ -433,7 +433,7 @@ public class Parser {
 	final Token next = getNext();
 
 	switch (next.type) {
-	    // Postfix unary expression
+	// Postfix unary expression
 	    case UNARYOP:
 		return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
 	    case QUESTIONMARK:
@@ -516,11 +516,12 @@ public class Parser {
 	final NodeEnumBlock block = parseEnumBlock();
 	return new NodeEnumDec(id.line, id.columnStart, mods, id, args, block);
     }
-    
-    private NodeEnumBlock parseEnumBlock() throws UnexpectedTokenException{
-	LinkedList<NodeEnumInstance> instances = new LinkedList<Node.NodeEnumInstance>();
+
+    private NodeEnumBlock parseEnumBlock() throws UnexpectedTokenException {
+	final LinkedList<NodeEnumInstance> instances = new LinkedList<Node.NodeEnumInstance>();
 	instances.add(parseEnumInstance());
-	while(getNext().type == TokenType.COMMA) instances.add(parseEnumInstance());
+	while (getNext().type == TokenType.COMMA)
+	    instances.add(parseEnumInstance());
 	rewind();
 	return new NodeEnumBlock(line, column, instances, parseClassBlock());
     }
@@ -580,10 +581,10 @@ public class Parser {
 	final LinkedList<NodeTypeDec> typeDecs = parseTypeDecs();
 	return new NodeFile(pkg, imports, typeDecs);
     }
-    
-    private NodeEnumInstance parseEnumInstance() throws UnexpectedTokenException{
-	Token id = expect(TokenType.ID);
-	if(getNext().type == TokenType.PARENL){
+
+    private NodeEnumInstance parseEnumInstance() throws UnexpectedTokenException {
+	final Token id = expect(TokenType.ID);
+	if (getNext().type == TokenType.PARENL) {
 	    rewind();
 	    return new NodeEnumInstance(id.line, id.columnStart, id, parseCallArgs());
 	}

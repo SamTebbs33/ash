@@ -6,7 +6,6 @@ import ashc.load.*;
 import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
-import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
@@ -29,13 +28,13 @@ public class Semantics {
 	    this.arrDims = arrDims;
 	    this.optional = optional;
 	}
-	
-	public TypeI(EnumPrimitive primitive){
-	    this.shortName = primitive.ashName;
+
+	public TypeI(final EnumPrimitive primitive) {
+	    shortName = primitive.ashName;
 	}
-	
-	public TypeI(EnumPrimitive primitive, int arrDims){
-	    this.shortName = primitive.ashName;
+
+	public TypeI(final EnumPrimitive primitive, final int arrDims) {
+	    shortName = primitive.ashName;
 	    this.arrDims = arrDims;
 	}
 
@@ -113,14 +112,15 @@ public class Semantics {
 	typeStack.peek().fields.add(field);
     }
 
-    public static TypeI getPrecedentType(TypeI type1, TypeI type2) {
-	if(type1.equals(type2)) return type1;
-	String name1 = type1.shortName, name2 = type2.shortName;
-	
-	if((name1.equals("String") && type1.arrDims == 0) || (name2.equals("String") && type2.arrDims == 0)) return new TypeI("String", 0, false);
-	
-	for(EnumPrimitive p : EnumPrimitive.values()) if(p.ashName.equals(name1) || p.ashName.equals(name2)) return new TypeI(p);
-	
+    public static TypeI getPrecedentType(final TypeI type1, final TypeI type2) {
+	if (type1.equals(type2)) return type1;
+	final String name1 = type1.shortName, name2 = type2.shortName;
+
+	if (name1.equals("String") && type1.arrDims == 0 || name2.equals("String") && type2.arrDims == 0) return new TypeI("String", 0, false);
+
+	for (final EnumPrimitive p : EnumPrimitive.values())
+	    if (p.ashName.equals(name1) || p.ashName.equals(name2)) return new TypeI(p);
+
 	return null;
     }
 

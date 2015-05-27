@@ -213,20 +213,20 @@ public abstract class Node {
     }
 
     public static class NodeEnumDec extends NodeTypeDec {
-	
+
 	LinkedList<NodeModifier> mods;
 	Token id;
 	NodeArgs args;
 	NodeEnumBlock block;
 
-	public NodeEnumDec(final int line, final int column, LinkedList<NodeModifier> mods, Token id, NodeArgs args, NodeEnumBlock block) {
+	public NodeEnumDec(final int line, final int column, final LinkedList<NodeModifier> mods, final Token id, final NodeArgs args, final NodeEnumBlock block) {
 	    super(line, column);
 	    this.mods = mods;
 	    this.args = args;
 	    this.id = id;
 	    this.block = block;
 	}
-	
+
 	@Override
 	public void preAnalyse() {
 	    // Ensure that the type being declared doesn't already exist
@@ -251,7 +251,7 @@ public abstract class Node {
     }
 
     public static class NodeInterfaceDec extends NodeTypeDec {
-	
+
 	LinkedList<NodeModifier> mods;
 	Token id;
 	NodeArgs args;
@@ -266,7 +266,7 @@ public abstract class Node {
 	    this.types = types;
 	    this.block = block;
 	}
-	
+
 	@Override
 	public void preAnalyse() {
 	    // Ensure that the type being declared doesn't already exist
@@ -374,23 +374,24 @@ public abstract class Node {
 	}
 
     }
-    
+
     public static class NodeEnumBlock extends Node {
 	public LinkedList<NodeEnumInstance> instances;
 	public NodeClassBlock block;
-	public NodeEnumBlock(int line, int column, LinkedList<NodeEnumInstance> instances, NodeClassBlock block) {
+
+	public NodeEnumBlock(final int line, final int column, final LinkedList<NodeEnumInstance> instances, final NodeClassBlock block) {
 	    super(line, column);
 	    this.instances = instances;
 	    this.block = block;
 	}
-	
+
     }
-    
+
     public static class NodeEnumInstance extends Node {
 	public NodeExprs exprs;
 	public String id;
 
-	public NodeEnumInstance(int line, int column, Token id, NodeExprs exprs) {
+	public NodeEnumInstance(final int line, final int column, final Token id, final NodeExprs exprs) {
 	    super(line, column);
 	    this.exprs = exprs;
 	    this.id = id.data;
@@ -572,7 +573,7 @@ public abstract class Node {
     }
 
     public static class NodePrefix extends Node implements IFuncStmt,
-	    IExpression {
+    IExpression {
 
 	public NodePrefix(final int line, final int column) {
 	    super(line, column);
