@@ -792,7 +792,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return null;
+	    return Semantics.getPrecedentType(exprTrue.getExprType(), exprFalse.getExprType());
 	}
 
     }
