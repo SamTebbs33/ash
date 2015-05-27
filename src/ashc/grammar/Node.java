@@ -51,6 +51,11 @@ public abstract class Node {
 
     public static class NodeFile extends Node {
 
+	@Override
+	public String toString() {
+	    return "NodeFile [pkg=" + pkg + ", imports=" + imports + ", typeDecs=" + typeDecs + "]";
+	}
+
 	public NodePackage pkg;
 	public LinkedList<NodeImport> imports;
 	public LinkedList<NodeTypeDec> typeDecs;
@@ -815,7 +820,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return Semantics.getPrecedentType(expr1.getExprType(), expr2.getExprType());
+	    return operator.operation.primitive == null ? Semantics.getPrecedentType(expr1.getExprType(), expr2.getExprType()) : new TypeI(operator.operation.primitive);
 	}
     }
 

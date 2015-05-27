@@ -30,6 +30,7 @@ public class AshCompiler {
 
     public void parse() {
 	fileNode = parser.start();
+	System.out.println(fileNode.toString());
     }
 
     public void preAnalyse() {
