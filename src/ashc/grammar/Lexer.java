@@ -19,8 +19,7 @@ public class Lexer {
     public static enum TokenType {
 	// The ERROR token type must be the last one, as it matches anything
 	// that isn't matched by other tokens
-	COMMENT("(//.+)|(/\\*(.|[\r\n])*?\\*/)", "comment"), // Source:
-	// http://blog.ostermiller.org/find-comment
+	COMMENT("(//.+)|(/\\*(.|[\r\n])*?\\*/)", "comment"), // Source: http://blog.ostermiller.org/find-comment
 	OCTINT("0o[0-7]+", "octal integer"),
 	BININT("0b[0|1]+", "binary integer"),
 	HEXINT("0x[0-9a-fA-F]+", "hexadecimal integer"),

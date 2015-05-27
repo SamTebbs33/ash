@@ -316,7 +316,7 @@ public abstract class Node {
     }
 
     public static class NodeArgs extends Node {
-	LinkedList<NodeArg> args = new LinkedList<NodeArg>();
+	public LinkedList<NodeArg> args = new LinkedList<NodeArg>();
 
 	public void add(final NodeArg arg) {
 	    args.add(arg);
@@ -405,7 +405,7 @@ public abstract class Node {
 
     public static class NodeType extends Node {
 
-	String id;
+	public String id;
 	public int arrDims;
 	public boolean optional;
 
@@ -615,6 +615,16 @@ public abstract class Node {
 	public String toString() {
 	    return "NodeFuncCall [id=" + id + ", args=" + args + ", prefix=" + prefix + "]";
 	}
+	
+	@Override
+	public TypeI getExprType() {
+	    if(prefix == null){
+		return Semantics.getFuncType(id, args);
+	    }else{
+		TypeI type = prefix.getExprType();
+		return Semantics.getFuncType(id, type, args);
+	    }
+	}
 
     }
 
@@ -632,6 +642,18 @@ public abstract class Node {
 	@Override
 	public String toString() {
 	    return "NodeVariable [id=" + id + ", prefix=" + prefix + "]";
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    if(prefix == null){
+		Optional<Type> type = Semantics.getType(id);
+		if(type.isPresent()) return new TypeI(type.get().qualifiedName.shortName, 0, false);
+		else return Semantics.getVarType(id);
+	    }else{
+		TypeI type = prefix.getExprType();
+		return Semantics.getVarType(id, type);
+	    }
 	}
 
     }

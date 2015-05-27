@@ -2,6 +2,6 @@ import java.lang.Object
 
 class Test : Object {
 
-	public var a : int
+	
 
 }

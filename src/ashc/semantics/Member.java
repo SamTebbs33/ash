@@ -3,6 +3,8 @@ package ashc.semantics;
 import java.lang.reflect.*;
 import java.util.*;
 
+import ashc.grammar.Node.IExpression;
+import ashc.grammar.Node.*;
 import ashc.semantics.Semantics.TypeI;
 
 /**
@@ -40,6 +42,19 @@ public class Member {
 	    if (obj instanceof Type) return qualifiedName.shortName.equals(((Type) obj).qualifiedName.shortName);
 	    else if (obj instanceof String) return qualifiedName.shortName.equals(obj);
 	    else return false;
+	}
+
+	public Field getField(String id) {
+	    for(Field field : fields) if(field.qualifiedName.shortName.equals(id)) return field;
+	    return null;
+	}
+
+	public TypeI getFuncType(String id, NodeExprs args) {
+	    LinkedList<TypeI> parameters = new LinkedList<TypeI>();
+	    for (final IExpression arg : args.exprs)
+		parameters.add(arg.getExprType());
+	    for(Function func : functions) if(func.paramsAreEqual(parameters) && func.qualifiedName.shortName.equals(id)) return func.returnType;
+	    return null;
 	}
 
     }

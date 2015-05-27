@@ -2,10 +2,12 @@ package ashc.semantics;
 
 import java.util.*;
 
+import ashc.grammar.Node.NodeExprs;
 import ashc.load.*;
 import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
+import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
@@ -122,6 +124,32 @@ public class Semantics {
 	    if (p.ashName.equals(name1) || p.ashName.equals(name2)) return new TypeI(p);
 
 	return null;
+    }
+
+    public static TypeI getVarType(String id, TypeI type) {
+	if(type.arrDims > 0 && id.equals("length")) return new TypeI(EnumPrimitive.INT);
+	else {
+	    Optional<Type> t = getType(type.shortName);
+	    if(t.isPresent()) return t.get().getField(id).type;
+	}
+	return null;
+    }
+
+    public static TypeI getVarType(String id) {
+	return getVarType(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false));
+    }
+
+    public static TypeI getFuncType(String id, TypeI type, NodeExprs args) {
+	if(type.arrDims > 0 && id.equals("toString()")) return new TypeI("String", 0, false);
+	else {
+	    Optional<Type> t = getType(type.shortName);
+	    if(t.isPresent()) return t.get().getFuncType(id, args);
+	}
+	return null;
+    }
+
+    public static TypeI getFuncType(String id, NodeExprs args) {
+	return getFuncType(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args);
     }
 
 }
