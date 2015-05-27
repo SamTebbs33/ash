@@ -6,14 +6,14 @@ package ashc.semantics;
  */
 public enum EnumPrimitive {
 
-    BYTE("int8", "byte"),
-    SHORT("int16", "short"),
-    INT("int", "int"),
-    LONG("int64", "long"),
-    FLOAT("float", "float"),
+    BOOL("bool", "boolean"),
     DOUBLE("float64", "double"),
-    CHAR("char", "char"),
-    BOOL("bool", "boolean");
+    FLOAT("float", "float"),
+    LONG("int64", "long"),
+    INT("int", "int"),
+    SHORT("int16", "short"),
+    BYTE("int8", "byte"),
+    CHAR("char", "char");
     
     public String ashName, javaName;
 
