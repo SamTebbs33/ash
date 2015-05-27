@@ -13,6 +13,8 @@ public class Operator {
     }
 
     public static enum EnumOperation {
+	INCREMENT,
+	DECREMENT,
 	ADD,
 	SUBTRACT,
 	MULTIPLY,
@@ -87,6 +89,9 @@ public class Operator {
 	    
 	case "|":
 	    return EnumOperation.BIT_OR;
+	
+	case "~":
+	    return EnumOperation.BIT_NOT;
 	    
 	case "<<":
 	    return EnumOperation.L_SHIFT;
@@ -108,6 +113,18 @@ public class Operator {
 	    
 	case ">=":
 	    return EnumOperation.GREATER_EQUAL;
+	  
+	case "&&":
+	    return EnumOperation.AND;
+	    
+	case "||":
+	    return EnumOperation.OR;
+	    
+	case "^^":
+	    return EnumOperation.XOR;
+	    
+	case "!":
+	    return EnumOperation.NOT;
 	    
 	default:
 	    return null;

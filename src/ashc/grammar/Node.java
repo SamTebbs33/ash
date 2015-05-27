@@ -800,12 +800,12 @@ public abstract class Node {
 
     public static class NodeBinary extends Node implements IExpression {
 	public IExpression expr1, expr2;
-	public String operator;
+	public Operator operator;
 
 	public NodeBinary(final IExpression expr1, final String operator, final IExpression expr2) {
 	    this.expr1 = expr1;
 	    this.expr2 = expr2;
-	    this.operator = operator;
+	    this.operator = new Operator(operator);
 	}
 
 	@Override
@@ -821,13 +821,13 @@ public abstract class Node {
 
     public static class NodeUnary extends Node implements IExpression {
 	public IExpression expr;
-	public String operator;
+	public Operator operator;
 	public boolean prefix;
 
 	public NodeUnary(final int line, final int column, final IExpression expr, final String operator, final boolean prefix) {
 	    super(line, column);
 	    this.expr = expr;
-	    this.operator = operator;
+	    this.operator = new Operator(operator);
 	    this.prefix = prefix;
 	}
 
