@@ -814,7 +814,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return null;
+	    return Semantics.getPrecedentType(expr1.getExprType(), expr2.getExprType());
 	}
     }
 
