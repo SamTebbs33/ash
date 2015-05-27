@@ -492,7 +492,7 @@ public class Parser {
     }
 
     private NodeType parseType() throws UnexpectedTokenException {
-	final Token id = expect(TokenType.ID);
+	final Token id = expect(TokenType.ID, TokenType.PRIMITIVE);
 	final NodeType type = new NodeType(id.data);
 	if (getNext().type == TokenType.QUESTIONMARK) type.optional = true;
 	else rewind();
