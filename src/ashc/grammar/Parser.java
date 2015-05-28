@@ -253,7 +253,7 @@ public class Parser {
 	    args = parseArgs();
 	} else rewind();
 
-	if (getNext().type == TokenType.COLON) types = parseTypes();
+	if (getNext().type == TokenType.COLON) types = parseSuperTypes();
 	else rewind();
 
 	final NodeClassBlock block = parseClassBlock();
@@ -473,6 +473,15 @@ public class Parser {
 	rewind();
 	return types;
     }
+    
+    private NodeTypes parseSuperTypes() throws UnexpectedTokenException {
+	final NodeTypes types = new NodeTypes();
+	types.add(parseSuperType());
+	while (getNext().type == TokenType.COMMA)
+	    types.add(parseSuperType());
+	rewind();
+	return types;
+    }
 
     private NodeArgs parseArgs() throws UnexpectedTokenException {
 	expect(TokenType.PARENL);
@@ -506,6 +515,12 @@ public class Parser {
 	rewind();
 	return type;
     }
+    
+    private NodeType parseSuperType() throws UnexpectedTokenException {
+   	final Token id = expect(TokenType.ID);
+   	final NodeType type = new NodeType(id.data);
+   	return type;
+       }
 
     private NodeEnumDec parseEnumDec(final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
 	final Token id = expect(TokenType.ID);
@@ -539,7 +554,7 @@ public class Parser {
 	    args = parseArgs();
 	} else rewind();
 
-	if (getNext().type == TokenType.COLON) types = parseTypes();
+	if (getNext().type == TokenType.COLON) types = parseSuperTypes();
 	else rewind();
 
 	final NodeClassBlock block = parseClassBlock();
