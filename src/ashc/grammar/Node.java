@@ -364,10 +364,10 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {
-	    for (final NodeVarDec varDec : varDecs)
-		varDec.preAnalyse();
 	    for (final NodeFuncDec funcDec : funcDecs)
 		funcDec.preAnalyse();
+	    for (final NodeVarDec varDec : varDecs)
+		varDec.preAnalyse();
 	}
 
 	@Override
@@ -480,6 +480,7 @@ public abstract class Node {
 	    for (final NodeModifier mod : mods)
 		modifiers |= mod.asInt();
 	    final Function func = new Function(name, modifiers);
+	    func.returnType = type != null ? new TypeI(type.id, type.arrDims, type.optional) : null;
 	    for (final NodeArg arg : args.args)
 		func.parameters.add(new TypeI(arg.type.id, arg.type.arrDims, arg.type.optional));
 	    if (!Semantics.funcExists(func)) Semantics.addFunc(func);
@@ -538,8 +539,8 @@ public abstract class Node {
 	}
 
 	@Override
-	public void analyse() {
-	    super.analyse();
+	public void preAnalyse() {
+	    super.preAnalyse();
 	}
 
     }

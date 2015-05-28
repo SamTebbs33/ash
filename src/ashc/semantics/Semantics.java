@@ -73,6 +73,7 @@ public class Semantics {
     public static void addType(final Type type) {
 	types.put(type.qualifiedName, type);
 	typeStack.push(type);
+	bindName(type.qualifiedName);
     }
 
     public static void exitType() {

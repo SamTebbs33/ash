@@ -2,6 +2,8 @@ import java.lang.Object
 
 class Test : Object {
 
+	func sam() : int {}
 	
+	var a : int = sam()
 
 }

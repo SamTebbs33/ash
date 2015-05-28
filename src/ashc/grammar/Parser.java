@@ -354,7 +354,10 @@ public class Parser {
     private NodeExprs parseCallArgs() throws UnexpectedTokenException {
 	final NodeExprs exprs = new NodeExprs();
 	expect(TokenType.PARENL);
-	Token next;
+	Token next = getNext();
+	if(next.type == TokenType.PARENR) return exprs;
+	else rewind();
+	
 	do {
 	    final IExpression expr = parseExpression();
 	    // System.out.println(expr);

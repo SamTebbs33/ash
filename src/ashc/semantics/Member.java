@@ -53,7 +53,13 @@ public class Member {
 	    LinkedList<TypeI> parameters = new LinkedList<TypeI>();
 	    for (final IExpression arg : args.exprs)
 		parameters.add(arg.getExprType());
-	    for(Function func : functions) if(func.paramsAreEqual(parameters) && func.qualifiedName.shortName.equals(id)) return func.returnType;
+	    for(Function func : functions){
+		if(func.paramsAreEqual(parameters)){
+		    if(func.qualifiedName.shortName.equals(id)){
+			return func.returnType;
+		    }
+		}
+	    }
 	    return null;
 	}
 
