@@ -87,7 +87,10 @@ public abstract class Node {
 	}
 
 	@Override
-	public void analyse() {}
+	public void analyse() {
+	    if (typeDecs != null) for (final NodeTypeDec t : typeDecs)
+		t.analyse();
+	}
 
     }
 
@@ -135,9 +138,6 @@ public abstract class Node {
 	    super(line, column);
 	    this.mods = mods;
 	}
-
-	@Override
-	public void analyse() {}
 
     }
 
