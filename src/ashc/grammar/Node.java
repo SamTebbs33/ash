@@ -599,6 +599,7 @@ public abstract class Node {
 		if(scope.returnType.isVoid()) semanticError(this, line, column, RETURN_EXPR_IN_VOID_FUNC);
 		else if(!scope.returnType.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, scope.returnType.toString(), exprType.toString());
 	    }
+	    for(IFuncStmt stmt : stmts) ((Node)stmt).analyse();
 	}
 
     }
@@ -648,6 +649,17 @@ public abstract class Node {
 	    else {
 		final TypeI type = prefix.getExprType();
 		return Semantics.getFuncType(id, type, args);
+	    }
+	}
+
+	@Override
+	public void analyse() {
+	    Function func = null;
+	    if(prefix == null) func = Semantics.getFunc(id, args);
+	    else func = Semantics.getFunc(id, prefix.getExprType(), args);
+	    
+	    if(func == null){
+		semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id);
 	    }
 	}
 

@@ -16,6 +16,7 @@ public class Error {
 	TYPE_DOES_NOT_EXTEND("Type (%s) does not extend %s"),
 
 	FUNC_ALREADY_EXISTS("Function already exists (%s)"),
+	FUNC_DOES_NOT_EXIST("Function doesn't exist (%s)"),
 	RETURN_EXPR_IN_VOID_FUNC("Cannot return an expression in a void function"),
 
 	FIELD_ALREADY_EXISTS("Field already exists (%s)"),

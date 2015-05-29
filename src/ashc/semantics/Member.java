@@ -5,6 +5,7 @@ import java.util.*;
 
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeExprs;
+import ashc.semantics.Member.Function;
 import ashc.semantics.Semantics.TypeI;
 
 /**
@@ -66,6 +67,15 @@ public class Member {
 		else if(type.hasSuper(name)) return true;
 	    }
 	    return false;
+	}
+
+	public Function getFunc(String id, NodeExprs args) {
+	    final LinkedList<TypeI> parameters = new LinkedList<TypeI>();
+	    for (final IExpression arg : args.exprs)
+		parameters.add(arg.getExprType());
+	    for (final Function func : functions)
+		if (func.paramsAreEqual(parameters)) if (func.qualifiedName.shortName.equals(id)) return func;
+	    return null;
 	}
 
     }

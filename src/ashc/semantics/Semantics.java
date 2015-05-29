@@ -8,6 +8,7 @@ import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Semantics.TypeI;
+import static ashc.error.Error.semanticError;
 
 /**
  * Ash
@@ -170,6 +171,16 @@ public class Semantics {
 
     public static TypeI getFuncType(final String id, final NodeExprs args) {
 	return getFuncType(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args);
+    }
+    
+    public static Function getFunc(String id, TypeI type, NodeExprs args) {
+	final Optional<Type> t = getType(type.shortName);
+	if (t.isPresent()) return t.get().getFunc(id, args);
+	return null;
+    }
+
+    public static Function getFunc(String id, NodeExprs args) {
+	return getFunc(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args);
     }
 
 }
