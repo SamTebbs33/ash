@@ -13,6 +13,8 @@ public enum EnumPrimitive {
     INT("int", "int"),
     SHORT("int16", "short"),
     BYTE("int8", "byte"),
+    ULONG("ulong", "long"),
+    UINT("uint", "int"),
     CHAR("char", "char");
 
     public String ashName, javaName;
