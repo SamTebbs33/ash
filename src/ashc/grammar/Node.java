@@ -211,6 +211,10 @@ public abstract class Node {
 		if (!typeOpt.isPresent()) semanticError(line, column, TYPE_DOES_NOT_EXIST, typeNode.id);
 		else {
 		    final Type type = typeOpt.get();
+		    if(type.type == EnumType.CLASS){
+			if(hasSuperClass) semanticError(this, line, column, CANNOT_EXTEND_MULTIPLE_CLASSES, typeNode.id);
+			else hasSuperClass = true;
+		    }
 		    if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
 		    if (type.type == EnumType.ENUM) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
 		}

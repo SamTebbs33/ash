@@ -21,6 +21,7 @@ public class Error {
 	CANNOT_EXTEND_FINAL_TYPE("Cannot extend a final type (%s)"),
 	CANNOT_EXTEND_TYPE("%s %s cannot extend %s %s (%s)"),
 	CANNOT_EXTENDS_OPTIONAL_TYPE("Cannot extend an optional type (%s)"),
+	CANNOT_EXTEND_MULTIPLE_CLASSES("Cannot extend multiple classes (%s)"),
 
 	DUPLICATE_MODIFIERS("Duplicate modifiers (%s)"),
 	DUPLICATE_ARGUMENTS("Duplicate arguments (%s)"),
