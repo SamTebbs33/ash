@@ -504,6 +504,7 @@ public abstract class Node {
 	    }
 	    Scope.push(new FuncScope(new TypeI(type.id, type.arrDims, type.optional)));
 	    block.analyse();
+	    Scope.pop();
 	}
 
     }

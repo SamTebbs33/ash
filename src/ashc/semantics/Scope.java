@@ -36,4 +36,8 @@ public class Scope {
 	get().scopeStack.push(scope);
     }
 
+    public static void pop() {
+	get().scopeStack.pop();
+    }
+
 }
