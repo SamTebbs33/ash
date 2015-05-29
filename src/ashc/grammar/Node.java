@@ -905,5 +905,14 @@ public abstract class Node {
 	    return new TypeI(Semantics.typeStack.peek().qualifiedName.shortName, 0, false);
 	}
     }
+    
+    public static class NodeNull extends Node implements IExpression {
+
+	@Override
+	public TypeI getExprType() {
+	    return new TypeI("null", 0, true);
+	}
+	
+    }
 
 }

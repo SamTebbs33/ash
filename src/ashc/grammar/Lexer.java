@@ -72,6 +72,7 @@ public class Lexer {
 	STATIC("static"),
 	THIS("this"),
 	SELF("self"),
+	NULL("null"),
 
 	PRIMITIVE("bool|double|float|long|int|short|byte|ulong|uint|char|void", "primitive"),
 	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),

@@ -72,7 +72,7 @@ public class Semantics {
 
 	public boolean canBeAssignedTo(TypeI exprType) {
 	    if(this.equals(exprType)) return true;
-	    return exprType.arrDims == this.arrDims && this.optional == exprType.optional && Semantics.typeHasSuper(exprType.shortName, this.shortName);
+	    return exprType.arrDims == this.arrDims && this.optional == exprType.optional && (exprType.shortName.equals("null") || Semantics.typeHasSuper(exprType.shortName, this.shortName));
 	}
 
     }
