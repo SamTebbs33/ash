@@ -7,12 +7,12 @@ package ashc.semantics;
 public enum EnumPrimitive {
 
     BOOL("bool", "boolean"),
-    DOUBLE("float64", "double"),
+    DOUBLE("double", "double"),
     FLOAT("float", "float"),
-    LONG("int64", "long"),
+    LONG("long", "long"),
     INT("int", "int"),
-    SHORT("int16", "short"),
-    BYTE("int8", "byte"),
+    SHORT("short", "short"),
+    BYTE("byte", "byte"),
     ULONG("ulong", "long"),
     UINT("uint", "int"),
     CHAR("char", "char");
