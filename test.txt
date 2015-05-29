@@ -1,4 +1,4 @@
 
-class Test : String{
-	
+class Test : String {
+	func foo() : String -> ""
 }

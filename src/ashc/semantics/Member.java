@@ -31,6 +31,7 @@ public class Member {
 	public EnumType type;
 	public LinkedList<Function> functions = new LinkedList<Function>();
 	public LinkedList<Field> fields = new LinkedList<Field>();
+	public LinkedList<Type> supers = new LinkedList<Member.Type>();
 
 	public Type(final QualifiedName qualifiedName, final int modifiers, final EnumType type) {
 	    super(qualifiedName, modifiers);
@@ -57,6 +58,11 @@ public class Member {
 	    for (final Function func : functions)
 		if (func.paramsAreEqual(parameters)) if (func.qualifiedName.shortName.equals(id)) return func.returnType;
 	    return null;
+	}
+
+	public boolean hasSuper(QualifiedName name) {
+	    for(Type type : supers) if(type.qualifiedName.equals(name)) return true;
+	    return false;
 	}
 
     }

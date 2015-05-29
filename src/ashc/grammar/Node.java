@@ -13,6 +13,7 @@ import ashc.semantics.Member.EnumType;
 import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
+import ashc.semantics.Scope.FuncScope;
 import ashc.semantics.Semantics.TypeI;
 import ashc.util.*;
 
@@ -79,7 +80,7 @@ public abstract class Node {
 		for (final String section : pkgName.paths)
 		    name.add(section);
 	    }
-	    Scope.push(new Scope(name));
+	    Scope.namespace = name;
 	    if (imports != null) for (final NodeImport i : imports)
 		i.preAnalyse();
 	    if (typeDecs != null) for (final NodeTypeDec t : typeDecs)
@@ -231,6 +232,12 @@ public abstract class Node {
 	    super.preAnalyse();
 	    block.preAnalyse();
 	    Semantics.exitType();
+	}
+	
+	@Override
+	public void analyse(){
+	    super.analyse();
+	    block.analyse();
 	}
 
 	@Override
@@ -414,7 +421,7 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    if (Semantics.typeExists(id)) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
+	    if (!Semantics.typeExists(id)) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
 	    if (EnumPrimitive.isPrimitive(id) && optional) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
 	}
 
@@ -488,7 +495,15 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    super.analyse();
+	    args.analyse();
+	    type.analyse();
+	    if(throwsType != null){
+		throwsType.analyse();
+		Optional<Type> type = Semantics.getType(throwsType.id);
+		if(type.isPresent()) if(!type.get().hasSuper((new QualifiedName("")).add("java").add("lang").add("Throwable"))) semanticError(this, line, column, TYPE_DOES_NOT_EXTEND, throwsType.id, "java.lang.Throwable");
+	    }
+	    Scope.push(new FuncScope(new TypeI(type.id, type.arrDims, type.optional)));
+	    block.analyse();
 	}
 
     }

@@ -15,11 +15,12 @@ public class QualifiedName {
 	add(section);
     }
 
-    public void add(final String section) {
+    public QualifiedName add(final String section) {
 	if (!section.isEmpty()) {
 	    sections.add(section);
 	    shortName = section;
 	}
+	return this;
     }
 
     public QualifiedName copy() {
