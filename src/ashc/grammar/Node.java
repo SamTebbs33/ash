@@ -182,8 +182,12 @@ public abstract class Node {
 		    if (!typeOpt.isPresent()) semanticError(line, column, TYPE_DOES_NOT_EXIST, typeNode.id);
 		    else {
 			final Type type = typeOpt.get();
-			if (type.type == EnumType.CLASS && getType() == EnumType.CLASS) if (hasSuperClass) semanticError(this, line, column, CANNOT_EXTEND_MULTIPLE_CLASSES, typeNode.id);
-			else hasSuperClass = true;
+			if (type.type == EnumType.CLASS){
+			    if(getType() == EnumType.CLASS){
+				if (hasSuperClass) semanticError(this, line, column, CANNOT_EXTEND_MULTIPLE_CLASSES, typeNode.id);
+				else hasSuperClass = true;
+			    }else semanticError(this, line, column, CANNOT_EXTEND_TYPE, "an", this.getType().name().toLowerCase(), "a", "class", typeNode.id);
+			}
 			if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
 			if (type.type == EnumType.ENUM && getType() != EnumType.ENUM) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
 		    }
@@ -265,19 +269,11 @@ public abstract class Node {
     }
 
     public static class NodeInterfaceDec extends NodeTypeDec {
-
-	LinkedList<NodeModifier> mods;
-	Token id;
-	NodeArgs args;
-	NodeTypes types;
+	
 	NodeClassBlock block;
 
-	public NodeInterfaceDec(final int line, final int column, final LinkedList<NodeModifier> mods, final Token id, final NodeArgs args, final NodeTypes types, final NodeClassBlock block) {
-	    super(line, column, mods);
-	    this.mods = mods;
-	    this.id = id;
-	    this.args = args;
-	    this.types = types;
+	public NodeInterfaceDec(int line, int column, LinkedList<NodeModifier> mods, NodeTypes types, NodeArgs args, Token id, NodeClassBlock block) {
+	    super(line, column, mods, types, args, id);
 	    this.block = block;
 	}
 
@@ -291,6 +287,12 @@ public abstract class Node {
 	@Override
 	protected EnumType getType() {
 	    return EnumType.INTERFACE;
+	}
+
+	@Override
+	public void analyse() {
+	    super.analyse();
+	    block.analyse();
 	}
 
     }

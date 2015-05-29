@@ -1,6 +1,4 @@
-import java.lang.Object
-import java.lang.String
 
-class Test : Object, String{
+class Test : String{
 	
 }

@@ -561,7 +561,7 @@ public class Parser {
 	else rewind();
 
 	final NodeClassBlock block = parseClassBlock();
-	return new NodeInterfaceDec(id.line, id.columnStart, mods, id, args, types, block);
+	return new NodeInterfaceDec(id.line, id.columnStart, mods, types, args, id, block);
     }
 
     private NodeTypeDec parseTypeDec() throws UnexpectedTokenException {
