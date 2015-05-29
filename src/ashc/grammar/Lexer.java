@@ -72,7 +72,7 @@ public class Lexer {
 	THIS("this"),
 	SELF("self"),
 
-	PRIMITIVE("bool|double|float|long|int|short|byte|ulong|uint|char", "primitive"),
+	PRIMITIVE("bool|double|float|long|int|short|byte|ulong|uint|char|void", "primitive"),
 	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),
 	EOF("\\Z", "end of file"),
 	ERROR(".*", "error");

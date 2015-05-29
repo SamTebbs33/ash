@@ -294,7 +294,10 @@ public class Parser {
 	rewind();
 
 	if (getNext().type == TokenType.COLON) type = parseType();
-	else rewind();
+	else {
+	    type = new NodeType("void");
+	    rewind();
+	}
 
 	if (getNext().type == TokenType.ARROW) throwsType = parseType();
 	else rewind();
