@@ -257,7 +257,7 @@ public class Parser {
 	else rewind();
 
 	final NodeClassBlock block = parseClassBlock();
-	return new NodeClassDec(id.line, id.columnStart, mods, id, args, types, block);
+	return new NodeClassDec(id.line, id.columnStart, mods, types, args, id, block);
     }
 
     private NodeClassBlock parseClassBlock() throws UnexpectedTokenException {
@@ -439,7 +439,7 @@ public class Parser {
 	final Token next = getNext();
 
 	switch (next.type) {
-	    // Postfix unary expression
+	// Postfix unary expression
 	    case UNARYOP:
 		return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
 	    case QUESTIONMARK:

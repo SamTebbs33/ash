@@ -126,9 +126,12 @@ public abstract class Node {
 
     }
 
-    public static class NodeTypeDec extends Node {
+    public static abstract class NodeTypeDec extends Node {
 
 	public LinkedList<NodeModifier> mods;
+	public NodeTypes types;
+	public NodeArgs args;
+	public Token id;
 
 	public NodeTypeDec(final int line, final int column) {
 	    super(line, column);
@@ -139,41 +142,11 @@ public abstract class Node {
 	    this.mods = mods;
 	}
 
-    }
-
-    public static class NodeModifier extends Node {
-	public String mod;
-
-	public NodeModifier(final int line, final int column, final String mod) {
-	    this.mod = mod;
-	}
-
-	public int asInt() {
-	    for (final EnumModifier modifier : EnumModifier.values())
-		if (modifier.name().equalsIgnoreCase(mod)) return modifier.intVal;
-	    return 0;
-	}
-    }
-
-    public static class NodeClassDec extends NodeTypeDec {
-
-	LinkedList<NodeModifier> mods;
-	Token id;
-	NodeArgs args;
-	NodeTypes types;
-	NodeClassBlock block;
-
-	public NodeClassDec(final int line, final int column) {
-	    super(line, column);
-	}
-
-	public NodeClassDec(final int line, final int column, final LinkedList<NodeModifier> mods, final Token id, final NodeArgs args, final NodeTypes types, final NodeClassBlock block) {
-	    super(line, column, mods);
-	    this.mods = mods;
-	    this.id = id;
-	    this.args = args;
+	public NodeTypeDec(final int line, final int column, final LinkedList<NodeModifier> mods, final NodeTypes types, final NodeArgs args, final Token id) {
+	    this(line, column, mods);
 	    this.types = types;
-	    this.block = block;
+	    this.args = args;
+	    this.id = id;
 	}
 
 	@Override
@@ -193,33 +166,72 @@ public abstract class Node {
 	    }
 
 	    if (types != null) for (final NodeType type : types.types)
-		if (type.optional) semanticError(this, line, column, CANNOT_EXTENDS_OPTIONAL_TYPE, type.id);
+		if (type.optional) semanticError(this, line, column, CANNOT_EXTEND_OPTIONAL_TYPE, type.id);
 
-	    Semantics.addType(new Type(name, modifiers, EnumType.CLASS));
-	    block.preAnalyse();
-	    Semantics.exitType();
+	    Semantics.addType(new Type(name, modifiers, getType()));
 	}
 
 	@Override
 	public void analyse() {
 	    // Ensure the super-types are valid
-	    if (types != null){
+	    if (types != null) {
 		boolean hasSuperClass = false;
 		for (final NodeType typeNode : types.types) {
-		final Optional<Type> typeOpt = Semantics.getType(typeNode.id);
+		    final Optional<Type> typeOpt = Semantics.getType(typeNode.id);
 
-		if (!typeOpt.isPresent()) semanticError(line, column, TYPE_DOES_NOT_EXIST, typeNode.id);
-		else {
-		    final Type type = typeOpt.get();
-		    if(type.type == EnumType.CLASS){
-			if(hasSuperClass) semanticError(this, line, column, CANNOT_EXTEND_MULTIPLE_CLASSES, typeNode.id);
+		    if (!typeOpt.isPresent()) semanticError(line, column, TYPE_DOES_NOT_EXIST, typeNode.id);
+		    else {
+			final Type type = typeOpt.get();
+			if (type.type == EnumType.CLASS && getType() == EnumType.CLASS) if (hasSuperClass) semanticError(this, line, column, CANNOT_EXTEND_MULTIPLE_CLASSES, typeNode.id);
 			else hasSuperClass = true;
+			if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
+			if (type.type == EnumType.ENUM && getType() != EnumType.ENUM) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
 		    }
-		    if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
-		    if (type.type == EnumType.ENUM) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
 		}
 	    }
 	}
+
+	protected abstract EnumType getType();
+
+    }
+
+    public static class NodeModifier extends Node {
+	public String mod;
+
+	public NodeModifier(final int line, final int column, final String mod) {
+	    this.mod = mod;
+	}
+
+	public int asInt() {
+	    for (final EnumModifier modifier : EnumModifier.values())
+		if (modifier.name().equalsIgnoreCase(mod)) return modifier.intVal;
+	    return 0;
+	}
+    }
+
+    public static class NodeClassDec extends NodeTypeDec {
+
+	NodeClassBlock block;
+
+	public NodeClassDec(final int line, final int column) {
+	    super(line, column);
+	}
+
+	public NodeClassDec(final int line, final int column, final LinkedList<NodeModifier> mods, final NodeTypes types, final NodeArgs args, final Token id, final NodeClassBlock block) {
+	    super(line, column, mods, types, args, id);
+	    this.block = block;
+	}
+
+	@Override
+	public void preAnalyse() {
+	    super.preAnalyse();
+	    block.preAnalyse();
+	    Semantics.exitType();
+	}
+
+	@Override
+	protected EnumType getType() {
+	    return EnumType.CLASS;
 	}
     }
 
@@ -240,23 +252,14 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {
-	    // Ensure that the type being declared doesn't already exist
-	    if (Semantics.bindingExists(id.data)) semanticError(this, line, column, TYPE_ALREADY_EXISTS, id.data);
-	    final QualifiedName name = Scope.getNamespace();
-	    name.add(id.data);
-
-	    int modifiers = 0;
-	    if (mods != null) for (final NodeModifier modNode : mods) {
-		final int mod = modNode.asInt();
-		// Check if the modifier has already been added, else add to
-		// "modifiers"
-		if (BitOp.and(modifiers, mod)) semanticError(this, line, column, DUPLICATE_MODIFIERS, modNode.mod);
-		else modifiers |= mod;
-	    }
-
-	    Semantics.addType(new Type(name, modifiers, EnumType.ENUM));
+	    super.preAnalyse();
 	    block.preAnalyse();
 	    Semantics.exitType();
+	}
+
+	@Override
+	protected EnumType getType() {
+	    return EnumType.ENUM;
 	}
 
     }
@@ -280,26 +283,14 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {
-	    // Ensure that the type being declared doesn't already exist
-	    if (Semantics.bindingExists(id.data)) semanticError(this, line, column, TYPE_ALREADY_EXISTS, id.data);
-	    final QualifiedName name = Scope.getNamespace();
-	    name.add(id.data);
-
-	    int modifiers = 0;
-	    if (mods != null) for (final NodeModifier modNode : mods) {
-		final int mod = modNode.asInt();
-		// Check if the modifier has already been added, else add to
-		// "modifiers"
-		if (BitOp.and(modifiers, mod)) semanticError(this, line, column, DUPLICATE_MODIFIERS, modNode.mod);
-		else modifiers |= mod;
-	    }
-
-	    if (types != null) for (final NodeType type : types.types)
-		if (type.optional) semanticError(this, line, column, CANNOT_EXTENDS_OPTIONAL_TYPE, type.id);
-
-	    Semantics.addType(new Type(name, modifiers, EnumType.INTERFACE));
+	    super.preAnalyse();
 	    block.preAnalyse();
 	    Semantics.exitType();
+	}
+
+	@Override
+	protected EnumType getType() {
+	    return EnumType.INTERFACE;
 	}
 
     }
@@ -585,7 +576,7 @@ public abstract class Node {
     }
 
     public static class NodePrefix extends Node implements IFuncStmt,
-	    IExpression {
+    IExpression {
 
 	public NodePrefix(final int line, final int column) {
 	    super(line, column);
