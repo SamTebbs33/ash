@@ -61,7 +61,10 @@ public class Member {
 	}
 
 	public boolean hasSuper(QualifiedName name) {
-	    for(Type type : supers) if(type.qualifiedName.equals(name)) return true;
+	    for(Type type : supers){
+		if(type.qualifiedName.equals(name)) return true; 
+		else if(type.hasSuper(name)) return true;
+	    }
 	    return false;
 	}
 

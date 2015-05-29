@@ -591,6 +591,16 @@ public abstract class Node {
 	    stmts.add(funcStmt);
 	}
 
+	@Override
+	public void analyse() {
+	    if(singleLineExpr != null){
+		FuncScope scope = (FuncScope) Scope.getScope();
+		TypeI exprType = singleLineExpr.getExprType();
+		if(scope.returnType.isVoid()) semanticError(this, line, column, RETURN_EXPR_IN_VOID_FUNC);
+		else if(!scope.returnType.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, scope.returnType.toString(), exprType.toString());
+	    }
+	}
+
     }
 
     public static class NodePrefix extends Node implements IFuncStmt,

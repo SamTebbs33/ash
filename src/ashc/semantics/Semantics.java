@@ -7,6 +7,7 @@ import ashc.load.*;
 import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
+import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
@@ -60,13 +61,32 @@ public class Semantics {
 
 	@Override
 	public String toString() {
-	    return "TypeI [shortName=" + shortName + ", arrDims=" + arrDims + "]";
+	    StringBuffer arrBuffer = new StringBuffer();
+	    for(int i = 0; i < arrDims; i++) arrBuffer.append("[]");
+	    return String.format("%s%s%s", shortName, optional ? "?" : "", arrBuffer.toString());
+	}
+
+	public boolean isVoid() {
+	    return shortName.equals("void");
+	}
+
+	public boolean canBeAssignedTo(TypeI exprType) {
+	    if(this.equals(exprType)) return true;
+	    return exprType.arrDims == this.arrDims && this.optional == exprType.optional && Semantics.typeHasSuper(exprType.shortName, this.shortName);
 	}
 
     }
 
     public static boolean typeExists(final String typeName) {
-	return EnumPrimitive.isPrimitive(typeName) || typeNameMap.containsKey(typeName);
+	return typeName.equals("void") || EnumPrimitive.isPrimitive(typeName) || typeNameMap.containsKey(typeName);
+    }
+
+    public static boolean typeHasSuper(String type, String superType) {
+	Optional<Type> t = getType(type), superT = getType(superType);
+	if(t.isPresent() && superT.isPresent()){
+	   return t.get().hasSuper(superT.get().qualifiedName);
+	}
+	return false;
     }
 
     public static void addType(final Type type) {

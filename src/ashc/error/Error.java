@@ -16,6 +16,7 @@ public class Error {
 	TYPE_DOES_NOT_EXTEND("Type (%s) does not extend %s"),
 
 	FUNC_ALREADY_EXISTS("Function already exists (%s)"),
+	RETURN_EXPR_IN_VOID_FUNC("Cannot return an expression in a void function"),
 
 	FIELD_ALREADY_EXISTS("Field already exists (%s)"),
 
@@ -28,7 +29,8 @@ public class Error {
 	DUPLICATE_ARGUMENTS("Duplicate arguments (%s)"),
 	DUPLICATE_TYPES("Duplicate types (%s)"),
 
-	PRIMTIVE_CANNOT_BE_OPTIONAL("A primitive type cannot be optional (%s)");
+	PRIMTIVE_CANNOT_BE_OPTIONAL("A primitive type cannot be optional (%s)"),
+	CANNOT_ASSIGN("Cannot assign %s to %s");
 
 	public String format;
 
