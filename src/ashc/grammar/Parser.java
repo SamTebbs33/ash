@@ -358,9 +358,9 @@ public class Parser {
 	final NodeExprs exprs = new NodeExprs();
 	expect(TokenType.PARENL);
 	Token next = getNext();
-	if(next.type == TokenType.PARENR) return exprs;
+	if (next.type == TokenType.PARENR) return exprs;
 	else rewind();
-	
+
 	do {
 	    final IExpression expr = parseExpression();
 	    // System.out.println(expr);
@@ -439,7 +439,7 @@ public class Parser {
 	final Token next = getNext();
 
 	switch (next.type) {
-	// Postfix unary expression
+	    // Postfix unary expression
 	    case UNARYOP:
 		return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
 	    case QUESTIONMARK:
@@ -476,7 +476,7 @@ public class Parser {
 	rewind();
 	return types;
     }
-    
+
     private NodeTypes parseSuperTypes() throws UnexpectedTokenException {
 	final NodeTypes types = new NodeTypes();
 	types.add(parseSuperType());
@@ -518,12 +518,12 @@ public class Parser {
 	rewind();
 	return type;
     }
-    
+
     private NodeType parseSuperType() throws UnexpectedTokenException {
-   	final Token id = expect(TokenType.ID);
-   	final NodeType type = new NodeType(id.data);
-   	return type;
-       }
+	final Token id = expect(TokenType.ID);
+	final NodeType type = new NodeType(id.data);
+	return type;
+    }
 
     private NodeEnumDec parseEnumDec(final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
 	final Token id = expect(TokenType.ID);

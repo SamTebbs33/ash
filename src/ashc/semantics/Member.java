@@ -4,7 +4,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import ashc.grammar.Node.IExpression;
-import ashc.grammar.Node.*;
+import ashc.grammar.Node.NodeExprs;
 import ashc.semantics.Semantics.TypeI;
 
 /**
@@ -44,22 +44,18 @@ public class Member {
 	    else return false;
 	}
 
-	public Field getField(String id) {
-	    for(Field field : fields) if(field.qualifiedName.shortName.equals(id)) return field;
+	public Field getField(final String id) {
+	    for (final Field field : fields)
+		if (field.qualifiedName.shortName.equals(id)) return field;
 	    return null;
 	}
 
-	public TypeI getFuncType(String id, NodeExprs args) {
-	    LinkedList<TypeI> parameters = new LinkedList<TypeI>();
+	public TypeI getFuncType(final String id, final NodeExprs args) {
+	    final LinkedList<TypeI> parameters = new LinkedList<TypeI>();
 	    for (final IExpression arg : args.exprs)
 		parameters.add(arg.getExprType());
-	    for(Function func : functions){
-		if(func.paramsAreEqual(parameters)){
-		    if(func.qualifiedName.shortName.equals(id)){
-			return func.returnType;
-		    }
-		}
-	    }
+	    for (final Function func : functions)
+		if (func.paramsAreEqual(parameters)) if (func.qualifiedName.shortName.equals(id)) return func.returnType;
 	    return null;
 	}
 

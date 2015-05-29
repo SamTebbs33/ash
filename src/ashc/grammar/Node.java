@@ -203,7 +203,9 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    // Ensure the super-types are valid
-	    if (types != null) for (final NodeType typeNode : types.types) {
+	    if (types != null){
+		boolean hasSuperClass = false;
+		for (final NodeType typeNode : types.types) {
 		final Optional<Type> typeOpt = Semantics.getType(typeNode.id);
 
 		if (!typeOpt.isPresent()) semanticError(line, column, TYPE_DOES_NOT_EXIST, typeNode.id);
@@ -214,7 +216,7 @@ public abstract class Node {
 		}
 	    }
 	}
-
+	}
     }
 
     public static class NodeEnumDec extends NodeTypeDec {
@@ -579,7 +581,7 @@ public abstract class Node {
     }
 
     public static class NodePrefix extends Node implements IFuncStmt,
-    IExpression {
+	    IExpression {
 
 	public NodePrefix(final int line, final int column) {
 	    super(line, column);
@@ -616,13 +618,12 @@ public abstract class Node {
 	public String toString() {
 	    return "NodeFuncCall [id=" + id + ", args=" + args + ", prefix=" + prefix + "]";
 	}
-	
+
 	@Override
 	public TypeI getExprType() {
-	    if(prefix == null){
-		return Semantics.getFuncType(id, args);
-	    }else{
-		TypeI type = prefix.getExprType();
+	    if (prefix == null) return Semantics.getFuncType(id, args);
+	    else {
+		final TypeI type = prefix.getExprType();
 		return Semantics.getFuncType(id, type, args);
 	    }
 	}
@@ -647,12 +648,12 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    if(prefix == null){
-		Optional<Type> type = Semantics.getType(id);
-		if(type.isPresent()) return new TypeI(type.get().qualifiedName.shortName, 0, false);
+	    if (prefix == null) {
+		final Optional<Type> type = Semantics.getType(id);
+		if (type.isPresent()) return new TypeI(type.get().qualifiedName.shortName, 0, false);
 		else return Semantics.getVarType(id);
-	    }else{
-		TypeI type = prefix.getExprType();
+	    } else {
+		final TypeI type = prefix.getExprType();
 		return Semantics.getVarType(id, type);
 	    }
 	}
