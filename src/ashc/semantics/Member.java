@@ -147,5 +147,14 @@ public class Member {
 	}
 
     }
+    
+    public static class Variable {
+	public String id;
+	public TypeI type;
+	public Variable(String id, TypeI type) {
+	    this.id = id;
+	    this.type = type;
+	}
+    }
 
 }

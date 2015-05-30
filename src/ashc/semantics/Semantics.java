@@ -184,4 +184,10 @@ public class Semantics {
 	typeStack.push(type);
     }
 
+    public static boolean varExists(String id) {
+	if(Scope.getScope().hasVar(id)) return true;
+	for(Field field : typeStack.peek().fields) if(field.qualifiedName.shortName.equals(id)) return true;
+	return false;
+    }
+
 }

@@ -13,6 +13,7 @@ import ashc.semantics.Member.EnumType;
 import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
+import ashc.semantics.Member.Variable;
 import ashc.semantics.Scope.FuncScope;
 import ashc.semantics.Semantics.TypeI;
 import ashc.util.*;
@@ -532,10 +533,16 @@ public abstract class Node {
 	    this.id = id;
 	}
 
+	@Override
+	public void analyse() {
+	    if(Semantics.varExists(id)) semanticError(this, line, column, VAR_ALREADY_EXISTS, id);
+	}
+
     }
 
     public static class NodeVarDecExplicit extends NodeVarDec {
 	public NodeType type;
+	public TypeI typeI;
 
 	public NodeVarDecExplicit(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, final NodeType type) {
 	    super(line, column, mods, keyword, id);
@@ -553,6 +560,14 @@ public abstract class Node {
 	    if (!Semantics.fieldExists(field)) Semantics.addField(field);
 	    else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
 	}
+	
+	@Override
+	public void analyse() {
+	    super.analyse();
+	    typeI = new TypeI(type.id, type.arrDims, type.optional);
+	    if(!errored) Scope.getScope().addVar(new Variable(id, typeI));
+	    if(type.optional) semanticError(this, line, column, MISSING_ASSIGNMENT);
+	}
 
     }
 
@@ -565,8 +580,10 @@ public abstract class Node {
 	}
 
 	@Override
-	public void preAnalyse() {
-	    super.preAnalyse();
+	public void analyse() {
+	    super.analyse();
+	    TypeI exprType = expr.getExprType();
+	    if(!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType.toString(), typeI.toString());
 	}
 
     }

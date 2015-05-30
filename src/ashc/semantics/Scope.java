@@ -1,6 +1,10 @@
 package ashc.semantics;
 
 import static ashc.main.AshCompiler.*;
+
+import java.util.*;
+
+import ashc.semantics.Member.Variable;
 import ashc.semantics.Semantics.TypeI;
 
 /**
@@ -22,6 +26,8 @@ public class Scope {
     public static QualifiedName namespace;
 
     public Scope() {}
+    
+    public LinkedList<Variable> vars = new LinkedList<Variable>();
 
     public static Scope getScope() {
 	return get().scopeStack.peek();
@@ -37,6 +43,15 @@ public class Scope {
 
     public static void pop() {
 	get().scopeStack.pop();
+    }
+
+    public boolean hasVar(String id) {
+	for(Variable var : vars) if(var.id.equals(id)) return true;
+	return false;
+    }
+    
+    public void addVar(Variable var){
+	vars.add(var);
     }
 
 }
