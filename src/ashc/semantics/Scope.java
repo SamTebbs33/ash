@@ -8,21 +8,20 @@ import ashc.semantics.Semantics.TypeI;
  * @author samtebbs, 15:08:08 - 23 May 2015
  */
 public class Scope {
-    
+
     public static class FuncScope extends Scope {
-	
+
 	public TypeI returnType;
 
-	public FuncScope(TypeI typeI) {
-	    returnType = typeI;   
+	public FuncScope(final TypeI typeI) {
+	    returnType = typeI;
 	}
-	
+
     }
 
     public static QualifiedName namespace;
 
-    public Scope() {
-    }
+    public Scope() {}
 
     public static Scope getScope() {
 	return get().scopeStack.peek();

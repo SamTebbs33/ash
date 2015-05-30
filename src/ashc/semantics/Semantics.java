@@ -7,8 +7,6 @@ import ashc.load.*;
 import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
-import ashc.semantics.Semantics.TypeI;
-import static ashc.error.Error.semanticError;
 
 /**
  * Ash
@@ -62,8 +60,9 @@ public class Semantics {
 
 	@Override
 	public String toString() {
-	    StringBuffer arrBuffer = new StringBuffer();
-	    for(int i = 0; i < arrDims; i++) arrBuffer.append("[]");
+	    final StringBuffer arrBuffer = new StringBuffer();
+	    for (int i = 0; i < arrDims; i++)
+		arrBuffer.append("[]");
 	    return String.format("%s%s%s", shortName, optional ? "?" : "", arrBuffer.toString());
 	}
 
@@ -71,9 +70,9 @@ public class Semantics {
 	    return shortName.equals("void");
 	}
 
-	public boolean canBeAssignedTo(TypeI exprType) {
-	    if(this.equals(exprType)) return true;
-	    return exprType.arrDims == this.arrDims && this.optional == exprType.optional && (exprType.shortName.equals("null") || Semantics.typeHasSuper(exprType.shortName, this.shortName));
+	public boolean canBeAssignedTo(final TypeI exprType) {
+	    if (equals(exprType)) return true;
+	    return exprType.arrDims == arrDims && optional == exprType.optional && (exprType.shortName.equals("null") || Semantics.typeHasSuper(exprType.shortName, shortName));
 	}
 
     }
@@ -82,17 +81,15 @@ public class Semantics {
 	return typeName.equals("void") || EnumPrimitive.isPrimitive(typeName) || typeNameMap.containsKey(typeName);
     }
 
-    public static boolean typeHasSuper(String type, String superType) {
-	Optional<Type> t = getType(type), superT = getType(superType);
-	if(t.isPresent() && superT.isPresent()){
-	   return t.get().hasSuper(superT.get().qualifiedName);
-	}
+    public static boolean typeHasSuper(final String type, final String superType) {
+	final Optional<Type> t = getType(type), superT = getType(superType);
+	if (t.isPresent() && superT.isPresent()) return t.get().hasSuper(superT.get().qualifiedName);
 	return false;
     }
 
     public static void addType(final Type type) {
 	types.put(type.qualifiedName, type);
-	typeStack.push(type);
+	enterType(type);
 	bindName(type.qualifiedName);
     }
 
@@ -172,15 +169,19 @@ public class Semantics {
     public static TypeI getFuncType(final String id, final NodeExprs args) {
 	return getFuncType(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args);
     }
-    
-    public static Function getFunc(String id, TypeI type, NodeExprs args) {
+
+    public static Function getFunc(final String id, final TypeI type, final NodeExprs args) {
 	final Optional<Type> t = getType(type.shortName);
 	if (t.isPresent()) return t.get().getFunc(id, args);
 	return null;
     }
 
-    public static Function getFunc(String id, NodeExprs args) {
+    public static Function getFunc(final String id, final NodeExprs args) {
 	return getFunc(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args);
+    }
+
+    public static void enterType(final Type type) {
+	typeStack.push(type);
     }
 
 }

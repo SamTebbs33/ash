@@ -134,6 +134,8 @@ public abstract class Node {
 	public NodeArgs args;
 	public Token id;
 
+	public Type type;
+
 	public NodeTypeDec(final int line, final int column) {
 	    super(line, column);
 	}
@@ -168,8 +170,8 @@ public abstract class Node {
 
 	    if (types != null) for (final NodeType type : types.types)
 		if (type.optional) semanticError(this, line, column, CANNOT_EXTEND_OPTIONAL_TYPE, type.id);
-
-	    Semantics.addType(new Type(name, modifiers, getType()));
+	    type = new Type(name, modifiers, getType());
+	    Semantics.addType(type);
 	}
 
 	@Override
@@ -183,17 +185,16 @@ public abstract class Node {
 		    if (!typeOpt.isPresent()) semanticError(line, column, TYPE_DOES_NOT_EXIST, typeNode.id);
 		    else {
 			final Type type = typeOpt.get();
-			if (type.type == EnumType.CLASS){
-			    if(getType() == EnumType.CLASS){
-				if (hasSuperClass) semanticError(this, line, column, CANNOT_EXTEND_MULTIPLE_CLASSES, typeNode.id);
-				else hasSuperClass = true;
-			    }else semanticError(this, line, column, CANNOT_EXTEND_TYPE, "an", this.getType().name().toLowerCase(), "a", "class", typeNode.id);
-			}
+			if (type.type == EnumType.CLASS) if (getType() == EnumType.CLASS) {
+			    if (hasSuperClass) semanticError(this, line, column, CANNOT_EXTEND_MULTIPLE_CLASSES, typeNode.id);
+			    else hasSuperClass = true;
+			} else semanticError(this, line, column, CANNOT_EXTEND_TYPE, "an", getType().name().toLowerCase(), "a", "class", typeNode.id);
 			if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
 			if (type.type == EnumType.ENUM && getType() != EnumType.ENUM) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
 		    }
 		}
 	    }
+	    Semantics.enterType(type);
 	}
 
 	protected abstract EnumType getType();
@@ -233,11 +234,12 @@ public abstract class Node {
 	    block.preAnalyse();
 	    Semantics.exitType();
 	}
-	
+
 	@Override
-	public void analyse(){
+	public void analyse() {
 	    super.analyse();
 	    block.analyse();
+	    Semantics.exitType();
 	}
 
 	@Override
@@ -276,10 +278,10 @@ public abstract class Node {
     }
 
     public static class NodeInterfaceDec extends NodeTypeDec {
-	
+
 	NodeClassBlock block;
 
-	public NodeInterfaceDec(int line, int column, LinkedList<NodeModifier> mods, NodeTypes types, NodeArgs args, Token id, NodeClassBlock block) {
+	public NodeInterfaceDec(final int line, final int column, final LinkedList<NodeModifier> mods, final NodeTypes types, final NodeArgs args, final Token id, final NodeClassBlock block) {
 	    super(line, column, mods, types, args, id);
 	    this.block = block;
 	}
@@ -300,6 +302,7 @@ public abstract class Node {
 	public void analyse() {
 	    super.analyse();
 	    block.analyse();
+	    Semantics.exitType();
 	}
 
     }
@@ -330,11 +333,16 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
+	    int i = 0;
 	    for (final NodeArg arg : args) {
 		arg.analyse();
-		for (final NodeArg arg2 : args)
-		    if (arg.id.equals(arg2.id)) semanticError(this, line, column, DUPLICATE_ARGUMENTS, arg2.id);
+		int j = 0;
+		for (final NodeArg arg2 : args) {
+		    if (i != j && arg.id.equals(arg2.id)) semanticError(this, line, column, DUPLICATE_ARGUMENTS, arg2.id);
+		    j++;
+		}
 	    }
+	    i++;
 	}
     }
 
@@ -497,10 +505,10 @@ public abstract class Node {
 	public void analyse() {
 	    args.analyse();
 	    type.analyse();
-	    if(throwsType != null){
+	    if (throwsType != null) {
 		throwsType.analyse();
-		Optional<Type> type = Semantics.getType(throwsType.id);
-		if(type.isPresent()) if(!type.get().hasSuper((new QualifiedName("")).add("java").add("lang").add("Throwable"))) semanticError(this, line, column, TYPE_DOES_NOT_EXTEND, throwsType.id, "java.lang.Throwable");
+		final Optional<Type> type = Semantics.getType(throwsType.id);
+		if (type.isPresent()) if (!type.get().hasSuper(new QualifiedName("").add("java").add("lang").add("Throwable"))) semanticError(this, line, column, TYPE_DOES_NOT_EXTEND, throwsType.id, "java.lang.Throwable");
 	    }
 	    Scope.push(new FuncScope(new TypeI(type.id, type.arrDims, type.optional)));
 	    block.analyse();
@@ -593,19 +601,20 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    if(singleLineExpr != null){
-		FuncScope scope = (FuncScope) Scope.getScope();
-		TypeI exprType = singleLineExpr.getExprType();
-		if(scope.returnType.isVoid()) semanticError(this, line, column, RETURN_EXPR_IN_VOID_FUNC);
-		else if(!scope.returnType.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, scope.returnType.toString(), exprType.toString());
+	    if (singleLineExpr != null) {
+		final FuncScope scope = (FuncScope) Scope.getScope();
+		final TypeI exprType = singleLineExpr.getExprType();
+		if (scope.returnType.isVoid()) semanticError(this, line, column, RETURN_EXPR_IN_VOID_FUNC);
+		else if (!scope.returnType.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, scope.returnType.toString(), exprType.toString());
 	    }
-	    for(IFuncStmt stmt : stmts) ((Node)stmt).analyse();
+	    for (final IFuncStmt stmt : stmts)
+		((Node) stmt).analyse();
 	}
 
     }
 
     public static class NodePrefix extends Node implements IFuncStmt,
-    IExpression {
+	    IExpression {
 
 	public NodePrefix(final int line, final int column) {
 	    super(line, column);
@@ -655,12 +664,9 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    Function func = null;
-	    if(prefix == null) func = Semantics.getFunc(id, args);
+	    if (prefix == null) func = Semantics.getFunc(id, args);
 	    else func = Semantics.getFunc(id, prefix.getExprType(), args);
-	    
-	    if(func == null){
-		semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id);
-	    }
+	    if (func == null) semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id);
 	}
 
     }
@@ -917,14 +923,14 @@ public abstract class Node {
 	    return new TypeI(Semantics.typeStack.peek().qualifiedName.shortName, 0, false);
 	}
     }
-    
+
     public static class NodeNull extends Node implements IExpression {
 
 	@Override
 	public TypeI getExprType() {
 	    return new TypeI("null", 0, true);
 	}
-	
+
     }
 
 }

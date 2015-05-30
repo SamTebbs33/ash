@@ -1,7 +1,6 @@
-
 class Test : String {
 	func foo2(){}
-	func foo(){
-		foo2()
+	func foo(a : int){
+		foo(2)
 	}
 }

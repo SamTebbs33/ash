@@ -29,7 +29,7 @@ public class TypeImporter {
 		type.functions.add(Function.fromMethod(method));
 	    for (final Field field : cls.getFields())
 		type.fields.add(ashc.semantics.Member.Field.from(field));
-	    Semantics.addType(type);
+	    Semantics.exitType();
 	} catch (final ClassNotFoundException e) {
 	    e.printStackTrace();
 	}
