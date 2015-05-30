@@ -333,16 +333,19 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    int i = 0;
-	    for (final NodeArg arg : args) {
-		arg.analyse();
-		int j = 0;
-		for (final NodeArg arg2 : args) {
-		    if (i != j && arg.id.equals(arg2.id)) semanticError(this, line, column, DUPLICATE_ARGUMENTS, arg2.id);
-		    j++;
+	    for(int i = 0; i < args.size(); i++){
+		boolean hasDupes = false;
+		for(int j = 0; j < args.size(); j++){
+		    if(i != j){
+			if(args.get(i).id.equals(args.get(j).id)){
+			    hasDupes = true;
+			    semanticError(this, line, column, DUPLICATE_ARGUMENTS, args.get(i).id);
+			    break;
+			}
+		    }
 		}
+		if(hasDupes) continue;
 	    }
-	    i++;
 	}
     }
 

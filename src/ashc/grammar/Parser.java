@@ -494,8 +494,13 @@ public class Parser {
 	expect(TokenType.PARENL);
 	final NodeArgs args = new NodeArgs();
 	NodeArg arg;
-	while ((arg = parseArg()) != null)
+	if((arg = parseArg()) != null){
 	    args.add(arg);
+	    while(getNext().type == TokenType.COMMA){
+		args.add(parseArg());
+	    }
+	    rewind();
+	}
 	expect(TokenType.PARENR);
 	return args;
     }
