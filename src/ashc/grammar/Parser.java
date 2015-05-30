@@ -44,7 +44,6 @@ import ashc.grammar.Node.NodeUnary;
 import ashc.grammar.Node.NodeVarAssign;
 import ashc.grammar.Node.NodeVarDec;
 import ashc.grammar.Node.NodeVarDecExplicit;
-import ashc.grammar.Node.NodeVarDecExplicitAssign;
 import ashc.grammar.Node.NodeVarDecImplicit;
 import ashc.grammar.Node.NodeVariable;
 
@@ -463,10 +462,10 @@ public class Parser {
 	TokenType type = next.type;
 	if (type == TokenType.COLON) {
 	    final NodeType nodeType = parseType();
-	    varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType);
+	    varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, null);
 	    next = getNext();
 	    type = next.type;
-	    if (type == TokenType.ASSIGNOP) varDec = new NodeVarDecExplicitAssign(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, parseExpression());
+	    if (type == TokenType.ASSIGNOP) varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, parseExpression());
 	    else rewind();
 	} else varDec = new NodeVarDecImplicit(id.line, id.columnStart, mods, keyword.data, id.data, parseExpression());
 	return varDec;

@@ -542,11 +542,14 @@ public abstract class Node {
 
     public static class NodeVarDecExplicit extends NodeVarDec {
 	public NodeType type;
+	public IExpression expr;
+	
 	public TypeI typeI;
 
-	public NodeVarDecExplicit(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, final NodeType type) {
+	public NodeVarDecExplicit(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, final NodeType type, IExpression expr) {
 	    super(line, column, mods, keyword, id);
 	    this.type = type;
+	    this.expr = expr;
 	}
 
 	@Override
@@ -566,24 +569,13 @@ public abstract class Node {
 	    super.analyse();
 	    typeI = new TypeI(type.id, type.arrDims, type.optional);
 	    if(!errored) Scope.getScope().addVar(new Variable(id, typeI));
-	    if(type.optional) semanticError(this, line, column, MISSING_ASSIGNMENT);
-	}
-
-    }
-
-    public static class NodeVarDecExplicitAssign extends NodeVarDecExplicit {
-	public IExpression expr;
-
-	public NodeVarDecExplicitAssign(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, final NodeType type, final IExpression expr) {
-	    super(line, column, mods, keyword, id, type);
-	    this.expr = expr;
-	}
-
-	@Override
-	public void analyse() {
-	    super.analyse();
-	    TypeI exprType = expr.getExprType();
-	    if(!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType.toString(), typeI.toString());
+	    
+	    if(expr == null){
+		if(!type.optional && !(EnumPrimitive.isPrimitive(type.id) && type.arrDims == 0)) semanticError(this, line, column, MISSING_ASSIGNMENT);
+	    }else{
+		TypeI exprType = expr.getExprType();
+		if(!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType.toString(), typeI.toString());
+	    }
 	}
 
     }

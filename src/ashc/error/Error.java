@@ -23,7 +23,7 @@ public class Error {
 	
 	VAR_ALREADY_EXISTS("Variable already exists (%s)"),
 	
-	MISSING_ASSIGNMENT("Variable assignment expected"),
+	MISSING_ASSIGNMENT("Assignment expected"),
 
 	CANNOT_EXTEND_FINAL_TYPE("Cannot extend a final type (%s)"),
 	CANNOT_EXTEND_TYPE("%s %s cannot extend %s %s (%s)"),
