@@ -565,6 +565,7 @@ public abstract class Node {
 	public void analyse() {
 	    super.analyse();
 	    type.analyse();
+	    if(expr != null) ((Node)expr).analyse();
 	    typeI = new TypeI(type.id, type.arrDims, type.optional);
 	    if (!errored) Scope.getScope().addVar(new Variable(id, typeI));
 
@@ -574,6 +575,7 @@ public abstract class Node {
 		final TypeI exprType = expr.getExprType();
 		if (!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType.toString(), typeI.toString());
 	    }
+	    Semantics.addVar(new Variable(id, typeI));
 	}
 
     }
@@ -601,7 +603,8 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    super.analyse();
-	    if (!errored) Scope.getScope().addVar(new Variable(id, expr.getExprType()));
+	    if(expr != null) ((Node)expr).analyse();
+	    if (!errored) Semantics.addVar(new Variable(id, expr.getExprType()));
 	}
 
     }

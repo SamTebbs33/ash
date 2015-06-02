@@ -124,12 +124,18 @@ public class Member {
     }
 
     public static class Variable {
+	
 	public String id;
 	public TypeI type;
 
 	public Variable(final String id, final TypeI type) {
 	    this.id = id;
 	    this.type = type;
+	}
+
+	@Override
+	public String toString() {
+	    return "Variable [id=" + id + ", type=" + type + "]";
 	}
     }
 

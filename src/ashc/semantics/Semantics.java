@@ -8,6 +8,7 @@ import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
+import ashc.semantics.Scope.FuncScope;
 
 /**
  * Ash
@@ -164,6 +165,9 @@ public class Semantics {
     }
 
     public static Variable getVar(final String id) {
+	// Look in scope
+	for(Variable var : Scope.getScope().vars) if(var.id.equals(id)) return var;
+	// Else, look in the current type
 	return getVar(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false));
     }
 
@@ -199,6 +203,13 @@ public class Semantics {
 	for (final Field field : typeStack.peek().fields)
 	    if (field.qualifiedName.shortName.equals(id)) return true;
 	return false;
+    }
+
+    public static void addVar(Variable variable) {
+	if(Scope.getScope() instanceof FuncScope){
+	    // We are in a function, so add a local variable to the function's scope
+	    Scope.getScope().addVar(variable);
+	}
     }
 
 }

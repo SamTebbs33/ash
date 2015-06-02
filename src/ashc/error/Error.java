@@ -24,7 +24,7 @@ public class Error {
 	VAR_ALREADY_EXISTS("Variable already exists (%s)"),
 
 	MISSING_ASSIGNMENT("Assignment expected"),
-	TOO_MANY_ARRAY_ACCESSES("Variable attempts to access %d array dimensions but the variable only has %d (%s)"),
+	TOO_MANY_ARRAY_ACCESSES("Attempted to access %s array dimension(s) on a variable with %s dimension(s) (%s)"),
 	ARRAY_INDEX_NOT_NUMERIC("Array index must be numeric (%s)"),
 
 	CANNOT_EXTEND_FINAL_TYPE("Cannot extend a final type (%s)"),
