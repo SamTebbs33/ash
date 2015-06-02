@@ -699,7 +699,7 @@ public abstract class Node {
 
 	public String id;
 	public NodePrefix prefix;
-	public NodeExprs exprs;
+	public NodeExprs exprs = new NodeExprs();
 
 	public NodeVariable(final int line, final int column, final String id, final NodePrefix prefix) {
 	    super(line, column);
@@ -734,7 +734,7 @@ public abstract class Node {
 	    }
 	    if (var != null) {
 		final TypeI varType = var.type;
-		if (exprs.exprs.size() > varType.arrDims) semanticError(this, line, column, VAR_IS_NOT_ARRAY, id);
+		if (exprs.exprs.size() > varType.arrDims) semanticError(this, line, column, TOO_MANY_ARRAY_ACCESSES, exprs.exprs.size()+"", varType.arrDims+"", id);
 		if (!errored) for (final IExpression expr : exprs.exprs) {
 		    final TypeI indexType = expr.getExprType();
 		    if (!EnumPrimitive.validForArrayIndex(indexType)) semanticError(this, line, column, ARRAY_INDEX_NOT_NUMERIC, indexType.toString());

@@ -61,10 +61,11 @@ public class Semantics {
 
 	@Override
 	public String toString() {
+	    if(isNull() || isVoid()) return shortName;
 	    final StringBuffer arrBuffer = new StringBuffer();
 	    for (int i = 0; i < arrDims; i++)
 		arrBuffer.append("[]");
-	    return String.format("%s%s%s", shortName, optional ? "?" : "", arrBuffer.toString());
+	    return String.format("%s%s%s", shortName, arrBuffer.toString(), optional ? "?" : "");
 	}
 
 	public boolean isVoid() {
@@ -72,18 +73,16 @@ public class Semantics {
 	}
 
 	public boolean canBeAssignedTo(final TypeI exprType) {
-	    // Types can be assigned to each other if they are both numeric and
-	    // have the same number of array dimensions,
-	    // the argument has this type as a super-type and has the same
-	    // number of array dimensions
-	    // or if one is null and the other isn't numeric
 	    if (equals(exprType)) return true;
+	    // If the expr is null, and this is optional, and it has more than 0 array dimensions
+	    if(exprType.isNull() && this.optional && (!EnumPrimitive.isPrimitive(shortName) || arrDims > 0)) return true;
+	    // If they are both numeric and the array dimensions are 0
 	    if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && arrDims == exprType.arrDims) return true;
 	    return exprType.arrDims == arrDims && optional == exprType.optional && (exprType.isNull() && !EnumPrimitive.isNumeric(shortName) || Semantics.typeHasSuper(exprType.shortName, shortName));
 	}
 
 	private boolean isNull() {
-	    return !shortName.equals("null");
+	    return shortName.equals("null");
 	}
 
     }

@@ -347,6 +347,11 @@ public class Parser {
 	    } else {
 		rewind();
 		prefix = new NodeVariable(id.line, id.columnStart, id.data, prefix);
+		while(getNext().type == TokenType.BRACKETL){
+		    ((NodeVariable)prefix).exprs.exprs.add(parseExpression());
+		    expect(TokenType.BRACKETR);
+		}
+		rewind();
 	    }
 
 	} while (getNext().type == TokenType.DOT);
@@ -516,13 +521,13 @@ public class Parser {
     private NodeType parseType() throws UnexpectedTokenException {
 	final Token id = expect(TokenType.ID, TokenType.PRIMITIVE);
 	final NodeType type = new NodeType(id.data);
-	if (getNext().type == TokenType.QUESTIONMARK) type.optional = true;
-	else rewind();
 	while (getNext().type == TokenType.BRACKETL) {
 	    expect(TokenType.BRACKETR);
 	    type.arrDims++;
 	}
 	rewind();
+	if (getNext().type == TokenType.QUESTIONMARK) type.optional = true;
+	else rewind();
 	return type;
     }
 
