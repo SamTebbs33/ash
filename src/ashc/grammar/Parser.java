@@ -442,7 +442,7 @@ public class Parser {
 	final Token next = getNext();
 
 	switch (next.type) {
-	    // Postfix unary expression
+	// Postfix unary expression
 	    case UNARYOP:
 		return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
 	    case QUESTIONMARK:
@@ -493,11 +493,10 @@ public class Parser {
 	expect(TokenType.PARENL);
 	final NodeArgs args = new NodeArgs();
 	NodeArg arg;
-	if((arg = parseArg()) != null){
+	if ((arg = parseArg()) != null) {
 	    args.add(arg);
-	    while(getNext().type == TokenType.COMMA){
+	    while (getNext().type == TokenType.COMMA)
 		args.add(parseArg());
-	    }
 	    rewind();
 	}
 	expect(TokenType.PARENR);

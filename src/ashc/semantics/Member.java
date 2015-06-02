@@ -123,13 +123,25 @@ public class Member {
 
     }
 
-    public static class Field extends Member {
-
+    public static class Variable {
+	public String id;
 	public TypeI type;
 
-	public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type) {
-	    super(qualifiedName, modifiers);
+	public Variable(final String id, final TypeI type) {
+	    this.id = id;
 	    this.type = type;
+	}
+    }
+
+    public static class Field extends Variable {
+
+	public QualifiedName qualifiedName;
+	public int modifiers;
+
+	public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type) {
+	    super(qualifiedName.shortName, type);
+	    this.qualifiedName = qualifiedName;
+	    this.modifiers = modifiers;
 	}
 
 	public static Field from(final java.lang.reflect.Field field) {
@@ -146,15 +158,6 @@ public class Member {
 	    return false;
 	}
 
-    }
-    
-    public static class Variable {
-	public String id;
-	public TypeI type;
-	public Variable(String id, TypeI type) {
-	    this.id = id;
-	    this.type = type;
-	}
     }
 
 }

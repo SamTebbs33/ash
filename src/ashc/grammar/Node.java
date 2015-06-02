@@ -334,18 +334,15 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    for(int i = 0; i < args.size(); i++){
+	    for (int i = 0; i < args.size(); i++) {
 		boolean hasDupes = false;
-		for(int j = 0; j < args.size(); j++){
-		    if(i != j){
-			if(args.get(i).id.equals(args.get(j).id)){
-			    hasDupes = true;
-			    semanticError(this, line, column, DUPLICATE_ARGUMENTS, args.get(i).id);
-			    break;
-			}
+		for (int j = 0; j < args.size(); j++)
+		    if (i != j) if (args.get(i).id.equals(args.get(j).id)) {
+			hasDupes = true;
+			semanticError(this, line, column, DUPLICATE_ARGUMENTS, args.get(i).id);
+			break;
 		    }
-		}
-		if(hasDupes) continue;
+		if (hasDupes) continue;
 	    }
 	}
     }
@@ -535,7 +532,7 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    if(Semantics.varExists(id)) semanticError(this, line, column, VAR_ALREADY_EXISTS, id);
+	    if (Semantics.varExists(id)) semanticError(this, line, column, VAR_ALREADY_EXISTS, id);
 	}
 
     }
@@ -543,10 +540,10 @@ public abstract class Node {
     public static class NodeVarDecExplicit extends NodeVarDec {
 	public NodeType type;
 	public IExpression expr;
-	
+
 	public TypeI typeI;
 
-	public NodeVarDecExplicit(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, final NodeType type, IExpression expr) {
+	public NodeVarDecExplicit(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, final NodeType type, final IExpression expr) {
 	    super(line, column, mods, keyword, id);
 	    this.type = type;
 	    this.expr = expr;
@@ -563,18 +560,19 @@ public abstract class Node {
 	    if (!Semantics.fieldExists(field)) Semantics.addField(field);
 	    else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
 	}
-	
+
 	@Override
 	public void analyse() {
 	    super.analyse();
+	    type.analyse();
 	    typeI = new TypeI(type.id, type.arrDims, type.optional);
-	    if(!errored) Scope.getScope().addVar(new Variable(id, typeI));
-	    
-	    if(expr == null){
-		if(!type.optional && !(EnumPrimitive.isPrimitive(type.id) && type.arrDims == 0)) semanticError(this, line, column, MISSING_ASSIGNMENT);
-	    }else{
-		TypeI exprType = expr.getExprType();
-		if(!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType.toString(), typeI.toString());
+	    if (!errored) Scope.getScope().addVar(new Variable(id, typeI));
+
+	    if (expr == null) {
+		if (!type.optional && !(EnumPrimitive.isPrimitive(type.id) && type.arrDims == 0)) semanticError(this, line, column, MISSING_ASSIGNMENT);
+	    } else {
+		final TypeI exprType = expr.getExprType();
+		if (!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType.toString(), typeI.toString());
 	    }
 	}
 
@@ -598,6 +596,12 @@ public abstract class Node {
 	    final Field field = new Field(name, modifiers, expr.getExprType());
 	    if (!Semantics.fieldExists(field)) Semantics.addField(field);
 	    else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
+	}
+
+	@Override
+	public void analyse() {
+	    super.analyse();
+	    if (!errored) Scope.getScope().addVar(new Variable(id, expr.getExprType()));
 	}
 
     }
@@ -626,7 +630,7 @@ public abstract class Node {
     }
 
     public static class NodePrefix extends Node implements IFuncStmt,
-	    IExpression {
+    IExpression {
 
 	public NodePrefix(final int line, final int column) {
 	    super(line, column);
@@ -645,6 +649,13 @@ public abstract class Node {
 	public void add(final IExpression expr) {
 	    exprs.add(expr);
 	}
+
+	@Override
+	public void analyse() {
+	    for (final IExpression expr : exprs)
+		((Node) expr).analyse();
+	}
+
     }
 
     public static class NodeFuncCall extends NodePrefix {
@@ -676,6 +687,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    Function func = null;
+	    args.analyse();
 	    if (prefix == null) func = Semantics.getFunc(id, args);
 	    else func = Semantics.getFunc(id, prefix.getExprType(), args);
 	    if (func == null) semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id);
@@ -687,6 +699,7 @@ public abstract class Node {
 
 	public String id;
 	public NodePrefix prefix;
+	public NodeExprs exprs;
 
 	public NodeVariable(final int line, final int column, final String id, final NodePrefix prefix) {
 	    super(line, column);
@@ -704,10 +717,28 @@ public abstract class Node {
 	    if (prefix == null) {
 		final Optional<Type> type = Semantics.getType(id);
 		if (type.isPresent()) return new TypeI(type.get().qualifiedName.shortName, 0, false);
-		else return Semantics.getVarType(id);
+		else return Semantics.getVar(id).type;
 	    } else {
 		final TypeI type = prefix.getExprType();
-		return Semantics.getVarType(id, type);
+		return Semantics.getVar(id, type).type;
+	    }
+	}
+
+	@Override
+	public void analyse() {
+	    Variable var = null;
+	    if (prefix == null) var = Semantics.getVar(id);
+	    else {
+		final TypeI type = prefix.getExprType();
+		var = Semantics.getVar(id, type);
+	    }
+	    if (var != null) {
+		final TypeI varType = var.type;
+		if (exprs.exprs.size() > varType.arrDims) semanticError(this, line, column, VAR_IS_NOT_ARRAY, id);
+		if (!errored) for (final IExpression expr : exprs.exprs) {
+		    final TypeI indexType = expr.getExprType();
+		    if (!EnumPrimitive.validForArrayIndex(indexType)) semanticError(this, line, column, ARRAY_INDEX_NOT_NUMERIC, indexType.toString());
+		}
 	    }
 	}
 

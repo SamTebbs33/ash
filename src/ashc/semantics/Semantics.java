@@ -7,6 +7,7 @@ import ashc.load.*;
 import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
+import ashc.semantics.Member.Variable;
 
 /**
  * Ash
@@ -71,8 +72,18 @@ public class Semantics {
 	}
 
 	public boolean canBeAssignedTo(final TypeI exprType) {
+	    // Types can be assigned to each other if they are both numeric and
+	    // have the same number of array dimensions,
+	    // the argument has this type as a super-type and has the same
+	    // number of array dimensions
+	    // or if one is null and the other isn't numeric
 	    if (equals(exprType)) return true;
-	    return exprType.arrDims == arrDims && optional == exprType.optional && (exprType.shortName.equals("null") || Semantics.typeHasSuper(exprType.shortName, shortName));
+	    if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && arrDims == exprType.arrDims) return true;
+	    return exprType.arrDims == arrDims && optional == exprType.optional && (exprType.isNull() && !EnumPrimitive.isNumeric(shortName) || Semantics.typeHasSuper(exprType.shortName, shortName));
+	}
+
+	private boolean isNull() {
+	    return !shortName.equals("null");
 	}
 
     }
@@ -144,17 +155,17 @@ public class Semantics {
 	return null;
     }
 
-    public static TypeI getVarType(final String id, final TypeI type) {
-	if (type.arrDims > 0 && id.equals("length")) return new TypeI(EnumPrimitive.INT);
+    public static Variable getVar(final String id, final TypeI type) {
+	if (type.arrDims > 0 && id.equals("length")) return new Variable("length", new TypeI(EnumPrimitive.INT));
 	else {
 	    final Optional<Type> t = getType(type.shortName);
-	    if (t.isPresent()) return t.get().getField(id).type;
+	    if (t.isPresent()) return t.get().getField(id);
 	}
 	return null;
     }
 
-    public static TypeI getVarType(final String id) {
-	return getVarType(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false));
+    public static Variable getVar(final String id) {
+	return getVar(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false));
     }
 
     public static TypeI getFuncType(final String id, final TypeI type, final NodeExprs args) {
@@ -184,9 +195,10 @@ public class Semantics {
 	typeStack.push(type);
     }
 
-    public static boolean varExists(String id) {
-	if(Scope.getScope().hasVar(id)) return true;
-	for(Field field : typeStack.peek().fields) if(field.qualifiedName.shortName.equals(id)) return true;
+    public static boolean varExists(final String id) {
+	if (Scope.getScope().hasVar(id)) return true;
+	for (final Field field : typeStack.peek().fields)
+	    if (field.qualifiedName.shortName.equals(id)) return true;
 	return false;
     }
 

@@ -26,7 +26,7 @@ public class Scope {
     public static QualifiedName namespace;
 
     public Scope() {}
-    
+
     public LinkedList<Variable> vars = new LinkedList<Variable>();
 
     public static Scope getScope() {
@@ -45,12 +45,13 @@ public class Scope {
 	get().scopeStack.pop();
     }
 
-    public boolean hasVar(String id) {
-	for(Variable var : vars) if(var.id.equals(id)) return true;
+    public boolean hasVar(final String id) {
+	for (final Variable var : vars)
+	    if (var.id.equals(id)) return true;
 	return false;
     }
-    
-    public void addVar(Variable var){
+
+    public void addVar(final Variable var) {
 	vars.add(var);
     }
 

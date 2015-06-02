@@ -20,10 +20,12 @@ public class Error {
 	RETURN_EXPR_IN_VOID_FUNC("Cannot return an expression in a void function"),
 
 	FIELD_ALREADY_EXISTS("Field already exists (%s)"),
-	
+
 	VAR_ALREADY_EXISTS("Variable already exists (%s)"),
-	
+
 	MISSING_ASSIGNMENT("Assignment expected"),
+	VAR_IS_NOT_ARRAY("Variable is not an array (%s)"),
+	ARRAY_INDEX_NOT_NUMERIC("Array index must be numeric (%s)"),
 
 	CANNOT_EXTEND_FINAL_TYPE("Cannot extend a final type (%s)"),
 	CANNOT_EXTEND_TYPE("%s %s cannot extend %s %s (%s)"),
