@@ -22,6 +22,7 @@ public class Error {
 	FIELD_ALREADY_EXISTS("Field already exists (%s)"),
 
 	VAR_ALREADY_EXISTS("Variable already exists (%s)"),
+	VAR_DOES_NOT_EXIST("Variable does not exist (%s)"),
 
 	MISSING_ASSIGNMENT("Assignment expected"),
 	TOO_MANY_ARRAY_ACCESSES("Attempted to access %s array dimension(s) on a variable with %s dimension(s) (%s)"),
@@ -46,12 +47,12 @@ public class Error {
 	}
     }
 
-    public static void semanticError(final int line, final int column, final EnumError error, final String... args) {
-	System.err.printf("Error [%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
-	System.err.printf(error.format + "%n", (Object[]) args);
+    public static void semanticError(final int line, final int column, final EnumError error, final Object... args) {
+	System.err.printf("Error[%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
+	System.err.printf(error.format + "%n", args);
     }
 
-    public static void semanticError(final Node node, final int line, final int column, final EnumError error, final String... args) {
+    public static void semanticError(final Node node, final int line, final int column, final EnumError error, final Object... args) {
 	node.errored = true;
 	semanticError(line, column, error, args);
     }

@@ -1,6 +1,6 @@
 class Test {
 	func foo(a : int) : int {
-		const a : String[]? = null
+		const a : String[] = b
 		var b = a
 	}
 }

@@ -573,7 +573,7 @@ public abstract class Node {
 		if (!type.optional && !(EnumPrimitive.isPrimitive(type.id) && type.arrDims == 0)) semanticError(this, line, column, MISSING_ASSIGNMENT);
 	    } else {
 		final TypeI exprType = expr.getExprType();
-		if (!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType.toString(), typeI.toString());
+		if(exprType != null) if (!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType, typeI.toString());
 	    }
 	    Semantics.addVar(new Variable(id, typeI));
 	}
@@ -717,14 +717,21 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
+	    Variable var = null;
 	    if (prefix == null) {
 		final Optional<Type> type = Semantics.getType(id);
 		if (type.isPresent()) return new TypeI(type.get().qualifiedName.shortName, 0, false);
-		else return Semantics.getVar(id).type;
+		else {
+		    var = Semantics.getVar(id);
+		}
 	    } else {
 		final TypeI type = prefix.getExprType();
-		return Semantics.getVar(id, type).type;
+		var = Semantics.getVar(id, type);
 	    }
+	    if(var == null){
+		semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
+		return null;
+	    }else return var.type;
 	}
 
 	@Override

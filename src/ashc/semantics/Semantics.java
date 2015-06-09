@@ -74,6 +74,7 @@ public class Semantics {
 	}
 
 	public boolean canBeAssignedTo(final TypeI exprType) {
+	    if(exprType == null) return false;
 	    if (equals(exprType)) return true;
 	    // If the expr is null, and this is optional, and it has more than 0 array dimensions
 	    if(exprType.isNull() && this.optional && (!EnumPrimitive.isPrimitive(shortName) || arrDims > 0)) return true;
