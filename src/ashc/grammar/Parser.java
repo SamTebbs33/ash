@@ -34,6 +34,7 @@ import ashc.grammar.Node.NodeNull;
 import ashc.grammar.Node.NodePackage;
 import ashc.grammar.Node.NodePrefix;
 import ashc.grammar.Node.NodeQualifiedName;
+import ashc.grammar.Node.NodeReturn;
 import ashc.grammar.Node.NodeString;
 import ashc.grammar.Node.NodeTernary;
 import ashc.grammar.Node.NodeThis;
@@ -57,6 +58,7 @@ public class Parser {
     private final LinkedList<Token> tokens = new LinkedList<Token>();
     private final Lexer lexer;
     private int pointer = 0, line = 1, column = 1;
+    public boolean silenceErrors = false;
 
     public Parser(final Lexer lexer) {
 	this.lexer = lexer;
@@ -143,7 +145,7 @@ public class Parser {
      */
     private Token expect(final TokenType t) throws UnexpectedTokenException {
 	final Token token = getNext();
-	if (token.type != t) throw new UnexpectedTokenException(token, t);
+	if (token.type != t && !silenceErrors) throw new UnexpectedTokenException(token, t);
 	return token;
     }
 
@@ -164,7 +166,7 @@ public class Parser {
 		found = true;
 		break;
 	    }
-	if (!found) throw new UnexpectedTokenException(token, t);
+	if (!found && !silenceErrors) throw new UnexpectedTokenException(token, t);
 	return token;
     }
 
@@ -319,9 +321,14 @@ public class Parser {
     }
 
     private IFuncStmt parseFuncStmt() throws UnexpectedTokenException {
-	final Token token = expect(TokenType.ID, TokenType.VAR, TokenType.CONST);
+	final Token token = expect(TokenType.ID, TokenType.VAR, TokenType.CONST, TokenType.RETURN);
 	rewind();
 	switch (token.type) {
+	    case RETURN:
+		silenceErrors = true;
+		final IExpression expr = parseExpression();
+		silenceErrors = false;
+		return new NodeReturn(token.line, token.columnStart, expr);
 	    case ID:
 		final IFuncStmt stmt = parsePrefix();
 		if (stmt instanceof NodeVariable) {
@@ -347,8 +354,8 @@ public class Parser {
 	    } else {
 		rewind();
 		prefix = new NodeVariable(id.line, id.columnStart, id.data, prefix);
-		while(getNext().type == TokenType.BRACKETL){
-		    ((NodeVariable)prefix).exprs.exprs.add(parseExpression());
+		while (getNext().type == TokenType.BRACKETL) {
+		    ((NodeVariable) prefix).exprs.exprs.add(parseExpression());
 		    expect(TokenType.BRACKETR);
 		}
 		rewind();
@@ -447,7 +454,7 @@ public class Parser {
 	final Token next = getNext();
 
 	switch (next.type) {
-	// Postfix unary expression
+	    // Postfix unary expression
 	    case UNARYOP:
 		return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
 	    case QUESTIONMARK:
@@ -519,8 +526,20 @@ public class Parser {
     }
 
     private NodeType parseType() throws UnexpectedTokenException {
-	final Token id = expect(TokenType.ID, TokenType.PRIMITIVE);
-	final NodeType type = new NodeType(id.data);
+	final NodeType type = new NodeType();
+	// Parse tuple types
+	if (getNext().type == TokenType.PARENL) {
+	    do
+		type.tupleTypes.add(parseType());
+	    while (getNext().type == TokenType.COMMA);
+	    rewind();
+	    expect(TokenType.PARENR);
+	} else {
+	    rewind();
+	    type.id = expect(TokenType.ID, TokenType.PRIMITIVE).data;
+	}
+
+	// Parse array dimensions
 	while (getNext().type == TokenType.BRACKETL) {
 	    expect(TokenType.BRACKETR);
 	    type.arrDims++;

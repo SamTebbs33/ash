@@ -62,7 +62,7 @@ public class Semantics {
 
 	@Override
 	public String toString() {
-	    if(isNull() || isVoid()) return shortName;
+	    if (isNull() || isVoid()) return shortName;
 	    final StringBuffer arrBuffer = new StringBuffer();
 	    for (int i = 0; i < arrDims; i++)
 		arrBuffer.append("[]");
@@ -74,10 +74,11 @@ public class Semantics {
 	}
 
 	public boolean canBeAssignedTo(final TypeI exprType) {
-	    if(exprType == null) return false;
+	    if (exprType == null) return false;
 	    if (equals(exprType)) return true;
-	    // If the expr is null, and this is optional, and it has more than 0 array dimensions
-	    if(exprType.isNull() && this.optional && (!EnumPrimitive.isPrimitive(shortName) || arrDims > 0)) return true;
+	    // If the expr is null, and this is optional, and it has more than 0
+	    // array dimensions
+	    if (exprType.isNull() && optional && (!EnumPrimitive.isPrimitive(shortName) || arrDims > 0)) return true;
 	    // If they are both numeric and the array dimensions are 0
 	    if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && arrDims == exprType.arrDims) return true;
 	    return exprType.arrDims == arrDims && optional == exprType.optional && (exprType.isNull() && !EnumPrimitive.isNumeric(shortName) || Semantics.typeHasSuper(exprType.shortName, shortName));
@@ -167,7 +168,8 @@ public class Semantics {
 
     public static Variable getVar(final String id) {
 	// Look in scope
-	for(Variable var : Scope.getScope().vars) if(var.id.equals(id)) return var;
+	for (final Variable var : Scope.getScope().vars)
+	    if (var.id.equals(id)) return var;
 	// Else, look in the current type
 	return getVar(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false));
     }
@@ -206,11 +208,11 @@ public class Semantics {
 	return false;
     }
 
-    public static void addVar(Variable variable) {
-	if(Scope.getScope() instanceof FuncScope){
-	    // We are in a function, so add a local variable to the function's scope
+    public static void addVar(final Variable variable) {
+	if (Scope.getScope() instanceof FuncScope) // We are in a function, so
+						   // add a local variable to
+						   // the function's scope
 	    Scope.getScope().addVar(variable);
-	}
     }
 
 }

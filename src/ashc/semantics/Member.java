@@ -71,8 +71,15 @@ public class Member {
 	    final LinkedList<TypeI> parameters = new LinkedList<TypeI>();
 	    for (final IExpression arg : args.exprs)
 		parameters.add(arg.getExprType());
+	    return getFunc(id, parameters);
+	}
+
+	public Function getFunc(final String id, final LinkedList<TypeI> parameters) {
 	    for (final Function func : functions)
 		if (func.paramsAreEqual(parameters)) if (func.qualifiedName.shortName.equals(id)) return func;
+	    Function func = null;
+	    for (final Type superType : supers)
+		if ((func = superType.getFunc(id, parameters)) != null) return func;
 	    return null;
 	}
 
@@ -124,7 +131,7 @@ public class Member {
     }
 
     public static class Variable {
-	
+
 	public String id;
 	public TypeI type;
 

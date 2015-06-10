@@ -193,6 +193,7 @@ public abstract class Node {
 			if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
 			if (type.type == EnumType.ENUM && getType() != EnumType.ENUM) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
 		    }
+		    if (!errored) type.supers.add(typeOpt.get());
 		}
 	    }
 	    Semantics.enterType(type);
@@ -423,10 +424,13 @@ public abstract class Node {
 	public String id;
 	public int arrDims;
 	public boolean optional;
+	public LinkedList<NodeType> tupleTypes = new LinkedList<NodeType>();
 
 	public NodeType(final String data) {
 	    id = data;
 	}
+
+	public NodeType() {}
 
 	@Override
 	public void analyse() {
@@ -565,7 +569,7 @@ public abstract class Node {
 	public void analyse() {
 	    super.analyse();
 	    type.analyse();
-	    if(expr != null) ((Node)expr).analyse();
+	    if (expr != null) ((Node) expr).analyse();
 	    typeI = new TypeI(type.id, type.arrDims, type.optional);
 	    if (!errored) Scope.getScope().addVar(new Variable(id, typeI));
 
@@ -573,7 +577,7 @@ public abstract class Node {
 		if (!type.optional && !(EnumPrimitive.isPrimitive(type.id) && type.arrDims == 0)) semanticError(this, line, column, MISSING_ASSIGNMENT);
 	    } else {
 		final TypeI exprType = expr.getExprType();
-		if(exprType != null) if (!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType, typeI.toString());
+		if (exprType != null) if (!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType, typeI.toString());
 	    }
 	    Semantics.addVar(new Variable(id, typeI));
 	}
@@ -603,7 +607,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    super.analyse();
-	    if(expr != null) ((Node)expr).analyse();
+	    if (expr != null) ((Node) expr).analyse();
 	    if (!errored) Semantics.addVar(new Variable(id, expr.getExprType()));
 	}
 
@@ -633,7 +637,7 @@ public abstract class Node {
     }
 
     public static class NodePrefix extends Node implements IFuncStmt,
-    IExpression {
+	    IExpression {
 
 	public NodePrefix(final int line, final int column) {
 	    super(line, column);
@@ -721,17 +725,15 @@ public abstract class Node {
 	    if (prefix == null) {
 		final Optional<Type> type = Semantics.getType(id);
 		if (type.isPresent()) return new TypeI(type.get().qualifiedName.shortName, 0, false);
-		else {
-		    var = Semantics.getVar(id);
-		}
+		else var = Semantics.getVar(id);
 	    } else {
 		final TypeI type = prefix.getExprType();
 		var = Semantics.getVar(id, type);
 	    }
-	    if(var == null){
+	    if (var == null) {
 		semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
 		return null;
-	    }else return var.type;
+	    } else return var.type;
 	}
 
 	@Override
@@ -744,7 +746,7 @@ public abstract class Node {
 	    }
 	    if (var != null) {
 		final TypeI varType = var.type;
-		if (exprs.exprs.size() > varType.arrDims) semanticError(this, line, column, TOO_MANY_ARRAY_ACCESSES, exprs.exprs.size()+"", varType.arrDims+"", id);
+		if (exprs.exprs.size() > varType.arrDims) semanticError(this, line, column, TOO_MANY_ARRAY_ACCESSES, exprs.exprs.size() + "", varType.arrDims + "", id);
 		if (!errored) for (final IExpression expr : exprs.exprs) {
 		    final TypeI indexType = expr.getExprType();
 		    if (!EnumPrimitive.validForArrayIndex(indexType)) semanticError(this, line, column, ARRAY_INDEX_NOT_NUMERIC, indexType.toString());
@@ -765,6 +767,16 @@ public abstract class Node {
 	    this.assignOp = assignOp;
 	    this.expr = expr;
 	}
+    }
+
+    public static class NodeReturn extends Node implements IFuncStmt {
+	public IExpression expr;
+
+	public NodeReturn(final int line, final int column, final IExpression expr) {
+	    super(line, column);
+	    this.expr = expr;
+	}
+
     }
 
     public static class NodeInteger extends Node implements IExpression {
