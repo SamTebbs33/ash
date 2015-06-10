@@ -3,6 +3,7 @@ package ashc.semantics;
 import java.util.*;
 
 import ashc.grammar.Node.NodeExprs;
+import ashc.grammar.Node.NodeType;
 import ashc.load.*;
 import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
@@ -25,11 +26,20 @@ public class Semantics {
 	public String shortName;
 	public int arrDims;
 	public boolean optional;
+	public LinkedList<NodeType> tupleTypes;
 
 	public TypeI(final String shortName, final int arrDims, final boolean optional) {
 	    this.shortName = shortName;
 	    this.arrDims = arrDims;
 	    this.optional = optional;
+	    this.tupleTypes = new LinkedList<NodeType>();
+	}
+	
+	public TypeI(NodeType type){
+	    this.shortName = type.id;
+	    this.arrDims = type.arrDims;
+	    this.optional = type.optional;
+	    this.tupleTypes = type.tupleTypes;
 	}
 
 	public TypeI(final EnumPrimitive primitive) {
@@ -70,7 +80,7 @@ public class Semantics {
 	}
 
 	public boolean isVoid() {
-	    return shortName.equals("void");
+	    return shortName != null ? shortName.equals("void") : false;
 	}
 
 	public boolean canBeAssignedTo(final TypeI exprType) {
@@ -85,7 +95,7 @@ public class Semantics {
 	}
 
 	private boolean isNull() {
-	    return shortName.equals("null");
+	    return shortName != null ? shortName.equals("null") : false;
 	}
 
     }
@@ -199,6 +209,7 @@ public class Semantics {
 
     public static void enterType(final Type type) {
 	typeStack.push(type);
+	System.out.println(typeStack);
     }
 
     public static boolean varExists(final String id) {

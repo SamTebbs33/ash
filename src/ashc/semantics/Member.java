@@ -83,6 +83,11 @@ public class Member {
 	    return null;
 	}
 
+	@Override
+	public String toString() {
+	    return "Type [type=" + type + ", functions=" + functions + ", fields=" + fields + ", supers=" + supers + ", qualifiedName=" + qualifiedName + "]";
+	}
+
     }
 
     public static class Function extends Member {

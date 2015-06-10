@@ -499,9 +499,9 @@ public abstract class Node {
 	    for (final NodeModifier mod : mods)
 		modifiers |= mod.asInt();
 	    final Function func = new Function(name, modifiers);
-	    func.returnType = type != null ? new TypeI(type.id, type.arrDims, type.optional) : null;
+	    func.returnType = type != null ? new TypeI(type) : null;
 	    for (final NodeArg arg : args.args)
-		func.parameters.add(new TypeI(arg.type.id, arg.type.arrDims, arg.type.optional));
+		func.parameters.add(new TypeI(arg.type));
 	    if (!Semantics.funcExists(func)) Semantics.addFunc(func);
 	    else semanticError(this, line, column, FUNC_ALREADY_EXISTS, id);
 	}
@@ -515,7 +515,7 @@ public abstract class Node {
 		final Optional<Type> type = Semantics.getType(throwsType.id);
 		if (type.isPresent()) if (!type.get().hasSuper(new QualifiedName("").add("java").add("lang").add("Throwable"))) semanticError(this, line, column, TYPE_DOES_NOT_EXTEND, throwsType.id, "java.lang.Throwable");
 	    }
-	    Scope.push(new FuncScope(new TypeI(type.id, type.arrDims, type.optional)));
+	    Scope.push(new FuncScope(new TypeI(type)));
 	    block.analyse();
 	    Scope.pop();
 	}
@@ -560,7 +560,7 @@ public abstract class Node {
 	    int modifiers = 0;
 	    for (final NodeModifier mod : mods)
 		modifiers |= mod.asInt();
-	    final Field field = new Field(name, modifiers, new TypeI(type.id, type.arrDims, type.optional));
+	    final Field field = new Field(name, modifiers, new TypeI(type));
 	    if (!Semantics.fieldExists(field)) Semantics.addField(field);
 	    else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
 	}
@@ -570,7 +570,7 @@ public abstract class Node {
 	    super.analyse();
 	    type.analyse();
 	    if (expr != null) ((Node) expr).analyse();
-	    typeI = new TypeI(type.id, type.arrDims, type.optional);
+	    typeI = new TypeI(type);
 	    if (!errored) Scope.getScope().addVar(new Variable(id, typeI));
 
 	    if (expr == null) {
