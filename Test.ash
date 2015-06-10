@@ -1,3 +1,3 @@
 class Test : Object {
-	var a : (int, String)
+	var a : (int)
 }

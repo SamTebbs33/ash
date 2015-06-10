@@ -531,9 +531,7 @@ public class Parser {
 	if (getNext().type == TokenType.PARENL) {
 	    do
 		type.tupleTypes.add(parseType());
-	    while (getNext().type == TokenType.COMMA);
-	    rewind();
-	    expect(TokenType.PARENR);
+	    while (expect(TokenType.COMMA, TokenType.PARENR).type == TokenType.COMMA);
 	} else {
 	    rewind();
 	    type.id = expect(TokenType.ID, TokenType.PRIMITIVE).data;
