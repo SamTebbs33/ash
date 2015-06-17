@@ -76,9 +76,9 @@ public class Semantics {
 		arrBuffer.append("[]");
 	    String id = shortName;
 	    if(isTuple()){
-		id = "(";
-		for(TypeI tupleType : tupleTypes) id += tupleType.toString() + ",";
-		id += ")";
+		id = "[";
+		for(int i = 0; i < tupleTypes.size(); i++) id += tupleTypes.get(i).toString() + (i < tupleTypes.size() - 1 ? ", " : "");
+		id += "]";
 	    }
 	    return String.format("%s%s%s", id, arrBuffer.toString(), optional ? "?" : "");
 	}
@@ -93,9 +93,18 @@ public class Semantics {
 	    // If the expr is null, and this is optional, and it has more than 0
 	    // array dimensions
 	    if (exprType.isNull() && optional && (!EnumPrimitive.isPrimitive(shortName) || arrDims > 0)) return true;
+	    // If this is a tuple and the expression is a tuple expression
+	    if(tupleTypes.size() > 0){
+		if(tupleTypes.size() == exprType.tupleTypes.size()){
+		    for(int i = 0; i < exprType.tupleTypes.size(); i++){
+			if(!tupleTypes.get(i).canBeAssignedTo(exprType.tupleTypes.get(i))) return false;
+		    }
+		    return true;
+		}
+	    }
 	    // If they are both numeric and the array dimensions are 0
 	    if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && arrDims == exprType.arrDims) return true;
-	    return exprType.arrDims == arrDims && optional == exprType.optional && (exprType.isNull() && !EnumPrimitive.isNumeric(shortName) || Semantics.typeHasSuper(exprType.shortName, shortName));
+	    return (exprType.arrDims == arrDims) && optional == exprType.optional && (exprType.isNull() && !EnumPrimitive.isNumeric(shortName) || Semantics.typeHasSuper(exprType.shortName, shortName));
 	}
 
 	public boolean isNull() {

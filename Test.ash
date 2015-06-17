@@ -1,3 +1,3 @@
 class Test : Object {
-	var b : [int] = [0, 1]
+	var b : [String] = ["0"]
 }

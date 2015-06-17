@@ -38,6 +38,7 @@ import ashc.grammar.Node.NodeReturn;
 import ashc.grammar.Node.NodeString;
 import ashc.grammar.Node.NodeTernary;
 import ashc.grammar.Node.NodeThis;
+import ashc.grammar.Node.NodeTupleExpr;
 import ashc.grammar.Node.NodeType;
 import ashc.grammar.Node.NodeTypeDec;
 import ashc.grammar.Node.NodeTypes;
@@ -349,7 +350,7 @@ public class Parser {
 	    final Token id = expect(TokenType.ID);
 	    if (getNext().type == TokenType.PARENL) {
 		rewind();
-		final NodeExprs exprs = parseCallArgs();
+		final NodeExprs exprs = parseCallArgs(TokenType.PARENL, TokenType.PARENR);
 		prefix = new NodeFuncCall(id.line, id.columnStart, id.data, exprs, prefix);
 	    } else {
 		rewind();
@@ -366,11 +367,11 @@ public class Parser {
 	return prefix;
     }
 
-    private NodeExprs parseCallArgs() throws UnexpectedTokenException {
+    private NodeExprs parseCallArgs(TokenType start, TokenType end) throws UnexpectedTokenException {
 	final NodeExprs exprs = new NodeExprs();
-	expect(TokenType.PARENL);
+	expect(start);
 	Token next = getNext();
-	if (next.type == TokenType.PARENR) return exprs;
+	if (next.type == end) return exprs;
 	else rewind();
 
 	do {
@@ -380,12 +381,12 @@ public class Parser {
 	    next = getNext();
 	} while (next.type == TokenType.COMMA);
 	rewind();
-	expect(TokenType.PARENR);
+	expect(end);
 	return exprs;
     }
 
     private IExpression parsePrimaryExpression() throws UnexpectedTokenException {
-	Token next = expect(TokenType.NULL, TokenType.ID, TokenType.THIS, TokenType.UNARYOP, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.LONG, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
+	Token next = expect(TokenType.NULL, TokenType.ID, TokenType.THIS, TokenType.UNARYOP, TokenType.BRACKETL, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.LONG, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
 	IExpression expr = null;
 
 	switch (next.type) {
@@ -401,6 +402,11 @@ public class Parser {
 		break;
 	    case UNARYOP:
 		expr = new NodeUnary(next.line, next.columnStart, parsePrimaryExpression(), next.data, true);
+		break;
+	    case BRACKETL:
+		expr = new NodeTupleExpr(next.line, next.columnStart);
+		rewind();
+		((NodeTupleExpr)expr).exprs = parseCallArgs(TokenType.BRACKETL, TokenType.BRACKETR);
 		break;
 	    case PARENL:
 		expr = parseExpression();
@@ -636,7 +642,7 @@ public class Parser {
 	final Token id = expect(TokenType.ID);
 	if (getNext().type == TokenType.PARENL) {
 	    rewind();
-	    return new NodeEnumInstance(id.line, id.columnStart, id, parseCallArgs());
+	    return new NodeEnumInstance(id.line, id.columnStart, id, parseCallArgs(TokenType.PARENL, TokenType.PARENR));
 	}
 	rewind();
 	return new NodeEnumInstance(id.line, id.columnStart, id, null);

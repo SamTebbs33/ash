@@ -1000,5 +1000,59 @@ public abstract class Node {
 	}
 
     }
+    
+    public static class NodeArray extends Node implements IExpression {
+	
+	public NodeExprs exprs = new NodeExprs();
+
+	public NodeArray(int line, int column) {
+	    super(line, column);
+	}
+	
+	public void add(IExpression expr){
+	    exprs.add(expr);
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    LinkedList<IExpression> exprList = exprs.exprs;
+	    // Just infer an Object array
+	    if(exprList.size() == 0){
+		return new TypeI("Object", 1, false);
+	    }
+	    // Infer the precedent type within this array expression
+	    TypeI type = exprList.getFirst().getExprType();
+	    for(int i = 1; i < exprList.size(); i++) type = Semantics.getPrecedentType(type, exprList.get(i).getExprType());
+	    type.arrDims += 1; // Add one to show that this is an array expression
+	    return type;
+	}
+	
+    }
+    
+    public static class NodeTupleExpr extends Node implements IExpression {
+	
+	public NodeExprs exprs = new NodeExprs();
+
+	public NodeTupleExpr(int line, int column) {
+	    super(line, column);
+	}
+	
+	public void add(IExpression expr){
+	    exprs.add(expr);
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    LinkedList<IExpression> exprList = exprs.exprs;
+	    // Just infer an Object array
+	    if(exprList.size() == 0){
+		return new TypeI("Object", 1, false);
+	    }
+	    TypeI type = new TypeI("", 0, false);
+	    for(IExpression expr : exprList) type.tupleTypes.add(expr.getExprType());
+	    return type;
+	}
+	
+    }
 
 }
