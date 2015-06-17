@@ -26,20 +26,18 @@ public class Semantics {
 	public String shortName;
 	public int arrDims;
 	public boolean optional;
-	public LinkedList<NodeType> tupleTypes;
+	public LinkedList<TypeI> tupleTypes;
 
 	public TypeI(final String shortName, final int arrDims, final boolean optional) {
 	    this.shortName = shortName;
 	    this.arrDims = arrDims;
 	    this.optional = optional;
-	    this.tupleTypes = new LinkedList<NodeType>();
+	    this.tupleTypes = new LinkedList<TypeI>();
 	}
 	
 	public TypeI(NodeType type){
-	    this.shortName = type.id;
-	    this.arrDims = type.arrDims;
-	    this.optional = type.optional;
-	    this.tupleTypes = type.tupleTypes;
+	    this(type.id, type.arrDims, type.optional);
+	    for(NodeType nodeType : type.tupleTypes) tupleTypes.add(new TypeI(nodeType));
 	}
 
 	public TypeI(final EnumPrimitive primitive) {
@@ -76,11 +74,17 @@ public class Semantics {
 	    final StringBuffer arrBuffer = new StringBuffer();
 	    for (int i = 0; i < arrDims; i++)
 		arrBuffer.append("[]");
-	    return String.format("%s%s%s", shortName, arrBuffer.toString(), optional ? "?" : "");
+	    String id = shortName;
+	    if(isTuple()){
+		id = "(";
+		for(TypeI tupleType : tupleTypes) id += tupleType.toString() + ",";
+		id += ")";
+	    }
+	    return String.format("%s%s%s", id, arrBuffer.toString(), optional ? "?" : "");
 	}
 
 	public boolean isVoid() {
-	    return shortName != null ? shortName.equals("void") : false;
+	    return !isTuple() ? shortName.equals("void") : false;
 	}
 
 	public boolean canBeAssignedTo(final TypeI exprType) {
@@ -94,8 +98,12 @@ public class Semantics {
 	    return exprType.arrDims == arrDims && optional == exprType.optional && (exprType.isNull() && !EnumPrimitive.isNumeric(shortName) || Semantics.typeHasSuper(exprType.shortName, shortName));
 	}
 
-	private boolean isNull() {
-	    return shortName != null ? shortName.equals("null") : false;
+	public boolean isNull() {
+	    return !isTuple() ? shortName.equals("null") : false;
+	}
+	
+	public boolean isTuple(){
+	    return tupleTypes != null && tupleTypes.size() > 0;
 	}
 
     }
@@ -209,20 +217,21 @@ public class Semantics {
 
     public static void enterType(final Type type) {
 	typeStack.push(type);
-	System.out.println(typeStack);
     }
 
     public static boolean varExists(final String id) {
-	if (Scope.getScope().hasVar(id)) return true;
-	for (final Field field : typeStack.peek().fields)
+	Scope scope = Scope.getScope();
+	if (scope != null && scope.hasVar(id)) return true;
+	for (final Field field : typeStack.peek().fields){
+	    System.out.println(field);
 	    if (field.qualifiedName.shortName.equals(id)) return true;
+	}
 	return false;
     }
 
     public static void addVar(final Variable variable) {
-	if (Scope.getScope() instanceof FuncScope) // We are in a function, so
-						   // add a local variable to
-						   // the function's scope
+	if (Scope.getScope() instanceof FuncScope) 
+	    // We are in a function, so add a local variable to the function's scope
 	    Scope.getScope().addVar(variable);
     }
 

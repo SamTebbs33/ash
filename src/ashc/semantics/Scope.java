@@ -30,7 +30,8 @@ public class Scope {
     public LinkedList<Variable> vars = new LinkedList<Variable>();
 
     public static Scope getScope() {
-	return get().scopeStack.peek();
+	Stack<Scope> stack = get().scopeStack;
+	return stack.size() > 0 ? stack.peek() : null;
     }
 
     public static QualifiedName getNamespace() {

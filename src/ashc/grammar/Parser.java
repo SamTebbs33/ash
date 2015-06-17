@@ -528,10 +528,10 @@ public class Parser {
     private NodeType parseType() throws UnexpectedTokenException {
 	final NodeType type = new NodeType();
 	// Parse tuple types
-	if (getNext().type == TokenType.PARENL) {
+	if (getNext().type == TokenType.BRACKETL) {
 	    do
 		type.tupleTypes.add(parseType());
-	    while (expect(TokenType.COMMA, TokenType.PARENR).type == TokenType.COMMA);
+	    while (expect(TokenType.COMMA, TokenType.BRACKETR).type == TokenType.COMMA);
 	} else {
 	    rewind();
 	    type.id = expect(TokenType.ID, TokenType.PRIMITIVE).data;

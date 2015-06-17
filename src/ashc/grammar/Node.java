@@ -434,8 +434,10 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    if (!Semantics.typeExists(id)) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
-	    if (EnumPrimitive.isPrimitive(id) && optional) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
+	    if(tupleTypes.size() == 0){
+		if (!Semantics.typeExists(id)) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
+		if (EnumPrimitive.isPrimitive(id) && optional) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
+	    }else for(NodeType typeNode : tupleTypes) typeNode.analyse();
 	}
 
     }
@@ -536,7 +538,8 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    if (Semantics.varExists(id)) semanticError(this, line, column, VAR_ALREADY_EXISTS, id);
+	    // Only check if this var exists if we're in a scope, since variable declarations in types are already handled
+	    if (Scope.getScope() != null && Semantics.varExists(id)) semanticError(this, line, column, VAR_ALREADY_EXISTS, id);
 	}
 
     }
@@ -571,7 +574,7 @@ public abstract class Node {
 	    type.analyse();
 	    if (expr != null) ((Node) expr).analyse();
 	    typeI = new TypeI(type);
-	    if (!errored) Scope.getScope().addVar(new Variable(id, typeI));
+	    if (!errored && Scope.getScope() != null) Scope.getScope().addVar(new Variable(id, typeI));
 
 	    if (expr == null) {
 		if (!type.optional && !(EnumPrimitive.isPrimitive(type.id) && type.arrDims == 0)) semanticError(this, line, column, MISSING_ASSIGNMENT);

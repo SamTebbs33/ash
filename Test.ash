@@ -1,3 +1,3 @@
 class Test : Object {
-	var a : (int)
+	var b : [int] = [0, 1]
 }
