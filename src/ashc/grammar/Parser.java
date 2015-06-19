@@ -264,8 +264,8 @@ public class Parser {
     }
 
     private NodeClassBlock parseClassBlock() throws UnexpectedTokenException {
-	expect(TokenType.BRACEL);
 	final NodeClassBlock block = new NodeClassBlock();
+	if(getNext().type == TokenType.BRACEL){
 	while (getNext().type != TokenType.BRACER) {
 	    rewind();
 	    final LinkedList<NodeModifier> mods = parseMods();
@@ -281,6 +281,7 @@ public class Parser {
 		    continue;
 	    }
 	}
+	}else rewind();
 	return block;
     }
 

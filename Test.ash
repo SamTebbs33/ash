@@ -1,3 +1,1 @@
-class Test : Object {
-	func f(name : String = "SAm", age : int) : String -> name + age
-}
+class Test(name : String) : Object
