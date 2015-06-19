@@ -526,7 +526,10 @@ public class Parser {
 	if (id.type == TokenType.ID) {
 	    expect(TokenType.COLON);
 	    final NodeType type = parseType();
-	    return new NodeArg(id.line, id.columnStart, id.data, type);
+	    IExpression defExpr = null;
+	    if(expect(TokenType.COMMA, TokenType.ASSIGNOP, TokenType.PARENR).type == TokenType.ASSIGNOP) defExpr = parseExpression();
+	    else rewind();
+	    return new NodeArg(id.line, id.columnStart, id.data, type, defExpr);
 	} else rewind();
 	return null;
     }

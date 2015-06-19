@@ -1,3 +1,3 @@
 class Test : Object {
-	var b : [String] = ["0"]
+	func f(name : String = "SAm", age : int) : String -> name + age
 }

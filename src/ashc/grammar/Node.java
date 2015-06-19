@@ -312,11 +312,13 @@ public abstract class Node {
     public static class NodeArg extends Node {
 	public String id;
 	public NodeType type;
+	public IExpression defExpr;
 
-	public NodeArg(final int line, final int column, final String id, final NodeType type) {
+	public NodeArg(final int line, final int column, final String id, final NodeType type, IExpression defExpr) {
 	    super(line, column);
 	    this.id = id;
 	    this.type = type;
+	    this.defExpr = defExpr;
 	}
 
 	@Override
@@ -518,6 +520,7 @@ public abstract class Node {
 		if (type.isPresent()) if (!type.get().hasSuper(new QualifiedName("").add("java").add("lang").add("Throwable"))) semanticError(this, line, column, TYPE_DOES_NOT_EXTEND, throwsType.id, "java.lang.Throwable");
 	    }
 	    Scope.push(new FuncScope(new TypeI(type)));
+	    for(NodeArg arg : args.args) Scope.getScope().addVar(new Variable(arg.id, new TypeI(arg.type)));
 	    block.analyse();
 	    Scope.pop();
 	}
