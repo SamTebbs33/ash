@@ -22,6 +22,14 @@ public class Scope {
 	}
 
     }
+    
+    public static class PropertyScope extends Scope {
+	public TypeI varType;
+
+	public PropertyScope(TypeI varType) {
+	    this.varType = varType;
+	}
+    }
 
     public static QualifiedName namespace;
 

@@ -35,6 +35,7 @@ import ashc.grammar.Node.NodePackage;
 import ashc.grammar.Node.NodePrefix;
 import ashc.grammar.Node.NodeQualifiedName;
 import ashc.grammar.Node.NodeReturn;
+import ashc.grammar.Node.NodeSelf;
 import ashc.grammar.Node.NodeString;
 import ashc.grammar.Node.NodeTernary;
 import ashc.grammar.Node.NodeThis;
@@ -312,8 +313,14 @@ public class Parser {
     }
 
     private NodeFuncBlock parseFuncBlock() throws UnexpectedTokenException {
+	return parseFuncBlock(true);
+    }
+
+    private NodeFuncBlock parseFuncBlock(boolean allowSingleLine) throws UnexpectedTokenException {
 	final NodeFuncBlock block = new NodeFuncBlock();
-	final Token token = expect(TokenType.LAMBDAARROW, TokenType.BRACEL);
+	Token token = null;
+	 if(allowSingleLine) token  = expect(TokenType.LAMBDAARROW, TokenType.BRACEL);
+	 else token = expect(TokenType.BRACEL);
 	if (token.type == TokenType.BRACEL) while (getNext().type != TokenType.BRACER) {
 	    rewind();
 	    block.add(parseFuncStmt());
@@ -323,7 +330,7 @@ public class Parser {
     }
 
     private IFuncStmt parseFuncStmt() throws UnexpectedTokenException {
-	final Token token = expect(TokenType.ID, TokenType.VAR, TokenType.CONST, TokenType.RETURN);
+	final Token token = expect(TokenType.ID, TokenType.SELF, TokenType.VAR, TokenType.CONST, TokenType.RETURN);
 	rewind();
 	switch (token.type) {
 	    case RETURN:
@@ -332,6 +339,7 @@ public class Parser {
 		silenceErrors = false;
 		return new NodeReturn(token.line, token.columnStart, expr);
 	    case ID:
+	    case SELF:
 		final IFuncStmt stmt = parsePrefix();
 		if (stmt instanceof NodeVariable) {
 		    final Token assignOp = expect(TokenType.ASSIGNOP, TokenType.COMPOUNDASSIGNOP);
@@ -348,7 +356,7 @@ public class Parser {
     private NodePrefix parsePrefix() throws UnexpectedTokenException {
 	NodePrefix prefix = null;
 	do {
-	    final Token id = expect(TokenType.ID);
+	    final Token id = expect(TokenType.ID, TokenType.SELF);
 	    if (getNext().type == TokenType.PARENL) {
 		rewind();
 		final NodeExprs exprs = parseCallArgs(TokenType.PARENL, TokenType.PARENR);
@@ -387,7 +395,7 @@ public class Parser {
     }
 
     private IExpression parsePrimaryExpression() throws UnexpectedTokenException {
-	Token next = expect(TokenType.NULL, TokenType.ID, TokenType.THIS, TokenType.UNARYOP, TokenType.BRACKETL, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.LONG, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
+	Token next = expect(TokenType.NULL, TokenType.ID, TokenType.THIS, TokenType.SELF, TokenType.UNARYOP, TokenType.BRACKETL, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.LONG, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
 	IExpression expr = null;
 
 	switch (next.type) {
@@ -400,6 +408,9 @@ public class Parser {
 		break;
 	    case THIS:
 		expr = new NodeThis(next.line, next.columnStart);
+		break;
+	    case SELF:
+		expr = new NodeSelf(next.line, next.columnStart);
 		break;
 	    case UNARYOP:
 		expr = new NodeUnary(next.line, next.columnStart, parsePrimaryExpression(), next.data, true);
@@ -482,11 +493,36 @@ public class Parser {
 	if (type == TokenType.COLON) {
 	    final NodeType nodeType = parseType();
 	    varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, null);
-	    next = getNext();
-	    type = next.type;
-	    if (type == TokenType.ASSIGNOP) varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, parseExpression());
+	    if (getNext().type == TokenType.ASSIGNOP) varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, parseExpression());
 	    else rewind();
 	} else varDec = new NodeVarDecImplicit(id.line, id.columnStart, mods, keyword.data, id.data, parseExpression());
+	
+	if(getNext().type == TokenType.LAMBDAARROW){
+	    expect(TokenType.BRACEL);
+	    NodeFuncBlock getBlock = null, setBlock = null;
+	    while(getNext().type != TokenType.BRACER){
+		rewind();
+		if(setBlock == null && getBlock == null){
+		    next = expect(TokenType.GET, TokenType.SET);
+		    if(next.type == TokenType.SET) setBlock = parseFuncBlock(false);
+		    else getBlock = parseFuncBlock();
+		}
+		next = getNext();
+		if(next.type == TokenType.GET){
+		    if(getBlock != null){
+			if(setBlock == null) throw new UnexpectedTokenException(next, TokenType.SET, TokenType.BRACER);
+			else throw new UnexpectedTokenException(next, TokenType.BRACER);
+		    }else getBlock = parseFuncBlock();
+		}else if(next.type == TokenType.SET){
+		    if(setBlock != null){
+			if(getBlock == null) throw new UnexpectedTokenException(next, TokenType.GET, TokenType.BRACER);
+			else throw new UnexpectedTokenException(next, TokenType.BRACER);
+		    }else setBlock = parseFuncBlock(false);
+		}else rewind();
+	    }
+	    varDec.getBlock = getBlock;
+	    varDec.setBlock = setBlock;
+	}else rewind();
 	return varDec;
     }
 

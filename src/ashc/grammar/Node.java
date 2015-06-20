@@ -7,6 +7,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import ashc.grammar.Lexer.Token;
+import ashc.grammar.Node.NodeFuncBlock;
 import ashc.load.*;
 import ashc.semantics.*;
 import ashc.semantics.Member.EnumType;
@@ -14,7 +15,7 @@ import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
-import ashc.semantics.Scope.FuncScope;
+import ashc.semantics.Scope.*;
 import ashc.semantics.Semantics.TypeI;
 import ashc.util.*;
 
@@ -531,6 +532,7 @@ public abstract class Node {
 	public LinkedList<NodeModifier> mods;
 	public String keyword;
 	public String id;
+	public NodeFuncBlock getBlock, setBlock;
 
 	public NodeVarDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id) {
 	    super(line, column);
@@ -993,6 +995,21 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    return new TypeI(Semantics.typeStack.peek().qualifiedName.shortName, 0, false);
 	}
+    }
+    
+    public static class NodeSelf extends Node implements IExpression {
+
+	public NodeSelf(int line, int columnStart) {
+	    super(line, columnStart);
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    if(Scope.getScope() instanceof PropertyScope) return ((PropertyScope)Scope.getScope()).varType;
+	    else semanticError(this, line, column, CANNOT_USE_SELF);
+	    return null;
+	}
+	
     }
 
     public static class NodeNull extends Node implements IExpression {
