@@ -517,7 +517,7 @@ public class Parser {
 		    if(setBlock != null){
 			if(getBlock == null) throw new UnexpectedTokenException(next, TokenType.GET, TokenType.BRACER);
 			else throw new UnexpectedTokenException(next, TokenType.BRACER);
-		    }else setBlock = parseFuncBlock(false);
+		    }else setBlock = parseFuncBlock();
 		}else rewind();
 	    }
 	    varDec.getBlock = getBlock;

@@ -23,6 +23,8 @@ public class Error {
 
 	VAR_ALREADY_EXISTS("Variable already exists (%s)"),
 	VAR_DOES_NOT_EXIST("Variable does not exist (%s)"),
+	CONST_VAR_IS_PROPERTY("A const cannot have an inline getter and/or setter (%s)"),
+	PROPERTY_IN_FUNC("Cannot declare an inline getter and/or setter in a function (%s)"),
 
 	MISSING_ASSIGNMENT("Assignment expected"),
 	TOO_MANY_ARRAY_ACCESSES("Attempted to access %s array dimension(s) on a variable with %s dimension(s) (%s)"),

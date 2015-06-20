@@ -7,7 +7,6 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import ashc.grammar.Lexer.Token;
-import ashc.grammar.Node.NodeFuncBlock;
 import ashc.load.*;
 import ashc.semantics.*;
 import ashc.semantics.Member.EnumType;
@@ -15,7 +14,8 @@ import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
-import ashc.semantics.Scope.*;
+import ashc.semantics.Scope.FuncScope;
+import ashc.semantics.Scope.PropertyScope;
 import ashc.semantics.Semantics.TypeI;
 import ashc.util.*;
 
@@ -540,6 +540,23 @@ public abstract class Node {
 	    this.keyword = keyword;
 	    this.id = id;
 	}
+	
+	protected void analyseProperty(TypeI type){
+	    if((getBlock != null || setBlock != null)){
+		if(keyword.equals("const")) semanticError(this, line, column, CONST_VAR_IS_PROPERTY, id);
+		else if(Scope.getScope() instanceof FuncScope) semanticError(this, line, column, PROPERTY_IN_FUNC, id);
+	    }
+	    if(getBlock != null){
+		Scope.push(new PropertyScope(type));
+		getBlock.analyse();
+		Scope.pop();
+	    }
+	    if(setBlock != null){
+		Scope.push(new PropertyScope(type));
+		setBlock.analyse();
+		Scope.pop();
+	    }
+	}
 
 	@Override
 	public void analyse() {
@@ -588,6 +605,7 @@ public abstract class Node {
 		if (exprType != null) if (!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType, typeI.toString());
 	    }
 	    Semantics.addVar(new Variable(id, typeI));
+	    analyseProperty(typeI);
 	}
 
     }
@@ -616,7 +634,9 @@ public abstract class Node {
 	public void analyse() {
 	    super.analyse();
 	    if (expr != null) ((Node) expr).analyse();
-	    if (!errored) Semantics.addVar(new Variable(id, expr.getExprType()));
+	    TypeI type = expr.getExprType();
+	    if (!errored) Semantics.addVar(new Variable(id, type));
+	    analyseProperty(type);
 	}
 
     }
@@ -1005,7 +1025,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    if(Scope.getScope() instanceof PropertyScope) return ((PropertyScope)Scope.getScope()).varType;
+	    if(Scope.getScope() instanceof PropertyScope) return ((PropertyScope)Scope.getScope()).returnType;
 	    else semanticError(this, line, column, CANNOT_USE_SELF);
 	    return null;
 	}

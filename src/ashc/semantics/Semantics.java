@@ -10,6 +10,7 @@ import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
 import ashc.semantics.Scope.FuncScope;
+import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
@@ -113,6 +114,10 @@ public class Semantics {
 	
 	public boolean isTuple(){
 	    return tupleTypes != null && tupleTypes.size() > 0;
+	}
+
+	public static TypeI voidType() {
+	    return new TypeI("void", 0, false);
 	}
 
     }

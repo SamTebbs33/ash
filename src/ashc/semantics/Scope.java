@@ -23,11 +23,10 @@ public class Scope {
 
     }
     
-    public static class PropertyScope extends Scope {
-	public TypeI varType;
+    public static class PropertyScope extends FuncScope {
 
 	public PropertyScope(TypeI varType) {
-	    this.varType = varType;
+	    super(varType);
 	}
     }
 
