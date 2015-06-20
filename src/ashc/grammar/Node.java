@@ -7,6 +7,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import ashc.grammar.Lexer.Token;
+import ashc.grammar.Node.NodeIf;
 import ashc.load.*;
 import ashc.semantics.*;
 import ashc.semantics.Member.EnumType;
@@ -1111,6 +1112,19 @@ public abstract class Node {
 	    TypeI type = new TypeI("", 0, false);
 	    for(IExpression expr : exprList) type.tupleTypes.add(expr.getExprType());
 	    return type;
+	}
+	
+    }
+    
+    public static class NodeIf extends Node implements IFuncStmt {
+	public IExpression expr;
+	public NodeFuncBlock block;
+	public NodeIf elseStmt;
+
+	public NodeIf(int line, int column, IExpression expr, NodeFuncBlock block) {
+	    super(line, column);
+	    this.expr = expr;
+	    this.block = block;
 	}
 	
     }

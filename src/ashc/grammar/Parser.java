@@ -25,6 +25,7 @@ import ashc.grammar.Node.NodeFloat;
 import ashc.grammar.Node.NodeFuncBlock;
 import ashc.grammar.Node.NodeFuncCall;
 import ashc.grammar.Node.NodeFuncDec;
+import ashc.grammar.Node.NodeIf;
 import ashc.grammar.Node.NodeImport;
 import ashc.grammar.Node.NodeInteger;
 import ashc.grammar.Node.NodeInterfaceDec;
@@ -330,26 +331,43 @@ public class Parser {
     }
 
     private IFuncStmt parseFuncStmt() throws UnexpectedTokenException {
-	final Token token = expect(TokenType.ID, TokenType.SELF, TokenType.VAR, TokenType.CONST, TokenType.RETURN);
-	rewind();
+	final Token token = expect(TokenType.ID, TokenType.SELF, TokenType.IF, TokenType.VAR, TokenType.CONST, TokenType.RETURN);
 	switch (token.type) {
 	    case RETURN:
+		rewind();
 		silenceErrors = true;
 		final IExpression expr = parseExpression();
 		silenceErrors = false;
 		return new NodeReturn(token.line, token.columnStart, expr);
 	    case ID:
 	    case SELF:
+		rewind();
 		final IFuncStmt stmt = parsePrefix();
 		if (stmt instanceof NodeVariable) {
 		    final Token assignOp = expect(TokenType.ASSIGNOP, TokenType.COMPOUNDASSIGNOP);
 		    return new NodeVarAssign(assignOp.line, assignOp.columnStart, (NodeVariable) stmt, assignOp.data, parseExpression());
 		} else return stmt;
+	    case IF:
+		return parseIfStmt();
 	    case VAR:
 	    case CONST:
+		rewind();
 		return parseVarDec(null);
 	}
 	return null;
+    }
+
+    private NodeIf parseIfStmt() throws UnexpectedTokenException {
+	NodeIf ifStmt = new NodeIf(line, column, parseExpression(), parseFuncBlock());
+	if(getNext().type == TokenType.ELSE) {
+	    TokenType next = expect(TokenType.IF, TokenType.BRACEL).type;
+	    if(next == TokenType.IF) ifStmt.elseStmt = parseIfStmt();
+	    else{
+		rewind();
+		ifStmt.elseStmt = new NodeIf(line, column, null, parseFuncBlock());
+	    }
+	}else rewind();
+	return ifStmt;
     }
 
     // A prefix is just another name for a func call or variable

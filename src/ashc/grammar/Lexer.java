@@ -77,6 +77,9 @@ public class Lexer {
 	IS("is"),
 	GET("get"),
 	SET("set"),
+	
+	IF("if"),
+	ELSE("else"),
 
 	PRIMITIVE("bool|double|float|long|int|short|byte|ulong|uint|char|void", "primitive"),
 	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),
