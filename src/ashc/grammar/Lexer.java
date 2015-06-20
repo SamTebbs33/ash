@@ -32,6 +32,12 @@ public class Lexer {
 	CHAR("\'.\'", "character"),
 	BOOL("true|false", "boolean"),
 
+	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
+	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
+	BINARYOP("\\.\\.|<|>|<=|>=|==|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|", "binary operator"),
+	ASSIGNOP("=", "assignment operator"),
+	WHITESPACE("[\n\t ]+", "whitespace"),
+	
 	ARROW("=>", "throws arrow"),
 	LAMBDAARROW("->", "lambda arrow"),
 	PARENL("\\(", "left parenthesis"),
@@ -44,12 +50,6 @@ public class Lexer {
 	COMMA(",", "comma"),
 	QUESTIONMARK("\\?", "question mark"),
 	COLON(":", "colon"),
-
-	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
-	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
-	BINARYOP("<=|>=|==|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|", "binary operator"),
-	ASSIGNOP("=", "assignment operator"),
-	WHITESPACE("[\n\t ]+", "whitespace"),
 
 	VAR("var"),
 	CONST("const"),
@@ -80,6 +80,9 @@ public class Lexer {
 	
 	IF("if"),
 	ELSE("else"),
+	WHILE("while"),
+	FOR("for"),
+	IN("in"),
 
 	PRIMITIVE("bool|double|float|long|int|short|byte|ulong|uint|char|void", "primitive"),
 	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),

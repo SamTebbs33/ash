@@ -1,15 +1,6 @@
 class Test {
-	public func main() {
-		var b = true
-		var a = 0
-		
-		// Parentheses around the conditions are optional
-		if (b){
-			a = 0
-		}else if(a == 0){
-			a = 1
-		}else{
-			a = 2
-		}
+	public func main(args : String[]) {
+		for(a in 0..9){}
+		for(var a = 0, a < 10, a += 1){} // Var dec, comma, expression, comma, func stmt
 	}
 }

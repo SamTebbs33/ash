@@ -7,6 +7,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import ashc.grammar.Lexer.Token;
+import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeIf;
 import ashc.load.*;
 import ashc.semantics.*;
@@ -177,7 +178,7 @@ public abstract class Node {
 	    Semantics.addType(type);
 	    
 	    // Create the default constructor and add fields supplied by the arguments
-	    if(args.args.size() > 0){
+	    if(args != null && args.args.size() > 0){
 		Function defConstructor = new Function(Scope.getNamespace().copy().add(id.data), EnumModifier.PUBLIC.intVal);
 		for(NodeArg arg : args.args){
 		    arg.preAnalyse();
@@ -1125,6 +1126,53 @@ public abstract class Node {
 	    super(line, column);
 	    this.expr = expr;
 	    this.block = block;
+	}
+	
+    }
+    
+    public static class NodeWhile extends Node implements IFuncStmt {
+	public IExpression expr;
+	public NodeFuncBlock block;
+	
+	public NodeWhile(int line, int column, IExpression expr, NodeFuncBlock block) {
+	    super(line, column);
+	    this.expr = expr;
+	    this.block = block;
+	}
+	
+    }
+    
+    public static class NodeFor extends Node implements IFuncStmt {
+	public IExpression expr;
+	public NodeFuncBlock block;
+	
+	public NodeFor(int line, int column, IExpression expr, NodeFuncBlock block) {
+	    super(line, column);
+	    this.expr = expr;
+	    this.block = block;
+	}
+	
+    }
+    
+    public static class NodeForNormal extends NodeFor implements IFuncStmt {
+	public IFuncStmt initStmt, endStmt;
+	
+	public NodeForNormal(int line, int column, IFuncStmt initStmt, IExpression condition, IFuncStmt endStmt, NodeFuncBlock block) {
+	    super(line, column, condition, block);
+	    this.initStmt = initStmt;
+	    this.endStmt = endStmt;
+	}
+	
+    }
+    
+    public static class NodeForIn extends NodeFor implements IFuncStmt {
+
+	public String varId;
+
+	public NodeForIn(int line, int column, String data, IExpression parseExpression, NodeFuncBlock block) {
+	    super(line, column, parseExpression, block);
+	    this.varId = data;
+	    this.expr = parseExpression;
 	}
 	
     }

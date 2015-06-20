@@ -2,54 +2,10 @@ package ashc.grammar;
 
 import java.util.*;
 
-import ashc.grammar.Lexer.InvalidTokenException;
-import ashc.grammar.Lexer.Token;
-import ashc.grammar.Lexer.TokenType;
-import ashc.grammar.Lexer.UnexpectedTokenException;
-import ashc.grammar.Node.IExpression;
+import ashc.grammar.Lexer.*;
 import ashc.grammar.Node.IFuncStmt;
-import ashc.grammar.Node.NodeArg;
-import ashc.grammar.Node.NodeArgs;
-import ashc.grammar.Node.NodeBinary;
-import ashc.grammar.Node.NodeBool;
-import ashc.grammar.Node.NodeChar;
-import ashc.grammar.Node.NodeClassBlock;
-import ashc.grammar.Node.NodeClassDec;
-import ashc.grammar.Node.NodeDouble;
-import ashc.grammar.Node.NodeEnumBlock;
-import ashc.grammar.Node.NodeEnumDec;
-import ashc.grammar.Node.NodeEnumInstance;
-import ashc.grammar.Node.NodeExprs;
-import ashc.grammar.Node.NodeFile;
-import ashc.grammar.Node.NodeFloat;
-import ashc.grammar.Node.NodeFuncBlock;
-import ashc.grammar.Node.NodeFuncCall;
-import ashc.grammar.Node.NodeFuncDec;
-import ashc.grammar.Node.NodeIf;
-import ashc.grammar.Node.NodeImport;
-import ashc.grammar.Node.NodeInteger;
-import ashc.grammar.Node.NodeInterfaceDec;
-import ashc.grammar.Node.NodeLong;
-import ashc.grammar.Node.NodeModifier;
-import ashc.grammar.Node.NodeNull;
-import ashc.grammar.Node.NodePackage;
-import ashc.grammar.Node.NodePrefix;
-import ashc.grammar.Node.NodeQualifiedName;
-import ashc.grammar.Node.NodeReturn;
-import ashc.grammar.Node.NodeSelf;
-import ashc.grammar.Node.NodeString;
-import ashc.grammar.Node.NodeTernary;
-import ashc.grammar.Node.NodeThis;
-import ashc.grammar.Node.NodeTupleExpr;
-import ashc.grammar.Node.NodeType;
-import ashc.grammar.Node.NodeTypeDec;
-import ashc.grammar.Node.NodeTypes;
-import ashc.grammar.Node.NodeUnary;
-import ashc.grammar.Node.NodeVarAssign;
-import ashc.grammar.Node.NodeVarDec;
-import ashc.grammar.Node.NodeVarDecExplicit;
-import ashc.grammar.Node.NodeVarDecImplicit;
-import ashc.grammar.Node.NodeVariable;
+import ashc.grammar.Lexer.*;
+import ashc.grammar.Node.*;
 
 /**
  * Ash
@@ -331,7 +287,7 @@ public class Parser {
     }
 
     private IFuncStmt parseFuncStmt() throws UnexpectedTokenException {
-	final Token token = expect(TokenType.ID, TokenType.SELF, TokenType.IF, TokenType.VAR, TokenType.CONST, TokenType.RETURN);
+	final Token token = expect(TokenType.ID, TokenType.SELF, TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.VAR, TokenType.CONST, TokenType.RETURN);
 	switch (token.type) {
 	    case RETURN:
 		rewind();
@@ -349,12 +305,49 @@ public class Parser {
 		} else return stmt;
 	    case IF:
 		return parseIfStmt();
+	    case WHILE:
+		return parseWhileStmt();
+	    case FOR:
+		return parseForStmt();
 	    case VAR:
 	    case CONST:
 		rewind();
 		return parseVarDec(null);
 	}
 	return null;
+    }
+
+    private IFuncStmt parseForStmt() throws UnexpectedTokenException {
+	int parens = 0;
+	while(getNext().type == TokenType.PARENL) parens++;
+	rewind();
+	Token next = expect(TokenType.ID, TokenType.VAR, TokenType.COMMA);
+	if(next.type == TokenType.ID){
+	    expect(TokenType.IN);
+	    IExpression expr = parseExpression();
+	    while(parens-- > 0) expect(TokenType.PARENR);
+	    NodeForIn forIn = new NodeForIn(line, column, next.data, expr, parseFuncBlock());
+	    return forIn;
+	}else{
+	    IFuncStmt initStmt = null, endStmt = null;
+	    IExpression condition = null;
+	    if(next.type != TokenType.COMMA){
+		initStmt = parseFuncStmt();
+		expect(TokenType.COMMA);
+	    }
+	    if(getNext().type != TokenType.COMMA){
+		rewind();
+		condition = parseExpression();
+		expect(TokenType.COMMA);
+	    }
+	    endStmt = parseFuncStmt();
+	    while(parens-- > 0) expect(TokenType.PARENR);
+	    return new NodeForNormal(line, column, initStmt, condition, endStmt, parseFuncBlock());
+	}
+    }
+
+    private IFuncStmt parseWhileStmt() throws UnexpectedTokenException {
+	return new NodeWhile(line, column, parseExpression(), parseFuncBlock());
     }
 
     private NodeIf parseIfStmt() throws UnexpectedTokenException {
