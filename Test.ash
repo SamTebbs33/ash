@@ -1,6 +1,3 @@
-class Test(name : String) : Object{
-	var a : int -> {
-		get -> 0
-		set -> new / self
-	}
+class Test(name : String) {
+	var a = Test("")
 }

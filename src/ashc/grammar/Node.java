@@ -174,6 +174,20 @@ public abstract class Node {
 		if (type.optional) semanticError(this, line, column, CANNOT_EXTEND_OPTIONAL_TYPE, type.id);
 	    type = new Type(name, modifiers, getType());
 	    Semantics.addType(type);
+	    
+	    // Create the default constructor and add fields supplied by the arguments
+	    if(args.args.size() > 0){
+		Function defConstructor = new Function(Scope.getNamespace().copy().add(id.data), EnumModifier.PUBLIC.intVal);
+		for(NodeArg arg : args.args){
+		    arg.preAnalyse();
+		    if(!arg.errored){
+			TypeI argType = new TypeI(arg.type);
+			Semantics.addField(new Field(Scope.getNamespace().copy().add(arg.id), EnumModifier.PUBLIC.intVal, argType));
+			defConstructor.parameters.add(argType);
+		    }
+		}
+		type.functions.add(defConstructor);
+	    }
 	}
 
 	@Override
@@ -723,9 +737,15 @@ public abstract class Node {
 	public void analyse() {
 	    Function func = null;
 	    args.analyse();
-	    if (prefix == null) func = Semantics.getFunc(id, args);
-	    else func = Semantics.getFunc(id, prefix.getExprType(), args);
-	    if (func == null) semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id);
+	    TypeI enclosingType = null;
+	    if (prefix == null){
+		enclosingType = new TypeI(Semantics.typeStack.peek().qualifiedName.shortName, 0, false);
+		func = Semantics.getFunc(id, args);
+	    }else{
+		enclosingType = prefix.getExprType();
+		func = Semantics.getFunc(id, enclosingType, args);
+	    }
+	    if (func == null) semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, enclosingType);
 	}
 
     }

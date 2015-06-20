@@ -191,7 +191,12 @@ public class Semantics {
 
     public static Variable getVar(final String id, final TypeI type) {
 	if (type.arrDims > 0 && id.equals("length")) return new Variable("length", new TypeI(EnumPrimitive.INT));
-	else {
+	if(type.tupleTypes.size() > 0){
+	    if(id.length() == 1){
+		int tupleIndex = ((int)id.charAt(0))-97;
+		if(type.tupleTypes.size() > tupleIndex) return new Variable(id, type.tupleTypes.get(tupleIndex));
+	    }
+	}else {
 	    final Optional<Type> t = getType(type.shortName);
 	    if (t.isPresent()) return t.get().getField(id);
 	}
@@ -200,8 +205,7 @@ public class Semantics {
 
     public static Variable getVar(final String id) {
 	// Look in scope
-	for (final Variable var : Scope.getScope().vars)
-	    if (var.id.equals(id)) return var;
+	if(Scope.getScope() != null) for(final Variable var : Scope.getScope().vars) if (var.id.equals(id)) return var;
 	// Else, look in the current type
 	return getVar(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false));
     }

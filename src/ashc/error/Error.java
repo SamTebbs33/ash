@@ -16,15 +16,15 @@ public class Error {
 	TYPE_DOES_NOT_EXTEND("Type (%s) does not extend %s"),
 
 	FUNC_ALREADY_EXISTS("Function already exists (%s)"),
-	FUNC_DOES_NOT_EXIST("Function doesn't exist (%s)"),
+	FUNC_DOES_NOT_EXIST("Function %s doesn't exist in type %s"),
 	RETURN_EXPR_IN_VOID_FUNC("Cannot return an expression in a void function"),
 
 	FIELD_ALREADY_EXISTS("Field already exists (%s)"),
 
 	VAR_ALREADY_EXISTS("Variable already exists (%s)"),
 	VAR_DOES_NOT_EXIST("Variable does not exist (%s)"),
-	CONST_VAR_IS_PROPERTY("A const cannot have an inline getter and/or setter (%s)"),
-	PROPERTY_IN_FUNC("Cannot declare an inline getter and/or setter in a function (%s)"),
+	CONST_VAR_IS_PROPERTY("Cannot declare a const property (%s)"),
+	PROPERTY_IN_FUNC("Cannot declare a property in a function (%s)"),
 
 	MISSING_ASSIGNMENT("Assignment expected"),
 	TOO_MANY_ARRAY_ACCESSES("Attempted to access %s array dimension(s) on a variable with %s dimension(s) (%s)"),
