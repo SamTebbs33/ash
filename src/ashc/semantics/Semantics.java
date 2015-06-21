@@ -3,6 +3,7 @@ package ashc.semantics;
 import java.util.*;
 
 import ashc.grammar.Node.NodeExprs;
+import ashc.grammar.Node.NodeTupleType;
 import ashc.grammar.Node.NodeType;
 import ashc.load.*;
 import ashc.semantics.Member.Field;
@@ -24,7 +25,7 @@ public class Semantics {
 
     public static class TypeI {
 
-	public String shortName;
+	public String shortName, tupleName;
 	public int arrDims;
 	public boolean optional;
 	public LinkedList<TypeI> tupleTypes;
@@ -38,7 +39,7 @@ public class Semantics {
 	
 	public TypeI(NodeType type){
 	    this(type.id, type.arrDims, type.optional);
-	    for(NodeType nodeType : type.tupleTypes) tupleTypes.add(new TypeI(nodeType));
+	    for(NodeTupleType nodeType : type.tupleTypes) tupleTypes.add(new TypeI(nodeType));
 	}
 
 	public TypeI(final EnumPrimitive primitive) {
@@ -48,6 +49,11 @@ public class Semantics {
 	public TypeI(final EnumPrimitive primitive, final int arrDims) {
 	    shortName = primitive.ashName;
 	    this.arrDims = arrDims;
+	}
+
+	public TypeI(NodeTupleType nodeType) {
+	    this(nodeType.type);
+	    this.tupleName = nodeType.name;
 	}
 
 	public static TypeI fromClass(final Class cls) {
@@ -192,10 +198,7 @@ public class Semantics {
     public static Variable getVar(final String id, final TypeI type) {
 	if (type.arrDims > 0 && id.equals("length")) return new Variable("length", new TypeI(EnumPrimitive.INT));
 	if(type.tupleTypes.size() > 0){
-	    if(id.length() == 1){
-		int tupleIndex = ((int)id.charAt(0))-97;
-		if(type.tupleTypes.size() > tupleIndex) return new Variable(id, type.tupleTypes.get(tupleIndex));
-	    }
+	    for(TypeI tupleType : type.tupleTypes) if(tupleType.tupleName != null && tupleType.tupleName.equals(id)) return new Variable(id, tupleType);
 	}else {
 	    final Optional<Type> t = getType(type.shortName);
 	    if (t.isPresent()) return t.get().getField(id);

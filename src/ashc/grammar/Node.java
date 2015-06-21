@@ -443,7 +443,7 @@ public abstract class Node {
 	public String id;
 	public int arrDims;
 	public boolean optional;
-	public LinkedList<NodeType> tupleTypes = new LinkedList<NodeType>();
+	public LinkedList<NodeTupleType> tupleTypes = new LinkedList<NodeTupleType>();
 
 	public NodeType(final String data) {
 	    id = data;
@@ -456,7 +456,7 @@ public abstract class Node {
 	    if(tupleTypes.size() == 0){
 		if (!Semantics.typeExists(id)) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
 		if (EnumPrimitive.isPrimitive(id) && optional) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
-	    }else for(NodeType typeNode : tupleTypes) typeNode.analyse();
+	    }else for(NodeTupleType typeNode : tupleTypes) typeNode.analyse();
 	}
 
     }
@@ -1175,6 +1175,15 @@ public abstract class Node {
 	    this.expr = parseExpression;
 	}
 	
+    }
+    
+    public static class NodeTupleType extends Node {
+	public NodeType type;
+	public String name;
+	public NodeTupleType(int line, int column, NodeType type) {
+	    super(line, column);
+	    this.type = type;
+	}
     }
 
 }

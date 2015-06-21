@@ -31,6 +31,7 @@ public class Lexer {
 	STRING("\".*\"", "string"),
 	CHAR("\'.\'", "character"),
 	BOOL("true|false", "boolean"),
+	PRIMITIVE("bool|double|float|long|int|short|byte|ulong|uint|char|void", "primitive"),
 
 	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
 	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
@@ -84,7 +85,6 @@ public class Lexer {
 	FOR("for"),
 	IN("in"),
 
-	PRIMITIVE("bool|double|float|long|int|short|byte|ulong|uint|char|void", "primitive"),
 	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),
 	EOF("\\Z", "end of file"),
 	ERROR(".*", "error");

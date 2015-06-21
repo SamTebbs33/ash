@@ -3,7 +3,10 @@ package ashc.grammar;
 import java.util.*;
 
 import ashc.grammar.Lexer.*;
+import ashc.grammar.Lexer.TokenType;
+import ashc.grammar.Lexer.UnexpectedTokenException;
 import ashc.grammar.Node.IFuncStmt;
+import ashc.grammar.Node.NodeType;
 import ashc.grammar.Lexer.*;
 import ashc.grammar.Node.*;
 
@@ -586,9 +589,16 @@ public class Parser {
 	final NodeType type = new NodeType();
 	// Parse tuple types
 	if (getNext().type == TokenType.BRACKETL) {
-	    do
-		type.tupleTypes.add(parseType());
-	    while (expect(TokenType.COMMA, TokenType.BRACKETR).type == TokenType.COMMA);
+	    boolean named = false, unnamed = false;
+	    do{
+		NodeTupleType tupleType = parseTupleType(named, unnamed);
+		if(tupleType.name != null) named = true;
+		else{
+		    tupleType.name = ((char)('a'+type.tupleTypes.size()))+"";
+		    unnamed = true;
+		}
+		type.tupleTypes.add(tupleType);
+	    }while (expect(TokenType.COMMA, TokenType.BRACKETR).type == TokenType.COMMA);
 	} else {
 	    rewind();
 	    type.id = expect(TokenType.ID, TokenType.PRIMITIVE).data;
@@ -603,6 +613,19 @@ public class Parser {
 	if (getNext().type == TokenType.QUESTIONMARK) type.optional = true;
 	else rewind();
 	return type;
+    }
+
+    public NodeTupleType parseTupleType(boolean mustBeNamed, boolean mustBeUnnamed) throws UnexpectedTokenException {
+	String id = expect(TokenType.ID, TokenType.PRIMITIVE).data;
+	Token next = getNext();
+	if(next.type == TokenType.COLON){
+	    if(mustBeUnnamed) throw new UnexpectedTokenException(next, TokenType.COMMA, TokenType.BRACKETR);
+	    NodeTupleType type = new NodeTupleType(line, column, parseType());
+	    type.name = id;
+	    return type;
+	}else if(mustBeNamed) throw new UnexpectedTokenException(next, TokenType.COLON);
+	rewind(2);
+	return new NodeTupleType(line, column, parseType());
     }
 
     private NodeType parseSuperType() throws UnexpectedTokenException {
