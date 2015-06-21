@@ -70,7 +70,7 @@ public class Semantics {
 	public boolean equals(final Object obj) {
 	    if (obj instanceof TypeI) {
 		final TypeI type = (TypeI) obj;
-		return type.shortName.equals(shortName) && type.arrDims == arrDims;
+		return type.shortName.equals(shortName) && type.arrDims == arrDims && type.optional == optional;
 	    }
 	    return false;
 	}
@@ -110,6 +110,7 @@ public class Semantics {
 		    }
 		    return true;
 		}
+		return false;
 	    }
 	    if(optional != exprType.optional) return false;
 	    // If they are both numeric and the array dimensions are 0
@@ -127,6 +128,10 @@ public class Semantics {
 
 	public static TypeI voidType() {
 	    return new TypeI("void", 0, false);
+	}
+
+	public boolean isArray() {
+	    return arrDims > 0;
 	}
 
     }

@@ -356,8 +356,8 @@ public abstract class Node {
 	public void analyse() {
 	    for (int i = 0; i < args.size(); i++) {
 		boolean hasDupes = false;
-		for (int j = 0; j < args.size(); j++)
-		    if (i != j) if (args.get(i).id.equals(args.get(j).id)) {
+		for (int j = i+1; j < args.size(); j++)
+		    if (args.get(i).id.equals(args.get(j).id)) {
 			hasDupes = true;
 			semanticError(this, line, column, DUPLICATE_ARGUMENTS, args.get(i).id);
 			break;
@@ -459,7 +459,7 @@ public abstract class Node {
 	    }else{
 		for(int i = 0; i < tupleTypes.size(); i++){
 		    tupleTypes.get(i).analyse();
-		    for(int j = 0; j < tupleTypes.size(); j++) if(i != j) if(tupleTypes.get(i).name.equals(tupleTypes.get(j).name)) semanticError(this, line, column, DUPLICATE_ARGUMENTS, tupleTypes.get(i).name);
+		    for(int j = i+1; j < tupleTypes.size(); j++) if(tupleTypes.get(i).name.equals(tupleTypes.get(j).name)) semanticError(this, line, column, DUPLICATE_ARGUMENTS, tupleTypes.get(i).name);
 		}
 	    }
 	}
@@ -1078,6 +1078,17 @@ public abstract class Node {
 	public void add(IExpression expr){
 	    exprs.add(expr);
 	}
+	
+
+	@Override
+	public void preAnalyse() {
+	    exprs.preAnalyse();
+	}
+
+	@Override
+	public void analyse() {
+	    exprs.analyse();
+	}
 
 	@Override
 	public TypeI getExprType() {
@@ -1101,6 +1112,16 @@ public abstract class Node {
 
 	public NodeTupleExpr(int line, int column) {
 	    super(line, column);
+	}
+	
+	@Override
+	public void preAnalyse() {
+	    for(NodeTupleExprArg arg : exprs) arg.preAnalyse();
+	}
+
+	@Override
+	public void analyse() {
+	    for(NodeTupleExprArg arg : exprs) arg.analyse();
 	}
 
 	@Override
@@ -1130,6 +1151,20 @@ public abstract class Node {
 	    this.expr = expr;
 	    this.block = block;
 	}
+
+	@Override
+	public void analyse() {
+	   ((Node)expr).analyse();
+	   if(!((Node)expr).errored){
+	       TypeI exprType = expr.getExprType();
+	       if(EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL){
+		   if(!exprType.isArray()) return;
+	       }
+	       semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
+	   }
+	   block.analyse();
+	   if(elseStmt != null) elseStmt.analyse();
+	}
 	
     }
     
@@ -1141,6 +1176,19 @@ public abstract class Node {
 	    super(line, column);
 	    this.expr = expr;
 	    this.block = block;
+	}
+	
+	@Override
+	public void analyse() {
+	   ((Node)expr).analyse();
+	   if(!((Node)expr).errored){
+	       TypeI exprType = expr.getExprType();
+	       if(EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL){
+		   if(!exprType.isArray()) return;
+	       }
+	       semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
+	   }
+	   block.analyse();
 	}
 	
     }
@@ -1155,6 +1203,19 @@ public abstract class Node {
 	    this.block = block;
 	}
 	
+	@Override
+	public void analyse() {
+	   ((Node)expr).analyse();
+	   if(!((Node)expr).errored){
+	       TypeI exprType = expr.getExprType();
+	       if(EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL){
+		   if(!exprType.isArray()) return;
+	       }
+	       semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
+	   }
+	   block.analyse();
+	}
+	
     }
     
     public static class NodeForNormal extends NodeFor implements IFuncStmt {
@@ -1164,6 +1225,13 @@ public abstract class Node {
 	    super(line, column, condition, block);
 	    this.initStmt = initStmt;
 	    this.endStmt = endStmt;
+	}
+	
+	@Override
+	public void analyse() {
+	   if(initStmt != null) ((Node) initStmt).analyse();
+	   if(endStmt != null) ((Node) endStmt).analyse();
+	   super.analyse();
 	}
 	
     }
@@ -1183,14 +1251,12 @@ public abstract class Node {
     public static class NodeTupleType extends Node {
 	public NodeType type;
 	public String name;
+	
 	public NodeTupleType(int line, int column, NodeType type) {
 	    super(line, column);
 	    this.type = type;
 	}
-	@Override
-	public void preAnalyse() {
-	    type.preAnalyse();
-	}
+
 	@Override
 	public void analyse() {
 	    type.analyse();
@@ -1201,8 +1267,14 @@ public abstract class Node {
     public static class NodeTupleExprArg extends Node {
 	public IExpression expr;
 	public String name;
+	
 	public NodeTupleExprArg(int line, int column) {
 	    super(line, column);
+	}
+	
+	@Override
+	public void analyse() {
+	    ((Node) expr).analyse();
 	}
     }
 

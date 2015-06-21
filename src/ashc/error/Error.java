@@ -30,6 +30,7 @@ public class Error {
 	TOO_MANY_ARRAY_ACCESSES("Attempted to access %s array dimension(s) on a variable with %s dimension(s) (%s)"),
 	ARRAY_INDEX_NOT_NUMERIC("Array index must be numeric (%s)"),
 	CANNOT_USE_SELF("Cannot use the self keyword in the current context"),
+	EXPECTED_BOOL_EXPR("Expected a boolean expression, found %s"),
 
 	CANNOT_EXTEND_FINAL_TYPE("Cannot extend a final type (%s)"),
 	CANNOT_EXTEND_TYPE("%s %s cannot extend %s %s (%s)"),
