@@ -82,6 +82,7 @@ public class Semantics {
 	    for (int i = 0; i < arrDims; i++)
 		arrBuffer.append("[]");
 	    String id = shortName;
+	    if(tupleName != null) id = tupleName + " : " + id;
 	    if(isTuple()){
 		id = "[";
 		for(int i = 0; i < tupleTypes.size(); i++) id += tupleTypes.get(i).toString() + (i < tupleTypes.size() - 1 ? ", " : "");
@@ -104,7 +105,8 @@ public class Semantics {
 	    if(tupleTypes.size() > 0){
 		if(tupleTypes.size() == exprType.tupleTypes.size()){
 		    for(int i = 0; i < exprType.tupleTypes.size(); i++){
-			if(!tupleTypes.get(i).canBeAssignedTo(exprType.tupleTypes.get(i))) return false;
+			TypeI tupleType1 = tupleTypes.get(i), tupleType2 = exprType.tupleTypes.get(i);
+			if(!tupleType1.tupleName.equals(tupleType2.tupleName) || !tupleTypes.get(i).canBeAssignedTo(exprType.tupleTypes.get(i))) return false;
 		    }
 		    return true;
 		}
