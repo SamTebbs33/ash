@@ -6,6 +6,8 @@ import ashc.grammar.Lexer.*;
 import ashc.grammar.Lexer.TokenType;
 import ashc.grammar.Lexer.UnexpectedTokenException;
 import ashc.grammar.Node.IFuncStmt;
+import ashc.grammar.Node.NodeExprs;
+import ashc.grammar.Node.NodeTupleExprArg;
 import ashc.grammar.Node.NodeType;
 import ashc.grammar.Lexer.*;
 import ashc.grammar.Node.*;
@@ -432,7 +434,7 @@ public class Parser {
 	    case BRACKETL:
 		expr = new NodeTupleExpr(next.line, next.columnStart);
 		rewind();
-		((NodeTupleExpr)expr).exprs = parseCallArgs(TokenType.BRACKETL, TokenType.BRACKETR);
+		((NodeTupleExpr)expr).exprs = parseTupleExpr();
 		break;
 	    case PARENL:
 		expr = parseExpression();
@@ -479,6 +481,35 @@ public class Parser {
 	    }
 	}
 	return expr;
+    }
+
+    private LinkedList<NodeTupleExprArg> parseTupleExpr() throws UnexpectedTokenException {
+	expect(TokenType.BRACKETL);
+	boolean named = false, unnamed = false;
+	LinkedList<NodeTupleExprArg> args = new LinkedList<NodeTupleExprArg>();
+	do{
+	    NodeTupleExprArg arg = parseTupleExprArg(named, unnamed);
+	    if(arg.name != null) named = true;
+	    else{
+		arg.name = ((char)('a'+args.size()))+"";
+		unnamed = true;
+	    }
+	    args.add(arg);
+	    
+	}while(expect(TokenType.BRACKETR, TokenType.COMMA).type == TokenType.COMMA);
+	return args;
+    }
+
+    private NodeTupleExprArg parseTupleExprArg(boolean named, boolean unnamed) throws UnexpectedTokenException {
+	Token next = getNext();
+	NodeTupleExprArg arg = new NodeTupleExprArg(next.line, next.columnStart);
+	if(next.type == TokenType.ID){
+	    if(getNext().type == TokenType.COLON){
+		arg.name = next.data;
+	    }else rewind(2);
+	}else rewind();
+	arg.expr = parseExpression();
+	return arg;
     }
 
     private IExpression parseExpression() throws UnexpectedTokenException {

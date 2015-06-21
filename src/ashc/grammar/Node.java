@@ -1093,25 +1093,24 @@ public abstract class Node {
     
     public static class NodeTupleExpr extends Node implements IExpression {
 	
-	public NodeExprs exprs = new NodeExprs();
+	public LinkedList<NodeTupleExprArg> exprs = new LinkedList<Node.NodeTupleExprArg>();
 
 	public NodeTupleExpr(int line, int column) {
 	    super(line, column);
 	}
-	
-	public void add(IExpression expr){
-	    exprs.add(expr);
-	}
 
 	@Override
 	public TypeI getExprType() {
-	    LinkedList<IExpression> exprList = exprs.exprs;
 	    // Just infer an Object array
-	    if(exprList.size() == 0){
+	    if(exprs.size() == 0){
 		return new TypeI("Object", 1, false);
 	    }
 	    TypeI type = new TypeI("", 0, false);
-	    for(IExpression expr : exprList) type.tupleTypes.add(expr.getExprType());
+	    for(NodeTupleExprArg arg : exprs){
+		TypeI argType = arg.expr.getExprType();
+		argType.tupleName = arg.name;
+		type.tupleTypes.add(argType);
+	    }
 	    return type;
 	}
 	
@@ -1183,6 +1182,14 @@ public abstract class Node {
 	public NodeTupleType(int line, int column, NodeType type) {
 	    super(line, column);
 	    this.type = type;
+	}
+    }
+    
+    public static class NodeTupleExprArg extends Node {
+	public IExpression expr;
+	public String name;
+	public NodeTupleExprArg(int line, int column) {
+	    super(line, column);
 	}
     }
 
