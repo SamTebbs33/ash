@@ -106,14 +106,15 @@ public class Semantics {
 		if(tupleTypes.size() == exprType.tupleTypes.size()){
 		    for(int i = 0; i < exprType.tupleTypes.size(); i++){
 			TypeI tupleType1 = tupleTypes.get(i), tupleType2 = exprType.tupleTypes.get(i);
-			if(!tupleType1.tupleName.equals(tupleType2.tupleName) || !tupleTypes.get(i).canBeAssignedTo(exprType.tupleTypes.get(i))) return false;
+			if(!tupleType1.tupleName.equals(tupleType2.tupleName) || !tupleType1.canBeAssignedTo(tupleType2)) return false;
 		    }
 		    return true;
 		}
 	    }
+	    if(optional != exprType.optional) return false;
 	    // If they are both numeric and the array dimensions are 0
 	    if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && arrDims == exprType.arrDims) return true;
-	    return (exprType.arrDims == arrDims) && optional == exprType.optional && (exprType.isNull() && !EnumPrimitive.isNumeric(shortName) || Semantics.typeHasSuper(exprType.shortName, shortName));
+	    return (exprType.arrDims == arrDims) && (exprType.isNull() && !EnumPrimitive.isNumeric(shortName) || Semantics.typeHasSuper(exprType.shortName, shortName));
 	}
 
 	public boolean isNull() {

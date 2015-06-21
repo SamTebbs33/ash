@@ -456,7 +456,12 @@ public abstract class Node {
 	    if(tupleTypes.size() == 0){
 		if (!Semantics.typeExists(id)) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
 		if (EnumPrimitive.isPrimitive(id) && optional) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
-	    }else for(NodeTupleType typeNode : tupleTypes) typeNode.analyse();
+	    }else{
+		for(int i = 0; i < tupleTypes.size(); i++){
+		    tupleTypes.get(i).analyse();
+		    for(int j = 0; j < tupleTypes.size(); j++) if(i != j) if(tupleTypes.get(i).name.equals(tupleTypes.get(j).name)) semanticError(this, line, column, DUPLICATE_ARGUMENTS, tupleTypes.get(i).name);
+		}
+	    }
 	}
 
     }
@@ -585,7 +590,6 @@ public abstract class Node {
     public static class NodeVarDecExplicit extends NodeVarDec {
 	public NodeType type;
 	public IExpression expr;
-
 	public TypeI typeI;
 
 	public NodeVarDecExplicit(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, final NodeType type, final IExpression expr) {
@@ -1183,6 +1187,15 @@ public abstract class Node {
 	    super(line, column);
 	    this.type = type;
 	}
+	@Override
+	public void preAnalyse() {
+	    type.preAnalyse();
+	}
+	@Override
+	public void analyse() {
+	    type.analyse();
+	}
+	
     }
     
     public static class NodeTupleExprArg extends Node {
