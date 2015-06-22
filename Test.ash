@@ -1,7 +1,8 @@
-class Test {
-	public func main(args : String[]) {
-		for(arg in args){
-			var a : String = arg
+import java.lang.Iterable
+
+class Test : Iterable {
+	public func main(args : Test[]) {
+		for(a in args){
 		}
 	}
 }

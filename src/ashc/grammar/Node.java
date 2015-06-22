@@ -542,7 +542,7 @@ public abstract class Node {
 		if (type.isPresent()) if (!type.get().hasSuper(new QualifiedName("").add("java").add("lang").add("Throwable"))) semanticError(this, line, column, TYPE_DOES_NOT_EXTEND, throwsType.id, "java.lang.Throwable");
 	    }
 	    Scope.push(new FuncScope(new TypeI(type)));
-	    for(NodeArg arg : args.args) Scope.getScope().addVar(new Variable(arg.id, new TypeI(arg.type)));
+	    for(NodeArg arg : args.args) Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
 	    block.analyse();
 	    Scope.pop();
 	}
@@ -565,7 +565,7 @@ public abstract class Node {
 	protected void analyseProperty(TypeI type){
 	    if((getBlock != null || setBlock != null)){
 		if(keyword.equals("const")) semanticError(this, line, column, CONST_VAR_IS_PROPERTY, id);
-		else if(Scope.getScope() instanceof FuncScope) semanticError(this, line, column, PROPERTY_IN_FUNC, id);
+		else if(Scope.getFuncScope() != null) semanticError(this, line, column, PROPERTY_IN_FUNC, id);
 	    }
 	    if(getBlock != null){
 		Scope.push(new PropertyScope(type));
@@ -616,7 +616,7 @@ public abstract class Node {
 	    type.analyse();
 	    if (expr != null) ((Node) expr).analyse();
 	    typeI = new TypeI(type);
-	    if (!errored && Scope.getScope() != null) Scope.getScope().addVar(new Variable(id, typeI));
+	    if (!errored) Semantics.addVar(new Variable(id, typeI));
 
 	    if (expr == null) {
 		if (!type.optional && !(EnumPrimitive.isPrimitive(type.id) && type.arrDims == 0)) semanticError(this, line, column, MISSING_ASSIGNMENT);
@@ -673,7 +673,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    if (singleLineExpr != null) {
-		final FuncScope scope = (FuncScope) Scope.getScope();
+		final FuncScope scope = Scope.getFuncScope();
 		final TypeI exprType = singleLineExpr.getExprType();
 		if (scope.returnType.isVoid()) semanticError(this, line, column, RETURN_EXPR_IN_VOID_FUNC);
 		else if (!scope.returnType.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, scope.returnType.toString(), exprType.toString());
@@ -1051,7 +1051,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    if(Scope.getScope() instanceof PropertyScope) return ((PropertyScope)Scope.getScope()).returnType;
+	    if(Scope.getPropertyScope() != null) return Scope.getPropertyScope().returnType;
 	    else semanticError(this, line, column, CANNOT_USE_SELF);
 	    return null;
 	}
@@ -1213,7 +1213,9 @@ public abstract class Node {
 	       }
 	       semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
 	   }
+	   Scope.push(new Scope());
 	   block.analyse();
+	   Scope.pop();
 	}
 	
     }
@@ -1258,12 +1260,14 @@ public abstract class Node {
 	   }else{
 	       Optional<Type> type = Semantics.getType(exprType.shortName);
 	       if(type.isPresent()) if(type.get().hasSuper(new QualifiedName("java").add("lang").add("Iterable"))){
-		   //TODO: When adding support for generics, extract the exprType iterable generic here
+		   //TODO: When adding support for generics, extract the exprType iterable generic here and assign it to varType
 	       }
 	       else semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
 	   }
+	   Scope.push(new Scope());
 	   Semantics.addVar(new Variable(varId, varType));
 	   block.analyse();
+	   Scope.pop();
 	}
 	
     }

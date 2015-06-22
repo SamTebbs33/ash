@@ -4,6 +4,7 @@ import static ashc.main.AshCompiler.*;
 
 import java.util.*;
 
+import ashc.main.*;
 import ashc.semantics.Member.Variable;
 import ashc.semantics.Semantics.TypeI;
 
@@ -12,6 +13,8 @@ import ashc.semantics.Semantics.TypeI;
  * @author samtebbs, 15:08:08 - 23 May 2015
  */
 public class Scope {
+
+    public static Stack<Scope> scopeStack = new Stack<Scope>();
 
     public static class FuncScope extends Scope {
 
@@ -35,10 +38,10 @@ public class Scope {
     public Scope() {}
 
     public LinkedList<Variable> vars = new LinkedList<Variable>();
+    public Scope parent;
 
     public static Scope getScope() {
-	Stack<Scope> stack = get().scopeStack;
-	return stack.size() > 0 ? stack.peek() : null;
+	return scopeStack.size() > 0 ? scopeStack.peek() : null;
     }
 
     public static QualifiedName getNamespace() {
@@ -46,21 +49,33 @@ public class Scope {
     }
 
     public static void push(final Scope scope) {
-	get().scopeStack.push(scope);
+	if(scopeStack.size() > 0) scope.parent = scopeStack.peek();
+	scopeStack.push(scope);
     }
 
     public static void pop() {
-	get().scopeStack.pop();
+	scopeStack.pop();
     }
 
     public boolean hasVar(final String id) {
 	for (final Variable var : vars)
 	    if (var.id.equals(id)) return true;
+	if(parent != null) return parent.hasVar(id);
 	return false;
     }
 
     public void addVar(final Variable var) {
 	vars.add(var);
+    }
+    
+    public static FuncScope getFuncScope(){
+	for(int i = scopeStack.size()-1; i >= 0; i--) if(scopeStack.get(i) instanceof FuncScope) return (FuncScope) scopeStack.get(i);
+	return null;
+    }
+    
+    public static PropertyScope getPropertyScope(){
+	for(int i = scopeStack.size()-1; i >= 0; i--) if(scopeStack.get(i) instanceof PropertyScope) return (PropertyScope) scopeStack.get(i);
+	return null;
     }
 
 }

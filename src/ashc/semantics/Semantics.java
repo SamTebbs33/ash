@@ -204,8 +204,8 @@ public class Semantics {
     }
 
     public static Variable getVar(final String id, final TypeI type) {
-	if (type.arrDims > 0 && id.equals("length")) return new Variable("length", new TypeI(EnumPrimitive.INT));
-	if(type.tupleTypes.size() > 0){
+	if (type.isArray() && id.equals("length")) return new Variable("length", new TypeI(EnumPrimitive.INT));
+	if(type.isTuple()){
 	    for(TypeI tupleType : type.tupleTypes) if(tupleType.tupleName != null && tupleType.tupleName.equals(id)) return new Variable(id, tupleType);
 	}else {
 	    final Optional<Type> t = getType(type.shortName);
@@ -214,15 +214,24 @@ public class Semantics {
 	return null;
     }
 
+    public static Variable getVar(final String id, Scope scope){
+	if(scope != null){
+	    for(final Variable var : scope.vars) if (var.id.equals(id)) return var;
+	    if(scope.parent != null) return getVar(id, scope.parent);
+	}
+	return null;
+    }
+    
     public static Variable getVar(final String id) {
 	// Look in scope
-	if(Scope.getScope() != null) for(final Variable var : Scope.getScope().vars) if (var.id.equals(id)) return var;
+	Variable var = null;
+	if((var = getVar(id, Scope.getScope())) != null) return var;
 	// Else, look in the current type
 	return getVar(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false));
     }
 
     public static TypeI getFuncType(final String id, final TypeI type, final NodeExprs args) {
-	if (type.arrDims > 0 && id.equals("toString()")) return new TypeI("String", 0, false);
+	if (type.isArray() && id.equals("toString()")) return new TypeI("String", 0, false);
 	else {
 	    final Optional<Type> t = getType(type.shortName);
 	    if (t.isPresent()) return t.get().getFuncType(id, args);
@@ -252,16 +261,13 @@ public class Semantics {
 	Scope scope = Scope.getScope();
 	if (scope != null && scope.hasVar(id)) return true;
 	for (final Field field : typeStack.peek().fields){
-	    System.out.println(field);
 	    if (field.qualifiedName.shortName.equals(id)) return true;
 	}
 	return false;
     }
 
     public static void addVar(final Variable variable) {
-	if (Scope.getScope() instanceof FuncScope) 
-	    // We are in a function, so add a local variable to the function's scope
-	    Scope.getScope().addVar(variable);
+	Scope.getScope().vars.add(variable);
     }
 
 }

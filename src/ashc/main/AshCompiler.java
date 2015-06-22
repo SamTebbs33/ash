@@ -13,7 +13,6 @@ import ashc.semantics.*;
  */
 public class AshCompiler {
 
-    public Stack<Scope> scopeStack = new Stack<Scope>();
     private final Parser parser;
     private final Lexer lexer;
     private NodeFile fileNode;
