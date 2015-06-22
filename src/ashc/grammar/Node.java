@@ -1246,6 +1246,26 @@ public abstract class Node {
 	    this.expr = parseExpression;
 	}
 	
+	@Override
+	public void analyse() {
+	   // The only types that can be iterated over are arrays and those that implement java.lang.Iterable
+	   TypeI exprType = expr.getExprType();
+	   TypeI varType = new TypeI("Object", 0, false);
+	   if(exprType.isTuple()) semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
+	   if(exprType.isArray()){
+	       exprType.arrDims--;
+	       varType = exprType;
+	   }else{
+	       Optional<Type> type = Semantics.getType(exprType.shortName);
+	       if(type.isPresent()) if(type.get().hasSuper(new QualifiedName("java").add("lang").add("Iterable"))){
+		   //TODO: When adding support for generics, extract the exprType iterable generic here
+	       }
+	       else semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
+	   }
+	   Semantics.addVar(new Variable(varId, varType));
+	   block.analyse();
+	}
+	
     }
     
     public static class NodeTupleType extends Node {
