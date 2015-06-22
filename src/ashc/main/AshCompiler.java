@@ -5,7 +5,6 @@ import java.util.*;
 
 import ashc.grammar.*;
 import ashc.grammar.Node.NodeFile;
-import ashc.semantics.*;
 
 /**
  * Ash

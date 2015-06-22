@@ -2,16 +2,45 @@ package ashc.codegen;
 
 import java.io.*;
 
-import ashc.grammar.Node.*;
+import ashc.grammar.Node.NodeArg;
+import ashc.grammar.Node.NodeBinary;
+import ashc.grammar.Node.NodeBool;
+import ashc.grammar.Node.NodeChar;
+import ashc.grammar.Node.NodeClassBlock;
+import ashc.grammar.Node.NodeClassDec;
+import ashc.grammar.Node.NodeDouble;
+import ashc.grammar.Node.NodeEnumDec;
+import ashc.grammar.Node.NodeExprs;
+import ashc.grammar.Node.NodeFile;
+import ashc.grammar.Node.NodeFloat;
+import ashc.grammar.Node.NodeFuncBlock;
+import ashc.grammar.Node.NodeFuncCall;
+import ashc.grammar.Node.NodeImport;
+import ashc.grammar.Node.NodeInteger;
+import ashc.grammar.Node.NodeInterfaceDec;
+import ashc.grammar.Node.NodeLong;
+import ashc.grammar.Node.NodeModifier;
+import ashc.grammar.Node.NodePackage;
+import ashc.grammar.Node.NodeQualifiedName;
+import ashc.grammar.Node.NodeString;
+import ashc.grammar.Node.NodeTernary;
+import ashc.grammar.Node.NodeThis;
+import ashc.grammar.Node.NodeType;
+import ashc.grammar.Node.NodeTypeDec;
+import ashc.grammar.Node.NodeTypes;
+import ashc.grammar.Node.NodeUnary;
+import ashc.grammar.Node.NodeVarDecExplicit;
+import ashc.grammar.Node.NodeVarDecImplicit;
+import ashc.grammar.Node.NodeVariable;
 
 /**
  * Ash
  * @author samtebbs, 20:08:22 - 24 May 2015
  */
 public interface CodeGenerator {
-    
+
     public void start() throws FileNotFoundException;
-    
+
     public void end();
 
     public void generateArg(NodeArg arg);

@@ -10,8 +10,6 @@ import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
-import ashc.semantics.Scope.FuncScope;
-import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
@@ -34,12 +32,13 @@ public class Semantics {
 	    this.shortName = shortName;
 	    this.arrDims = arrDims;
 	    this.optional = optional;
-	    this.tupleTypes = new LinkedList<TypeI>();
+	    tupleTypes = new LinkedList<TypeI>();
 	}
-	
-	public TypeI(NodeType type){
+
+	public TypeI(final NodeType type) {
 	    this(type.id, type.arrDims, type.optional);
-	    for(NodeTupleType nodeType : type.tupleTypes) tupleTypes.add(new TypeI(nodeType));
+	    for (final NodeTupleType nodeType : type.tupleTypes)
+		tupleTypes.add(new TypeI(nodeType));
 	}
 
 	public TypeI(final EnumPrimitive primitive) {
@@ -51,9 +50,9 @@ public class Semantics {
 	    this.arrDims = arrDims;
 	}
 
-	public TypeI(NodeTupleType nodeType) {
+	public TypeI(final NodeTupleType nodeType) {
 	    this(nodeType.type);
-	    this.tupleName = nodeType.name;
+	    tupleName = nodeType.name;
 	}
 
 	public static TypeI fromClass(final Class cls) {
@@ -82,10 +81,11 @@ public class Semantics {
 	    for (int i = 0; i < arrDims; i++)
 		arrBuffer.append("[]");
 	    String id = shortName;
-	    if(tupleName != null) id = tupleName + " : " + id;
-	    if(isTuple()){
+	    if (tupleName != null) id = tupleName + " : " + id;
+	    if (isTuple()) {
 		id = "[";
-		for(int i = 0; i < tupleTypes.size(); i++) id += tupleTypes.get(i).toString() + (i < tupleTypes.size() - 1 ? ", " : "");
+		for (int i = 0; i < tupleTypes.size(); i++)
+		    id += tupleTypes.get(i).toString() + (i < tupleTypes.size() - 1 ? ", " : "");
 		id += "]";
 	    }
 	    return String.format("%s%s%s", id, arrBuffer.toString(), optional ? "?" : "");
@@ -102,27 +102,27 @@ public class Semantics {
 	    // array dimensions
 	    if (exprType.isNull() && optional && (!EnumPrimitive.isPrimitive(shortName) || arrDims > 0)) return true;
 	    // If this is a tuple and the expression is a tuple expression
-	    if(tupleTypes.size() > 0){
-		if(tupleTypes.size() == exprType.tupleTypes.size()){
-		    for(int i = 0; i < exprType.tupleTypes.size(); i++){
-			TypeI tupleType1 = tupleTypes.get(i), tupleType2 = exprType.tupleTypes.get(i);
-			if(!tupleType1.tupleName.equals(tupleType2.tupleName) || !tupleType1.canBeAssignedTo(tupleType2)) return false;
+	    if (tupleTypes.size() > 0) {
+		if (tupleTypes.size() == exprType.tupleTypes.size()) {
+		    for (int i = 0; i < exprType.tupleTypes.size(); i++) {
+			final TypeI tupleType1 = tupleTypes.get(i), tupleType2 = exprType.tupleTypes.get(i);
+			if (!tupleType1.tupleName.equals(tupleType2.tupleName) || !tupleType1.canBeAssignedTo(tupleType2)) return false;
 		    }
 		    return true;
 		}
 		return false;
 	    }
-	    if(optional != exprType.optional) return false;
+	    if (optional != exprType.optional) return false;
 	    // If they are both numeric and the array dimensions are 0
 	    if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && arrDims == exprType.arrDims) return true;
-	    return (exprType.arrDims == arrDims) && (exprType.isNull() && !EnumPrimitive.isNumeric(shortName) || Semantics.typeHasSuper(exprType.shortName, shortName));
+	    return exprType.arrDims == arrDims && (exprType.isNull() && !EnumPrimitive.isNumeric(shortName) || Semantics.typeHasSuper(exprType.shortName, shortName));
 	}
 
 	public boolean isNull() {
 	    return !isTuple() ? shortName.equals("null") : false;
 	}
-	
-	public boolean isTuple(){
+
+	public boolean isTuple() {
 	    return tupleTypes != null && tupleTypes.size() > 0;
 	}
 
@@ -205,27 +205,29 @@ public class Semantics {
 
     public static Variable getVar(final String id, final TypeI type) {
 	if (type.isArray() && id.equals("length")) return new Variable("length", new TypeI(EnumPrimitive.INT));
-	if(type.isTuple()){
-	    for(TypeI tupleType : type.tupleTypes) if(tupleType.tupleName != null && tupleType.tupleName.equals(id)) return new Variable(id, tupleType);
-	}else {
+	if (type.isTuple()) {
+	    for (final TypeI tupleType : type.tupleTypes)
+		if (tupleType.tupleName != null && tupleType.tupleName.equals(id)) return new Variable(id, tupleType);
+	} else {
 	    final Optional<Type> t = getType(type.shortName);
 	    if (t.isPresent()) return t.get().getField(id);
 	}
 	return null;
     }
 
-    public static Variable getVar(final String id, Scope scope){
-	if(scope != null){
-	    for(final Variable var : scope.vars) if (var.id.equals(id)) return var;
-	    if(scope.parent != null) return getVar(id, scope.parent);
+    public static Variable getVar(final String id, final Scope scope) {
+	if (scope != null) {
+	    for (final Variable var : scope.vars)
+		if (var.id.equals(id)) return var;
+	    if (scope.parent != null) return getVar(id, scope.parent);
 	}
 	return null;
     }
-    
+
     public static Variable getVar(final String id) {
 	// Look in scope
 	Variable var = null;
-	if((var = getVar(id, Scope.getScope())) != null) return var;
+	if ((var = getVar(id, Scope.getScope())) != null) return var;
 	// Else, look in the current type
 	return getVar(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false));
     }
@@ -258,11 +260,10 @@ public class Semantics {
     }
 
     public static boolean varExists(final String id) {
-	Scope scope = Scope.getScope();
+	final Scope scope = Scope.getScope();
 	if (scope != null && scope.hasVar(id)) return true;
-	for (final Field field : typeStack.peek().fields){
+	for (final Field field : typeStack.peek().fields)
 	    if (field.qualifiedName.shortName.equals(id)) return true;
-	}
 	return false;
     }
 

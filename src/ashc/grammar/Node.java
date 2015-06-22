@@ -7,8 +7,6 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import ashc.grammar.Lexer.Token;
-import ashc.grammar.Node.IExpression;
-import ashc.grammar.Node.NodeIf;
 import ashc.load.*;
 import ashc.semantics.*;
 import ashc.semantics.Member.EnumType;
@@ -176,14 +174,15 @@ public abstract class Node {
 		if (type.optional) semanticError(this, line, column, CANNOT_EXTEND_OPTIONAL_TYPE, type.id);
 	    type = new Type(name, modifiers, getType());
 	    Semantics.addType(type);
-	    
-	    // Create the default constructor and add fields supplied by the arguments
-	    if(args != null && args.args.size() > 0){
-		Function defConstructor = new Function(Scope.getNamespace().copy().add(id.data), EnumModifier.PUBLIC.intVal);
-		for(NodeArg arg : args.args){
+
+	    // Create the default constructor and add fields supplied by the
+	    // arguments
+	    if (args != null && args.args.size() > 0) {
+		final Function defConstructor = new Function(Scope.getNamespace().copy().add(id.data), EnumModifier.PUBLIC.intVal);
+		for (final NodeArg arg : args.args) {
 		    arg.preAnalyse();
-		    if(!arg.errored){
-			TypeI argType = new TypeI(arg.type);
+		    if (!arg.errored) {
+			final TypeI argType = new TypeI(arg.type);
 			Semantics.addField(new Field(Scope.getNamespace().copy().add(arg.id), EnumModifier.PUBLIC.intVal, argType));
 			defConstructor.parameters.add(argType);
 		    }
@@ -331,7 +330,7 @@ public abstract class Node {
 	public NodeType type;
 	public IExpression defExpr;
 
-	public NodeArg(final int line, final int column, final String id, final NodeType type, IExpression defExpr) {
+	public NodeArg(final int line, final int column, final String id, final NodeType type, final IExpression defExpr) {
 	    super(line, column);
 	    this.id = id;
 	    this.type = type;
@@ -356,7 +355,7 @@ public abstract class Node {
 	public void analyse() {
 	    for (int i = 0; i < args.size(); i++) {
 		boolean hasDupes = false;
-		for (int j = i+1; j < args.size(); j++)
+		for (int j = i + 1; j < args.size(); j++)
 		    if (args.get(i).id.equals(args.get(j).id)) {
 			hasDupes = true;
 			semanticError(this, line, column, DUPLICATE_ARGUMENTS, args.get(i).id);
@@ -453,14 +452,13 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    if(tupleTypes.size() == 0){
+	    if (tupleTypes.size() == 0) {
 		if (!Semantics.typeExists(id)) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
 		if (EnumPrimitive.isPrimitive(id) && optional) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
-	    }else{
-		for(int i = 0; i < tupleTypes.size(); i++){
-		    tupleTypes.get(i).analyse();
-		    for(int j = i+1; j < tupleTypes.size(); j++) if(tupleTypes.get(i).name.equals(tupleTypes.get(j).name)) semanticError(this, line, column, DUPLICATE_ARGUMENTS, tupleTypes.get(i).name);
-		}
+	    } else for (int i = 0; i < tupleTypes.size(); i++) {
+		tupleTypes.get(i).analyse();
+		for (int j = i + 1; j < tupleTypes.size(); j++)
+		    if (tupleTypes.get(i).name.equals(tupleTypes.get(j).name)) semanticError(this, line, column, DUPLICATE_ARGUMENTS, tupleTypes.get(i).name);
 	    }
 	}
 
@@ -542,7 +540,8 @@ public abstract class Node {
 		if (type.isPresent()) if (!type.get().hasSuper(new QualifiedName("").add("java").add("lang").add("Throwable"))) semanticError(this, line, column, TYPE_DOES_NOT_EXTEND, throwsType.id, "java.lang.Throwable");
 	    }
 	    Scope.push(new FuncScope(new TypeI(type)));
-	    for(NodeArg arg : args.args) Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
+	    for (final NodeArg arg : args.args)
+		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
 	    block.analyse();
 	    Scope.pop();
 	}
@@ -561,18 +560,16 @@ public abstract class Node {
 	    this.keyword = keyword;
 	    this.id = id;
 	}
-	
-	protected void analyseProperty(TypeI type){
-	    if((getBlock != null || setBlock != null)){
-		if(keyword.equals("const")) semanticError(this, line, column, CONST_VAR_IS_PROPERTY, id);
-		else if(Scope.getFuncScope() != null) semanticError(this, line, column, PROPERTY_IN_FUNC, id);
-	    }
-	    if(getBlock != null){
+
+	protected void analyseProperty(final TypeI type) {
+	    if (getBlock != null || setBlock != null) if (keyword.equals("const")) semanticError(this, line, column, CONST_VAR_IS_PROPERTY, id);
+	    else if (Scope.getFuncScope() != null) semanticError(this, line, column, PROPERTY_IN_FUNC, id);
+	    if (getBlock != null) {
 		Scope.push(new PropertyScope(type));
 		getBlock.analyse();
 		Scope.pop();
 	    }
-	    if(setBlock != null){
+	    if (setBlock != null) {
 		Scope.push(new PropertyScope(type));
 		setBlock.analyse();
 		Scope.pop();
@@ -581,7 +578,8 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    // Only check if this var exists if we're in a scope, since variable declarations in types are already handled
+	    // Only check if this var exists if we're in a scope, since variable
+	    // declarations in types are already handled
 	    if (Scope.getScope() != null && Semantics.varExists(id)) semanticError(this, line, column, VAR_ALREADY_EXISTS, id);
 	}
 
@@ -654,7 +652,7 @@ public abstract class Node {
 	public void analyse() {
 	    super.analyse();
 	    if (expr != null) ((Node) expr).analyse();
-	    TypeI type = expr.getExprType();
+	    final TypeI type = expr.getExprType();
 	    if (!errored) Semantics.addVar(new Variable(id, type));
 	    analyseProperty(type);
 	}
@@ -685,7 +683,7 @@ public abstract class Node {
     }
 
     public static class NodePrefix extends Node implements IFuncStmt,
-	    IExpression {
+    IExpression {
 
 	public NodePrefix(final int line, final int column) {
 	    super(line, column);
@@ -744,10 +742,10 @@ public abstract class Node {
 	    Function func = null;
 	    args.analyse();
 	    TypeI enclosingType = null;
-	    if (prefix == null){
+	    if (prefix == null) {
 		enclosingType = new TypeI(Semantics.typeStack.peek().qualifiedName.shortName, 0, false);
 		func = Semantics.getFunc(id, args);
-	    }else{
+	    } else {
 		enclosingType = prefix.getExprType();
 		func = Semantics.getFunc(id, enclosingType, args);
 	    }
@@ -1042,20 +1040,20 @@ public abstract class Node {
 	    return new TypeI(Semantics.typeStack.peek().qualifiedName.shortName, 0, false);
 	}
     }
-    
+
     public static class NodeSelf extends Node implements IExpression {
 
-	public NodeSelf(int line, int columnStart) {
+	public NodeSelf(final int line, final int columnStart) {
 	    super(line, columnStart);
 	}
 
 	@Override
 	public TypeI getExprType() {
-	    if(Scope.getPropertyScope() != null) return Scope.getPropertyScope().returnType;
+	    if (Scope.getPropertyScope() != null) return Scope.getPropertyScope().returnType;
 	    else semanticError(this, line, column, CANNOT_USE_SELF);
 	    return null;
 	}
-	
+
     }
 
     public static class NodeNull extends Node implements IExpression {
@@ -1066,19 +1064,18 @@ public abstract class Node {
 	}
 
     }
-    
+
     public static class NodeArray extends Node implements IExpression {
-	
+
 	public NodeExprs exprs = new NodeExprs();
 
-	public NodeArray(int line, int column) {
+	public NodeArray(final int line, final int column) {
 	    super(line, column);
 	}
-	
-	public void add(IExpression expr){
+
+	public void add(final IExpression expr) {
 	    exprs.add(expr);
 	}
-	
 
 	@Override
 	public void preAnalyse() {
@@ -1092,61 +1089,61 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    LinkedList<IExpression> exprList = exprs.exprs;
+	    final LinkedList<IExpression> exprList = exprs.exprs;
 	    // Just infer an Object array
-	    if(exprList.size() == 0){
-		return new TypeI("Object", 1, false);
-	    }
+	    if (exprList.size() == 0) return new TypeI("Object", 1, false);
 	    // Infer the precedent type within this array expression
 	    TypeI type = exprList.getFirst().getExprType();
-	    for(int i = 1; i < exprList.size(); i++) type = Semantics.getPrecedentType(type, exprList.get(i).getExprType());
-	    type.arrDims += 1; // Add one to show that this is an array expression
+	    for (int i = 1; i < exprList.size(); i++)
+		type = Semantics.getPrecedentType(type, exprList.get(i).getExprType());
+	    type.arrDims += 1; // Add one to show that this is an array
+			       // expression
 	    return type;
 	}
-	
+
     }
-    
+
     public static class NodeTupleExpr extends Node implements IExpression {
-	
+
 	public LinkedList<NodeTupleExprArg> exprs = new LinkedList<Node.NodeTupleExprArg>();
 
-	public NodeTupleExpr(int line, int column) {
+	public NodeTupleExpr(final int line, final int column) {
 	    super(line, column);
 	}
-	
+
 	@Override
 	public void preAnalyse() {
-	    for(NodeTupleExprArg arg : exprs) arg.preAnalyse();
+	    for (final NodeTupleExprArg arg : exprs)
+		arg.preAnalyse();
 	}
 
 	@Override
 	public void analyse() {
-	    for(NodeTupleExprArg arg : exprs) arg.analyse();
+	    for (final NodeTupleExprArg arg : exprs)
+		arg.analyse();
 	}
 
 	@Override
 	public TypeI getExprType() {
 	    // Just infer an Object array
-	    if(exprs.size() == 0){
-		return new TypeI("Object", 1, false);
-	    }
-	    TypeI type = new TypeI("", 0, false);
-	    for(NodeTupleExprArg arg : exprs){
-		TypeI argType = arg.expr.getExprType();
+	    if (exprs.size() == 0) return new TypeI("Object", 1, false);
+	    final TypeI type = new TypeI("", 0, false);
+	    for (final NodeTupleExprArg arg : exprs) {
+		final TypeI argType = arg.expr.getExprType();
 		argType.tupleName = arg.name;
 		type.tupleTypes.add(argType);
 	    }
 	    return type;
 	}
-	
+
     }
-    
+
     public static class NodeIf extends Node implements IFuncStmt {
 	public IExpression expr;
 	public NodeFuncBlock block;
 	public NodeIf elseStmt;
 
-	public NodeIf(int line, int column, IExpression expr, NodeFuncBlock block) {
+	public NodeIf(final int line, final int column, final IExpression expr, final NodeFuncBlock block) {
 	    super(line, column);
 	    this.expr = expr;
 	    this.block = block;
@@ -1154,129 +1151,124 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	   ((Node)expr).analyse();
-	   if(!((Node)expr).errored){
-	       TypeI exprType = expr.getExprType();
-	       if(EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL){
-		   if(!exprType.isArray()) return;
-	       }
-	       semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
-	   }
-	   block.analyse();
-	   if(elseStmt != null) elseStmt.analyse();
+	    ((Node) expr).analyse();
+	    if (!((Node) expr).errored) {
+		final TypeI exprType = expr.getExprType();
+		if (EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL) if (!exprType.isArray()) return;
+		semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
+	    }
+	    block.analyse();
+	    if (elseStmt != null) elseStmt.analyse();
 	}
-	
+
     }
-    
+
     public static class NodeWhile extends Node implements IFuncStmt {
 	public IExpression expr;
 	public NodeFuncBlock block;
-	
-	public NodeWhile(int line, int column, IExpression expr, NodeFuncBlock block) {
+
+	public NodeWhile(final int line, final int column, final IExpression expr, final NodeFuncBlock block) {
 	    super(line, column);
 	    this.expr = expr;
 	    this.block = block;
 	}
-	
+
 	@Override
 	public void analyse() {
-	   ((Node)expr).analyse();
-	   if(!((Node)expr).errored){
-	       TypeI exprType = expr.getExprType();
-	       if(EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL){
-		   if(!exprType.isArray()) return;
-	       }
-	       semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
-	   }
-	   block.analyse();
+	    ((Node) expr).analyse();
+	    if (!((Node) expr).errored) {
+		final TypeI exprType = expr.getExprType();
+		if (EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL) if (!exprType.isArray()) return;
+		semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
+	    }
+	    block.analyse();
 	}
-	
+
     }
-    
+
     public static class NodeFor extends Node implements IFuncStmt {
 	public IExpression expr;
 	public NodeFuncBlock block;
-	
-	public NodeFor(int line, int column, IExpression expr, NodeFuncBlock block) {
+
+	public NodeFor(final int line, final int column, final IExpression expr, final NodeFuncBlock block) {
 	    super(line, column);
 	    this.expr = expr;
 	    this.block = block;
 	}
-	
+
 	@Override
 	public void analyse() {
-	   ((Node)expr).analyse();
-	   if(!((Node)expr).errored){
-	       TypeI exprType = expr.getExprType();
-	       if(EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL){
-		   if(!exprType.isArray()) return;
-	       }
-	       semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
-	   }
-	   Scope.push(new Scope());
-	   block.analyse();
-	   Scope.pop();
+	    ((Node) expr).analyse();
+	    if (!((Node) expr).errored) {
+		final TypeI exprType = expr.getExprType();
+		if (EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL) if (!exprType.isArray()) return;
+		semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
+	    }
+	    Scope.push(new Scope());
+	    block.analyse();
+	    Scope.pop();
 	}
-	
+
     }
-    
+
     public static class NodeForNormal extends NodeFor implements IFuncStmt {
 	public IFuncStmt initStmt, endStmt;
-	
-	public NodeForNormal(int line, int column, IFuncStmt initStmt, IExpression condition, IFuncStmt endStmt, NodeFuncBlock block) {
+
+	public NodeForNormal(final int line, final int column, final IFuncStmt initStmt, final IExpression condition, final IFuncStmt endStmt, final NodeFuncBlock block) {
 	    super(line, column, condition, block);
 	    this.initStmt = initStmt;
 	    this.endStmt = endStmt;
 	}
-	
+
 	@Override
 	public void analyse() {
-	   if(initStmt != null) ((Node) initStmt).analyse();
-	   if(endStmt != null) ((Node) endStmt).analyse();
-	   super.analyse();
+	    if (initStmt != null) ((Node) initStmt).analyse();
+	    if (endStmt != null) ((Node) endStmt).analyse();
+	    super.analyse();
 	}
-	
+
     }
-    
+
     public static class NodeForIn extends NodeFor implements IFuncStmt {
 
 	public String varId;
 
-	public NodeForIn(int line, int column, String data, IExpression parseExpression, NodeFuncBlock block) {
+	public NodeForIn(final int line, final int column, final String data, final IExpression parseExpression, final NodeFuncBlock block) {
 	    super(line, column, parseExpression, block);
-	    this.varId = data;
-	    this.expr = parseExpression;
+	    varId = data;
+	    expr = parseExpression;
 	}
-	
+
 	@Override
 	public void analyse() {
-	   // The only types that can be iterated over are arrays and those that implement java.lang.Iterable
-	   TypeI exprType = expr.getExprType();
-	   TypeI varType = new TypeI("Object", 0, false);
-	   if(exprType.isTuple()) semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
-	   if(exprType.isArray()){
-	       exprType.arrDims--;
-	       varType = exprType;
-	   }else{
-	       Optional<Type> type = Semantics.getType(exprType.shortName);
-	       if(type.isPresent()) if(type.get().hasSuper(new QualifiedName("java").add("lang").add("Iterable"))){
-		   //TODO: When adding support for generics, extract the exprType iterable generic here and assign it to varType
-	       }
-	       else semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
-	   }
-	   Scope.push(new Scope());
-	   Semantics.addVar(new Variable(varId, varType));
-	   block.analyse();
-	   Scope.pop();
+	    // The only types that can be iterated over are arrays and those
+	    // that implement java.lang.Iterable
+	    final TypeI exprType = expr.getExprType();
+	    TypeI varType = new TypeI("Object", 0, false);
+	    if (exprType.isTuple()) semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
+	    if (exprType.isArray()) {
+		exprType.arrDims--;
+		varType = exprType;
+	    } else {
+		final Optional<Type> type = Semantics.getType(exprType.shortName);
+		if (type.isPresent()) if (type.get().hasSuper(new QualifiedName("java").add("lang").add("Iterable"))) {
+		    // TODO: When adding support for generics, extract the
+		    // exprType iterable generic here and assign it to varType
+		} else semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
+	    }
+	    Scope.push(new Scope());
+	    Semantics.addVar(new Variable(varId, varType));
+	    block.analyse();
+	    Scope.pop();
 	}
-	
+
     }
-    
+
     public static class NodeTupleType extends Node {
 	public NodeType type;
 	public String name;
-	
-	public NodeTupleType(int line, int column, NodeType type) {
+
+	public NodeTupleType(final int line, final int column, final NodeType type) {
 	    super(line, column);
 	    this.type = type;
 	}
@@ -1285,17 +1277,17 @@ public abstract class Node {
 	public void analyse() {
 	    type.analyse();
 	}
-	
+
     }
-    
+
     public static class NodeTupleExprArg extends Node {
 	public IExpression expr;
 	public String name;
-	
-	public NodeTupleExprArg(int line, int column) {
+
+	public NodeTupleExprArg(final int line, final int column) {
 	    super(line, column);
 	}
-	
+
 	@Override
 	public void analyse() {
 	    ((Node) expr).analyse();

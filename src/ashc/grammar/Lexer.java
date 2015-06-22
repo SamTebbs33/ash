@@ -38,7 +38,7 @@ public class Lexer {
 	BINARYOP("\\.\\.|<|>|<=|>=|==|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|", "binary operator"),
 	ASSIGNOP("=", "assignment operator"),
 	WHITESPACE("[\n\t ]+", "whitespace"),
-	
+
 	ARROW("=>", "throws arrow"),
 	LAMBDAARROW("->", "lambda arrow"),
 	PARENL("\\(", "left parenthesis"),
@@ -78,7 +78,7 @@ public class Lexer {
 	IS("is"),
 	GET("get"),
 	SET("set"),
-	
+
 	IF("if"),
 	ELSE("else"),
 	WHILE("while"),

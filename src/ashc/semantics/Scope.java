@@ -1,10 +1,7 @@
 package ashc.semantics;
 
-import static ashc.main.AshCompiler.*;
-
 import java.util.*;
 
-import ashc.main.*;
 import ashc.semantics.Member.Variable;
 import ashc.semantics.Semantics.TypeI;
 
@@ -25,10 +22,10 @@ public class Scope {
 	}
 
     }
-    
+
     public static class PropertyScope extends FuncScope {
 
-	public PropertyScope(TypeI varType) {
+	public PropertyScope(final TypeI varType) {
 	    super(varType);
 	}
     }
@@ -49,7 +46,7 @@ public class Scope {
     }
 
     public static void push(final Scope scope) {
-	if(scopeStack.size() > 0) scope.parent = scopeStack.peek();
+	if (scopeStack.size() > 0) scope.parent = scopeStack.peek();
 	scopeStack.push(scope);
     }
 
@@ -60,21 +57,23 @@ public class Scope {
     public boolean hasVar(final String id) {
 	for (final Variable var : vars)
 	    if (var.id.equals(id)) return true;
-	if(parent != null) return parent.hasVar(id);
+	if (parent != null) return parent.hasVar(id);
 	return false;
     }
 
     public void addVar(final Variable var) {
 	vars.add(var);
     }
-    
-    public static FuncScope getFuncScope(){
-	for(int i = scopeStack.size()-1; i >= 0; i--) if(scopeStack.get(i) instanceof FuncScope) return (FuncScope) scopeStack.get(i);
+
+    public static FuncScope getFuncScope() {
+	for (int i = scopeStack.size() - 1; i >= 0; i--)
+	    if (scopeStack.get(i) instanceof FuncScope) return (FuncScope) scopeStack.get(i);
 	return null;
     }
-    
-    public static PropertyScope getPropertyScope(){
-	for(int i = scopeStack.size()-1; i >= 0; i--) if(scopeStack.get(i) instanceof PropertyScope) return (PropertyScope) scopeStack.get(i);
+
+    public static PropertyScope getPropertyScope() {
+	for (int i = scopeStack.size() - 1; i >= 0; i--)
+	    if (scopeStack.get(i) instanceof PropertyScope) return (PropertyScope) scopeStack.get(i);
 	return null;
     }
 
