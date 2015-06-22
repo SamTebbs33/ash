@@ -53,8 +53,10 @@ public class Operator {
 
     public EnumOperation operation;
     public EnumOperatorType type;
+    public String opStr;
 
     public Operator(String opStr) {
+	this.opStr = opStr;
 	if (opStr.charAt(opStr.length() - 1) == '=') {
 	    type = EnumOperatorType.ASSIGNMENT;
 	    opStr = opStr.substring(0, opStr.length() - 1);

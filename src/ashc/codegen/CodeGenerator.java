@@ -1,73 +1,79 @@
 package ashc.codegen;
 
+import java.io.*;
+
+import ashc.grammar.Node.*;
+
 /**
  * Ash
  * @author samtebbs, 20:08:22 - 24 May 2015
  */
 public interface CodeGenerator {
+    
+    public void start() throws FileNotFoundException;
+    
+    public void end();
 
-    public void generateArg();
+    public void generateArg(NodeArg arg);
 
-    public void generateBinary();
+    public void generateBinary(NodeBinary expr);
 
-    public void generateBool();
+    public void generateBool(NodeBool expr);
 
-    public void generateChar();
+    public void generateChar(NodeChar expr);
 
-    public void generateClassBlock();
+    public void generateClassBlock(NodeClassBlock block);
 
-    public void generateClassDec();
+    public void generateClassDec(NodeClassDec dec);
 
-    public void generateDouble();
+    public void generateDouble(NodeDouble expr);
 
-    public void generateEnumDec();
+    public void generateEnumDec(NodeEnumDec dec);
 
-    public void generateExprs();
+    public void generateExprs(NodeExprs exprs);
 
-    public void generateFile();
+    public void generateFile(NodeFile file);
 
-    public void generateFloat();
+    public void generateFloat(NodeFloat expr);
 
-    public void generateFuncBlock();
+    public void generateFuncBlock(NodeFuncBlock block);
 
-    public void generateFuncCall();
+    public void generateFuncCall(NodeFuncCall call);
 
     public void generateDec();
 
-    public void generateImport();
+    public void generateImport(NodeImport stmt);
 
-    public void generateInteger();
+    public void generateInteger(NodeInteger expr);
 
-    public void generateInterfaceDec();
+    public void generateInterfaceDec(NodeInterfaceDec dec);
 
-    public void generateLong();
+    public void generateLong(NodeLong expr);
 
-    public void generateModifier();
+    public void generateModifier(NodeModifier mod);
 
-    public void generatePackage();
+    public void generatePackage(NodePackage pkg);
 
-    public void generateQualifiedName();
+    public void generateQualifiedName(NodeQualifiedName name);
 
-    public void generateString();
+    public void generateString(NodeString str);
 
-    public void generateTernary();
+    public void generateTernary(NodeTernary expr);
 
-    public void generateThis();
+    public void generateThis(NodeThis expr);
 
-    public void generateType();
+    public void generateType(NodeType type);
 
-    public void generateTypeDec();
+    public void generateTypeDec(NodeTypeDec dec);
 
-    public void generateTypes();
+    public void generateTypes(NodeTypes types);
 
-    public void generateUnary();
+    public void generateUnary(NodeUnary expr);
 
-    public void generateVarDecExplicit();
+    public void generateVarDecExplicit(NodeVarDecExplicit dec);
 
-    public void generateVarDecExplicitAssign();
+    public void generateVarDecImplicit(NodeVarDecImplicit dec);
 
-    public void generateVarDecImplicit();
-
-    public void generateVariable();
+    public void generateVariable(NodeVariable var);
 
 }

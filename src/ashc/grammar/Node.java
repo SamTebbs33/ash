@@ -236,7 +236,7 @@ public abstract class Node {
 
     public static class NodeClassDec extends NodeTypeDec {
 
-	NodeClassBlock block;
+	public NodeClassBlock block;
 
 	public NodeClassDec(final int line, final int column) {
 	    super(line, column);
