@@ -26,13 +26,14 @@ public class Semantics {
 	public String shortName, tupleName;
 	public int arrDims;
 	public boolean optional;
-	public LinkedList<TypeI> tupleTypes;
+	public LinkedList<TypeI> tupleTypes, genericTypes;
 
 	public TypeI(final String shortName, final int arrDims, final boolean optional) {
 	    this.shortName = shortName;
 	    this.arrDims = arrDims;
 	    this.optional = optional;
 	    tupleTypes = new LinkedList<TypeI>();
+	    genericTypes = new LinkedList<TypeI>();
 	}
 
 	public TypeI(final NodeType type) {
@@ -42,17 +43,17 @@ public class Semantics {
 	}
 
 	public TypeI(final EnumPrimitive primitive) {
-	    shortName = primitive.ashName;
+	    this(primitive, 0);
 	}
 
 	public TypeI(final EnumPrimitive primitive, final int arrDims) {
-	    shortName = primitive.ashName;
-	    this.arrDims = arrDims;
+	    this(primitive.ashName, arrDims, false);
 	}
 
 	public TypeI(final NodeTupleType nodeType) {
 	    this(nodeType.type);
 	    tupleName = nodeType.name;
+	    for(NodeType t : nodeType.type.generics.types) genericTypes.add(new TypeI(t));
 	}
 
 	public static TypeI fromClass(final Class cls) {
@@ -137,6 +138,7 @@ public class Semantics {
     }
 
     public static boolean typeExists(final String typeName) {
+	if(typeStack.size() > 0) for(String generic : typeStack.peek().generics) if(generic.equals(typeName)) return true;
 	return typeName.equals("void") || EnumPrimitive.isPrimitive(typeName) || typeNameMap.containsKey(typeName);
     }
 
@@ -268,7 +270,7 @@ public class Semantics {
     }
 
     public static void addVar(final Variable variable) {
-	Scope.getScope().vars.add(variable);
+	if(Scope.inScope()) Scope.getScope().vars.add(variable);
     }
 
 }

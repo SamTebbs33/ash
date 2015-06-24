@@ -135,6 +135,7 @@ public abstract class Node {
 	public NodeTypes types;
 	public NodeArgs args;
 	public Token id;
+	public NodeTypes generics;
 
 	public Type type;
 
@@ -173,6 +174,7 @@ public abstract class Node {
 	    if (types != null) for (final NodeType type : types.types)
 		if (type.optional) semanticError(this, line, column, CANNOT_EXTEND_OPTIONAL_TYPE, type.id);
 	    type = new Type(name, modifiers, getType());
+	    for(NodeType generic : generics.types) type.generics.add(generic.id);
 	    Semantics.addType(type);
 
 	    // Create the default constructor and add fields supplied by the
@@ -241,9 +243,10 @@ public abstract class Node {
 	    super(line, column);
 	}
 
-	public NodeClassDec(final int line, final int column, final LinkedList<NodeModifier> mods, final NodeTypes types, final NodeArgs args, final Token id, final NodeClassBlock block) {
+	public NodeClassDec(final int line, final int column, final LinkedList<NodeModifier> mods, final NodeTypes types, final NodeArgs args, final Token id, final NodeClassBlock block, NodeTypes generics) {
 	    super(line, column, mods, types, args, id);
 	    this.block = block;
+	    this.generics = generics;
 	}
 
 	@Override
@@ -367,7 +370,7 @@ public abstract class Node {
     }
 
     public static class NodeTypes extends Node {
-	LinkedList<NodeType> types = new LinkedList<Node.NodeType>();
+	public LinkedList<NodeType> types = new LinkedList<Node.NodeType>();
 
 	public void add(final NodeType type) {
 	    types.add(type);
@@ -443,6 +446,7 @@ public abstract class Node {
 	public int arrDims;
 	public boolean optional;
 	public LinkedList<NodeTupleType> tupleTypes = new LinkedList<NodeTupleType>();
+	public NodeTypes generics;
 
 	public NodeType(final String data) {
 	    id = data;
@@ -504,8 +508,9 @@ public abstract class Node {
 	public NodeArgs args;
 	public NodeType type, throwsType;
 	public NodeFuncBlock block;
+	private NodeTypes generics;
 
-	public NodeFuncDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String id, final NodeArgs args, final NodeType type, final NodeType throwsType, final NodeFuncBlock block) {
+	public NodeFuncDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String id, final NodeArgs args, final NodeType type, final NodeType throwsType, final NodeFuncBlock block, NodeTypes types) {
 	    super(line, column);
 	    this.mods = mods;
 	    this.id = id;
@@ -513,6 +518,7 @@ public abstract class Node {
 	    this.type = type;
 	    this.throwsType = throwsType;
 	    this.block = block;
+	    this.generics = types;
 	}
 
 	@Override

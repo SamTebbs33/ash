@@ -1,8 +1,8 @@
-import java.lang.Iterable
+import java.util.LinkedList
 
-class Test : Iterable {
-	public func main(args : Test[]) {
-		for(a in args){
-		}
-	}
+class Test<T> : LinkedList<T> {
+
+	var list : LinkedList<T>?
+	var obj : T?
+	
 }

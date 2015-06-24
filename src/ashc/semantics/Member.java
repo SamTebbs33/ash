@@ -32,6 +32,7 @@ public class Member {
 	public LinkedList<Function> functions = new LinkedList<Function>();
 	public LinkedList<Field> fields = new LinkedList<Field>();
 	public LinkedList<Type> supers = new LinkedList<Member.Type>();
+	public LinkedList<String> generics = new LinkedList<String>();
 
 	public Type(final QualifiedName qualifiedName, final int modifiers, final EnumType type) {
 	    super(qualifiedName, modifiers);

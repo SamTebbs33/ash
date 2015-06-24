@@ -77,4 +77,8 @@ public class Scope {
 	return null;
     }
 
+    public static boolean inScope() {
+	return scopeStack.size() > 0;
+    }
+
 }

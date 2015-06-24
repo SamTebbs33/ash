@@ -156,6 +156,12 @@ public class Parser {
 	if (token.type != t && !silenceErrors) throw new UnexpectedTokenException(token, t);
 	return token;
     }
+    
+    private Token expect(String tokenData) throws UnexpectedTokenException{
+	Token next = getNext();
+	if(!next.data.equals(tokenData) && !silenceErrors) throw new UnexpectedTokenException(next, tokenData);
+	return next;
+    }
 
     /**
      * Expect the next token to have the same type as any one of the arguments
@@ -255,6 +261,7 @@ public class Parser {
      */
     private NodeClassDec parseClassDec(final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
 	final Token id = expect(TokenType.ID);
+	NodeTypes generics = parseGenerics();
 	NodeArgs args = null;
 	NodeTypes types = null;
 
@@ -267,7 +274,7 @@ public class Parser {
 	else rewind();
 
 	final NodeClassBlock block = parseClassBlock();
-	return new NodeClassDec(id.line, id.columnStart, mods, types, args, id, block);
+	return new NodeClassDec(id.line, id.columnStart, mods, types, args, id, block, generics);
     }
 
     private NodeClassBlock parseClassBlock() throws UnexpectedTokenException {
@@ -297,6 +304,7 @@ public class Parser {
     private NodeFuncDec parseFuncDec(final boolean needsBody, final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
 	expect(TokenType.FUNC);
 	final Token id = expect(TokenType.ID);
+	NodeTypes types = parseGenerics();
 	final NodeArgs args = parseArgs();
 	NodeType type = null, throwsType = null;
 	NodeFuncBlock block = new NodeFuncBlock();
@@ -314,7 +322,16 @@ public class Parser {
 
 	if (needsBody) block = parseFuncBlock();
 
-	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, type, throwsType, block);
+	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, type, throwsType, block, types);
+    }
+
+    public NodeTypes parseGenerics() throws UnexpectedTokenException {
+	if(getNext().data.equals("<")) {
+	    NodeTypes types = parseTypes();
+	    expect(">");
+	    return types;
+	}else rewind();
+	return new NodeTypes();
     }
 
     private NodeFuncBlock parseFuncBlock() throws UnexpectedTokenException {
@@ -678,6 +695,7 @@ public class Parser {
 	} else {
 	    rewind();
 	    type.id = expect(TokenType.ID, TokenType.PRIMITIVE).data;
+	    type.generics = parseGenerics();
 	}
 
 	// Parse array dimensions
@@ -707,6 +725,7 @@ public class Parser {
     private NodeType parseSuperType() throws UnexpectedTokenException {
 	final Token id = expect(TokenType.ID);
 	final NodeType type = new NodeType(id.data);
+	type.generics = parseGenerics();
 	return type;
     }
 
