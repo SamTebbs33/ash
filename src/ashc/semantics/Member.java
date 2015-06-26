@@ -87,10 +87,10 @@ public class Member {
 	@Override
 	public String toString() {
 	    return "Type [type=" + type + /*
-					   * ", functions=" + functions +
-					   * ", fields=" + fields + ", supers="
-					   * + supers +
-					   */", qualifiedName=" + qualifiedName + "]";
+	     * ", functions=" + functions +
+	     * ", fields=" + fields + ", supers="
+	     * + supers +
+	     */", qualifiedName=" + qualifiedName + "]";
 	}
 
     }

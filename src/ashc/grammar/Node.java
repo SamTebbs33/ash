@@ -181,6 +181,7 @@ public abstract class Node {
 	    // arguments
 	    if (args != null) {
 		final Function defConstructor = new Function(Scope.getNamespace().copy().add(id.data), EnumModifier.PUBLIC.intVal);
+		defConstructor.returnType = new TypeI(name.shortName, 0, false);
 		for (final NodeArg arg : args.args) {
 		    arg.preAnalyse();
 		    if (!arg.errored) {
@@ -465,8 +466,13 @@ public abstract class Node {
 	    if (tupleTypes.size() == 0) {
 		if (!Semantics.typeExists(id)) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
 		else if (!id.equals("void")) {
-		    final Type type = Semantics.getType(id).get();
-		    if (generics.types.size() > type.generics.size()) semanticError(this, line, column, TOO_MANY_GENERICS);
+		    final Optional<Type> typeOpt = Semantics.getType(id);
+		    if (!typeOpt.isPresent()) // If the type doesn't exist,
+					      // check if it is a generic
+					      // declared in the current type
+			for (final String generic : Semantics.currentType().generics)
+			if (id.equals(generic)) return;
+		    if (generics.types.size() > typeOpt.get().generics.size()) semanticError(this, line, column, TOO_MANY_GENERICS);
 		}
 		if (EnumPrimitive.isPrimitive(id) && optional) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
 	    } else for (int i = 0; i < tupleTypes.size(); i++) {
@@ -659,7 +665,8 @@ public abstract class Node {
 	    int modifiers = 0;
 	    for (final NodeModifier mod : mods)
 		modifiers |= mod.asInt();
-	    final Field field = new Field(name, modifiers, expr.getExprType());
+	    final TypeI exprType = expr.getExprType();
+	    final Field field = new Field(name, modifiers, exprType);
 	    if (!Semantics.fieldExists(field)) Semantics.addField(field);
 	    else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
 	}
@@ -669,6 +676,7 @@ public abstract class Node {
 	    super.analyse();
 	    if (expr != null) ((Node) expr).analyse();
 	    final TypeI type = expr.getExprType();
+	    System.out.println(type);
 	    if (!errored) Semantics.addVar(new Variable(id, type));
 	    analyseProperty(type);
 	}
@@ -699,7 +707,7 @@ public abstract class Node {
     }
 
     public static class NodePrefix extends Node implements IFuncStmt,
-	    IExpression {
+    IExpression {
 
 	public NodePrefix(final int line, final int column) {
 	    super(line, column);
@@ -748,10 +756,30 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    if (prefix == null) return Semantics.getFuncType(id, args);
-	    else {
+	    if (prefix == null) {
+		final Function func = Semantics.getFunc(id, args);
+		if (func == null) {
+		    semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id);
+		    return null;
+		} else return func.returnType;
+	    } else {
 		final TypeI type = prefix.getExprType();
-		return Semantics.getFuncType(id, type, args);
+		final Function func = Semantics.getFunc(id, type, args);
+		if (func == null) {
+		    semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id);
+		    return null;
+		} else {
+		    final TypeI funcType = func.returnType;
+		    if (!funcType.isTuple()) {
+			final Optional<Type> typeOpt = Semantics.getType(funcType.shortName);
+			if (!typeOpt.isPresent()){
+			    TypeI genericType = Semantics.getGenericType(funcType.shortName, type);
+			    if(genericType == null) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, funcType.shortName);
+			    else return genericType;
+			}
+		    }
+		    return funcType;
+		}
 	    }
 	}
 
@@ -794,6 +822,7 @@ public abstract class Node {
 	    Variable var = null;
 	    if (prefix == null) {
 		final Optional<Type> type = Semantics.getType(id);
+		// Check if it is a type name rather than a variable
 		if (type.isPresent()) return new TypeI(type.get().qualifiedName.shortName, 0, false);
 		else var = Semantics.getVar(id);
 	    } else {

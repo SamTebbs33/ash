@@ -10,6 +10,7 @@ import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
+import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
@@ -38,6 +39,7 @@ public class Semantics {
 
 	public TypeI(final NodeType type) {
 	    this(type.id, type.arrDims, type.optional);
+	    for(NodeType nodeType : type.generics.types) genericTypes.add(new TypeI(nodeType));
 	    for (final NodeTupleType nodeType : type.tupleTypes)
 		tupleTypes.add(new TypeI(nodeType));
 	}
@@ -53,6 +55,7 @@ public class Semantics {
 	public TypeI(final NodeTupleType nodeType) {
 	    this(nodeType.type);
 	    tupleName = nodeType.name;
+
 	    for (final NodeType t : nodeType.type.generics.types)
 		genericTypes.add(new TypeI(t));
 	}
@@ -89,6 +92,11 @@ public class Semantics {
 		for (int i = 0; i < tupleTypes.size(); i++)
 		    id += tupleTypes.get(i).toString() + (i < tupleTypes.size() - 1 ? ", " : "");
 		id += "]";
+	    }
+	    if(genericTypes.size() > 0){
+		id += "<";
+		for(int i = 0; i < genericTypes.size() - 1; i++) id += genericTypes.toString() + ", ";
+		id += genericTypes.getLast().toString() + ">";
 	    }
 	    return String.format("%s%s%s", id, arrBuffer.toString(), optional ? "?" : "");
 	}
@@ -174,8 +182,7 @@ public class Semantics {
     }
 
     public static Optional<Type> getType(final String id) {
-	final QualifiedName typeName = typeNameMap.get(id);
-	return typeName != null ? Optional.of(types.get(typeName)) : Optional.empty();
+	return typeNameMap.containsKey(id) ? Optional.of(types.get(typeNameMap.get(id))) : Optional.empty();
     }
 
     public static boolean funcExists(final Function func) {
@@ -280,6 +287,25 @@ public class Semantics {
 
     public static void addVar(final Variable variable) {
 	if (Scope.inScope()) Scope.getScope().vars.add(variable);
+    }
+
+    public static Type currentType() {
+	return typeStack.peek();
+    }
+
+    public static TypeI getGenericType(String shortName, TypeI type) {
+	Optional<Type> typeOpt = getType(type.shortName);
+	if(typeOpt.isPresent()){
+	    Type enclosingType = typeOpt.get();
+	    int i = 0;
+	    for(String generic : enclosingType.generics){
+		if(generic.equals(shortName)){
+		    if(i < type.genericTypes.size()) return type.genericTypes.get(i);
+		    else return new TypeI("Object", 0, false);
+		}
+	    }
+	}
+	return null;
     }
 
 }

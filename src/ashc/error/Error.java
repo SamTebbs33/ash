@@ -16,7 +16,7 @@ public class Error {
 	TYPE_DOES_NOT_EXTEND("Type (%s) does not extend %s"),
 
 	FUNC_ALREADY_EXISTS("Function already exists (%s)"),
-	FUNC_DOES_NOT_EXIST("Function %s doesn't exist in type %s"),
+	FUNC_DOES_NOT_EXIST("Function %s doesn't exist" /*in type %s*/),
 	CONSTRUCTOR_DOES_NOT_EXIST("Constructor does not exist in type %s"),
 	RETURN_EXPR_IN_VOID_FUNC("Cannot return an expression in a void function"),
 
