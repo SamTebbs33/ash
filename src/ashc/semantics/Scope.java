@@ -30,7 +30,7 @@ public class Scope {
 	}
     }
 
-    public static QualifiedName namespace;
+    private static QualifiedName namespace = new QualifiedName("");
 
     public Scope() {}
 
@@ -43,6 +43,10 @@ public class Scope {
 
     public static QualifiedName getNamespace() {
 	return namespace;
+    }
+    
+    public static void setNamespace(QualifiedName namespc){
+	if(namespc != null) namespace = namespc;
     }
 
     public static void push(final Scope scope) {

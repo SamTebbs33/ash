@@ -17,6 +17,7 @@ public class Error {
 
 	FUNC_ALREADY_EXISTS("Function already exists (%s)"),
 	FUNC_DOES_NOT_EXIST("Function %s doesn't exist in type %s"),
+	CONSTRUCTOR_DOES_NOT_EXIST("Constructor does not exist in type %s"),
 	RETURN_EXPR_IN_VOID_FUNC("Cannot return an expression in a void function"),
 
 	FIELD_ALREADY_EXISTS("Field already exists (%s)"),
@@ -28,6 +29,7 @@ public class Error {
 
 	MISSING_ASSIGNMENT("Assignment expected"),
 	TOO_MANY_ARRAY_ACCESSES("Attempted to access %s array dimension(s) on a variable with %s dimension(s) (%s)"),
+	TOO_MANY_GENERICS("Too many generics declared"),
 	ARRAY_INDEX_NOT_NUMERIC("Array index must be numeric (%s)"),
 	CANNOT_USE_SELF("Cannot use the self keyword in the current context"),
 	EXPECTED_BOOL_EXPR("Expected a boolean expression, found %s"),

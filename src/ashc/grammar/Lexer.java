@@ -34,6 +34,7 @@ public class Lexer {
 	CHAR("\'.\'", "character"),
 	BOOL("true|false", "boolean"),
 	PRIMITIVE("bool|double|float|long|int|short|byte|ulong|uint|char|void", "primitive"),
+	LAMBDAARROW("->", "lambda arrow"),
 
 	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
 	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
@@ -42,7 +43,6 @@ public class Lexer {
 	WHITESPACE("[\n\t ]+", "whitespace"),
 
 	ARROW("=>", "throws arrow"),
-	LAMBDAARROW("->", "lambda arrow"),
 	PARENL("\\(", "left parenthesis"),
 	PARENR("\\)", "right parenthesis"),
 	BRACEL("\\{", "left brace"),

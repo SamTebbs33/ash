@@ -156,6 +156,7 @@ public class Semantics {
 
     public static void exitType() {
 	typeStack.pop();
+	Scope.getNamespace().pop();
     }
 
     public static void bindName(final String shortName, final QualifiedName qualifiedName) {
@@ -176,6 +177,11 @@ public class Semantics {
     }
 
     public static boolean funcExists(final Function func) {
+	Optional<Type> type = getType(func.qualifiedName.shortName);
+	// Check if it is a constructor for an existing type
+	if(type.isPresent()){
+	    return type.get().getFunc(func.qualifiedName.shortName, func.parameters) != null;
+	}
 	return typeStack.peek().functions.contains(func);
     }
 
@@ -254,6 +260,9 @@ public class Semantics {
     }
 
     public static Function getFunc(final String id, final NodeExprs args) {
+	Optional<Type> type = getType(id);
+	// Check if it is a constructor for an existing type
+	if(type.isPresent()) return type.get().getFunc(id, args);
 	return getFunc(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args);
     }
 

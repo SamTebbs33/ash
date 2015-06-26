@@ -50,7 +50,7 @@ public class QualifiedName {
 	String str = "";
 	for (int i = 0; i < sections.size() - 1; i++)
 	    str += sections.get(i) + ".";
-	str += sections.getLast();
+	if(!sections.isEmpty()) str += sections.getLast();
 	return str;
     }
 
@@ -65,6 +65,10 @@ public class QualifiedName {
     public boolean equals(final Object obj) {
 	if (obj instanceof QualifiedName) return sections.equals(((QualifiedName) obj).sections);
 	return false;
+    }
+
+    public void pop() {
+	if(!sections.isEmpty()) sections.removeLast();
     }
 
 }

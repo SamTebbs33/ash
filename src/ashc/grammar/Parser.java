@@ -313,7 +313,7 @@ public class Parser {
 
 	if (getNext().type == TokenType.COLON) type = parseType();
 	else {
-	    type = new NodeType("void");
+	    type = new NodeType(id.line, id.columnStart, "void");
 	    rewind();
 	}
 
@@ -436,10 +436,11 @@ public class Parser {
 	NodePrefix prefix = null;
 	do {
 	    final Token id = expect(TokenType.ID, TokenType.SELF);
+	    NodeTypes generics = parseGenerics();
 	    if (getNext().type == TokenType.PARENL) {
 		rewind();
 		final NodeExprs exprs = parseCallArgs(TokenType.PARENL, TokenType.PARENR);
-		prefix = new NodeFuncCall(id.line, id.columnStart, id.data, exprs, prefix);
+		prefix = new NodeFuncCall(id.line, id.columnStart, id.data, exprs, prefix, generics);
 	    } else {
 		rewind();
 		prefix = new NodeVariable(id.line, id.columnStart, id.data, prefix);
@@ -724,7 +725,7 @@ public class Parser {
 
     private NodeType parseSuperType() throws UnexpectedTokenException {
 	final Token id = expect(TokenType.ID);
-	final NodeType type = new NodeType(id.data);
+	final NodeType type = new NodeType(id.line, id.columnStart, id.data);
 	type.generics = parseGenerics();
 	return type;
     }

@@ -1,8 +1,9 @@
-import java.util.LinkedList
+import java.util.HashMap
+import java.lang.Integer
 
-class Test<T> : LinkedList<T> {
+class Test2() {
+}
 
-	var list : LinkedList<T>?
-	var obj : T?
-	
+class Test {
+	var test = Test2()
 }
