@@ -50,7 +50,7 @@ public class QualifiedName {
 	String str = "";
 	for (int i = 0; i < sections.size() - 1; i++)
 	    str += sections.get(i) + ".";
-	if(!sections.isEmpty()) str += sections.getLast();
+	if (!sections.isEmpty()) str += sections.getLast();
 	return str;
     }
 
@@ -68,7 +68,7 @@ public class QualifiedName {
     }
 
     public void pop() {
-	if(!sections.isEmpty()) sections.removeLast();
+	if (!sections.isEmpty()) sections.removeLast();
     }
 
 }

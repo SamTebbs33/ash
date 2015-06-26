@@ -76,11 +76,8 @@ public class Member {
 	}
 
 	public Function getFunc(final String id, final LinkedList<TypeI> parameters) {
-	    for (final Function func : functions){
-		if (func.qualifiedName.shortName.equals(id))
-		    if (func.paramsAreEqual(parameters))
-			return func;
-	    }
+	    for (final Function func : functions)
+		if (func.qualifiedName.shortName.equals(id)) if (func.paramsAreEqual(parameters)) return func;
 	    Function func = null;
 	    for (final Type superType : supers)
 		if ((func = superType.getFunc(id, parameters)) != null) return func;
@@ -89,7 +86,11 @@ public class Member {
 
 	@Override
 	public String toString() {
-	    return "Type [type=" + type + /*", functions=" + functions + ", fields=" + fields + ", supers=" + supers + */ ", qualifiedName=" + qualifiedName + "]";
+	    return "Type [type=" + type + /*
+					   * ", functions=" + functions +
+					   * ", fields=" + fields + ", supers="
+					   * + supers +
+					   */", qualifiedName=" + qualifiedName + "]";
 	}
 
     }
@@ -127,7 +128,7 @@ public class Member {
 
 	private boolean paramsAreEqual(final LinkedList<TypeI> params2) {
 	    if (parameters.size() != params2.size()) return false;
-	    int len = Math.min(parameters.size(), params2.size());
+	    final int len = Math.min(parameters.size(), params2.size());
 	    for (int i = 0; i < len; i++)
 		if (!parameters.get(i).equals(params2.get(i))) return false;
 	    return true;

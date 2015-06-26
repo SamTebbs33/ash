@@ -156,10 +156,10 @@ public class Parser {
 	if (token.type != t && !silenceErrors) throw new UnexpectedTokenException(token, t);
 	return token;
     }
-    
-    private Token expect(String tokenData) throws UnexpectedTokenException{
-	Token next = getNext();
-	if(!next.data.equals(tokenData) && !silenceErrors) throw new UnexpectedTokenException(next, tokenData);
+
+    private Token expect(final String tokenData) throws UnexpectedTokenException {
+	final Token next = getNext();
+	if (!next.data.equals(tokenData) && !silenceErrors) throw new UnexpectedTokenException(next, tokenData);
 	return next;
     }
 
@@ -261,7 +261,7 @@ public class Parser {
      */
     private NodeClassDec parseClassDec(final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
 	final Token id = expect(TokenType.ID);
-	NodeTypes generics = parseGenerics();
+	final NodeTypes generics = parseGenerics();
 	NodeArgs args = null;
 	NodeTypes types = null;
 
@@ -304,7 +304,7 @@ public class Parser {
     private NodeFuncDec parseFuncDec(final boolean needsBody, final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
 	expect(TokenType.FUNC);
 	final Token id = expect(TokenType.ID);
-	NodeTypes types = parseGenerics();
+	final NodeTypes types = parseGenerics();
 	final NodeArgs args = parseArgs();
 	NodeType type = null, throwsType = null;
 	NodeFuncBlock block = new NodeFuncBlock();
@@ -326,11 +326,11 @@ public class Parser {
     }
 
     public NodeTypes parseGenerics() throws UnexpectedTokenException {
-	if(getNext().data.equals("<")) {
-	    NodeTypes types = parseTypes();
+	if (getNext().data.equals("<")) {
+	    final NodeTypes types = parseTypes();
 	    expect(">");
 	    return types;
-	}else rewind();
+	} else rewind();
 	return new NodeTypes();
     }
 
@@ -436,7 +436,7 @@ public class Parser {
 	NodePrefix prefix = null;
 	do {
 	    final Token id = expect(TokenType.ID, TokenType.SELF);
-	    NodeTypes generics = parseGenerics();
+	    final NodeTypes generics = parseGenerics();
 	    if (getNext().type == TokenType.PARENL) {
 		rewind();
 		final NodeExprs exprs = parseCallArgs(TokenType.PARENL, TokenType.PARENR);
@@ -580,7 +580,7 @@ public class Parser {
 	final Token next = getNext();
 
 	switch (next.type) {
-	// Postfix unary expression
+	    // Postfix unary expression
 	    case UNARYOP:
 		return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
 	    case QUESTIONMARK:

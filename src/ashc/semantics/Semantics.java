@@ -53,7 +53,8 @@ public class Semantics {
 	public TypeI(final NodeTupleType nodeType) {
 	    this(nodeType.type);
 	    tupleName = nodeType.name;
-	    for(NodeType t : nodeType.type.generics.types) genericTypes.add(new TypeI(t));
+	    for (final NodeType t : nodeType.type.generics.types)
+		genericTypes.add(new TypeI(t));
 	}
 
 	public static TypeI fromClass(final Class cls) {
@@ -138,7 +139,8 @@ public class Semantics {
     }
 
     public static boolean typeExists(final String typeName) {
-	if(typeStack.size() > 0) for(String generic : typeStack.peek().generics) if(generic.equals(typeName)) return true;
+	if (typeStack.size() > 0) for (final String generic : typeStack.peek().generics)
+	    if (generic.equals(typeName)) return true;
 	return typeName.equals("void") || EnumPrimitive.isPrimitive(typeName) || typeNameMap.containsKey(typeName);
     }
 
@@ -177,11 +179,9 @@ public class Semantics {
     }
 
     public static boolean funcExists(final Function func) {
-	Optional<Type> type = getType(func.qualifiedName.shortName);
+	final Optional<Type> type = getType(func.qualifiedName.shortName);
 	// Check if it is a constructor for an existing type
-	if(type.isPresent()){
-	    return type.get().getFunc(func.qualifiedName.shortName, func.parameters) != null;
-	}
+	if (type.isPresent()) return type.get().getFunc(func.qualifiedName.shortName, func.parameters) != null;
 	return typeStack.peek().functions.contains(func);
     }
 
@@ -260,9 +260,9 @@ public class Semantics {
     }
 
     public static Function getFunc(final String id, final NodeExprs args) {
-	Optional<Type> type = getType(id);
+	final Optional<Type> type = getType(id);
 	// Check if it is a constructor for an existing type
-	if(type.isPresent()) return type.get().getFunc(id, args);
+	if (type.isPresent()) return type.get().getFunc(id, args);
 	return getFunc(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args);
     }
 
@@ -279,7 +279,7 @@ public class Semantics {
     }
 
     public static void addVar(final Variable variable) {
-	if(Scope.inScope()) Scope.getScope().vars.add(variable);
+	if (Scope.inScope()) Scope.getScope().vars.add(variable);
     }
 
 }

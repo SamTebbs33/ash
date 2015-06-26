@@ -23,7 +23,8 @@ public class TypeImporter {
 	    final Class<?> cls = loader.loadClass(path);
 	    final EnumType enumType = cls.isEnum() ? EnumType.ENUM : cls.isInterface() ? EnumType.INTERFACE : EnumType.CLASS;
 	    final Type type = new Type(QualifiedName.fromPath(path), cls.getModifiers(), enumType);
-	    for(TypeVariable genericType : cls.getTypeParameters()) type.generics.add(genericType.getName());
+	    for (final TypeVariable genericType : cls.getTypeParameters())
+		type.generics.add(genericType.getName());
 	    Semantics.addType(type);
 	    for (final Method method : cls.getMethods())
 		type.functions.add(Function.fromMethod(method));

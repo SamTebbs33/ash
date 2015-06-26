@@ -4,8 +4,6 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
-import ashc.grammar.Lexer.Token;
-
 /**
  * Ash
  *
@@ -159,7 +157,7 @@ public class Lexer {
 	    msg = String.format("Unexpected %s", t.type.typeName);
 	}
 
-	public UnexpectedTokenException(Token next, String tokenData) {
+	public UnexpectedTokenException(final Token next, final String tokenData) {
 	    token = next;
 	    msg = String.format("Unexpected %s, expected %s", next.type.typeName, tokenData);
 	}
