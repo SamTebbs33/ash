@@ -321,7 +321,7 @@ public class Parser {
 	    while (getNext().type != TokenType.BRACER) {
 		rewind();
 		final LinkedList<NodeModifier> mods = parseMods();
-		final Token token = expect(TokenType.FUNC, TokenType.CONST,
+		final Token token = expect(TokenType.FUNC, TokenType.MUT, TokenType.CONST,
 			TokenType.VAR, TokenType.BRACER);
 		rewind();
 		switch (token.type) {
@@ -332,12 +332,29 @@ public class Parser {
 		    case FUNC:
 			block.add(parseFuncDec(true, mods));
 			continue;
+		    case MUT:
+			block.add(parseMutFuncDec(true, mods));
+			continue;
 		}
 	    }
 	} else {
 	    rewind();
 	}
 	return block;
+    }
+    
+    private NodeFuncDec parseMutFuncDec(boolean needsBody, LinkedList<NodeModifier> mods) throws UnexpectedTokenException{
+	expect(TokenType.MUT);
+	Token id = expect(TokenType.ID);
+	NodeArgs args = parseArgs();
+	NodeType throwsType = null;
+	NodeFuncBlock block = null;
+	if(expect(TokenType.ARROW, TokenType.BRACEL).type == TokenType.ARROW) throwsType = parseType();
+	else rewind();
+	if(needsBody){
+	    block = parseFuncBlock(false);
+	}
+	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, throwsType, block, new NodeTypes(), true);
     }
 
     /**

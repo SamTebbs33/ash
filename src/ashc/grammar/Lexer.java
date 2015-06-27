@@ -61,6 +61,7 @@ public class Lexer {
 	VAR("var"),
 	CONST("const"),
 	FUNC("func"),
+	MUT("mut"),
 	CLASS("class"),
 	ENUM("enum"),
 	INTERFACE("interface"),

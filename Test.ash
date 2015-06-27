@@ -1,3 +1,5 @@
 class Test {
-	func foo() -> "Sam"
+	mut foo() {
+		
+	}
 }

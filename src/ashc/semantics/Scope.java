@@ -17,9 +17,11 @@ public class Scope {
     public static class FuncScope extends Scope {
 
 	public TypeI returnType;
+	public boolean isMutFunc;
 
-	public FuncScope(final TypeI typeI) {
+	public FuncScope(final TypeI typeI, boolean isMutFunc) {
 	    returnType = typeI;
+	    this.isMutFunc = isMutFunc;
 	}
 
     }
@@ -27,7 +29,7 @@ public class Scope {
     public static class PropertyScope extends FuncScope {
 
 	public PropertyScope(final TypeI varType) {
-	    super(varType);
+	    super(varType, false);
 	}
     }
 

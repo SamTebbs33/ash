@@ -7,6 +7,11 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import ashc.grammar.Lexer.Token;
+import ashc.grammar.Node.NodeArgs;
+import ashc.grammar.Node.NodeFuncBlock;
+import ashc.grammar.Node.NodeModifier;
+import ashc.grammar.Node.NodeType;
+import ashc.grammar.Node.NodeTypes;
 import ashc.load.*;
 import ashc.semantics.*;
 import ashc.semantics.Member.EnumType;
@@ -638,6 +643,7 @@ public abstract class Node {
 	public NodeTypes generics;
 	
 	private TypeI returnType;
+	private boolean isMutFunc;
 
 	public NodeFuncDec(final int line, final int column,
 		final LinkedList<NodeModifier> mods, final String id,
@@ -654,6 +660,13 @@ public abstract class Node {
 	    generics = types;
 	}
 
+	public NodeFuncDec(int line, int columnStart,
+		LinkedList<NodeModifier> mods2, String data, NodeArgs args2, NodeType throwsType2, NodeFuncBlock block2,
+		NodeTypes nodeTypes, boolean isMutFunc) {
+	    this(line, columnStart, mods2, data, args2, null, throwsType2, block2, nodeTypes);
+	    this.isMutFunc = true;
+	}
+
 	@Override
 	public void preAnalyse() {
 	    final QualifiedName name = Scope.getNamespace().copy();
@@ -667,12 +680,17 @@ public abstract class Node {
 		func.generics.add(generic.id);
 	    }
 	    
+	    if(!isMutFunc){
 	    if(!type.id.equals("void")) returnType = new TypeI(type);
 	    else if(block.singleLineExpr != null){
 		returnType = block.singleLineExpr.getExprType();
 	    }
 	    else returnType = new TypeI("void", 0, false);
 	    func.returnType = returnType;
+	    }else{
+		// The return type for mutator functions is the current type
+		func.returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
+	    }
 
 	    for (final NodeArg arg : args.args) {
 		func.parameters.add(new TypeI(arg.type));
@@ -698,7 +716,7 @@ public abstract class Node {
 			    throwsType.id, "java.lang.Throwable");
 		}
 	    }
-	    Scope.push(new FuncScope(returnType));
+	    Scope.push(new FuncScope(returnType, isMutFunc));
 	    for (final NodeArg arg : args.args) {
 		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
 	    }
