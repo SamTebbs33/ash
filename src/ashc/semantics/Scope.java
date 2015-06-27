@@ -7,6 +7,7 @@ import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
+ * 
  * @author samtebbs, 15:08:08 - 23 May 2015
  */
 public class Scope {
@@ -46,11 +47,15 @@ public class Scope {
     }
 
     public static void setNamespace(final QualifiedName namespc) {
-	if (namespc != null) namespace = namespc;
+	if (namespc != null) {
+	    namespace = namespc;
+	}
     }
 
     public static void push(final Scope scope) {
-	if (scopeStack.size() > 0) scope.parent = scopeStack.peek();
+	if (scopeStack.size() > 0) {
+	    scope.parent = scopeStack.peek();
+	}
 	scopeStack.push(scope);
     }
 
@@ -71,13 +76,15 @@ public class Scope {
 
     public static FuncScope getFuncScope() {
 	for (int i = scopeStack.size() - 1; i >= 0; i--)
-	    if (scopeStack.get(i) instanceof FuncScope) return (FuncScope) scopeStack.get(i);
+	    if (scopeStack.get(i) instanceof FuncScope) return (FuncScope) scopeStack
+		    .get(i);
 	return null;
     }
 
     public static PropertyScope getPropertyScope() {
 	for (int i = scopeStack.size() - 1; i >= 0; i--)
-	    if (scopeStack.get(i) instanceof PropertyScope) return (PropertyScope) scopeStack.get(i);
+	    if (scopeStack.get(i) instanceof PropertyScope) return (PropertyScope) scopeStack
+		    .get(i);
 	return null;
     }
 

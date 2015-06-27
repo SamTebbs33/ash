@@ -21,73 +21,42 @@ public class Lexer {
 	// that isn't matched by other tokens
 	COMMENT("(//.+)|(/\\*(.|[\r\n])*?\\*/)", "comment"), // Source:
 	// http://blog.ostermiller.org/find-comment
-	OCTINT("0o[0-7]+", "octal integer"),
-	BININT("0b[0|1]+", "binary integer"),
-	HEXINT("0x[0-9a-fA-F]+", "hexadecimal integer"),
-	FLOAT("-?[0-9]+\\.[0-9]+f", "float"),
-	DOUBLE("-?[0-9]+\\.[0-9]+", "double"),
-	LONG("-?[0-9]+L", "long"),
-	INT("-?[0-9]+", "integer"),
-	STRING("\".*\"", "string"),
-	CHAR("\'.\'", "character"),
-	BOOL("true|false", "boolean"),
-	PRIMITIVE("bool|double|float|long|int|short|byte|ulong|uint|char|void", "primitive"),
-	LAMBDAARROW("->", "lambda arrow"),
+	OCTINT("0o[0-7]+", "octal integer"), BININT("0b[0|1]+",
+		"binary integer"), HEXINT("0x[0-9a-fA-F]+",
+		"hexadecimal integer"), FLOAT("-?[0-9]+\\.[0-9]+f", "float"), DOUBLE(
+		"-?[0-9]+\\.[0-9]+", "double"), LONG("-?[0-9]+L", "long"), INT(
+		"-?[0-9]+", "integer"), STRING("\".*\"", "string"), CHAR(
+		"\'.\'", "character"), BOOL("true|false", "boolean"), PRIMITIVE(
+		"bool|double|float|long|int|short|byte|ulong|uint|char|void",
+		"primitive"), LAMBDAARROW("->", "lambda arrow"),
 
-	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
-	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
-	BINARYOP("\\.\\.|<|>|<=|>=|==|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|", "binary operator"),
-	ASSIGNOP("=", "assignment operator"),
-	WHITESPACE("[\n\t ]+", "whitespace"),
+	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"), COMPOUNDASSIGNOP(
+		"-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=",
+		"compound assignment operator"), BINARYOP(
+		"\\.\\.|<|>|<=|>=|==|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|",
+		"binary operator"), ASSIGNOP("=", "assignment operator"), WHITESPACE(
+		"[\n\t ]+", "whitespace"),
 
-	ARROW("=>", "throws arrow"),
-	PARENL("\\(", "left parenthesis"),
-	PARENR("\\)", "right parenthesis"),
-	BRACEL("\\{", "left brace"),
-	BRACER("\\}", "right brace"),
-	BRACKETL("\\[", "left bracket"),
-	BRACKETR("\\]", "right bracket"),
-	DOT("\\.", "dot"),
-	COMMA(",", "comma"),
-	QUESTIONMARK("\\?", "question mark"),
-	COLON(":", "colon"),
+	ARROW("=>", "throws arrow"), PARENL("\\(", "left parenthesis"), PARENR(
+		"\\)", "right parenthesis"), BRACEL("\\{", "left brace"), BRACER(
+		"\\}", "right brace"), BRACKETL("\\[", "left bracket"), BRACKETR(
+		"\\]", "right bracket"), DOT("\\.", "dot"), COMMA(",", "comma"), QUESTIONMARK(
+		"\\?", "question mark"), COLON(":", "colon"),
 
-	VAR("var"),
-	CONST("const"),
-	FUNC("func"),
-	CLASS("class"),
-	ENUM("enum"),
-	INTERFACE("interface"),
-	IMPORT("import"),
-	PACKAGE("package"),
-	RETURN("return"),
+	VAR("var"), CONST("const"), FUNC("func"), CLASS("class"), ENUM("enum"), INTERFACE(
+		"interface"), IMPORT("import"), PACKAGE("package"), RETURN(
+		"return"),
 
-	PUBLIC("public"),
-	PRIVATE("private"),
-	PROTECTED("protected"),
-	FINAL("final"),
-	REQUIRED("required"),
-	NATIVE("native"),
-	OVERRIDE("override"),
-	STANDARD("standard"),
-	STATIC("static"),
-	THIS("this"),
-	SELF("self"),
-	NULL("null"),
-	AS("as"),
-	IS("is"),
-	GET("get"),
-	SET("set"),
+	PUBLIC("public"), PRIVATE("private"), PROTECTED("protected"), FINAL(
+		"final"), REQUIRED("required"), NATIVE("native"), OVERRIDE(
+		"override"), STANDARD("standard"), STATIC("static"), THIS(
+		"this"), SELF("self"), NULL("null"), AS("as"), IS("is"), GET(
+		"get"), SET("set"),
 
-	IF("if"),
-	ELSE("else"),
-	WHILE("while"),
-	FOR("for"),
-	IN("in"),
+	IF("if"), ELSE("else"), WHILE("while"), FOR("for"), IN("in"),
 
-	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),
-	EOF("\\Z", "end of file"),
-	ERROR(".*", "error");
+	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"), EOF("\\Z", "end of file"), ERROR(
+		".*", "error");
 
 	public String regex, typeName;
 
@@ -106,7 +75,8 @@ public class Lexer {
 	public String data;
 	public int line, columnStart, columnEnd;
 
-	public Token(final TokenType type, final String data, final int line, final int column, final int columnEnd) {
+	public Token(final TokenType type, final String data, final int line,
+		final int column, final int columnEnd) {
 	    this.type = type;
 	    this.data = data;
 	    this.line = line;
@@ -116,7 +86,8 @@ public class Lexer {
 
 	@Override
 	public String toString() {
-	    return String.format("%d:%d-%d = %s (%s)", line, columnStart, columnEnd, type.name(), data);
+	    return String.format("%d:%d-%d = %s (%s)", line, columnStart,
+		    columnEnd, type.name(), data);
 	}
 
     }
@@ -126,7 +97,8 @@ public class Lexer {
 	public String data;
 	public int line, column;
 
-	public InvalidTokenException(final String data, final int line, final int column) {
+	public InvalidTokenException(final String data, final int line,
+		final int column) {
 	    this.data = data;
 	    this.line = line;
 	    this.column = column;
@@ -146,10 +118,14 @@ public class Lexer {
 	    final StringBuilder typesStr = new StringBuilder("");
 	    for (int i = 0; i < t.length; i++) {
 		typesStr.append(t[i].typeName);
-		if (i == t.length - 2) typesStr.append(" or ");
-		else if (i < t.length - 1) typesStr.append(", ");
+		if (i == (t.length - 2)) {
+		    typesStr.append(" or ");
+		} else if (i < (t.length - 1)) {
+		    typesStr.append(", ");
+		}
 	    }
-	    msg = String.format("Expected %s, found %s", typesStr, found.type.typeName);
+	    msg = String.format("Expected %s, found %s", typesStr,
+		    found.type.typeName);
 	}
 
 	public UnexpectedTokenException(final Token t) {
@@ -159,7 +135,8 @@ public class Lexer {
 
 	public UnexpectedTokenException(final Token next, final String tokenData) {
 	    token = next;
-	    msg = String.format("Unexpected %s, expected %s", next.type.typeName, tokenData);
+	    msg = String.format("Unexpected %s, expected %s",
+		    next.type.typeName, tokenData);
 	}
 
     }
@@ -173,8 +150,10 @@ public class Lexer {
 	    numLines++;
 	}
 	final StringBuffer patternsBuffer = new StringBuffer();
-	for (final TokenType type : TokenType.values())
-	    patternsBuffer.append(String.format("|(?<%s>%s)", type.name(), type.regex));
+	for (final TokenType type : TokenType.values()) {
+	    patternsBuffer.append(String.format("|(?<%s>%s)", type.name(),
+		    type.regex));
+	}
 	final String patternStr = patternsBuffer.toString();
 	final Pattern patterns = Pattern.compile(patternStr.substring(1));
 
@@ -183,13 +162,13 @@ public class Lexer {
     }
 
     public Token getNextToken() throws InvalidTokenException {
-	while (matcher.find())
+	while (matcher.find()) {
 	    for (final TokenType type : TokenType.values()) {
 		final String data = matcher.group(type.name());
 		if (data != null) {
 		    // Skip whitespace
 		    if (type == TokenType.WHITESPACE) {
-			for (final char ch : data.toCharArray())
+			for (final char ch : data.toCharArray()) {
 			    switch (ch) {
 				case '\n':
 				    line++;
@@ -201,17 +180,21 @@ public class Lexer {
 				case ' ':
 				    column++;
 			    }
+			}
 			continue;
-		    } else if (type == TokenType.ERROR) throw new InvalidTokenException(data, line, column);
+		    } else if (type == TokenType.ERROR) throw new InvalidTokenException(
+			    data, line, column);
 		    else if (type == TokenType.COMMENT) {
 			column += data.length();
 			continue;
 		    }
-		    final Token t = new Token(type, data, line, column, column + data.length());
+		    final Token t = new Token(type, data, line, column, column
+			    + data.length());
 		    column += data.length();
 		    return t;
 		}
 	    }
+	}
 	return null;
     }
 

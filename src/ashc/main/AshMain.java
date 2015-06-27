@@ -11,7 +11,8 @@ import ashc.load.*;
  */
 public class AshMain {
 
-    public static void main(final String[] args) throws FileNotFoundException, IOException {
+    public static void main(final String[] args) throws FileNotFoundException,
+	    IOException {
 	TypeImporter.loadClass("java.lang.String");
 	TypeImporter.loadClass("java.lang.Object");
 	final AshCompiler compiler = new AshCompiler(args[0]);

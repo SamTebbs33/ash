@@ -35,6 +35,7 @@ import ashc.grammar.Node.NodeVariable;
 
 /**
  * Ash
+ * 
  * @author samtebbs, 20:08:22 - 24 May 2015
  */
 public interface CodeGenerator {

@@ -10,10 +10,10 @@ import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
-import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
+ * 
  * @author samtebbs, 15:09:18 - 23 May 2015
  */
 public class Semantics {
@@ -29,7 +29,8 @@ public class Semantics {
 	public boolean optional;
 	public LinkedList<TypeI> tupleTypes, genericTypes;
 
-	public TypeI(final String shortName, final int arrDims, final boolean optional) {
+	public TypeI(final String shortName, final int arrDims,
+		final boolean optional) {
 	    this.shortName = shortName;
 	    this.arrDims = arrDims;
 	    this.optional = optional;
@@ -39,9 +40,12 @@ public class Semantics {
 
 	public TypeI(final NodeType type) {
 	    this(type.id, type.arrDims, type.optional);
-	    for(NodeType nodeType : type.generics.types) genericTypes.add(new TypeI(nodeType));
-	    for (final NodeTupleType nodeType : type.tupleTypes)
+	    for (final NodeType nodeType : type.generics.types) {
+		genericTypes.add(new TypeI(nodeType));
+	    }
+	    for (final NodeTupleType nodeType : type.tupleTypes) {
 		tupleTypes.add(new TypeI(nodeType));
+	    }
 	}
 
 	public TypeI(final EnumPrimitive primitive) {
@@ -56,8 +60,9 @@ public class Semantics {
 	    this(nodeType.type);
 	    tupleName = nodeType.name;
 
-	    for (final NodeType t : nodeType.type.generics.types)
+	    for (final NodeType t : nodeType.type.generics.types) {
 		genericTypes.add(new TypeI(t));
+	    }
 	}
 
 	public static TypeI fromClass(final Class cls) {
@@ -65,8 +70,11 @@ public class Semantics {
 	    int arrDims = clsName.length();
 	    clsName = clsName.replace("[", "");
 	    arrDims = arrDims - clsName.length();
-	    final String shortName = clsName.substring(clsName.lastIndexOf('.') + 1);
-	    if (clsName.charAt(0) == 'L') TypeImporter.loadClass(clsName.substring(1).replace(";", ""));
+	    final String shortName = clsName
+		    .substring(clsName.lastIndexOf('.') + 1);
+	    if (clsName.charAt(0) == 'L') {
+		TypeImporter.loadClass(clsName.substring(1).replace(";", ""));
+	    }
 	    return new TypeI(shortName, arrDims, false);
 	}
 
@@ -74,7 +82,9 @@ public class Semantics {
 	public boolean equals(final Object obj) {
 	    if (obj instanceof TypeI) {
 		final TypeI type = (TypeI) obj;
-		return type.shortName.equals(shortName) && type.arrDims == arrDims && type.optional == optional;
+		return type.shortName.equals(shortName)
+			&& (type.arrDims == arrDims)
+			&& (type.optional == optional);
 	    }
 	    return false;
 	}
@@ -83,22 +93,30 @@ public class Semantics {
 	public String toString() {
 	    if (isNull() || isVoid()) return shortName;
 	    final StringBuffer arrBuffer = new StringBuffer();
-	    for (int i = 0; i < arrDims; i++)
+	    for (int i = 0; i < arrDims; i++) {
 		arrBuffer.append("[]");
+	    }
 	    String id = shortName;
-	    if (tupleName != null) id = tupleName + " : " + id;
+	    if (tupleName != null) {
+		id = tupleName + " : " + id;
+	    }
 	    if (isTuple()) {
 		id = "[";
-		for (int i = 0; i < tupleTypes.size(); i++)
-		    id += tupleTypes.get(i).toString() + (i < tupleTypes.size() - 1 ? ", " : "");
+		for (int i = 0; i < tupleTypes.size(); i++) {
+		    id += tupleTypes.get(i).toString()
+			    + (i < (tupleTypes.size() - 1) ? ", " : "");
+		}
 		id += "]";
 	    }
-	    if(genericTypes.size() > 0){
+	    if (genericTypes.size() > 0) {
 		id += "<";
-		for(int i = 0; i < genericTypes.size() - 1; i++) id += genericTypes.toString() + ", ";
+		for (int i = 0; i < (genericTypes.size() - 1); i++) {
+		    id += genericTypes.toString() + ", ";
+		}
 		id += genericTypes.getLast().toString() + ">";
 	    }
-	    return String.format("%s%s%s", id, arrBuffer.toString(), optional ? "?" : "");
+	    return String.format("%s%s%s", id, arrBuffer.toString(),
+		    optional ? "?" : "");
 	}
 
 	public boolean isVoid() {
@@ -110,13 +128,16 @@ public class Semantics {
 	    if (equals(exprType)) return true;
 	    // If the expr is null, and this is optional, and it has more than 0
 	    // array dimensions
-	    if (exprType.isNull() && optional && (!EnumPrimitive.isPrimitive(shortName) || arrDims > 0)) return true;
+	    if (exprType.isNull() && optional
+		    && (!EnumPrimitive.isPrimitive(shortName) || (arrDims > 0))) return true;
 	    // If this is a tuple and the expression is a tuple expression
 	    if (tupleTypes.size() > 0) {
 		if (tupleTypes.size() == exprType.tupleTypes.size()) {
 		    for (int i = 0; i < exprType.tupleTypes.size(); i++) {
-			final TypeI tupleType1 = tupleTypes.get(i), tupleType2 = exprType.tupleTypes.get(i);
-			if (!tupleType1.tupleName.equals(tupleType2.tupleName) || !tupleType1.canBeAssignedTo(tupleType2)) return false;
+			final TypeI tupleType1 = tupleTypes.get(i), tupleType2 = exprType.tupleTypes
+				.get(i);
+			if (!tupleType1.tupleName.equals(tupleType2.tupleName)
+				|| !tupleType1.canBeAssignedTo(tupleType2)) return false;
 		    }
 		    return true;
 		}
@@ -124,8 +145,13 @@ public class Semantics {
 	    }
 	    if (optional != exprType.optional) return false;
 	    // If they are both numeric and the array dimensions are 0
-	    if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && arrDims == exprType.arrDims) return true;
-	    return exprType.arrDims == arrDims && (exprType.isNull() && !EnumPrimitive.isNumeric(shortName) || Semantics.typeHasSuper(exprType.shortName, shortName));
+	    if (EnumPrimitive.isNumeric(shortName)
+		    && EnumPrimitive.isNumeric(exprType.shortName)
+		    && (arrDims == exprType.arrDims)) return true;
+	    return (exprType.arrDims == arrDims)
+		    && ((exprType.isNull() && !EnumPrimitive
+			    .isNumeric(shortName)) || Semantics.typeHasSuper(
+			    exprType.shortName, shortName));
 	}
 
 	public boolean isNull() {
@@ -133,7 +159,7 @@ public class Semantics {
 	}
 
 	public boolean isTuple() {
-	    return tupleTypes != null && tupleTypes.size() > 0;
+	    return (tupleTypes != null) && (tupleTypes.size() > 0);
 	}
 
 	public static TypeI voidType() {
@@ -144,17 +170,24 @@ public class Semantics {
 	    return arrDims > 0;
 	}
 
+	public TypeI copy() {
+	    return new TypeI(shortName, arrDims, optional);
+	}
     }
 
     public static boolean typeExists(final String typeName) {
-	if (typeStack.size() > 0) for (final String generic : typeStack.peek().generics)
-	    if (generic.equals(typeName)) return true;
-	return typeName.equals("void") || EnumPrimitive.isPrimitive(typeName) || typeNameMap.containsKey(typeName);
+	if (typeStack.size() > 0) {
+	    for (final String generic : typeStack.peek().generics)
+		if (generic.equals(typeName)) return true;
+	}
+	return typeName.equals("void") || EnumPrimitive.isPrimitive(typeName)
+		|| typeNameMap.containsKey(typeName);
     }
 
     public static boolean typeHasSuper(final String type, final String superType) {
 	final Optional<Type> t = getType(type), superT = getType(superType);
-	if (t.isPresent() && superT.isPresent()) return t.get().hasSuper(superT.get().qualifiedName);
+	if (t.isPresent() && superT.isPresent()) return t.get().hasSuper(
+		superT.get().qualifiedName);
 	return false;
     }
 
@@ -169,7 +202,8 @@ public class Semantics {
 	Scope.getNamespace().pop();
     }
 
-    public static void bindName(final String shortName, final QualifiedName qualifiedName) {
+    public static void bindName(final String shortName,
+	    final QualifiedName qualifiedName) {
 	typeNameMap.put(shortName, qualifiedName);
     }
 
@@ -182,13 +216,15 @@ public class Semantics {
     }
 
     public static Optional<Type> getType(final String id) {
-	return typeNameMap.containsKey(id) ? Optional.of(types.get(typeNameMap.get(id))) : Optional.empty();
+	return typeNameMap.containsKey(id) ? Optional.of(types.get(typeNameMap
+		.get(id))) : Optional.empty();
     }
 
     public static boolean funcExists(final Function func) {
 	final Optional<Type> type = getType(func.qualifiedName.shortName);
 	// Check if it is a constructor for an existing type
-	if (type.isPresent()) return type.get().getFunc(func.qualifiedName.shortName, func.parameters) != null;
+	if (type.isPresent()) return type.get().getFunc(
+		func.qualifiedName.shortName, func.parameters) != null;
 	return typeStack.peek().functions.contains(func);
     }
 
@@ -210,19 +246,25 @@ public class Semantics {
 	if (type1.equals(type2)) return type1;
 	final String name1 = type1.shortName, name2 = type2.shortName;
 
-	if (name1.equals("String") && type1.arrDims == 0 || name2.equals("String") && type2.arrDims == 0) return new TypeI("String", 0, false);
+	if ((name1.equals("String") && (type1.arrDims == 0))
+		|| (name2.equals("String") && (type2.arrDims == 0))) return new TypeI(
+		"String", 0, false);
 
 	for (final EnumPrimitive p : EnumPrimitive.values())
-	    if (p.ashName.equals(name1) || p.ashName.equals(name2)) return new TypeI(p);
+	    if (p.ashName.equals(name1) || p.ashName.equals(name2)) return new TypeI(
+		    p);
 
 	return null;
     }
 
     public static Variable getVar(final String id, final TypeI type) {
-	if (type.isArray() && id.equals("length")) return new Variable("length", new TypeI(EnumPrimitive.INT));
+	if (type.isArray() && id.equals("length")) return new Variable(
+		"length", new TypeI(EnumPrimitive.INT));
 	if (type.isTuple()) {
 	    for (final TypeI tupleType : type.tupleTypes)
-		if (tupleType.tupleName != null && tupleType.tupleName.equals(id)) return new Variable(id, tupleType);
+		if ((tupleType.tupleName != null)
+			&& tupleType.tupleName.equals(id)) return new Variable(
+			id, tupleType);
 	} else {
 	    final Optional<Type> t = getType(type.shortName);
 	    if (t.isPresent()) return t.get().getField(id);
@@ -244,11 +286,14 @@ public class Semantics {
 	Variable var = null;
 	if ((var = getVar(id, Scope.getScope())) != null) return var;
 	// Else, look in the current type
-	return getVar(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false));
+	return getVar(id, new TypeI(typeStack.peek().qualifiedName.shortName,
+		0, false));
     }
 
-    public static TypeI getFuncType(final String id, final TypeI type, final NodeExprs args) {
-	if (type.isArray() && id.equals("toString()")) return new TypeI("String", 0, false);
+    public static TypeI getFuncType(final String id, final TypeI type,
+	    final NodeExprs args) {
+	if (type.isArray() && id.equals("toString()")) return new TypeI(
+		"String", 0, false);
 	else {
 	    final Optional<Type> t = getType(type.shortName);
 	    if (t.isPresent()) return t.get().getFuncType(id, args);
@@ -257,10 +302,12 @@ public class Semantics {
     }
 
     public static TypeI getFuncType(final String id, final NodeExprs args) {
-	return getFuncType(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args);
+	return getFuncType(id, new TypeI(
+		typeStack.peek().qualifiedName.shortName, 0, false), args);
     }
 
-    public static Function getFunc(final String id, final TypeI type, final NodeExprs args) {
+    public static Function getFunc(final String id, final TypeI type,
+	    final NodeExprs args) {
 	final Optional<Type> t = getType(type.shortName);
 	if (t.isPresent()) return t.get().getFunc(id, args);
 	return null;
@@ -270,7 +317,8 @@ public class Semantics {
 	final Optional<Type> type = getType(id);
 	// Check if it is a constructor for an existing type
 	if (type.isPresent()) return type.get().getFunc(id, args);
-	return getFunc(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args);
+	return getFunc(id, new TypeI(typeStack.peek().qualifiedName.shortName,
+		0, false), args);
     }
 
     public static void enterType(final Type type) {
@@ -279,31 +327,31 @@ public class Semantics {
 
     public static boolean varExists(final String id) {
 	final Scope scope = Scope.getScope();
-	if (scope != null && scope.hasVar(id)) return true;
+	if ((scope != null) && scope.hasVar(id)) return true;
 	for (final Field field : typeStack.peek().fields)
 	    if (field.qualifiedName.shortName.equals(id)) return true;
 	return false;
     }
 
     public static void addVar(final Variable variable) {
-	if (Scope.inScope()) Scope.getScope().vars.add(variable);
+	if (Scope.inScope()) {
+	    Scope.getScope().vars.add(variable);
+	}
     }
 
     public static Type currentType() {
 	return typeStack.peek();
     }
 
-    public static TypeI getGenericType(String shortName, TypeI type) {
-	Optional<Type> typeOpt = getType(type.shortName);
-	if(typeOpt.isPresent()){
-	    Type enclosingType = typeOpt.get();
-	    int i = 0;
-	    for(String generic : enclosingType.generics){
-		if(generic.equals(shortName)){
-		    if(i < type.genericTypes.size()) return type.genericTypes.get(i);
-		    else return new TypeI("Object", 0, false);
-		}
-	    }
+    public static TypeI getGenericType(final String shortName, final TypeI type) {
+	final Optional<Type> typeOpt = getType(type.shortName);
+	if (typeOpt.isPresent()) {
+	    final Type enclosingType = typeOpt.get();
+	    final int i = 0;
+	    for (final String generic : enclosingType.generics)
+		if (generic.equals(shortName)) if (i < type.genericTypes.size()) return type.genericTypes
+			.get(i);
+		else return new TypeI("Object", 0, false);
 	}
 	return null;
     }

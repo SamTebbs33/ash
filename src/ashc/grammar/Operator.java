@@ -4,40 +4,23 @@ import ashc.semantics.*;
 
 /**
  * Ash
+ * 
  * @author samtebbs, 10:49:05 - 27 May 2015
  */
 public class Operator {
 
     public static enum EnumOperatorType {
-	ARITHMETIC,
-	ASSIGNMENT
+	ARITHMETIC, ASSIGNMENT
     }
 
     public static enum EnumOperation {
-	INCREMENT,
-	DECREMENT,
-	ADD,
-	SUBTRACT,
-	MULTIPLY,
-	DIVIDE(EnumPrimitive.DOUBLE),
-	MOD,
-	POW(EnumPrimitive.DOUBLE),
-	AND(EnumPrimitive.BOOL),
-	OR(EnumPrimitive.BOOL),
-	XOR(EnumPrimitive.BOOL),
-	NOT(EnumPrimitive.BOOL),
-	BIT_AND,
-	BIT_OR,
-	BIT_XOR,
-	BIT_NOT,
-	LESS(EnumPrimitive.BOOL),
-	GREATER(EnumPrimitive.BOOL),
-	EQUAL(EnumPrimitive.BOOL),
-	LESS_EQUAL(EnumPrimitive.BOOL),
-	GREATER_EQUAL(EnumPrimitive.BOOL),
-	L_SHIFT,
-	R_SHIFT,
-	R_SHIFT_LOGICAL;
+	INCREMENT, DECREMENT, ADD, SUBTRACT, MULTIPLY, DIVIDE(
+		EnumPrimitive.DOUBLE), MOD, POW(EnumPrimitive.DOUBLE), AND(
+		EnumPrimitive.BOOL), OR(EnumPrimitive.BOOL), XOR(
+		EnumPrimitive.BOOL), NOT(EnumPrimitive.BOOL), BIT_AND, BIT_OR, BIT_XOR, BIT_NOT, LESS(
+		EnumPrimitive.BOOL), GREATER(EnumPrimitive.BOOL), EQUAL(
+		EnumPrimitive.BOOL), LESS_EQUAL(EnumPrimitive.BOOL), GREATER_EQUAL(
+		EnumPrimitive.BOOL), L_SHIFT, R_SHIFT, R_SHIFT_LOGICAL;
 
 	public EnumPrimitive primitive;
 
@@ -60,7 +43,9 @@ public class Operator {
 	if (opStr.charAt(opStr.length() - 1) == '=') {
 	    type = EnumOperatorType.ASSIGNMENT;
 	    opStr = opStr.substring(0, opStr.length() - 1);
-	} else type = EnumOperatorType.ARITHMETIC;
+	} else {
+	    type = EnumOperatorType.ARITHMETIC;
+	}
 	operation = getOperation(opStr);
     }
 
