@@ -7,6 +7,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import ashc.grammar.Lexer.Token;
+import ashc.grammar.Node.IFuncStmt;
 import ashc.grammar.Node.NodeArgs;
 import ashc.grammar.Node.NodeFuncBlock;
 import ashc.grammar.Node.NodeModifier;
@@ -878,6 +879,7 @@ public abstract class Node {
 
 	public IExpression singleLineExpr;
 	LinkedList<IFuncStmt> stmts = new LinkedList<IFuncStmt>();
+	public IFuncStmt singleLineStmt;
 
 	public void add(final IFuncStmt funcStmt) {
 	    stmts.add(funcStmt);
@@ -894,10 +896,9 @@ public abstract class Node {
 		    semanticError(this, line, column, CANNOT_ASSIGN,
 			    scope.returnType.toString(), exprType.toString());
 		}
-	    }
-	    for (final IFuncStmt stmt : stmts) {
-		((Node) stmt).analyse();
-	    }
+	    }else if(singleLineStmt != null) ((Node) singleLineStmt).analyse();
+	    else for (final IFuncStmt stmt : stmts) ((Node) stmt).analyse();
+	    
 	}
 
     }
@@ -1129,6 +1130,22 @@ public abstract class Node {
 		final IExpression expr) {
 	    super(line, column);
 	    this.expr = expr;
+	}
+	
+	@Override
+	public void analyse() {
+	    final FuncScope scope = Scope.getFuncScope();
+	    if(scope.isMutFunc) semanticError(this, line, column, RETURN_IN_MUT_FUNC);
+	    if (expr != null) {
+		final TypeI exprType = expr.getExprType();
+		if (scope.returnType.isVoid()) {
+		    semanticError(this, line, column, RETURN_EXPR_IN_VOID_FUNC);
+		} else if (!scope.returnType.canBeAssignedTo(exprType)) {
+		    semanticError(this, line, column, CANNOT_ASSIGN,
+			    scope.returnType.toString(), exprType.toString());
+		}
+	    }
+	    
 	}
 
     }

@@ -1,5 +1,9 @@
+import java.util.LinkedList
+
 class Test {
-	mut foo() {
-		
+	var string = ""
+	mut foo(val : String) {
+		string = string.append(val)
 	}
+	var a = foo("Hi").foo(" ").foo("there!")
 }

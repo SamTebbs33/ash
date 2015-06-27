@@ -352,7 +352,7 @@ public class Parser {
 	if(expect(TokenType.ARROW, TokenType.BRACEL).type == TokenType.ARROW) throwsType = parseType();
 	else rewind();
 	if(needsBody){
-	    block = parseFuncBlock(false);
+	    block = parseFuncBlock(false, false);
 	}
 	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, throwsType, block, new NodeTypes(), true);
     }
@@ -387,7 +387,7 @@ public class Parser {
 	}
 
 	if (needsBody) {
-	    block = parseFuncBlock();
+	    block = parseFuncBlock(true, true);
 	}
 
 	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args,
@@ -416,11 +416,7 @@ public class Parser {
 	return new NodeTypes();
     }
 
-    private NodeFuncBlock parseFuncBlock() throws UnexpectedTokenException {
-	return parseFuncBlock(true);
-    }
-
-    private NodeFuncBlock parseFuncBlock(final boolean allowSingleLine)
+    private NodeFuncBlock parseFuncBlock(final boolean allowSingleLine, boolean singleLineExpression)
 	    throws UnexpectedTokenException {
 	final NodeFuncBlock block = new NodeFuncBlock();
 	Token token = null;
@@ -435,7 +431,8 @@ public class Parser {
 		block.add(parseFuncStmt());
 	    }
 	} else {
-	    block.singleLineExpr = parseExpression();
+	    if(singleLineExpression) block.singleLineExpr = parseExpression();
+	    else block.singleLineStmt = parseFuncStmt();
 	}
 	return block;
     }
@@ -490,7 +487,7 @@ public class Parser {
 		expect(TokenType.PARENR);
 	    }
 	    final NodeForIn forIn = new NodeForIn(line, column, next.data,
-		    expr, parseFuncBlock());
+		    expr, parseFuncBlock(true, false));
 	    return forIn;
 	} else {
 	    IFuncStmt initStmt = null, endStmt = null;
@@ -509,17 +506,17 @@ public class Parser {
 		expect(TokenType.PARENR);
 	    }
 	    return new NodeForNormal(line, column, initStmt, condition,
-		    endStmt, parseFuncBlock());
+		    endStmt, parseFuncBlock(true, false));
 	}
     }
 
     private IFuncStmt parseWhileStmt() throws UnexpectedTokenException {
-	return new NodeWhile(line, column, parseExpression(), parseFuncBlock());
+	return new NodeWhile(line, column, parseExpression(), parseFuncBlock(true, false));
     }
 
     private NodeIf parseIfStmt() throws UnexpectedTokenException {
 	final NodeIf ifStmt = new NodeIf(line, column, parseExpression(),
-		parseFuncBlock());
+		parseFuncBlock(true, false));
 	if (getNext().type == TokenType.ELSE) {
 	    final TokenType next = expect(TokenType.IF, TokenType.BRACEL).type;
 	    if (next == TokenType.IF) {
@@ -527,7 +524,7 @@ public class Parser {
 	    } else {
 		rewind();
 		ifStmt.elseStmt = new NodeIf(line, column, null,
-			parseFuncBlock());
+			parseFuncBlock(true, false));
 	    }
 	} else {
 	    rewind();
@@ -752,9 +749,9 @@ public class Parser {
 		if ((setBlock == null) && (getBlock == null)) {
 		    next = expect(TokenType.GET, TokenType.SET);
 		    if (next.type == TokenType.SET) {
-			setBlock = parseFuncBlock(false);
+			setBlock = parseFuncBlock(true, true);
 		    } else {
-			getBlock = parseFuncBlock();
+			getBlock = parseFuncBlock(true, true);
 		    }
 		}
 		next = getNext();
@@ -765,7 +762,7 @@ public class Parser {
 			else throw new UnexpectedTokenException(next,
 				TokenType.BRACER);
 		    } else {
-			getBlock = parseFuncBlock();
+			getBlock = parseFuncBlock(true, true);
 		    }
 		} else if (next.type == TokenType.SET) {
 		    if (setBlock != null) {
@@ -774,7 +771,7 @@ public class Parser {
 			else throw new UnexpectedTokenException(next,
 				TokenType.BRACER);
 		    } else {
-			setBlock = parseFuncBlock();
+			setBlock = parseFuncBlock(true, true);
 		    }
 		} else {
 		    rewind();

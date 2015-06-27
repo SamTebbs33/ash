@@ -21,6 +21,7 @@ public class Error {
 	CONSTRUCTOR_DOES_NOT_EXIST("Constructor does not exist in type %s"),
 	RETURN_EXPR_IN_VOID_FUNC(
 		"Cannot return an expression in a void function"),
+		RETURN_IN_MUT_FUNC("Cannot return in a mutator function"),
 
 	FIELD_ALREADY_EXISTS("Field already exists (%s)"),
 
