@@ -636,6 +636,8 @@ public abstract class Node {
 	public NodeType type, throwsType;
 	public NodeFuncBlock block;
 	public NodeTypes generics;
+	
+	private TypeI returnType;
 
 	public NodeFuncDec(final int line, final int column,
 		final LinkedList<NodeModifier> mods, final String id,
@@ -664,7 +666,14 @@ public abstract class Node {
 	    for (final NodeType generic : generics.types) {
 		func.generics.add(generic.id);
 	    }
-	    func.returnType = type != null ? new TypeI(type) : null;
+	    
+	    if(!type.id.equals("void")) returnType = new TypeI(type);
+	    else if(block.singleLineExpr != null){
+		returnType = block.singleLineExpr.getExprType();
+	    }
+	    else returnType = new TypeI("void", 0, false);
+	    func.returnType = returnType;
+
 	    for (final NodeArg arg : args.args) {
 		func.parameters.add(new TypeI(arg.type));
 	    }
@@ -678,7 +687,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    args.analyse();
-	    type.analyse();
+	    if(type != null) type.analyse();
 	    if (throwsType != null) {
 		throwsType.analyse();
 		final Optional<Type> type = Semantics.getType(throwsType.id);
@@ -689,7 +698,7 @@ public abstract class Node {
 			    throwsType.id, "java.lang.Throwable");
 		}
 	    }
-	    Scope.push(new FuncScope(new TypeI(type)));
+	    Scope.push(new FuncScope(returnType));
 	    for (final NodeArg arg : args.args) {
 		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
 	    }
