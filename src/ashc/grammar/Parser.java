@@ -315,6 +315,10 @@ public class Parser {
 		block, generics);
     }
 
+    private NodeTypes parseGenerics() throws UnexpectedTokenException {
+	return parseGenerics(true);
+    }
+
     private NodeClassBlock parseClassBlock() throws UnexpectedTokenException {
 	final NodeClassBlock block = new NodeClassBlock();
 	if (getNext().type == TokenType.BRACEL) {
@@ -405,9 +409,13 @@ public class Parser {
 	return new NodeTypes();
     }
 
-    public NodeTypes parseGenerics() throws UnexpectedTokenException {
+    public NodeTypes parseGenerics(boolean necessary) throws UnexpectedTokenException {
 	if (getNext().data.equals("<")) {
-	    final NodeTypes types = parseTypes();
+	    final NodeTypes types = parseTypes(necessary);
+	    if(types == null && !necessary){
+		rewind();
+		return null;
+	    }
 	    expect(">");
 	    return types;
 	} else {
@@ -487,7 +495,7 @@ public class Parser {
 		expect(TokenType.PARENR);
 	    }
 	    final NodeForIn forIn = new NodeForIn(line, column, next.data,
-		    expr, parseFuncBlock(true, false));
+		    expr, parseConstructBlock());
 	    return forIn;
 	} else {
 	    IFuncStmt initStmt = null, endStmt = null;
@@ -506,25 +514,24 @@ public class Parser {
 		expect(TokenType.PARENR);
 	    }
 	    return new NodeForNormal(line, column, initStmt, condition,
-		    endStmt, parseFuncBlock(true, false));
+		    endStmt, parseConstructBlock());
 	}
     }
 
     private IFuncStmt parseWhileStmt() throws UnexpectedTokenException {
-	return new NodeWhile(line, column, parseExpression(), parseFuncBlock(true, false));
+	return new NodeWhile(line, column, parseExpression(), parseConstructBlock());
     }
 
     private NodeIf parseIfStmt() throws UnexpectedTokenException {
 	final NodeIf ifStmt = new NodeIf(line, column, parseExpression(),
-		parseFuncBlock(true, false));
+		parseConstructBlock());
 	if (getNext().type == TokenType.ELSE) {
-	    final TokenType next = expect(TokenType.IF, TokenType.BRACEL).type;
-	    if (next == TokenType.IF) {
+	    if (expect(TokenType.IF, TokenType.BRACEL).type == TokenType.IF) {
 		ifStmt.elseStmt = parseIfStmt();
 	    } else {
 		rewind();
 		ifStmt.elseStmt = new NodeIf(line, column, null,
-			parseFuncBlock(true, false));
+			parseConstructBlock());
 	    }
 	} else {
 	    rewind();
@@ -532,12 +539,24 @@ public class Parser {
 	return ifStmt;
     }
 
+    private NodeFuncBlock parseConstructBlock() throws UnexpectedTokenException {
+	if(getNext().type == TokenType.BRACEL){
+	    rewind();
+	    return parseFuncBlock(false, false);
+	}else{
+	    rewind();
+	    NodeFuncBlock block = new NodeFuncBlock();
+	    block.add(parseFuncStmt());
+	    return block;
+	}
+    }
+
     // A prefix is just another name for a func call or variable
     private NodePrefix parsePrefix() throws UnexpectedTokenException {
 	NodePrefix prefix = null;
 	do {
 	    final Token id = expect(TokenType.ID, TokenType.SELF);
-	    final NodeTypes generics = parseGenerics();
+	    final NodeTypes generics = parseGenerics(false);
 	    if (getNext().type == TokenType.PARENL) {
 		rewind();
 		final NodeExprs exprs = parseCallArgs(TokenType.PARENL,
@@ -785,14 +804,28 @@ public class Parser {
 	return varDec;
     }
 
-    private NodeTypes parseTypes() throws UnexpectedTokenException {
+    private NodeTypes parseTypes(boolean necessary) throws UnexpectedTokenException {
 	final NodeTypes types = new NodeTypes();
-	types.add(parseType());
+	int ptr = pointer;
+	NodeType type = parseType(necessary);
+	if(type == null){
+	    rewind(pointer-ptr);
+	    return null;
+	}
+	types.add(type);
 	while (getNext().type == TokenType.COMMA) {
 	    types.add(parseType());
 	}
 	rewind();
 	return types;
+    }
+    
+    private NodeType parseType() throws UnexpectedTokenException {
+	return parseType(true);
+    }
+
+    private NodeTypes parseTypes() throws UnexpectedTokenException {
+	return parseTypes(true);
     }
 
     private NodeTypes parseSuperTypes() throws UnexpectedTokenException {
@@ -838,7 +871,7 @@ public class Parser {
 	return null;
     }
 
-    private NodeType parseType() throws UnexpectedTokenException {
+    private NodeType parseType(boolean necessary) throws UnexpectedTokenException {
 	final NodeType type = new NodeType();
 	// Parse tuple types
 	if (getNext().type == TokenType.BRACKETL) {
@@ -855,7 +888,12 @@ public class Parser {
 	    } while (expect(TokenType.COMMA, TokenType.BRACKETR).type == TokenType.COMMA);
 	} else {
 	    rewind();
-	    type.id = expect(TokenType.ID, TokenType.PRIMITIVE).data;
+	    try{
+		type.id = expect(TokenType.ID, TokenType.PRIMITIVE).data;
+	    }catch(UnexpectedTokenException e){
+		if(!necessary) return null;
+		else throw e;
+	    }
 	    type.generics = parseGenerics();
 	}
 

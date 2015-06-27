@@ -36,13 +36,13 @@ public class Lexer {
 		"primitive"),
 	LAMBDAARROW("->", "lambda arrow"),
 
+	COMPOUNDASSIGNOP(
+		"-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=",
+		"compound assignment operator"),
 	BINARYOP(
 		"\\.\\.|<|>|<=|>=|==|!=|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|",
 		"binary operator"),
 	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
-	COMPOUNDASSIGNOP(
-		"-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=",
-		"compound assignment operator"),
 	ASSIGNOP("=", "assignment operator"),
 	WHITESPACE("[\n\t ]+", "whitespace"),
 

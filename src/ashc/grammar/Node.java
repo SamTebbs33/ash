@@ -206,15 +206,17 @@ public abstract class Node {
 		    }
 		}
 	    }
+	    type = new Type(name, modifiers, getType());
 
 	    if (types != null) {
-		for (final NodeType type : types.types)
-		    if (type.optional) {
+		for (final NodeType nodeType : types.types){
+		    if (nodeType.optional) {
 			semanticError(this, line, column,
-				CANNOT_EXTEND_OPTIONAL_TYPE, type.id);
+				CANNOT_EXTEND_OPTIONAL_TYPE, nodeType.id);
 		    }
+		    for(NodeType generic : nodeType.generics.types) type.addGeneric(nodeType.id, new TypeI(generic));
+		}
 	    }
-	    type = new Type(name, modifiers, getType());
 	    for (final NodeType generic : generics.types) {
 		type.generics.add(generic.id);
 	    }
@@ -1609,8 +1611,11 @@ public abstract class Node {
 			.getType(exprType.shortName);
 		if (type.isPresent()) if (type.get().hasSuper(
 			new QualifiedName("java").add("lang").add("Iterable"))) {
-		    // TODO: When adding support for generics, extract the
-		    // exprType iterable generic here and assign it to varType
+		    
+		    // Extract the generic used when implementing Iterable
+		    LinkedList<TypeI> list = type.get().getGenerics("Iterable");
+		    if(list == null || list.isEmpty()) varType = new TypeI("Object", 0, false);
+		    else varType = list.get(0);
 		} else {
 		    semanticError(this, line, column, CANNOT_ITERATE_TYPE,
 			    exprType);

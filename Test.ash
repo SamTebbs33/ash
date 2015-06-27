@@ -1,9 +1,12 @@
-import java.util.LinkedList
+import java.lang.Iterable
 
-class Test {
-	var string = ""
-	mut foo(val : String) {
-		string = string.append(val)
+class Test() : Iterable<String> {
+
+	var array = Test()
+	
+	func main(){
+		for(a in array) var b : String = a // Should pass
+		for(a in array) var b : int = a // Should fail
 	}
-	var a = foo("Hi").foo(" ").foo("there!")
+	
 }
