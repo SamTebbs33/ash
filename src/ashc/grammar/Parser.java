@@ -343,650 +343,650 @@ public class Parser {
     /**
      * func id(args?) (: type)?
      */
-     private NodeFuncDec parseFuncDec(final boolean needsBody,
+    private NodeFuncDec parseFuncDec(final boolean needsBody,
 	    final LinkedList<NodeModifier> mods)
 	    throws UnexpectedTokenException {
-	 expect(TokenType.FUNC);
-	 final Token id = expect(TokenType.ID);
-	 final NodeTypes types = parseGenericsDecs();
-	 final NodeArgs args = parseArgs();
-	 NodeType type = null, throwsType = null;
-	 NodeFuncBlock block = new NodeFuncBlock();
-	 expect(TokenType.COLON, TokenType.ARROW, TokenType.LAMBDAARROW,
+	expect(TokenType.FUNC);
+	final Token id = expect(TokenType.ID);
+	final NodeTypes types = parseGenericsDecs();
+	final NodeArgs args = parseArgs();
+	NodeType type = null, throwsType = null;
+	NodeFuncBlock block = new NodeFuncBlock();
+	expect(TokenType.COLON, TokenType.ARROW, TokenType.LAMBDAARROW,
 		TokenType.BRACEL);
-	 rewind();
+	rewind();
 
-	 if (getNext().type == TokenType.COLON) {
-	     type = parseType();
-	 } else {
-	     type = new NodeType(id.line, id.columnStart, "void");
-	     rewind();
-	 }
+	if (getNext().type == TokenType.COLON) {
+	    type = parseType();
+	} else {
+	    type = new NodeType(id.line, id.columnStart, "void");
+	    rewind();
+	}
 
-	 if (getNext().type == TokenType.ARROW) {
-	     throwsType = parseType();
-	 } else {
-	     rewind();
-	 }
+	if (getNext().type == TokenType.ARROW) {
+	    throwsType = parseType();
+	} else {
+	    rewind();
+	}
 
-	 if (needsBody) {
-	     block = parseFuncBlock();
-	 }
+	if (needsBody) {
+	    block = parseFuncBlock();
+	}
 
-	 return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args,
+	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args,
 		type, throwsType, block, types);
-     }
+    }
 
-     public NodeTypes parseGenericsDecs() throws UnexpectedTokenException {
-	 if (getNext().data.equals("<")) {
-	     final NodeTypes types = parseSuperTypes();
-	     expect(">");
-	     return types;
-	 } else {
-	     rewind();
-	 }
-	 return new NodeTypes();
-     }
+    public NodeTypes parseGenericsDecs() throws UnexpectedTokenException {
+	if (getNext().data.equals("<")) {
+	    final NodeTypes types = parseSuperTypes();
+	    expect(">");
+	    return types;
+	} else {
+	    rewind();
+	}
+	return new NodeTypes();
+    }
 
-     public NodeTypes parseGenerics() throws UnexpectedTokenException {
-	 if (getNext().data.equals("<")) {
-	     final NodeTypes types = parseTypes();
-	     expect(">");
-	     return types;
-	 } else {
-	     rewind();
-	 }
-	 return new NodeTypes();
-     }
+    public NodeTypes parseGenerics() throws UnexpectedTokenException {
+	if (getNext().data.equals("<")) {
+	    final NodeTypes types = parseTypes();
+	    expect(">");
+	    return types;
+	} else {
+	    rewind();
+	}
+	return new NodeTypes();
+    }
 
-     private NodeFuncBlock parseFuncBlock() throws UnexpectedTokenException {
-	 return parseFuncBlock(true);
-     }
+    private NodeFuncBlock parseFuncBlock() throws UnexpectedTokenException {
+	return parseFuncBlock(true);
+    }
 
-     private NodeFuncBlock parseFuncBlock(final boolean allowSingleLine)
+    private NodeFuncBlock parseFuncBlock(final boolean allowSingleLine)
 	    throws UnexpectedTokenException {
-	 final NodeFuncBlock block = new NodeFuncBlock();
-	 Token token = null;
-	 if (allowSingleLine) {
-	     token = expect(TokenType.LAMBDAARROW, TokenType.BRACEL);
-	 } else {
-	     token = expect(TokenType.BRACEL);
-	 }
-	 if (token.type == TokenType.BRACEL) {
-	     while (getNext().type != TokenType.BRACER) {
+	final NodeFuncBlock block = new NodeFuncBlock();
+	Token token = null;
+	if (allowSingleLine) {
+	    token = expect(TokenType.LAMBDAARROW, TokenType.BRACEL);
+	} else {
+	    token = expect(TokenType.BRACEL);
+	}
+	if (token.type == TokenType.BRACEL) {
+	    while (getNext().type != TokenType.BRACER) {
 		rewind();
 		block.add(parseFuncStmt());
-	     }
-	 } else {
-	     block.singleLineExpr = parseExpression();
-	 }
-	 return block;
-     }
+	    }
+	} else {
+	    block.singleLineExpr = parseExpression();
+	}
+	return block;
+    }
 
-     private IFuncStmt parseFuncStmt() throws UnexpectedTokenException {
-	 final Token token = expect(TokenType.ID, TokenType.SELF, TokenType.IF,
+    private IFuncStmt parseFuncStmt() throws UnexpectedTokenException {
+	final Token token = expect(TokenType.ID, TokenType.SELF, TokenType.IF,
 		TokenType.WHILE, TokenType.FOR, TokenType.VAR, TokenType.CONST,
 		TokenType.RETURN);
-	 switch (token.type) {
-	     case RETURN:
-		 rewind();
-		 silenceErrors = true;
-		 final IExpression expr = parseExpression();
-		 silenceErrors = false;
-		 return new NodeReturn(token.line, token.columnStart, expr);
-	     case ID:
-	     case SELF:
-		 rewind();
-		 final IFuncStmt stmt = parsePrefix();
-		 if (stmt instanceof NodeVariable) {
-		     final Token assignOp = expect(TokenType.ASSIGNOP,
+	switch (token.type) {
+	    case RETURN:
+		rewind();
+		silenceErrors = true;
+		final IExpression expr = parseExpression();
+		silenceErrors = false;
+		return new NodeReturn(token.line, token.columnStart, expr);
+	    case ID:
+	    case SELF:
+		rewind();
+		final IFuncStmt stmt = parsePrefix();
+		if (stmt instanceof NodeVariable) {
+		    final Token assignOp = expect(TokenType.ASSIGNOP,
 			    TokenType.COMPOUNDASSIGNOP);
-		     return new NodeVarAssign(assignOp.line,
+		    return new NodeVarAssign(assignOp.line,
 			    assignOp.columnStart, (NodeVariable) stmt,
 			    assignOp.data, parseExpression());
-		 } else return stmt;
-	     case IF:
-		 return parseIfStmt();
-	     case WHILE:
-		 return parseWhileStmt();
-	     case FOR:
-		 return parseForStmt();
-	     case VAR:
-	     case CONST:
-		 rewind();
-		 return parseVarDec(null);
-	 }
-	 return null;
-     }
+		} else return stmt;
+	    case IF:
+		return parseIfStmt();
+	    case WHILE:
+		return parseWhileStmt();
+	    case FOR:
+		return parseForStmt();
+	    case VAR:
+	    case CONST:
+		rewind();
+		return parseVarDec(null);
+	}
+	return null;
+    }
 
-     private IFuncStmt parseForStmt() throws UnexpectedTokenException {
-	 int parens = 0;
-	 while (getNext().type == TokenType.PARENL) {
-	     parens++;
-	 }
-	 rewind();
-	 final Token next = expect(TokenType.ID, TokenType.VAR, TokenType.COMMA);
-	 if (next.type == TokenType.ID) {
-	     expect(TokenType.IN);
-	     final IExpression expr = parseExpression();
-	     while (parens-- > 0) {
-		 expect(TokenType.PARENR);
-	     }
-	     final NodeForIn forIn = new NodeForIn(line, column, next.data,
+    private IFuncStmt parseForStmt() throws UnexpectedTokenException {
+	int parens = 0;
+	while (getNext().type == TokenType.PARENL) {
+	    parens++;
+	}
+	rewind();
+	final Token next = expect(TokenType.ID, TokenType.VAR, TokenType.COMMA);
+	if (next.type == TokenType.ID) {
+	    expect(TokenType.IN);
+	    final IExpression expr = parseExpression();
+	    while (parens-- > 0) {
+		expect(TokenType.PARENR);
+	    }
+	    final NodeForIn forIn = new NodeForIn(line, column, next.data,
 		    expr, parseFuncBlock());
-	     return forIn;
-	 } else {
-	     IFuncStmt initStmt = null, endStmt = null;
-	     IExpression condition = null;
-	     if (next.type != TokenType.COMMA) {
-		 initStmt = parseFuncStmt();
-		 expect(TokenType.COMMA);
-	     }
-	     if (getNext().type != TokenType.COMMA) {
-		 rewind();
-		 condition = parseExpression();
-		 expect(TokenType.COMMA);
-	     }
-	     endStmt = parseFuncStmt();
-	     while (parens-- > 0) {
-		 expect(TokenType.PARENR);
-	     }
-	     return new NodeForNormal(line, column, initStmt, condition,
+	    return forIn;
+	} else {
+	    IFuncStmt initStmt = null, endStmt = null;
+	    IExpression condition = null;
+	    if (next.type != TokenType.COMMA) {
+		initStmt = parseFuncStmt();
+		expect(TokenType.COMMA);
+	    }
+	    if (getNext().type != TokenType.COMMA) {
+		rewind();
+		condition = parseExpression();
+		expect(TokenType.COMMA);
+	    }
+	    endStmt = parseFuncStmt();
+	    while (parens-- > 0) {
+		expect(TokenType.PARENR);
+	    }
+	    return new NodeForNormal(line, column, initStmt, condition,
 		    endStmt, parseFuncBlock());
-	 }
-     }
+	}
+    }
 
-     private IFuncStmt parseWhileStmt() throws UnexpectedTokenException {
-	 return new NodeWhile(line, column, parseExpression(), parseFuncBlock());
-     }
+    private IFuncStmt parseWhileStmt() throws UnexpectedTokenException {
+	return new NodeWhile(line, column, parseExpression(), parseFuncBlock());
+    }
 
-     private NodeIf parseIfStmt() throws UnexpectedTokenException {
-	 final NodeIf ifStmt = new NodeIf(line, column, parseExpression(),
+    private NodeIf parseIfStmt() throws UnexpectedTokenException {
+	final NodeIf ifStmt = new NodeIf(line, column, parseExpression(),
 		parseFuncBlock());
-	 if (getNext().type == TokenType.ELSE) {
-	     final TokenType next = expect(TokenType.IF, TokenType.BRACEL).type;
-	     if (next == TokenType.IF) {
-		 ifStmt.elseStmt = parseIfStmt();
-	     } else {
-		 rewind();
-		 ifStmt.elseStmt = new NodeIf(line, column, null,
+	if (getNext().type == TokenType.ELSE) {
+	    final TokenType next = expect(TokenType.IF, TokenType.BRACEL).type;
+	    if (next == TokenType.IF) {
+		ifStmt.elseStmt = parseIfStmt();
+	    } else {
+		rewind();
+		ifStmt.elseStmt = new NodeIf(line, column, null,
 			parseFuncBlock());
-	     }
-	 } else {
-	     rewind();
-	 }
-	 return ifStmt;
-     }
+	    }
+	} else {
+	    rewind();
+	}
+	return ifStmt;
+    }
 
-     // A prefix is just another name for a func call or variable
-     private NodePrefix parsePrefix() throws UnexpectedTokenException {
-	 NodePrefix prefix = null;
-	 do {
-	     final Token id = expect(TokenType.ID, TokenType.SELF);
-	     final NodeTypes generics = parseGenerics();
-	     if (getNext().type == TokenType.PARENL) {
-		 rewind();
-		 final NodeExprs exprs = parseCallArgs(TokenType.PARENL,
+    // A prefix is just another name for a func call or variable
+    private NodePrefix parsePrefix() throws UnexpectedTokenException {
+	NodePrefix prefix = null;
+	do {
+	    final Token id = expect(TokenType.ID, TokenType.SELF);
+	    final NodeTypes generics = parseGenerics();
+	    if (getNext().type == TokenType.PARENL) {
+		rewind();
+		final NodeExprs exprs = parseCallArgs(TokenType.PARENL,
 			TokenType.PARENR);
-		 prefix = new NodeFuncCall(id.line, id.columnStart, id.data,
+		prefix = new NodeFuncCall(id.line, id.columnStart, id.data,
 			exprs, prefix, generics);
-	     } else {
-		 rewind();
-		 prefix = new NodeVariable(id.line, id.columnStart, id.data,
+	    } else {
+		rewind();
+		prefix = new NodeVariable(id.line, id.columnStart, id.data,
 			prefix);
-		 while (getNext().type == TokenType.BRACKETL) {
-		     ((NodeVariable) prefix).exprs.exprs.add(parseExpression());
-		     expect(TokenType.BRACKETR);
-		 }
-		 rewind();
-	     }
+		while (getNext().type == TokenType.BRACKETL) {
+		    ((NodeVariable) prefix).exprs.exprs.add(parseExpression());
+		    expect(TokenType.BRACKETR);
+		}
+		rewind();
+	    }
 
-	 } while (getNext().type == TokenType.DOT);
-	 rewind();
-	 return prefix;
-     }
+	} while (getNext().type == TokenType.DOT);
+	rewind();
+	return prefix;
+    }
 
-     private NodeExprs parseCallArgs(final TokenType start, final TokenType end)
+    private NodeExprs parseCallArgs(final TokenType start, final TokenType end)
 	    throws UnexpectedTokenException {
-	 final NodeExprs exprs = new NodeExprs();
-	 expect(start);
-	 Token next = getNext();
-	 if (next.type == end) return exprs;
-	 else {
-	     rewind();
-	 }
+	final NodeExprs exprs = new NodeExprs();
+	expect(start);
+	Token next = getNext();
+	if (next.type == end) return exprs;
+	else {
+	    rewind();
+	}
 
-	 do {
-	     final IExpression expr = parseExpression();
-	     // System.out.println(expr);
-	     exprs.add(expr);
-	     next = getNext();
-	 } while (next.type == TokenType.COMMA);
-	 rewind();
-	 expect(end);
-	 return exprs;
-     }
+	do {
+	    final IExpression expr = parseExpression();
+	    // System.out.println(expr);
+	    exprs.add(expr);
+	    next = getNext();
+	} while (next.type == TokenType.COMMA);
+	rewind();
+	expect(end);
+	return exprs;
+    }
 
-     private IExpression parsePrimaryExpression()
+    private IExpression parsePrimaryExpression()
 	    throws UnexpectedTokenException {
-	 Token next = expect(TokenType.NULL, TokenType.ID, TokenType.THIS,
+	Token next = expect(TokenType.NULL, TokenType.ID, TokenType.THIS,
 		TokenType.SELF, TokenType.UNARYOP, TokenType.BRACKETL,
 		TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT,
 		TokenType.BININT, TokenType.INT, TokenType.LONG,
 		TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING,
 		TokenType.CHAR, TokenType.BOOL);
-	 IExpression expr = null;
+	IExpression expr = null;
 
-	 switch (next.type) {
-	     case NULL:
-		 expr = new NodeNull();
-		 break;
-	     case ID:
-		 rewind();
-		 expr = parsePrefix();
-		 break;
-	     case THIS:
-		 expr = new NodeThis(next.line, next.columnStart);
-		 break;
-	     case SELF:
-		 expr = new NodeSelf(next.line, next.columnStart);
-		 break;
-	     case UNARYOP:
-		 expr = new NodeUnary(next.line, next.columnStart,
+	switch (next.type) {
+	    case NULL:
+		expr = new NodeNull();
+		break;
+	    case ID:
+		rewind();
+		expr = parsePrefix();
+		break;
+	    case THIS:
+		expr = new NodeThis(next.line, next.columnStart);
+		break;
+	    case SELF:
+		expr = new NodeSelf(next.line, next.columnStart);
+		break;
+	    case UNARYOP:
+		expr = new NodeUnary(next.line, next.columnStart,
 			parsePrimaryExpression(), next.data, true);
-		 break;
-	     case BRACKETL:
-		 expr = new NodeTupleExpr(next.line, next.columnStart);
-		 rewind();
-		 ((NodeTupleExpr) expr).exprs = parseTupleExpr();
-		 break;
-	     case PARENL:
-		 expr = parseExpression();
-		 expect(TokenType.PARENR);
-		 break;
-	     case OCTINT:
-		 expr = new NodeInteger(Integer.parseInt(next.data, 8));
-		 break;
-	     case HEXINT:
-		 expr = new NodeInteger(Integer.parseInt(next.data, 16));
-		 break;
-	     case BININT:
-		 expr = new NodeInteger(Integer.parseInt(next.data, 2));
-		 break;
-	     case INT:
-		 expr = new NodeInteger(Integer.parseInt(next.data, 10));
-		 break;
-	     case LONG:
-		 expr = new NodeLong(Long.parseLong(next.data.substring(0,
+		break;
+	    case BRACKETL:
+		expr = new NodeTupleExpr(next.line, next.columnStart);
+		rewind();
+		((NodeTupleExpr) expr).exprs = parseTupleExpr();
+		break;
+	    case PARENL:
+		expr = parseExpression();
+		expect(TokenType.PARENR);
+		break;
+	    case OCTINT:
+		expr = new NodeInteger(Integer.parseInt(next.data, 8));
+		break;
+	    case HEXINT:
+		expr = new NodeInteger(Integer.parseInt(next.data, 16));
+		break;
+	    case BININT:
+		expr = new NodeInteger(Integer.parseInt(next.data, 2));
+		break;
+	    case INT:
+		expr = new NodeInteger(Integer.parseInt(next.data, 10));
+		break;
+	    case LONG:
+		expr = new NodeLong(Long.parseLong(next.data.substring(0,
 			next.data.length() - 1)));
-		 break;
-	     case FLOAT:
-		 expr = new NodeFloat(Float.parseFloat(next.data));
-		 break;
-	     case DOUBLE:
-		 expr = new NodeDouble(Double.parseDouble(next.data));
-		 break;
-	     case STRING:
-		 expr = new NodeString(next.data.substring(1,
+		break;
+	    case FLOAT:
+		expr = new NodeFloat(Float.parseFloat(next.data));
+		break;
+	    case DOUBLE:
+		expr = new NodeDouble(Double.parseDouble(next.data));
+		break;
+	    case STRING:
+		expr = new NodeString(next.data.substring(1,
 			next.data.length() - 1));
-		 break;
-	     case CHAR:
-		 expr = new NodeChar(next.data.charAt(1));
-		 break;
-	     case BOOL:
-		 expr = new NodeBool(next.data.equals("true"));
-		 break;
-	 }
-	 if (expr != null) {
-	     next = getNext();
-	     switch (next.type) {
-		 case BINARYOP:
-		     return new NodeBinary(expr, next.data,
+		break;
+	    case CHAR:
+		expr = new NodeChar(next.data.charAt(1));
+		break;
+	    case BOOL:
+		expr = new NodeBool(next.data.equals("true"));
+		break;
+	}
+	if (expr != null) {
+	    next = getNext();
+	    switch (next.type) {
+		case BINARYOP:
+		    return new NodeBinary(expr, next.data,
 			    parsePrimaryExpression());
-		 default:
-		     rewind();
-	     }
-	 }
-	 return expr;
-     }
+		default:
+		    rewind();
+	    }
+	}
+	return expr;
+    }
 
-     private LinkedList<NodeTupleExprArg> parseTupleExpr()
+    private LinkedList<NodeTupleExprArg> parseTupleExpr()
 	    throws UnexpectedTokenException {
-	 expect(TokenType.BRACKETL);
-	 boolean named = false, unnamed = false;
-	 final LinkedList<NodeTupleExprArg> args = new LinkedList<NodeTupleExprArg>();
-	 do {
-	     final NodeTupleExprArg arg = parseTupleExprArg(named, unnamed);
-	     if (arg.name != null) {
-		 named = true;
-	     } else {
-		 arg.name = (char) ('a' + args.size()) + "";
-		 unnamed = true;
-	     }
-	     args.add(arg);
+	expect(TokenType.BRACKETL);
+	boolean named = false, unnamed = false;
+	final LinkedList<NodeTupleExprArg> args = new LinkedList<NodeTupleExprArg>();
+	do {
+	    final NodeTupleExprArg arg = parseTupleExprArg(named, unnamed);
+	    if (arg.name != null) {
+		named = true;
+	    } else {
+		arg.name = (char) ('a' + args.size()) + "";
+		unnamed = true;
+	    }
+	    args.add(arg);
 
-	 } while (expect(TokenType.BRACKETR, TokenType.COMMA).type == TokenType.COMMA);
-	 return args;
-     }
+	} while (expect(TokenType.BRACKETR, TokenType.COMMA).type == TokenType.COMMA);
+	return args;
+    }
 
-     private NodeTupleExprArg parseTupleExprArg(final boolean named,
+    private NodeTupleExprArg parseTupleExprArg(final boolean named,
 	    final boolean unnamed) throws UnexpectedTokenException {
-	 final Token next = getNext();
-	 final NodeTupleExprArg arg = new NodeTupleExprArg(next.line,
+	final Token next = getNext();
+	final NodeTupleExprArg arg = new NodeTupleExprArg(next.line,
 		next.columnStart);
-	 if (next.type == TokenType.ID) {
-	     if (getNext().type == TokenType.COLON) {
-		 arg.name = next.data;
-	     } else {
-		 rewind(2);
-	     }
-	 } else {
-	     rewind();
-	 }
-	 arg.expr = parseExpression();
-	 return arg;
-     }
+	if (next.type == TokenType.ID) {
+	    if (getNext().type == TokenType.COLON) {
+		arg.name = next.data;
+	    } else {
+		rewind(2);
+	    }
+	} else {
+	    rewind();
+	}
+	arg.expr = parseExpression();
+	return arg;
+    }
 
-     private IExpression parseExpression() throws UnexpectedTokenException {
-	 final IExpression expr = parsePrimaryExpression();
-	 final Token next = getNext();
+    private IExpression parseExpression() throws UnexpectedTokenException {
+	final IExpression expr = parsePrimaryExpression();
+	final Token next = getNext();
 
-	 switch (next.type) {
+	switch (next.type) {
 	// Postfix unary expression
-	     case UNARYOP:
-		 return new NodeUnary(next.line, next.columnStart, expr,
+	    case UNARYOP:
+		return new NodeUnary(next.line, next.columnStart, expr,
 			next.data, false);
-	     case QUESTIONMARK:
-		 final IExpression exprTrue = parseExpression();
-		 expect(TokenType.COLON);
-		 return new NodeTernary(expr, exprTrue, parseExpression());
-	 }
-	 rewind();
-	 return expr;
-     }
+	    case QUESTIONMARK:
+		final IExpression exprTrue = parseExpression();
+		expect(TokenType.COLON);
+		return new NodeTernary(expr, exprTrue, parseExpression());
+	}
+	rewind();
+	return expr;
+    }
 
-     private NodeVarDec parseVarDec(final LinkedList<NodeModifier> mods)
+    private NodeVarDec parseVarDec(final LinkedList<NodeModifier> mods)
 	    throws UnexpectedTokenException {
-	 final Token keyword = expect(TokenType.CONST, TokenType.VAR);
-	 final Token id = expect(TokenType.ID);
-	 Token next = expect(TokenType.COLON, TokenType.ASSIGNOP);
-	 NodeVarDec varDec;
-	 final TokenType type = next.type;
-	 if (type == TokenType.COLON) {
-	     final NodeType nodeType = parseType();
-	     varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods,
+	final Token keyword = expect(TokenType.CONST, TokenType.VAR);
+	final Token id = expect(TokenType.ID);
+	Token next = expect(TokenType.COLON, TokenType.ASSIGNOP);
+	NodeVarDec varDec;
+	final TokenType type = next.type;
+	if (type == TokenType.COLON) {
+	    final NodeType nodeType = parseType();
+	    varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods,
 		    keyword.data, id.data, nodeType, null);
-	     if (getNext().type == TokenType.ASSIGNOP) {
-		 varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods,
+	    if (getNext().type == TokenType.ASSIGNOP) {
+		varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods,
 			keyword.data, id.data, nodeType, parseExpression());
-	     } else {
-		 rewind();
-	     }
-	 } else {
-	     varDec = new NodeVarDecImplicit(id.line, id.columnStart, mods,
+	    } else {
+		rewind();
+	    }
+	} else {
+	    varDec = new NodeVarDecImplicit(id.line, id.columnStart, mods,
 		    keyword.data, id.data, parseExpression());
-	 }
+	}
 
-	 if (getNext().type == TokenType.LAMBDAARROW) {
-	     expect(TokenType.BRACEL);
-	     NodeFuncBlock getBlock = null, setBlock = null;
-	     while (getNext().type != TokenType.BRACER) {
-		 rewind();
-		 if ((setBlock == null) && (getBlock == null)) {
-		     next = expect(TokenType.GET, TokenType.SET);
-		     if (next.type == TokenType.SET) {
-			 setBlock = parseFuncBlock(false);
-		     } else {
-			 getBlock = parseFuncBlock();
-		     }
-		 }
-		 next = getNext();
-		 if (next.type == TokenType.GET) {
-		     if (getBlock != null) {
-			 if (setBlock == null) throw new UnexpectedTokenException(
+	if (getNext().type == TokenType.LAMBDAARROW) {
+	    expect(TokenType.BRACEL);
+	    NodeFuncBlock getBlock = null, setBlock = null;
+	    while (getNext().type != TokenType.BRACER) {
+		rewind();
+		if ((setBlock == null) && (getBlock == null)) {
+		    next = expect(TokenType.GET, TokenType.SET);
+		    if (next.type == TokenType.SET) {
+			setBlock = parseFuncBlock(false);
+		    } else {
+			getBlock = parseFuncBlock();
+		    }
+		}
+		next = getNext();
+		if (next.type == TokenType.GET) {
+		    if (getBlock != null) {
+			if (setBlock == null) throw new UnexpectedTokenException(
 				next, TokenType.SET, TokenType.BRACER);
-			 else throw new UnexpectedTokenException(next,
+			else throw new UnexpectedTokenException(next,
 				TokenType.BRACER);
-		     } else {
-			 getBlock = parseFuncBlock();
-		     }
-		 } else if (next.type == TokenType.SET) {
-		     if (setBlock != null) {
-			 if (getBlock == null) throw new UnexpectedTokenException(
+		    } else {
+			getBlock = parseFuncBlock();
+		    }
+		} else if (next.type == TokenType.SET) {
+		    if (setBlock != null) {
+			if (getBlock == null) throw new UnexpectedTokenException(
 				next, TokenType.GET, TokenType.BRACER);
-			 else throw new UnexpectedTokenException(next,
+			else throw new UnexpectedTokenException(next,
 				TokenType.BRACER);
-		     } else {
-			 setBlock = parseFuncBlock();
-		     }
-		 } else {
-		     rewind();
-		 }
-	     }
-	     varDec.getBlock = getBlock;
-	     varDec.setBlock = setBlock;
-	 } else {
-	     rewind();
-	 }
-	 return varDec;
-     }
+		    } else {
+			setBlock = parseFuncBlock();
+		    }
+		} else {
+		    rewind();
+		}
+	    }
+	    varDec.getBlock = getBlock;
+	    varDec.setBlock = setBlock;
+	} else {
+	    rewind();
+	}
+	return varDec;
+    }
 
-     private NodeTypes parseTypes() throws UnexpectedTokenException {
-	 final NodeTypes types = new NodeTypes();
-	 types.add(parseType());
-	 while (getNext().type == TokenType.COMMA) {
-	     types.add(parseType());
-	 }
-	 rewind();
-	 return types;
-     }
+    private NodeTypes parseTypes() throws UnexpectedTokenException {
+	final NodeTypes types = new NodeTypes();
+	types.add(parseType());
+	while (getNext().type == TokenType.COMMA) {
+	    types.add(parseType());
+	}
+	rewind();
+	return types;
+    }
 
-     private NodeTypes parseSuperTypes() throws UnexpectedTokenException {
-	 final NodeTypes types = new NodeTypes();
-	 types.add(parseSuperType());
-	 while (getNext().type == TokenType.COMMA) {
-	     types.add(parseSuperType());
-	 }
-	 rewind();
-	 return types;
-     }
+    private NodeTypes parseSuperTypes() throws UnexpectedTokenException {
+	final NodeTypes types = new NodeTypes();
+	types.add(parseSuperType());
+	while (getNext().type == TokenType.COMMA) {
+	    types.add(parseSuperType());
+	}
+	rewind();
+	return types;
+    }
 
-     private NodeArgs parseArgs() throws UnexpectedTokenException {
-	 expect(TokenType.PARENL);
-	 final NodeArgs args = new NodeArgs();
-	 NodeArg arg;
-	 if ((arg = parseArg()) != null) {
-	     args.add(arg);
-	     while (getNext().type == TokenType.COMMA) {
-		 args.add(parseArg());
-	     }
-	     rewind();
-	 }
-	 expect(TokenType.PARENR);
-	 return args;
-     }
+    private NodeArgs parseArgs() throws UnexpectedTokenException {
+	expect(TokenType.PARENL);
+	final NodeArgs args = new NodeArgs();
+	NodeArg arg;
+	if ((arg = parseArg()) != null) {
+	    args.add(arg);
+	    while (getNext().type == TokenType.COMMA) {
+		args.add(parseArg());
+	    }
+	    rewind();
+	}
+	expect(TokenType.PARENR);
+	return args;
+    }
 
-     private NodeArg parseArg() throws UnexpectedTokenException {
-	 final Token id = getNext();
-	 if (id.type == TokenType.ID) {
-	     expect(TokenType.COLON);
-	     final NodeType type = parseType();
-	     IExpression defExpr = null;
-	     if (expect(TokenType.COMMA, TokenType.ASSIGNOP, TokenType.PARENR).type == TokenType.ASSIGNOP) {
-		 defExpr = parseExpression();
-	     } else {
-		 rewind();
-	     }
-	     return new NodeArg(id.line, id.columnStart, id.data, type, defExpr);
-	 } else {
-	     rewind();
-	 }
-	 return null;
-     }
+    private NodeArg parseArg() throws UnexpectedTokenException {
+	final Token id = getNext();
+	if (id.type == TokenType.ID) {
+	    expect(TokenType.COLON);
+	    final NodeType type = parseType();
+	    IExpression defExpr = null;
+	    if (expect(TokenType.COMMA, TokenType.ASSIGNOP, TokenType.PARENR).type == TokenType.ASSIGNOP) {
+		defExpr = parseExpression();
+	    } else {
+		rewind();
+	    }
+	    return new NodeArg(id.line, id.columnStart, id.data, type, defExpr);
+	} else {
+	    rewind();
+	}
+	return null;
+    }
 
-     private NodeType parseType() throws UnexpectedTokenException {
-	 final NodeType type = new NodeType();
-	 // Parse tuple types
-	 if (getNext().type == TokenType.BRACKETL) {
-	     boolean named = false, unnamed = false;
-	     do {
-		 final NodeTupleType tupleType = parseTupleType(named, unnamed);
-		 if (tupleType.name != null) {
-		     named = true;
-		 } else {
-		     tupleType.name = (char) ('a' + type.tupleTypes.size()) + "";
-		     unnamed = true;
-		 }
-		 type.tupleTypes.add(tupleType);
-	     } while (expect(TokenType.COMMA, TokenType.BRACKETR).type == TokenType.COMMA);
-	 } else {
-	     rewind();
-	     type.id = expect(TokenType.ID, TokenType.PRIMITIVE).data;
-	     type.generics = parseGenerics();
-	 }
+    private NodeType parseType() throws UnexpectedTokenException {
+	final NodeType type = new NodeType();
+	// Parse tuple types
+	if (getNext().type == TokenType.BRACKETL) {
+	    boolean named = false, unnamed = false;
+	    do {
+		final NodeTupleType tupleType = parseTupleType(named, unnamed);
+		if (tupleType.name != null) {
+		    named = true;
+		} else {
+		    tupleType.name = (char) ('a' + type.tupleTypes.size()) + "";
+		    unnamed = true;
+		}
+		type.tupleTypes.add(tupleType);
+	    } while (expect(TokenType.COMMA, TokenType.BRACKETR).type == TokenType.COMMA);
+	} else {
+	    rewind();
+	    type.id = expect(TokenType.ID, TokenType.PRIMITIVE).data;
+	    type.generics = parseGenerics();
+	}
 
-	 // Parse array dimensions
-	 while (getNext().type == TokenType.BRACKETL) {
-	     expect(TokenType.BRACKETR);
-	     type.arrDims++;
-	 }
-	 rewind();
-	 if (getNext().type == TokenType.QUESTIONMARK) {
-	     type.optional = true;
-	 } else {
-	     rewind();
-	 }
-	 return type;
-     }
+	// Parse array dimensions
+	while (getNext().type == TokenType.BRACKETL) {
+	    expect(TokenType.BRACKETR);
+	    type.arrDims++;
+	}
+	rewind();
+	if (getNext().type == TokenType.QUESTIONMARK) {
+	    type.optional = true;
+	} else {
+	    rewind();
+	}
+	return type;
+    }
 
-     public NodeTupleType parseTupleType(final boolean mustBeNamed,
+    public NodeTupleType parseTupleType(final boolean mustBeNamed,
 	    final boolean mustBeUnnamed) throws UnexpectedTokenException {
-	 final String id = expect(TokenType.ID, TokenType.PRIMITIVE).data;
-	 final Token next = getNext();
-	 if (next.type == TokenType.COLON) {
-	     if (mustBeUnnamed) throw new UnexpectedTokenException(next,
+	final String id = expect(TokenType.ID, TokenType.PRIMITIVE).data;
+	final Token next = getNext();
+	if (next.type == TokenType.COLON) {
+	    if (mustBeUnnamed) throw new UnexpectedTokenException(next,
 		    TokenType.COMMA, TokenType.BRACKETR);
-	     final NodeTupleType type = new NodeTupleType(line, column,
+	    final NodeTupleType type = new NodeTupleType(line, column,
 		    parseType());
-	     type.name = id;
-	     return type;
-	 } else if (mustBeNamed) throw new UnexpectedTokenException(next,
+	    type.name = id;
+	    return type;
+	} else if (mustBeNamed) throw new UnexpectedTokenException(next,
 		TokenType.COLON);
-	 rewind(2);
-	 return new NodeTupleType(line, column, parseType());
-     }
+	rewind(2);
+	return new NodeTupleType(line, column, parseType());
+    }
 
-     private NodeType parseSuperType() throws UnexpectedTokenException {
-	 final Token id = expect(TokenType.ID);
-	 final NodeType type = new NodeType(id.line, id.columnStart, id.data);
-	 type.generics = parseGenerics();
-	 return type;
-     }
+    private NodeType parseSuperType() throws UnexpectedTokenException {
+	final Token id = expect(TokenType.ID);
+	final NodeType type = new NodeType(id.line, id.columnStart, id.data);
+	type.generics = parseGenerics();
+	return type;
+    }
 
-     private NodeEnumDec parseEnumDec(final LinkedList<NodeModifier> mods)
+    private NodeEnumDec parseEnumDec(final LinkedList<NodeModifier> mods)
 	    throws UnexpectedTokenException {
-	 final Token id = expect(TokenType.ID);
-	 NodeArgs args = null;
+	final Token id = expect(TokenType.ID);
+	NodeArgs args = null;
 
-	 if (getNext().type == TokenType.PARENL) {
-	     rewind();
-	     args = parseArgs();
-	 } else {
-	     rewind();
-	 }
+	if (getNext().type == TokenType.PARENL) {
+	    rewind();
+	    args = parseArgs();
+	} else {
+	    rewind();
+	}
 
-	 final NodeEnumBlock block = parseEnumBlock();
-	 return new NodeEnumDec(id.line, id.columnStart, mods, id, args, block);
-     }
+	final NodeEnumBlock block = parseEnumBlock();
+	return new NodeEnumDec(id.line, id.columnStart, mods, id, args, block);
+    }
 
-     private NodeEnumBlock parseEnumBlock() throws UnexpectedTokenException {
-	 final LinkedList<NodeEnumInstance> instances = new LinkedList<Node.NodeEnumInstance>();
-	 instances.add(parseEnumInstance());
-	 while (getNext().type == TokenType.COMMA) {
-	     instances.add(parseEnumInstance());
-	 }
-	 rewind();
-	 return new NodeEnumBlock(line, column, instances, parseClassBlock());
-     }
+    private NodeEnumBlock parseEnumBlock() throws UnexpectedTokenException {
+	final LinkedList<NodeEnumInstance> instances = new LinkedList<Node.NodeEnumInstance>();
+	instances.add(parseEnumInstance());
+	while (getNext().type == TokenType.COMMA) {
+	    instances.add(parseEnumInstance());
+	}
+	rewind();
+	return new NodeEnumBlock(line, column, instances, parseClassBlock());
+    }
 
-     private NodeInterfaceDec parseInterfaceDec(
+    private NodeInterfaceDec parseInterfaceDec(
 	    final LinkedList<NodeModifier> mods)
 	    throws UnexpectedTokenException {
-	 final Token id = expect(TokenType.ID);
-	 NodeArgs args = null;
-	 NodeTypes types = null;
+	final Token id = expect(TokenType.ID);
+	NodeArgs args = null;
+	NodeTypes types = null;
 
-	 if (getNext().type == TokenType.PARENL) {
-	     rewind();
-	     args = parseArgs();
-	 } else {
-	     rewind();
-	 }
+	if (getNext().type == TokenType.PARENL) {
+	    rewind();
+	    args = parseArgs();
+	} else {
+	    rewind();
+	}
 
-	 if (getNext().type == TokenType.COLON) {
-	     types = parseSuperTypes();
-	 } else {
-	     rewind();
-	 }
+	if (getNext().type == TokenType.COLON) {
+	    types = parseSuperTypes();
+	} else {
+	    rewind();
+	}
 
-	 final NodeClassBlock block = parseClassBlock();
-	 return new NodeInterfaceDec(id.line, id.columnStart, mods, types, args,
+	final NodeClassBlock block = parseClassBlock();
+	return new NodeInterfaceDec(id.line, id.columnStart, mods, types, args,
 		id, block);
-     }
+    }
 
-     private NodeTypeDec parseTypeDec() throws UnexpectedTokenException {
-	 final LinkedList<NodeModifier> mods = parseMods();
-	 final Token token = expect(TokenType.CLASS, TokenType.ENUM,
+    private NodeTypeDec parseTypeDec() throws UnexpectedTokenException {
+	final LinkedList<NodeModifier> mods = parseMods();
+	final Token token = expect(TokenType.CLASS, TokenType.ENUM,
 		TokenType.INTERFACE);
-	 switch (token.type) {
-	     case CLASS:
-		 final NodeClassDec clsDec = parseClassDec(mods);
-		 return clsDec;
-	     case ENUM:
-		 final NodeEnumDec enumDec = parseEnumDec(mods);
-		 return enumDec;
-	     case INTERFACE:
-		 final NodeInterfaceDec interfaceDec = parseInterfaceDec(mods);
-		 return interfaceDec;
-	 }
-	 return null;
-     }
+	switch (token.type) {
+	    case CLASS:
+		final NodeClassDec clsDec = parseClassDec(mods);
+		return clsDec;
+	    case ENUM:
+		final NodeEnumDec enumDec = parseEnumDec(mods);
+		return enumDec;
+	    case INTERFACE:
+		final NodeInterfaceDec interfaceDec = parseInterfaceDec(mods);
+		return interfaceDec;
+	}
+	return null;
+    }
 
-     private LinkedList<NodeTypeDec> parseTypeDecs()
+    private LinkedList<NodeTypeDec> parseTypeDecs()
 	    throws UnexpectedTokenException {
-	 final LinkedList<NodeTypeDec> typeDecs = new LinkedList<Node.NodeTypeDec>();
-	 NodeTypeDec typeDec = parseTypeDec();
-	 typeDecs.add(typeDec);
-	 while (true) {
-	     // Having more than 1 type declaration is optional, so look out for
-	     // EOF
-	     if (getNext().type == TokenType.EOF) {
-		 break;
-	     }
-	     rewind();
-	     typeDec = parseTypeDec();
-	     typeDecs.add(typeDec);
-	 }
-	 return typeDecs;
-     }
+	final LinkedList<NodeTypeDec> typeDecs = new LinkedList<Node.NodeTypeDec>();
+	NodeTypeDec typeDec = parseTypeDec();
+	typeDecs.add(typeDec);
+	while (true) {
+	    // Having more than 1 type declaration is optional, so look out for
+	    // EOF
+	    if (getNext().type == TokenType.EOF) {
+		break;
+	    }
+	    rewind();
+	    typeDec = parseTypeDec();
+	    typeDecs.add(typeDec);
+	}
+	return typeDecs;
+    }
 
-     private NodeFile parseFile() throws UnexpectedTokenException {
-	 final NodePackage pkg = parsePackage();
-	 final LinkedList<NodeImport> imports = parseImports();
-	 final LinkedList<NodeTypeDec> typeDecs = parseTypeDecs();
-	 return new NodeFile(pkg, imports, typeDecs);
-     }
+    private NodeFile parseFile() throws UnexpectedTokenException {
+	final NodePackage pkg = parsePackage();
+	final LinkedList<NodeImport> imports = parseImports();
+	final LinkedList<NodeTypeDec> typeDecs = parseTypeDecs();
+	return new NodeFile(pkg, imports, typeDecs);
+    }
 
-     private NodeEnumInstance parseEnumInstance()
+    private NodeEnumInstance parseEnumInstance()
 	    throws UnexpectedTokenException {
-	 final Token id = expect(TokenType.ID);
-	 if (getNext().type == TokenType.PARENL) {
-	     rewind();
-	     return new NodeEnumInstance(id.line, id.columnStart, id,
+	final Token id = expect(TokenType.ID);
+	if (getNext().type == TokenType.PARENL) {
+	    rewind();
+	    return new NodeEnumInstance(id.line, id.columnStart, id,
 		    parseCallArgs(TokenType.PARENL, TokenType.PARENR));
-	 }
-	 rewind();
-	 return new NodeEnumInstance(id.line, id.columnStart, id, null);
-     }
+	}
+	rewind();
+	return new NodeEnumInstance(id.line, id.columnStart, id, null);
+    }
 
 }

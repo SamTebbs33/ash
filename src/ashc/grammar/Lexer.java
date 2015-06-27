@@ -21,42 +21,79 @@ public class Lexer {
 	// that isn't matched by other tokens
 	COMMENT("(//.+)|(/\\*(.|[\r\n])*?\\*/)", "comment"), // Source:
 	// http://blog.ostermiller.org/find-comment
-	OCTINT("0o[0-7]+", "octal integer"), BININT("0b[0|1]+",
-		"binary integer"), HEXINT("0x[0-9a-fA-F]+",
-		"hexadecimal integer"), FLOAT("-?[0-9]+\\.[0-9]+f", "float"), DOUBLE(
-		"-?[0-9]+\\.[0-9]+", "double"), LONG("-?[0-9]+L", "long"), INT(
-		"-?[0-9]+", "integer"), STRING("\".*\"", "string"), CHAR(
-		"\'.\'", "character"), BOOL("true|false", "boolean"), PRIMITIVE(
+	OCTINT("0o[0-7]+", "octal integer"),
+	BININT("0b[0|1]+", "binary integer"),
+	HEXINT("0x[0-9a-fA-F]+", "hexadecimal integer"),
+	FLOAT("-?[0-9]+\\.[0-9]+f", "float"),
+	DOUBLE("-?[0-9]+\\.[0-9]+", "double"),
+	LONG("-?[0-9]+L", "long"),
+	INT("-?[0-9]+", "integer"),
+	STRING("\".*\"", "string"),
+	CHAR("\'.\'", "character"),
+	BOOL("true|false", "boolean"),
+	PRIMITIVE(
 		"bool|double|float|long|int|short|byte|ulong|uint|char|void",
-		"primitive"), LAMBDAARROW("->", "lambda arrow"),
+		"primitive"),
+	LAMBDAARROW("->", "lambda arrow"),
 
-	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"), COMPOUNDASSIGNOP(
+	BINARYOP(
+		"\\.\\.|<|>|<=|>=|==|!=|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|",
+		"binary operator"),
+	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
+	COMPOUNDASSIGNOP(
 		"-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=",
-		"compound assignment operator"), BINARYOP(
-		"\\.\\.|<|>|<=|>=|==|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|",
-		"binary operator"), ASSIGNOP("=", "assignment operator"), WHITESPACE(
-		"[\n\t ]+", "whitespace"),
+		"compound assignment operator"),
+	ASSIGNOP("=", "assignment operator"),
+	WHITESPACE("[\n\t ]+", "whitespace"),
 
-	ARROW("=>", "throws arrow"), PARENL("\\(", "left parenthesis"), PARENR(
-		"\\)", "right parenthesis"), BRACEL("\\{", "left brace"), BRACER(
-		"\\}", "right brace"), BRACKETL("\\[", "left bracket"), BRACKETR(
-		"\\]", "right bracket"), DOT("\\.", "dot"), COMMA(",", "comma"), QUESTIONMARK(
-		"\\?", "question mark"), COLON(":", "colon"),
+	ARROW("=>", "throws arrow"),
+	PARENL("\\(", "left parenthesis"),
+	PARENR("\\)", "right parenthesis"),
+	BRACEL("\\{", "left brace"),
+	BRACER("\\}", "right brace"),
+	BRACKETL("\\[", "left bracket"),
+	BRACKETR("\\]", "right bracket"),
+	DOT("\\.", "dot"),
+	COMMA(",", "comma"),
+	QUESTIONMARK("\\?", "question mark"),
+	COLON(":", "colon"),
 
-	VAR("var"), CONST("const"), FUNC("func"), CLASS("class"), ENUM("enum"), INTERFACE(
-		"interface"), IMPORT("import"), PACKAGE("package"), RETURN(
-		"return"),
+	VAR("var"),
+	CONST("const"),
+	FUNC("func"),
+	CLASS("class"),
+	ENUM("enum"),
+	INTERFACE("interface"),
+	IMPORT("import"),
+	PACKAGE("package"),
+	RETURN("return"),
 
-	PUBLIC("public"), PRIVATE("private"), PROTECTED("protected"), FINAL(
-		"final"), REQUIRED("required"), NATIVE("native"), OVERRIDE(
-		"override"), STANDARD("standard"), STATIC("static"), THIS(
-		"this"), SELF("self"), NULL("null"), AS("as"), IS("is"), GET(
-		"get"), SET("set"),
+	PUBLIC("public"),
+	PRIVATE("private"),
+	PROTECTED("protected"),
+	FINAL("final"),
+	REQUIRED("required"),
+	NATIVE("native"),
+	OVERRIDE("override"),
+	STANDARD("standard"),
+	STATIC("static"),
+	THIS("this"),
+	SELF("self"),
+	NULL("null"),
+	AS("as"),
+	IS("is"),
+	GET("get"),
+	SET("set"),
 
-	IF("if"), ELSE("else"), WHILE("while"), FOR("for"), IN("in"),
+	IF("if"),
+	ELSE("else"),
+	WHILE("while"),
+	FOR("for"),
+	IN("in"),
 
-	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"), EOF("\\Z", "end of file"), ERROR(
-		".*", "error");
+	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),
+	EOF("\\Z", "end of file"),
+	ERROR(".*", "error");
 
 	public String regex, typeName;
 

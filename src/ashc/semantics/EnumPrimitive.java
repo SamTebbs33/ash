@@ -9,12 +9,27 @@ import ashc.semantics.Semantics.TypeI;
  */
 public enum EnumPrimitive {
 
-    BOOL("bool", "boolean", false, false), DOUBLE("double", "double", true,
-	    false), FLOAT("float", "float", true, false), LONG("long", "long",
-	    true, false), INT("int", "int", true, true), SHORT("short",
-	    "short", true, true), BYTE("byte", "byte", true, true), ULONG(
-	    "ulong", "long", true, false), UINT("uint", "int", true, false), CHAR(
-	    "char", "char", false, false);
+    BOOL("bool", "boolean", false, false), DOUBLE(
+	    "double",
+	    "double",
+	    true,
+	    false), FLOAT("float", "float", true, false), LONG(
+	    "long",
+	    "long",
+	    true,
+	    false), INT("int", "int", true, true), SHORT(
+	    "short",
+	    "short",
+	    true,
+	    true), BYTE("byte", "byte", true, true), ULONG(
+	    "ulong",
+	    "long",
+	    true,
+	    false), UINT("uint", "int", true, false), CHAR(
+	    "char",
+	    "char",
+	    false,
+	    false);
 
     public String ashName, javaName;
     public boolean validForArrayIndex, isNumeric;

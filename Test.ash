@@ -1,14 +1,10 @@
-import java.util.HashMap
-import java.lang.CharSequence
-
-class Test2<T>() {
-	public func test() : T {
-	
-	}
+class Optional<T>(value : T) {
+	var value : T?
+	public func present() : bool -> value != null
 }
 
 class Test {
-	var testObj = Test2<String>()
-	var test : String = testObj.test()
-	var test2 : int = testObj.test() // Should fail, as a String can't be assigned to an int
+	var optObj = Optional<Test>(null)
+	var obj = optObj.value // Should pass
+	var obj2 : String = optObj.value // Should fail
 }

@@ -546,7 +546,7 @@ public abstract class Node {
 	public int arrDims;
 	public boolean optional;
 	public LinkedList<NodeTupleType> tupleTypes = new LinkedList<NodeTupleType>();
-	public NodeTypes generics;
+	public NodeTypes generics = new NodeTypes();
 
 	public NodeType(final int line, final int column, final String data) {
 	    super(line, column);
@@ -565,11 +565,13 @@ public abstract class Node {
 		    if (!typeOpt.isPresent() && !EnumPrimitive.isPrimitive(id)) {
 			for (final String generic : Semantics.currentType().generics)
 			    if (id.equals(generic)) return;
-			semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
-		    }else if(!EnumPrimitive.isPrimitive(id)){
-		    if (generics.types.size() > typeOpt.get().generics.size()) {
-			semanticError(this, line, column, TOO_MANY_GENERICS);
-		    }
+			semanticError(this, line, column, TYPE_DOES_NOT_EXIST,
+				id);
+		    } else if (!EnumPrimitive.isPrimitive(id)) {
+			if (generics.types.size() > typeOpt.get().generics
+				.size()) {
+			    semanticError(this, line, column, TOO_MANY_GENERICS);
+			}
 		    }
 		}
 		if (EnumPrimitive.isPrimitive(id) && optional) {
@@ -874,7 +876,7 @@ public abstract class Node {
     }
 
     public static class NodePrefix extends Node implements IFuncStmt,
-    IExpression {
+	    IExpression {
 
 	public NodePrefix(final int line, final int column) {
 	    super(line, column);
@@ -1025,15 +1027,27 @@ public abstract class Node {
 			type.get().qualifiedName.shortName, 0, false);
 		else {
 		    var = Semantics.getVar(id);
+		    if (var == null){
+			semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
+			return null;
+		    }
+		    return var.type;
 		}
 	    } else {
 		final TypeI type = prefix.getExprType();
+		Type enclosingType = Semantics.getType(type.shortName).get();
 		var = Semantics.getVar(id, type);
+		if (var == null){
+		    semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
+		    return null;
+		}
+		int i = 0;
+		for(String generic : enclosingType.generics){
+		    if(generic.equals(var.type.shortName)) return type.genericTypes.get(i);
+		    else i++;
+		}
+		return var.type;
 	    }
-	    if (var == null) {
-		semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
-		return null;
-	    } else return var.type;
 	}
 
 	@Override

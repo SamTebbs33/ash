@@ -94,10 +94,10 @@ public class Member {
 	@Override
 	public String toString() {
 	    return "Type [type=" + type + /*
-	     * ", functions=" + functions +
-	     * ", fields=" + fields + ", supers="
-	     * + supers +
-	     */", qualifiedName=" + qualifiedName
+					   * ", functions=" + functions +
+					   * ", fields=" + fields + ", supers="
+					   * + supers +
+					   */", qualifiedName=" + qualifiedName
 		    + "]";
 	}
 
@@ -141,8 +141,11 @@ public class Member {
 	private boolean paramsAreEqual(final LinkedList<TypeI> params2) {
 	    if (parameters.size() != params2.size()) return false;
 	    final int len = Math.min(parameters.size(), params2.size());
-	    for (int i = 0; i < len; i++)
-		if (!parameters.get(i).equals(params2.get(i))) return false;
+	    for (int i = 0; i < len; i++) {
+		// If it is a generic, continue
+		if (generics.contains(parameters.get(i).shortName)) continue;
+		if (!parameters.get(i).canBeAssignedTo(params2.get(i))) return false;
+	    }
 	    return true;
 	}
 
