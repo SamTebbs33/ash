@@ -3,16 +3,12 @@ package ashc.grammar;
 import static ashc.error.Error.*;
 import static ashc.error.Error.EnumError.*;
 
+import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 
 import ashc.grammar.Lexer.Token;
-import ashc.grammar.Node.IFuncStmt;
-import ashc.grammar.Node.NodeArgs;
-import ashc.grammar.Node.NodeFuncBlock;
-import ashc.grammar.Node.NodeModifier;
-import ashc.grammar.Node.NodeType;
-import ashc.grammar.Node.NodeTypes;
+import ashc.grammar.Lexer.UnexpectedTokenException;
 import ashc.load.*;
 import ashc.semantics.*;
 import ashc.semantics.Member.EnumType;
@@ -1034,6 +1030,7 @@ public abstract class Node {
 	public String id;
 	public NodePrefix prefix;
 	public NodeExprs exprs = new NodeExprs();
+	public TypeI type;
 
 	public NodeVariable(final int line, final int column, final String id,
 		final NodePrefix prefix) {
@@ -1123,6 +1120,17 @@ public abstract class Node {
 	    this.assignOp = assignOp;
 	    this.expr = expr;
 	}
+
+	@Override
+	public void analyse() {
+	    var.analyse();
+	    ((Node) expr).analyse();
+	    if(var.type != null){
+		TypeI exprType = expr.getExprType();
+		if(!var.type.canBeAssignedTo(expr.getExprType())) semanticError(this, line, column, CANNOT_ASSIGN, var.type, exprType);
+	    }
+	}
+	
     }
 
     public static class NodeReturn extends Node implements IFuncStmt {
@@ -1231,21 +1239,41 @@ public abstract class Node {
     public static class NodeString extends Node implements IExpression {
 	public String val;
 
-	public NodeString(final String val) {
+	public NodeString(int line, int columnStart, final String val) {
+	    super(line, columnStart);
 	    this.val = val;
 	}
 	
 	@Override
 	public void analyse(){
 	    int i = 0;
-	    boolean inVarName = false;
+	    boolean inVarName = false, inExpr = false;
 	    String varName = "";
 	    while(i < val.length()){
 		char ch = val.charAt(i);
 		if(ch == '\\') i++;
 		else if(ch == '$') inVarName = true;
+		else if(ch == '{' && inVarName) inExpr = true;
+		else if(ch == '}' && inExpr){
+		    inExpr = false;
+		    inVarName = false;
+		    Parser parser = null;
+		    try {
+			parser = new Parser(new Lexer(new BufferedReader(new InputStreamReader(new ByteArrayInputStream(varName.getBytes())))));
+			parser.lineOffset = line-2;
+			parser.columnOffset = column+i;
+			IExpression expr = parser.parseExpression();
+			if(expr != null){
+			    ((Node) expr).analyse();
+			}
+		    } catch (IOException e) {
+			e.printStackTrace();
+		    } catch (UnexpectedTokenException e) {
+			if(parser != null) parser.handleException(e);
+		    }
+		}
 		else if(ch == ' '){
-		    if(inVarName){
+		    if(inVarName && !inExpr){
 			inVarName = false;
 			if(!Semantics.varExists(varName)) semanticError(this, line, column, VAR_DOES_NOT_EXIST, varName);
 			varName = "";
@@ -1253,7 +1281,8 @@ public abstract class Node {
 		}else if(inVarName) varName += ch;
 		i++;
 	    }
-	    if(inVarName && !Semantics.varExists(varName)) semanticError(this, line, column, VAR_DOES_NOT_EXIST, varName);
+	    if(inExpr) semanticError(this, line, column, EXPECTED_STRING_INTERP_TERMINATOR);
+	    else if(inVarName && !Semantics.varExists(varName)) semanticError(this, line, column, VAR_DOES_NOT_EXIST, varName);
 	}
 
 	@Override
