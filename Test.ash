@@ -4,9 +4,8 @@ class Test() : Iterable<String> {
 
 	var array = Test()
 	
-	func main(){
-		for(a in array) var b : String = a // Should pass
-		for(a in array) var b : int = a // Should fail
+	func main() {
+		var string = "$array"
 	}
 	
 }
