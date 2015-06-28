@@ -1234,6 +1234,27 @@ public abstract class Node {
 	public NodeString(final String val) {
 	    this.val = val;
 	}
+	
+	@Override
+	public void analyse(){
+	    int i = 0;
+	    boolean inVarName = false;
+	    String varName = "";
+	    while(i < val.length()){
+		char ch = val.charAt(i);
+		if(ch == '\\') i++;
+		else if(ch == '$') inVarName = true;
+		else if(ch == ' '){
+		    if(inVarName){
+			inVarName = false;
+			if(!Semantics.varExists(varName)) semanticError(this, line, column, VAR_DOES_NOT_EXIST, varName);
+			varName = "";
+		    }
+		}else if(inVarName) varName += ch;
+		i++;
+	    }
+	    if(inVarName && !Semantics.varExists(varName)) semanticError(this, line, column, VAR_DOES_NOT_EXIST, varName);
+	}
 
 	@Override
 	public String toString() {
