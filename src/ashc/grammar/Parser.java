@@ -67,6 +67,7 @@ public class Parser {
     private final Lexer lexer;
     private int pointer = 0, line = 1, column = 1;
     public boolean silenceErrors = false;
+    public int columnOffset, lineOffset;
 
     public Parser(final Lexer lexer) {
 	this.lexer = lexer;
@@ -94,7 +95,13 @@ public class Parser {
 	try {
 	    return parseFile();
 	} catch (final UnexpectedTokenException e) {
-	    final int line = e.token.line, colStart = e.token.columnStart, colEnd = e.token.columnEnd;
+	    handleException(e);
+	}
+	return null;
+    }
+
+    public void handleException(UnexpectedTokenException e) {
+	final int line = e.token.line+lineOffset, colStart = e.token.columnStart+columnOffset, colEnd = e.token.columnEnd+columnOffset;
 	    System.err.printf("Error:%d:%d-%d %s%n", line, colStart, colEnd,
 		    e.msg);
 
@@ -114,8 +121,6 @@ public class Parser {
 		    System.out.println();
 		}
 	    }
-	}
-	return null;
     }
 
     /**
@@ -660,7 +665,7 @@ public class Parser {
 		expr = new NodeDouble(Double.parseDouble(next.data));
 		break;
 	    case STRING:
-		expr = new NodeString(next.data.substring(1,
+		expr = new NodeString(next.line, next.columnStart, next.data.substring(1,
 			next.data.length() - 1));
 		break;
 	    case CHAR:
@@ -720,7 +725,7 @@ public class Parser {
 	return arg;
     }
 
-    private IExpression parseExpression() throws UnexpectedTokenException {
+    public IExpression parseExpression() throws UnexpectedTokenException {
 	final IExpression expr = parsePrimaryExpression();
 	final Token next = getNext();
 

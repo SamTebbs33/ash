@@ -15,6 +15,8 @@ public class Error {
 	TYPE_ALREADY_IMPORTED("Type has already been imported (%s)"),
 	TYPE_DOES_NOT_EXIST("Type doesn't exist (%s)"),
 	TYPE_DOES_NOT_EXTEND("Type (%s) does not extend %s"),
+	
+	EXPECTED_STRING_INTERP_TERMINATOR("Expected terminating } for string interpolated expression"),
 
 	FUNC_ALREADY_EXISTS("Function already exists (%s)"),
 	FUNC_DOES_NOT_EXIST("Function %s doesn't exist" /* in type %s */),
