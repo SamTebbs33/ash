@@ -47,6 +47,7 @@ public class Error {
 	DUPLICATE_MODIFIERS("Duplicate modifiers (%s)"),
 	DUPLICATE_ARGUMENTS("Duplicate arguments (%s)"),
 	DUPLICATE_TYPES("Duplicate types (%s)"),
+	PARAM_DEF_EXPR_NOT_LAST("Only the last parameter can have a default value"),
 
 	PRIMTIVE_CANNOT_BE_OPTIONAL("A primitive type cannot be optional (%s)"),
 	CANNOT_ASSIGN("Cannot assign %s to %s");

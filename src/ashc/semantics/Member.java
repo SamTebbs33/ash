@@ -119,6 +119,7 @@ public class Member {
     public static class Function extends Member {
 
 	public LinkedList<TypeI> parameters = new LinkedList<TypeI>();
+	public boolean hasDefExpr = false;
 	public TypeI returnType;
 	public LinkedList<String> generics = new LinkedList<String>();
 
@@ -149,7 +150,8 @@ public class Member {
 	}
 
 	private boolean paramsAreEqual(final LinkedList<TypeI> params2) {
-	    if (parameters.size() != params2.size()) return false;
+	    // If the function has a default parameter expression and the size of parmas2 is 1 less than params then allow it
+	    if (parameters.size() != params2.size() && !(hasDefExpr && parameters.size() == params2.size() + 1)) return false;
 	    final int len = Math.min(parameters.size(), params2.size());
 	    for (int i = 0; i < len; i++) {
 		// If it is a generic, continue

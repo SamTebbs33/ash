@@ -1,12 +1,10 @@
-import java.lang.Iterable
+//import java.lang.Iterable
 
-class Test() : Iterable<String> {
+class Person(name : String, age : int)
 
-	var array = Test()
-	
-	func main() {
-		var string = "${1+2+3+4+}"
-		string = "$string"
-	}
+class Test {
+
+	func makePerson(name : String, age : int = 0) -> Person(name, age)
+	var person = makePerson("Sam")
 	
 }

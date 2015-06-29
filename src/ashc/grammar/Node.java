@@ -360,21 +360,36 @@ public abstract class Node {
 
     public static class NodeArgs extends Node {
 	public LinkedList<NodeArg> args = new LinkedList<NodeArg>();
+	public boolean hasDefExpr;
 
 	public void add(final NodeArg arg) {
 	    args.add(arg);
 	}
 
 	@Override
+	public void preAnalyse() {
+	    for(NodeArg arg : args) if(arg.defExpr != null){
+		hasDefExpr = true;
+		break;
+	    }
+	}
+
+	@Override
 	public void analyse() {
-	    for (int i = 0; i < args.size(); i++) {
+	    int size = args.size();
+	    for (int i = 0; i < size; i++) {
 		boolean hasDupes = false;
-		for (int j = i + 1; j < args.size(); j++)
-		    if (args.get(i).id.equals(args.get(j).id)) {
+		NodeArg arg1 = args.get(i);
+		// Only the last parameter can have a default value
+		if(arg1.defExpr != null) if(i != size - 1) semanticError(this, arg1.line, arg1.column, PARAM_DEF_EXPR_NOT_LAST);
+		for (int j = i + 1; j < size; j++){
+		    NodeArg arg2 = args.get(j);
+		    if (arg1.id.equals(arg2.id)) {
 			hasDupes = true;
-			semanticError(this, line, column, DUPLICATE_ARGUMENTS, args.get(i).id);
+			semanticError(this, line, column, DUPLICATE_ARGUMENTS, arg1.id);
 			break;
 		    }
+		}
 		if (hasDupes) continue;
 	    }
 	}
@@ -566,6 +581,14 @@ public abstract class Node {
 	    final Function func = new Function(name, modifiers);
 	    for (final NodeType generic : generics.types)
 		func.generics.add(generic.id);
+	    
+	    args.preAnalyse();
+	    if(args.hasDefExpr) func.hasDefExpr = true;
+	    // We need to push a new scope and add the parameters as variables so that return type inference works
+	    Scope.push(new FuncScope(returnType, isMutFunc));
+	    for (final NodeArg arg : args.args){
+		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
+	    }
 
 	    if (!isMutFunc) {
 		if (!type.id.equals("void")) returnType = new TypeI(type);
@@ -573,6 +596,8 @@ public abstract class Node {
 		else returnType = new TypeI("void", 0, false);
 		func.returnType = returnType;
 	    } else func.returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
+	    
+	    Scope.pop();
 
 	    for (final NodeArg arg : args.args)
 		func.parameters.add(new TypeI(arg.type));
@@ -590,8 +615,9 @@ public abstract class Node {
 		if (type.isPresent()) if (!type.get().hasSuper(new QualifiedName("").add("java").add("lang").add("Throwable"))) semanticError(this, line, column, TYPE_DOES_NOT_EXTEND, throwsType.id, "java.lang.Throwable");
 	    }
 	    Scope.push(new FuncScope(returnType, isMutFunc));
-	    for (final NodeArg arg : args.args)
+	    for (final NodeArg arg : args.args){
 		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
+	    }
 	    block.analyse();
 	    Scope.pop();
 	}
