@@ -9,7 +9,7 @@ import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
- * 
+ *
  * @author samtebbs, 15:02:05 - 23 May 2015
  */
 public class Member {
@@ -34,16 +34,15 @@ public class Member {
 	public LinkedList<String> generics = new LinkedList<String>();
 	public HashMap<String, LinkedList<TypeI>> genericsMap = new HashMap<String, LinkedList<TypeI>>();
 
-	public Type(final QualifiedName qualifiedName, final int modifiers,
-		final EnumType type) {
+	public Type(final QualifiedName qualifiedName, final int modifiers, final EnumType type) {
 	    super(qualifiedName, modifiers);
 	    this.type = type;
 	}
-	
-	public void addGeneric(String typeName, TypeI generic){
-	    if(genericsMap.containsKey(typeName)) genericsMap.get(typeName).add(generic);
-	    else{
-		LinkedList<TypeI> list = new LinkedList<TypeI>();
+
+	public void addGeneric(final String typeName, final TypeI generic) {
+	    if (genericsMap.containsKey(typeName)) genericsMap.get(typeName).add(generic);
+	    else {
+		final LinkedList<TypeI> list = new LinkedList<TypeI>();
 		list.add(generic);
 		genericsMap.put(typeName, list);
 	    }
@@ -51,10 +50,8 @@ public class Member {
 
 	@Override
 	public boolean equals(final Object obj) {
-	    if (obj instanceof Type) return qualifiedName.shortName
-		    .equals(((Type) obj).qualifiedName.shortName);
-	    else if (obj instanceof String) return qualifiedName.shortName
-		    .equals(obj);
+	    if (obj instanceof Type) return qualifiedName.shortName.equals(((Type) obj).qualifiedName.shortName);
+	    else if (obj instanceof String) return qualifiedName.shortName.equals(obj);
 	    else return false;
 	}
 
@@ -66,12 +63,10 @@ public class Member {
 
 	public TypeI getFuncType(final String id, final NodeExprs args) {
 	    final LinkedList<TypeI> parameters = new LinkedList<TypeI>();
-	    for (final IExpression arg : args.exprs) {
+	    for (final IExpression arg : args.exprs)
 		parameters.add(arg.getExprType());
-	    }
 	    for (final Function func : functions)
-		if (func.paramsAreEqual(parameters)) if (func.qualifiedName.shortName
-			.equals(id)) return func.returnType;
+		if (func.paramsAreEqual(parameters)) if (func.qualifiedName.shortName.equals(id)) return func.returnType;
 	    return null;
 	}
 
@@ -84,17 +79,14 @@ public class Member {
 
 	public Function getFunc(final String id, final NodeExprs args) {
 	    final LinkedList<TypeI> parameters = new LinkedList<TypeI>();
-	    for (final IExpression arg : args.exprs) {
+	    for (final IExpression arg : args.exprs)
 		parameters.add(arg.getExprType());
-	    }
 	    return getFunc(id, parameters);
 	}
 
-	public Function getFunc(final String id,
-		final LinkedList<TypeI> parameters) {
+	public Function getFunc(final String id, final LinkedList<TypeI> parameters) {
 	    for (final Function func : functions)
-		if (func.qualifiedName.shortName.equals(id)) if (func
-			.paramsAreEqual(parameters)) return func;
+		if (func.qualifiedName.shortName.equals(id)) if (func.paramsAreEqual(parameters)) return func;
 	    Function func = null;
 	    for (final Type superType : supers)
 		if ((func = superType.getFunc(id, parameters)) != null) return func;
@@ -107,20 +99,18 @@ public class Member {
 					   * ", functions=" + functions +
 					   * ", fields=" + fields + ", supers="
 					   * + supers +
-					   */", qualifiedName=" + qualifiedName
-		    + "]";
+					   */", qualifiedName=" + qualifiedName + "]";
 	}
 
-	public LinkedList<TypeI> getGenerics(String string) {
-	    if(genericsMap .containsKey(string)){
-		return genericsMap.get(string);
-	    }else{
-		for(Type type : supers) if(type.qualifiedName.shortName.equals(string)){
-		    LinkedList<TypeI> genericList = new LinkedList<TypeI>();
-		    for(int i = 0; i < type.generics.size(); i++) genericList.add(new TypeI("Object", 0, false));
+	public LinkedList<TypeI> getGenerics(final String string) {
+	    if (genericsMap.containsKey(string)) return genericsMap.get(string);
+	    else for (final Type type : supers)
+		if (type.qualifiedName.shortName.equals(string)) {
+		    final LinkedList<TypeI> genericList = new LinkedList<TypeI>();
+		    for (int i = 0; i < type.generics.size(); i++)
+			genericList.add(new TypeI("Object", 0, false));
 		    return genericList;
 		}
-	    }
 	    return null;
 	}
 
@@ -137,16 +127,14 @@ public class Member {
 	}
 
 	public static Function fromMethod(final Method method) {
-	    final QualifiedName name = QualifiedName.fromClass(method
-		    .getDeclaringClass());
+	    final QualifiedName name = QualifiedName.fromClass(method.getDeclaringClass());
 	    name.add(method.getName());
 
 	    final Function func = new Function(name, method.getModifiers());
 
 	    final Parameter[] params = method.getParameters();
-	    for (final Parameter param : params) {
+	    for (final Parameter param : params)
 		func.parameters.add(TypeI.fromClass(param.getClass()));
-	    }
 	    func.returnType = TypeI.fromClass(method.getReturnType());
 	    return func;
 	}
@@ -155,8 +143,7 @@ public class Member {
 	public boolean equals(final Object obj) {
 	    if (obj instanceof Function) {
 		final Function func = (Function) obj;
-		return qualifiedName.equals(func.qualifiedName)
-			&& paramsAreEqual(func.parameters);
+		return qualifiedName.equals(func.qualifiedName) && paramsAreEqual(func.parameters);
 	    }
 	    return false;
 	}
@@ -174,9 +161,7 @@ public class Member {
 
 	@Override
 	public String toString() {
-	    return "Function [parameters=" + parameters + ", returnType="
-		    + returnType + ", qualifiedName=" + qualifiedName
-		    + ", modifiers=" + modifiers + "]";
+	    return "Function [parameters=" + parameters + ", returnType=" + returnType + ", qualifiedName=" + qualifiedName + ", modifiers=" + modifiers + "]";
 	}
 
     }
@@ -202,8 +187,7 @@ public class Member {
 	public QualifiedName qualifiedName;
 	public int modifiers;
 
-	public Field(final QualifiedName qualifiedName, final int modifiers,
-		final TypeI type) {
+	public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type) {
 	    super(qualifiedName.shortName, type);
 	    this.qualifiedName = qualifiedName;
 	    this.modifiers = modifiers;
@@ -212,16 +196,14 @@ public class Member {
 	public static Field from(final java.lang.reflect.Field field) {
 	    final int mods = field.getModifiers();
 	    final TypeI type = TypeI.fromClass(field.getType());
-	    final QualifiedName name = QualifiedName.fromClass(field
-		    .getDeclaringClass());
+	    final QualifiedName name = QualifiedName.fromClass(field.getDeclaringClass());
 	    name.add(field.getName());
 	    return new Field(name, mods, type);
 	}
 
 	@Override
 	public boolean equals(final Object obj) {
-	    if (obj instanceof Field) return ((Field) obj).qualifiedName
-		    .equals(qualifiedName);
+	    if (obj instanceof Field) return ((Field) obj).qualifiedName.equals(qualifiedName);
 	    return false;
 	}
 

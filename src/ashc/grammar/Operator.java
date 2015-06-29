@@ -4,7 +4,7 @@ import ashc.semantics.*;
 
 /**
  * Ash
- * 
+ *
  * @author samtebbs, 10:49:05 - 27 May 2015
  */
 public class Operator {
@@ -60,9 +60,7 @@ public class Operator {
 	if (opStr.charAt(opStr.length() - 1) == '=') {
 	    type = EnumOperatorType.ASSIGNMENT;
 	    opStr = opStr.substring(0, opStr.length() - 1);
-	} else {
-	    type = EnumOperatorType.ARITHMETIC;
-	}
+	} else type = EnumOperatorType.ARITHMETIC;
 	operation = getOperation(opStr);
     }
 

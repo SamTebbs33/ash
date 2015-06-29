@@ -31,17 +31,11 @@ public class Lexer {
 	STRING("\".*\"", "string"),
 	CHAR("\'.\'", "character"),
 	BOOL("true|false", "boolean"),
-	PRIMITIVE(
-		"bool|double|float|long|int|short|byte|ulong|uint|char|void",
-		"primitive"),
+	PRIMITIVE("bool|double|float|long|int|short|byte|ulong|uint|char|void", "primitive"),
 	LAMBDAARROW("->", "lambda arrow"),
 
-	COMPOUNDASSIGNOP(
-		"-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=",
-		"compound assignment operator"),
-	BINARYOP(
-		"\\.\\.|<|>|<=|>=|==|!=|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|",
-		"binary operator"),
+	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
+	BINARYOP("\\.\\.|<|>|<=|>=|==|!=|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|", "binary operator"),
 	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
 	ASSIGNOP("=", "assignment operator"),
 	WHITESPACE("[\n\t ]+", "whitespace"),
@@ -113,8 +107,7 @@ public class Lexer {
 	public String data;
 	public int line, columnStart, columnEnd;
 
-	public Token(final TokenType type, final String data, final int line,
-		final int column, final int columnEnd) {
+	public Token(final TokenType type, final String data, final int line, final int column, final int columnEnd) {
 	    this.type = type;
 	    this.data = data;
 	    this.line = line;
@@ -124,8 +117,7 @@ public class Lexer {
 
 	@Override
 	public String toString() {
-	    return String.format("%d:%d-%d = %s (%s)", line, columnStart,
-		    columnEnd, type.name(), data);
+	    return String.format("%d:%d-%d = %s (%s)", line, columnStart, columnEnd, type.name(), data);
 	}
 
     }
@@ -135,8 +127,7 @@ public class Lexer {
 	public String data;
 	public int line, column;
 
-	public InvalidTokenException(final String data, final int line,
-		final int column) {
+	public InvalidTokenException(final String data, final int line, final int column) {
 	    this.data = data;
 	    this.line = line;
 	    this.column = column;
@@ -156,14 +147,10 @@ public class Lexer {
 	    final StringBuilder typesStr = new StringBuilder("");
 	    for (int i = 0; i < t.length; i++) {
 		typesStr.append(t[i].typeName);
-		if (i == (t.length - 2)) {
-		    typesStr.append(" or ");
-		} else if (i < (t.length - 1)) {
-		    typesStr.append(", ");
-		}
+		if (i == (t.length - 2)) typesStr.append(" or ");
+		else if (i < (t.length - 1)) typesStr.append(", ");
 	    }
-	    msg = String.format("Expected %s, found %s", typesStr,
-		    found.type.typeName);
+	    msg = String.format("Expected %s, found %s", typesStr, found.type.typeName);
 	}
 
 	public UnexpectedTokenException(final Token t) {
@@ -173,8 +160,7 @@ public class Lexer {
 
 	public UnexpectedTokenException(final Token next, final String tokenData) {
 	    token = next;
-	    msg = String.format("Unexpected %s, expected %s",
-		    next.type.typeName, tokenData);
+	    msg = String.format("Unexpected %s, expected %s", next.type.typeName, tokenData);
 	}
 
     }
@@ -188,10 +174,8 @@ public class Lexer {
 	    numLines++;
 	}
 	final StringBuffer patternsBuffer = new StringBuffer();
-	for (final TokenType type : TokenType.values()) {
-	    patternsBuffer.append(String.format("|(?<%s>%s)", type.name(),
-		    type.regex));
-	}
+	for (final TokenType type : TokenType.values())
+	    patternsBuffer.append(String.format("|(?<%s>%s)", type.name(), type.regex));
 	final String patternStr = patternsBuffer.toString();
 	final Pattern patterns = Pattern.compile(patternStr.substring(1));
 
@@ -200,13 +184,13 @@ public class Lexer {
     }
 
     public Token getNextToken() throws InvalidTokenException {
-	while (matcher.find()) {
+	while (matcher.find())
 	    for (final TokenType type : TokenType.values()) {
 		final String data = matcher.group(type.name());
 		if (data != null) {
 		    // Skip whitespace
 		    if (type == TokenType.WHITESPACE) {
-			for (final char ch : data.toCharArray()) {
+			for (final char ch : data.toCharArray())
 			    switch (ch) {
 				case '\n':
 				    line++;
@@ -218,21 +202,17 @@ public class Lexer {
 				case ' ':
 				    column++;
 			    }
-			}
 			continue;
-		    } else if (type == TokenType.ERROR) throw new InvalidTokenException(
-			    data, line, column);
+		    } else if (type == TokenType.ERROR) throw new InvalidTokenException(data, line, column);
 		    else if (type == TokenType.COMMENT) {
 			column += data.length();
 			continue;
 		    }
-		    final Token t = new Token(type, data, line, column, column
-			    + data.length());
+		    final Token t = new Token(type, data, line, column, column + data.length());
 		    column += data.length();
 		    return t;
 		}
 	    }
-	}
 	return null;
     }
 

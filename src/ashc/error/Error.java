@@ -5,7 +5,7 @@ import ashc.main.*;
 
 /**
  * Ash
- * 
+ *
  * @author samtebbs, 15:44:44 - 23 May 2015
  */
 public class Error {
@@ -15,15 +15,14 @@ public class Error {
 	TYPE_ALREADY_IMPORTED("Type has already been imported (%s)"),
 	TYPE_DOES_NOT_EXIST("Type doesn't exist (%s)"),
 	TYPE_DOES_NOT_EXTEND("Type (%s) does not extend %s"),
-	
+
 	EXPECTED_STRING_INTERP_TERMINATOR("Expected terminating } for string interpolated expression"),
 
-	FUNC_ALREADY_EXISTS("Function already exists (%s)"),
-	FUNC_DOES_NOT_EXIST("Function %s doesn't exist" /* in type %s */),
-	CONSTRUCTOR_DOES_NOT_EXIST("Constructor does not exist in type %s"),
-	RETURN_EXPR_IN_VOID_FUNC(
-		"Cannot return an expression in a void function"),
-		RETURN_IN_MUT_FUNC("Cannot return in a mutator function"),
+		FUNC_ALREADY_EXISTS("Function already exists (%s)"),
+		FUNC_DOES_NOT_EXIST("Function %s doesn't exist" /* in type %s */),
+		CONSTRUCTOR_DOES_NOT_EXIST("Constructor does not exist in type %s"),
+		RETURN_EXPR_IN_VOID_FUNC("Cannot return an expression in a void function"),
+			RETURN_IN_MUT_FUNC("Cannot return in a mutator function"),
 
 	FIELD_ALREADY_EXISTS("Field already exists (%s)"),
 
@@ -33,8 +32,7 @@ public class Error {
 	PROPERTY_IN_FUNC("Cannot declare a property in a function (%s)"),
 
 	MISSING_ASSIGNMENT("Assignment expected"),
-	TOO_MANY_ARRAY_ACCESSES(
-		"Attempted to access %s array dimension(s) on a variable with %s dimension(s) (%s)"),
+	TOO_MANY_ARRAY_ACCESSES("Attempted to access %s array dimension(s) on a variable with %s dimension(s) (%s)"),
 	TOO_MANY_GENERICS("Too many generics declared"),
 	ARRAY_INDEX_NOT_NUMERIC("Array index must be numeric (%s)"),
 	CANNOT_USE_SELF("Cannot use the self keyword in the current context"),
@@ -60,15 +58,12 @@ public class Error {
 	}
     }
 
-    public static void semanticError(final int line, final int column,
-	    final EnumError error, final Object... args) {
-	System.err.printf("Error[%s:%d:%d] ", AshCompiler.get().relFilePath,
-		line, column);
+    public static void semanticError(final int line, final int column, final EnumError error, final Object... args) {
+	System.err.printf("Error[%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
 	System.err.printf(error.format + "%n", args);
     }
 
-    public static void semanticError(final Node node, final int line,
-	    final int column, final EnumError error, final Object... args) {
+    public static void semanticError(final Node node, final int line, final int column, final EnumError error, final Object... args) {
 	node.errored = true;
 	semanticError(line, column, error, args);
     }
