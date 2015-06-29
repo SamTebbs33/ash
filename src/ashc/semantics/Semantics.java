@@ -154,9 +154,9 @@ public class Semantics {
 	}
 
 	public static TypeI getObjectType() {
-	    return objectType ;
+	    return objectType;
 	}
-
+	
 	public TypeI setArrDims(int i) {
 	    arrDims = i;
 	    return this;

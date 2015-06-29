@@ -594,7 +594,7 @@ public abstract class Node {
 		if (!type.id.equals("void")) returnType = new TypeI(type);
 		else if (block.singleLineExpr != null) returnType = block.singleLineExpr.getExprType();
 		else returnType = TypeI.getVoidType();
-		func.returnType = returnType.isNull() ? TypeI.getObjectType().setOptional(true) : returnType;
+		func.returnType = returnType.isNull() ? TypeI.getObjectType().copy().setOptional(true) : returnType;
 	    } else func.returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
 	    
 	    Scope.pop();
@@ -1285,7 +1285,7 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    final LinkedList<IExpression> exprList = exprs.exprs;
 	    // Just infer an Object array
-	    if (exprList.size() == 0) return TypeI.getObjectType().setArrDims(1);
+	    if (exprList.size() == 0) return TypeI.getObjectType().copy().setArrDims(1);
 	    // Infer the precedent type within this array expression
 	    TypeI type = exprList.getFirst().getExprType();
 	    for (int i = 1; i < exprList.size(); i++)
