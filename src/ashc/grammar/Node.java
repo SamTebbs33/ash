@@ -593,8 +593,8 @@ public abstract class Node {
 	    if (!isMutFunc) {
 		if (!type.id.equals("void")) returnType = new TypeI(type);
 		else if (block.singleLineExpr != null) returnType = block.singleLineExpr.getExprType();
-		else returnType = new TypeI("void", 0, false);
-		func.returnType = returnType;
+		else returnType = TypeI.getVoidType();
+		func.returnType = returnType.isNull() ? TypeI.getObjectType().setOptional(true) : returnType;
 	    } else func.returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
 	    
 	    Scope.pop();
@@ -823,7 +823,7 @@ public abstract class Node {
 			for (; i < generics.types.size(); i++)
 			    funcType.genericTypes.add(new TypeI(generics.types.get(i)));
 			for (; i < func.generics.size(); i++)
-			    funcType.genericTypes.add(new TypeI("Object", 0, false));
+			    funcType.genericTypes.add(TypeI.getObjectType());
 		    }
 		    return funcType;
 		}
@@ -900,7 +900,11 @@ public abstract class Node {
 		}
 	    } else {
 		final TypeI type = prefix.getExprType();
-		final Type enclosingType = Semantics.getType(type.shortName).get();
+		Optional<Type> typeOpt = Semantics.getType(type.shortName);
+		if(!typeOpt.isPresent()){
+		    semanticError(this, line, column, TYPE_DOES_NOT_EXIST, type.shortName);
+		}
+		final Type enclosingType = typeOpt.get();
 		var = Semantics.getVar(id, type);
 		if (var == null) {
 		    semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
@@ -1281,7 +1285,7 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    final LinkedList<IExpression> exprList = exprs.exprs;
 	    // Just infer an Object array
-	    if (exprList.size() == 0) return new TypeI("Object", 1, false);
+	    if (exprList.size() == 0) return TypeI.getObjectType().setArrDims(1);
 	    // Infer the precedent type within this array expression
 	    TypeI type = exprList.getFirst().getExprType();
 	    for (int i = 1; i < exprList.size(); i++)
@@ -1316,7 +1320,7 @@ public abstract class Node {
 	@Override
 	public TypeI getExprType() {
 	    // Just infer an Object array
-	    if (exprs.size() == 0) return new TypeI("Object", 1, false);
+	    if (exprs.size() == 0) return TypeI.getObjectType();
 	    final TypeI type = new TypeI("", 0, false);
 	    for (final NodeTupleExprArg arg : exprs) {
 		final TypeI argType = arg.expr.getExprType();
@@ -1434,7 +1438,7 @@ public abstract class Node {
 	    // The only types that can be iterated over are arrays and those
 	    // that implement java.lang.Iterable
 	    final TypeI exprType = expr.getExprType();
-	    TypeI varType = new TypeI("Object", 0, false);
+	    TypeI varType = TypeI.getObjectType();
 	    if (exprType.isTuple()) semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
 	    if (exprType.isArray()) {
 		exprType.arrDims--;
@@ -1445,7 +1449,7 @@ public abstract class Node {
 
 		    // Extract the generic used when implementing Iterable
 		    final LinkedList<TypeI> list = type.get().getGenerics("Iterable");
-		    if ((list == null) || list.isEmpty()) varType = new TypeI("Object", 0, false);
+		    if ((list == null) || list.isEmpty()) varType = TypeI.getObjectType();
 		    else varType = list.get(0);
 		} else semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
 	    }

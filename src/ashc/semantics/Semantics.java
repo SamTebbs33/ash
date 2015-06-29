@@ -10,6 +10,7 @@ import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
+import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
@@ -24,6 +25,7 @@ public class Semantics {
 
     public static class TypeI {
 
+	private static TypeI objectType = new TypeI("Object", 0, false), voidType = new TypeI("void", 0, false);
 	public String shortName, tupleName;
 	public int arrDims;
 	public boolean optional;
@@ -139,8 +141,8 @@ public class Semantics {
 	    return (tupleTypes != null) && (tupleTypes.size() > 0);
 	}
 
-	public static TypeI voidType() {
-	    return new TypeI("void", 0, false);
+	public static TypeI getVoidType() {
+	    return voidType;
 	}
 
 	public boolean isArray() {
@@ -149,6 +151,20 @@ public class Semantics {
 
 	public TypeI copy() {
 	    return new TypeI(shortName, arrDims, optional);
+	}
+
+	public static TypeI getObjectType() {
+	    return objectType ;
+	}
+
+	public TypeI setArrDims(int i) {
+	    arrDims = i;
+	    return this;
+	}
+
+	public TypeI setOptional(boolean b) {
+	    optional = b;
+	    return this;
 	}
     }
 

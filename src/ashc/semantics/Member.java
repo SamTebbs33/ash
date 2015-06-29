@@ -108,7 +108,7 @@ public class Member {
 		if (type.qualifiedName.shortName.equals(string)) {
 		    final LinkedList<TypeI> genericList = new LinkedList<TypeI>();
 		    for (int i = 0; i < type.generics.size(); i++)
-			genericList.add(new TypeI("Object", 0, false));
+			genericList.add(TypeI.getObjectType());
 		    return genericList;
 		}
 	    return null;
