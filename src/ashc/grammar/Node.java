@@ -623,7 +623,8 @@ public abstract class Node {
 		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
 	    }
 	    block.analyse();
-	    if(!block.hasReturnStmt()) semanticError(this, line, column, NOT_ALL_PATHS_HAVE_RETURN);
+	    // If the return type is not "void", all code paths must have a return statement
+	    if(!returnType.isVoid()) if(!block.hasReturnStmt()) semanticError(this, line, column, NOT_ALL_PATHS_HAVE_RETURN);
 	    Scope.pop();
 	}
 
@@ -1411,7 +1412,7 @@ public abstract class Node {
 
     }
 
-    public static class NodeWhile extends Node implements IFuncStmt {
+    public static class NodeWhile extends Node implements IFuncStmt, IConstruct {
 	public IExpression expr;
 	public NodeFuncBlock block;
 
@@ -1432,9 +1433,14 @@ public abstract class Node {
 	    block.analyse();
 	}
 
+	@Override
+	public boolean hasReturnStmt() {
+	    return false;
+	}
+
     }
 
-    public static class NodeFor extends Node implements IFuncStmt {
+    public static class NodeFor extends Node implements IFuncStmt, IConstruct {
 	public IExpression expr;
 	public NodeFuncBlock block;
 
@@ -1455,6 +1461,11 @@ public abstract class Node {
 	    Scope.push(new Scope());
 	    block.analyse();
 	    Scope.pop();
+	}
+
+	@Override
+	public boolean hasReturnStmt() {
+	    return false;
 	}
 
     }
