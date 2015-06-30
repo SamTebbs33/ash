@@ -1177,6 +1177,36 @@ public abstract class Node {
 	}
 
     }
+    
+    public static class NodeElvis extends Node implements IExpression {
+	
+	public IExpression exprOptional, exprNotNull;
+
+	public NodeElvis(int line, int column, IExpression exprOptional, IExpression exprNotNull) {
+	    super(line, column);
+	    this.exprOptional = exprOptional;
+	    this.exprNotNull = exprNotNull;
+	}
+
+	@Override
+	public void analyse() {
+	    ((Node) exprOptional).analyse();
+	    ((Node) exprNotNull).analyse();
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    TypeI exprOptionalType = exprOptional.getExprType(), exprNotNullType = exprNotNull.getExprType();
+	    if(!exprOptionalType.optional) semanticError(this, line, column, ELVIS_EXPR_NOT_OPTIONAL, exprOptionalType.toString());
+	    if(exprNotNullType.optional) semanticError(this, line, column, ELVIS_EXPR_IS_OPTIONAL, exprNotNullType.toString());
+	    // Set the types as not optional to stop incompatibility errors thrown by the next method call
+	    exprOptionalType.optional = false;
+	    exprNotNullType.optional = false;
+	    TypeI type = Semantics.getPrecedentType(exprOptionalType, exprNotNullType).setOptional(false);
+	    return type;
+	}
+	
+    }
 
     public static class NodeBinary extends Node implements IExpression {
 	public IExpression expr1, expr2;

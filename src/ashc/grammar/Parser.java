@@ -16,6 +16,7 @@ import ashc.grammar.Node.NodeChar;
 import ashc.grammar.Node.NodeClassBlock;
 import ashc.grammar.Node.NodeClassDec;
 import ashc.grammar.Node.NodeDouble;
+import ashc.grammar.Node.NodeElvis;
 import ashc.grammar.Node.NodeEnumBlock;
 import ashc.grammar.Node.NodeEnumDec;
 import ashc.grammar.Node.NodeEnumInstance;
@@ -411,6 +412,7 @@ public class Parser {
 		final IFuncStmt stmt = parsePrefix();
 		if (stmt instanceof NodeVariable) {
 		    final Token assignOp = expect(TokenType.ASSIGNOP, TokenType.COMPOUNDASSIGNOP);
+		    System.out.println("parsing var assign");
 		    return new NodeVarAssign(assignOp.line, assignOp.columnStart, (NodeVariable) stmt, assignOp.data, parseExpression());
 		} else return stmt;
 	    case IF:
@@ -633,13 +635,15 @@ public class Parser {
 
     public IExpression parseExpression() throws UnexpectedTokenException {
 	final IExpression expr = parsePrimaryExpression();
-	final Token next = getNext();
+	Token next = getNext();
 
 	switch (next.type) {
 	// Postfix unary expression
 	    case UNARYOP:
 		return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
 	    case QUESTIONMARK:
+		if((next = getNext()).type == TokenType.QUESTIONMARK) return new NodeElvis(next.line, next.columnStart, expr, parseExpression());
+		else rewind();
 		final IExpression exprTrue = parseExpression();
 		expect(TokenType.COLON);
 		return new NodeTernary(expr, exprTrue, parseExpression());
@@ -657,9 +661,13 @@ public class Parser {
 	if (type == TokenType.COLON) {
 	    final NodeType nodeType = parseType();
 	    varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, null);
-	    if (getNext().type == TokenType.ASSIGNOP) varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, parseExpression());
+	    if (getNext().type == TokenType.ASSIGNOP){
+		varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, parseExpression());
+	    }
 	    else rewind();
-	} else varDec = new NodeVarDecImplicit(id.line, id.columnStart, mods, keyword.data, id.data, parseExpression());
+	} else {
+	    varDec = new NodeVarDecImplicit(id.line, id.columnStart, mods, keyword.data, id.data, parseExpression());
+	}
 
 	if (getNext().type == TokenType.LAMBDAARROW) {
 	    expect(TokenType.BRACEL);

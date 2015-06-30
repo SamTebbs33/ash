@@ -28,7 +28,7 @@ public class Lexer {
 	DOUBLE("-?[0-9]+\\.[0-9]+", "double"),
 	LONG("-?[0-9]+L", "long"),
 	INT("-?[0-9]+", "integer"),
-	STRING("\".*\"", "string"),
+	STRING("\".[^\"]*\"", "string"),
 	CHAR("\'.\'", "character"),
 	BOOL("true|false", "boolean"),
 	PRIMITIVE("bool|double|float|long|int|short|byte|ulong|uint|char|void", "primitive"),
