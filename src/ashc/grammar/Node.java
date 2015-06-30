@@ -47,6 +47,10 @@ public abstract class Node {
     public static interface IFuncStmt {
 
     }
+    
+    public static interface IConstruct {
+	public boolean hasReturnStmt();
+    }
 
     public static interface IExpression {
 
@@ -619,6 +623,7 @@ public abstract class Node {
 		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
 	    }
 	    block.analyse();
+	    if(!block.hasReturnStmt()) semanticError(this, line, column, NOT_ALL_PATHS_HAVE_RETURN);
 	    Scope.pop();
 	}
 
@@ -744,6 +749,14 @@ public abstract class Node {
 
 	public void add(final IFuncStmt funcStmt) {
 	    stmts.add(funcStmt);
+	}
+	
+	public boolean hasReturnStmt(){
+	    for(IFuncStmt stmt : stmts){
+		if(stmt instanceof NodeReturn) return true;
+		else if(stmt instanceof IConstruct) if(((IConstruct)stmt).hasReturnStmt()) return true;
+	    }
+	    return false;
 	}
 
 	@Override
@@ -1363,10 +1376,11 @@ public abstract class Node {
 
     }
 
-    public static class NodeIf extends Node implements IFuncStmt {
+    public static class NodeIf extends Node implements IFuncStmt, IConstruct {
 	public IExpression expr;
 	public NodeFuncBlock block;
 	public NodeIf elseStmt;
+	public boolean isElse;
 
 	public NodeIf(final int line, final int column, final IExpression expr, final NodeFuncBlock block) {
 	    super(line, column);
@@ -1384,6 +1398,15 @@ public abstract class Node {
 	    }
 	    block.analyse();
 	    if (elseStmt != null) elseStmt.analyse();
+	}
+
+	@Override
+	public boolean hasReturnStmt() {
+	    if(block.hasReturnStmt()){
+		if(isElse) return true;
+		else if(elseStmt.hasReturnStmt()) return true;
+	    }
+	    return false;
 	}
 
     }

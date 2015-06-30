@@ -412,7 +412,6 @@ public class Parser {
 		final IFuncStmt stmt = parsePrefix();
 		if (stmt instanceof NodeVariable) {
 		    final Token assignOp = expect(TokenType.ASSIGNOP, TokenType.COMPOUNDASSIGNOP);
-		    System.out.println("parsing var assign");
 		    return new NodeVarAssign(assignOp.line, assignOp.columnStart, (NodeVariable) stmt, assignOp.data, parseExpression());
 		} else return stmt;
 	    case IF:
@@ -468,10 +467,11 @@ public class Parser {
     private NodeIf parseIfStmt() throws UnexpectedTokenException {
 	final NodeIf ifStmt = new NodeIf(line, column, parseExpression(), parseConstructBlock());
 	if (getNext().type == TokenType.ELSE) {
-	    if (expect(TokenType.IF, TokenType.BRACEL).type == TokenType.IF) ifStmt.elseStmt = parseIfStmt();
+	    if (getNext().type == TokenType.IF) ifStmt.elseStmt = parseIfStmt();
 	    else {
 		rewind();
 		ifStmt.elseStmt = new NodeIf(line, column, null, parseConstructBlock());
+		ifStmt.isElse = true;
 	    }
 	} else rewind();
 	return ifStmt;
