@@ -599,7 +599,10 @@ public abstract class Node {
 		else if (block.singleLineExpr != null) returnType = block.singleLineExpr.getExprType();
 		else returnType = TypeI.getVoidType();
 		func.returnType = returnType.isNull() ? TypeI.getObjectType().copy().setOptional(true) : returnType;
-	    } else func.returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
+	    } else{
+		func.returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
+		returnType = func.returnType;
+	    }
 	    
 	    Scope.pop();
 
@@ -768,8 +771,11 @@ public abstract class Node {
 		if (scope.returnType.isVoid()) semanticError(this, line, column, RETURN_EXPR_IN_VOID_FUNC);
 		else if (!scope.returnType.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, scope.returnType.toString(), exprType.toString());
 	    } else if (singleLineStmt != null) ((Node) singleLineStmt).analyse();
-	    else for (final IFuncStmt stmt : stmts)
-		((Node) stmt).analyse();
+	    else{ 
+		for (final IFuncStmt stmt : stmts){
+		    ((Node) stmt).analyse();
+		}
+	    }
 
 	}
 
@@ -993,7 +999,7 @@ public abstract class Node {
 		final TypeI exprType = expr.getExprType();
 		if (scope.returnType.isVoid()) semanticError(this, line, column, RETURN_EXPR_IN_VOID_FUNC);
 		else if (!scope.returnType.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, scope.returnType.toString(), exprType.toString());
-	    }
+	    }else if(!scope.returnType.isVoid()) semanticError(this, line, column, RETURN_VOID_IN_NONVOID_FUNC);
 
 	}
 
@@ -1391,11 +1397,12 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
+	    if(expr != null){
 	    ((Node) expr).analyse();
 	    if (!((Node) expr).errored) {
 		final TypeI exprType = expr.getExprType();
-		if (EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL) if (!exprType.isArray()) return;
-		semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
+		if (EnumPrimitive.getPrimitive(exprType.shortName) != EnumPrimitive.BOOL || exprType.isArray()) semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
+	    }
 	    }
 	    block.analyse();
 	    if (elseStmt != null) elseStmt.analyse();

@@ -24,6 +24,7 @@ public class Error {
 		RETURN_EXPR_IN_VOID_FUNC("Cannot return an expression in a void function"),
 			RETURN_IN_MUT_FUNC("Cannot return in a mutator function"),
 			NOT_ALL_PATHS_HAVE_RETURN("Not all code paths have a return statement"),
+			RETURN_VOID_IN_NONVOID_FUNC("Cannot return void in a non-void function"),
 
 	FIELD_ALREADY_EXISTS("Field already exists (%s)"),
 
