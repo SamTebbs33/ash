@@ -1199,6 +1199,7 @@ public abstract class Node {
 	    TypeI exprOptionalType = exprOptional.getExprType(), exprNotNullType = exprNotNull.getExprType();
 	    if(!exprOptionalType.optional) semanticError(this, line, column, ELVIS_EXPR_NOT_OPTIONAL, exprOptionalType.toString());
 	    if(exprNotNullType.optional) semanticError(this, line, column, ELVIS_EXPR_IS_OPTIONAL, exprNotNullType.toString());
+	    if(EnumPrimitive.isPrimitive(exprOptionalType.shortName)) semanticError(this, line, column, ELVIS_EXPR_IS_PRIMITIVE, exprOptional);
 	    // Set the types as not optional to stop incompatibility errors thrown by the next method call
 	    exprOptionalType.optional = false;
 	    exprNotNullType.optional = false;
