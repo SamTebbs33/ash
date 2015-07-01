@@ -66,7 +66,7 @@ public class Parser {
 
     private final LinkedList<Token> tokens = new LinkedList<Token>();
     private final Lexer lexer;
-    private int pointer = 0, line = 1, column = 1;
+    private int pointer = 0, pointerTemp = 0, line = 1, column = 1;
     public boolean silenceErrors = false;
     public int columnOffset, lineOffset;
 
@@ -193,6 +193,14 @@ public class Parser {
 	    }
 	if (!found && !silenceErrors) throw new UnexpectedTokenException(token, t);
 	return token;
+    }
+    
+    private void savePointer() {
+	pointerTemp = pointer;
+    }
+    
+    private void restorePointer(){
+	pointer = pointerTemp;
     }
 
     /**
@@ -401,10 +409,12 @@ public class Parser {
 	final Token token = expect(TokenType.ID, TokenType.SELF, TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.VAR, TokenType.CONST, TokenType.RETURN);
 	switch (token.type) {
 	    case RETURN:
-		rewind();
+		//rewind();
 		silenceErrors = true;
+		savePointer();
 		final IExpression expr = parseExpression();
 		silenceErrors = false;
+		if(expr == null) restorePointer();
 		return new NodeReturn(token.line, token.columnStart, expr);
 	    case ID:
 	    case SELF:
@@ -638,11 +648,11 @@ public class Parser {
 	Token next = getNext();
 
 	switch (next.type) {
-	// Postfix unary expression
+	    // Postfix unary expression
 	    case UNARYOP:
 		return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
 	    case QUESTIONMARK:
-		if((next = getNext()).type == TokenType.QUESTIONMARK) return new NodeElvis(next.line, next.columnStart, expr, parseExpression());
+		if ((next = getNext()).type == TokenType.QUESTIONMARK) return new NodeElvis(next.line, next.columnStart, expr, parseExpression());
 		else rewind();
 		final IExpression exprTrue = parseExpression();
 		expect(TokenType.COLON);
@@ -661,13 +671,9 @@ public class Parser {
 	if (type == TokenType.COLON) {
 	    final NodeType nodeType = parseType();
 	    varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, null);
-	    if (getNext().type == TokenType.ASSIGNOP){
-		varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, parseExpression());
-	    }
+	    if (getNext().type == TokenType.ASSIGNOP) varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, parseExpression());
 	    else rewind();
-	} else {
-	    varDec = new NodeVarDecImplicit(id.line, id.columnStart, mods, keyword.data, id.data, parseExpression());
-	}
+	} else varDec = new NodeVarDecImplicit(id.line, id.columnStart, mods, keyword.data, id.data, parseExpression());
 
 	if (getNext().type == TokenType.LAMBDAARROW) {
 	    expect(TokenType.BRACEL);
@@ -700,10 +706,10 @@ public class Parser {
 
     private NodeTypes parseTypes(final boolean necessary) throws UnexpectedTokenException {
 	final NodeTypes types = new NodeTypes();
-	final int ptr = pointer;
+	savePointer();
 	final NodeType type = parseType(necessary);
 	if (type == null) {
-	    rewind(pointer - ptr);
+	    restorePointer();
 	    return null;
 	}
 	types.add(type);

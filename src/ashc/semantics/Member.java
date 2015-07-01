@@ -3,9 +3,11 @@ package ashc.semantics;
 import java.lang.reflect.*;
 import java.util.*;
 
+import ashc.grammar.*;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeExprs;
 import ashc.semantics.Semantics.TypeI;
+import ashc.util.*;
 
 /**
  * Ash
@@ -16,10 +18,21 @@ public class Member {
 
     public QualifiedName qualifiedName;
     public int modifiers;
+    public Type enclosingType;
+    public boolean isLocal;
 
     public Member(final QualifiedName qualifiedName, final int modifiers) {
 	this.qualifiedName = qualifiedName;
 	this.modifiers = modifiers;
+    }
+    
+    public boolean isVisible(){
+	if(isLocal) return true;
+	if(BitOp.and(modifiers, EnumModifier.PUBLIC.intVal)) return true;
+	if(enclosingType.equals(Semantics.currentType())) return true;
+	else if(BitOp.and(modifiers, EnumModifier.PRIVATE.intVal)) return false;
+	else if(Semantics.currentType().hasSuper(enclosingType.qualifiedName) && BitOp.and(modifiers, EnumModifier.PROTECTED.intVal)) return true;
+	return false;
     }
 
     public static enum EnumType {
@@ -96,10 +109,10 @@ public class Member {
 	@Override
 	public String toString() {
 	    return "Type [type=" + type + /*
-					   * ", functions=" + functions +
-					   * ", fields=" + fields + ", supers="
-					   * + supers +
-					   */", qualifiedName=" + qualifiedName + "]";
+	     * ", functions=" + functions +
+	     * ", fields=" + fields + ", supers="
+	     * + supers +
+	     */", qualifiedName=" + qualifiedName + "]";
 	}
 
 	public LinkedList<TypeI> getGenerics(final String string) {
@@ -150,8 +163,9 @@ public class Member {
 	}
 
 	private boolean paramsAreEqual(final LinkedList<TypeI> params2) {
-	    // If the function has a default parameter expression and the size of parmas2 is 1 less than params then allow it
-	    if (parameters.size() != params2.size() && !(hasDefExpr && parameters.size() == params2.size() + 1)) return false;
+	    // If the function has a default parameter expression and the size
+	    // of parmas2 is 1 less than params then allow it
+	    if ((parameters.size() != params2.size()) && !(hasDefExpr && (parameters.size() == (params2.size() + 1)))) return false;
 	    final int len = Math.min(parameters.size(), params2.size());
 	    for (int i = 0; i < len; i++) {
 		// If it is a generic, continue
@@ -168,14 +182,14 @@ public class Member {
 
     }
 
-    public static class Variable {
+    public static class Variable extends Field {
 
 	public String id;
-	public TypeI type;
 
 	public Variable(final String id, final TypeI type) {
+	    super(new QualifiedName(id), 0, type);
 	    this.id = id;
-	    this.type = type;
+	    this.isLocal = true;
 	}
 
 	@Override
@@ -184,15 +198,14 @@ public class Member {
 	}
     }
 
-    public static class Field extends Variable {
+    public static class Field extends Member {
 
-	public QualifiedName qualifiedName;
-	public int modifiers;
-
+	public TypeI type;
+	
 	public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type) {
-	    super(qualifiedName.shortName, type);
-	    this.qualifiedName = qualifiedName;
-	    this.modifiers = modifiers;
+	    super(qualifiedName, modifiers);
+	    this.type = type;
+	    this.enclosingType = Semantics.currentType();
 	}
 
 	public static Field from(final java.lang.reflect.Field field) {

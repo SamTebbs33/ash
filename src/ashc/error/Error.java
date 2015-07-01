@@ -18,13 +18,14 @@ public class Error {
 
 	EXPECTED_STRING_INTERP_TERMINATOR("Expected terminating } for string interpolated expression"),
 
-		FUNC_ALREADY_EXISTS("Function already exists (%s)"),
-		FUNC_DOES_NOT_EXIST("Function %s doesn't exist" /* in type %s */),
-		CONSTRUCTOR_DOES_NOT_EXIST("Constructor does not exist in type %s"),
-		RETURN_EXPR_IN_VOID_FUNC("Cannot return an expression in a void function"),
-			RETURN_IN_MUT_FUNC("Cannot return in a mutator function"),
-			NOT_ALL_PATHS_HAVE_RETURN("Not all code paths have a return statement"),
-			RETURN_VOID_IN_NONVOID_FUNC("Cannot return void in a non-void function"),
+	FUNC_ALREADY_EXISTS("Function already exists (%s)"),
+	FUNC_DOES_NOT_EXIST("Function %s doesn't exist" /* in type %s */),
+	FUNC_IS_NOT_VISIBLE("Function is not visible from the current context (%s)"),
+	CONSTRUCTOR_DOES_NOT_EXIST("Constructor does not exist in type %s"),
+	RETURN_EXPR_IN_VOID_FUNC("Cannot return an expression in a void function"),
+	RETURN_IN_MUT_FUNC("Cannot return in a mutator function"),
+	NOT_ALL_PATHS_HAVE_RETURN("Not all code paths have a return statement"),
+	RETURN_VOID_IN_NONVOID_FUNC("Cannot return void in a non-void function"),
 
 	FIELD_ALREADY_EXISTS("Field already exists (%s)"),
 
@@ -50,7 +51,7 @@ public class Error {
 	DUPLICATE_ARGUMENTS("Duplicate arguments (%s)"),
 	DUPLICATE_TYPES("Duplicate types (%s)"),
 	PARAM_DEF_EXPR_NOT_LAST("Only the last parameter can have a default value"),
-	
+
 	ELVIS_EXPR_NOT_OPTIONAL("The first expression in an elvis expression must be optional (%s)"),
 	ELVIS_EXPR_IS_OPTIONAL("The second expression in an elvis expression cannot be optional (%s)"),
 	ELVIS_EXPR_IS_PRIMITIVE("The first expression in an elvis expression cannot be a primitive (%s)"),

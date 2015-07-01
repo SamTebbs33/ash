@@ -10,7 +10,6 @@ import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
-import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
@@ -156,13 +155,13 @@ public class Semantics {
 	public static TypeI getObjectType() {
 	    return objectType;
 	}
-	
-	public TypeI setArrDims(int i) {
+
+	public TypeI setArrDims(final int i) {
 	    arrDims = i;
 	    return this;
 	}
 
-	public TypeI setOptional(boolean b) {
+	public TypeI setOptional(final boolean b) {
 	    optional = b;
 	    return this;
 	}
@@ -240,7 +239,7 @@ public class Semantics {
 	return null;
     }
 
-    public static Variable getVar(final String id, final TypeI type) {
+    public static Field getVar(final String id, final TypeI type) {
 	if (type.isArray() && id.equals("length")) return new Variable("length", new TypeI(EnumPrimitive.INT));
 	if (type.isTuple()) {
 	    for (final TypeI tupleType : type.tupleTypes)
@@ -261,7 +260,7 @@ public class Semantics {
 	return null;
     }
 
-    public static Variable getVar(final String id) {
+    public static Field getVar(final String id) {
 	// Look in scope
 	Variable var = null;
 	if ((var = getVar(id, Scope.getScope())) != null) return var;
@@ -308,7 +307,9 @@ public class Semantics {
     }
 
     public static void addVar(final Variable variable) {
-	if (Scope.inScope()) Scope.getScope().vars.add(variable);
+	if (Scope.inScope()){
+	    Scope.getScope().vars.add(variable);
+	}
     }
 
     public static Type currentType() {
