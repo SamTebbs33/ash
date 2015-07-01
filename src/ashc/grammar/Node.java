@@ -849,6 +849,7 @@ public abstract class Node {
 		    semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id);
 		    return null;
 		} else {
+		    if(!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
 		    final TypeI funcType = func.returnType;
 		    if (!funcType.isTuple()) {
 			final Optional<Type> typeOpt = Semantics.getType(funcType.shortName);
@@ -872,10 +873,14 @@ public abstract class Node {
 	    else {
 		enclosingType = prefix.getExprType();
 		func = Semantics.getFunc(id, enclosingType, args);
+		if(func != null && !func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
 	    }
 
-	    if (func == null) if (enclosingType == null) semanticError(this, line, column, CONSTRUCTOR_DOES_NOT_EXIST, id);
-	    else semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, enclosingType);
+	    if (func == null){
+		if (enclosingType == null) semanticError(this, line, column, CONSTRUCTOR_DOES_NOT_EXIST, id);
+		else semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, enclosingType);
+	    }
+	    else if(!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
 	}
 
     }
@@ -911,6 +916,7 @@ public abstract class Node {
 			semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
 			return null;
 		    }
+		    if(!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
 		    return var.type;
 		}
 	    } else {
@@ -923,6 +929,7 @@ public abstract class Node {
 		    semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
 		    return null;
 		}
+		if(!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
 		int i = 0;
 		for (final String generic : enclosingType.generics)
 		    if (generic.equals(var.type.shortName)) return type.genericTypes.get(i);
@@ -940,6 +947,7 @@ public abstract class Node {
 		var = Semantics.getVar(id, type);
 	    }
 	    if (var != null) {
+		if(!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
 		final TypeI varType = var.type;
 		if (exprs.exprs.size() > varType.arrDims) semanticError(this, line, column, TOO_MANY_ARRAY_ACCESSES, exprs.exprs.size() + "", varType.arrDims
 			+ "", id);

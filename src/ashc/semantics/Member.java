@@ -28,10 +28,14 @@ public class Member {
     
     public boolean isVisible(){
 	if(isLocal) return true;
-	if(BitOp.and(modifiers, EnumModifier.PUBLIC.intVal)) return true;
+	// Check if the member was declared as public, or no modifiers were given (Members are implicitly public)
+	if(BitOp.and(modifiers, EnumModifier.PUBLIC.intVal) || modifiers == 0) return true;
+	// If the current type is the same type as the member's enclosing type, the member is visible
 	if(enclosingType.equals(Semantics.currentType())) return true;
-	else if(BitOp.and(modifiers, EnumModifier.PRIVATE.intVal)) return false;
-	else if(Semantics.currentType().hasSuper(enclosingType.qualifiedName) && BitOp.and(modifiers, EnumModifier.PROTECTED.intVal)) return true;
+	// If the member is private, it isn't visible
+	if(BitOp.and(modifiers, EnumModifier.PRIVATE.intVal)) return false;
+	// If the current type is a sub-type of the member's enclosing type, it is visible
+	if(Semantics.currentType().hasSuper(enclosingType.qualifiedName)) return true;
 	return false;
     }
 
@@ -71,6 +75,10 @@ public class Member {
 	public Field getField(final String id) {
 	    for (final Field field : fields)
 		if (field.qualifiedName.shortName.equals(id)) return field;
+	    for(Type superType : supers){
+		Field field = superType.getField(id);
+		if(field != null) return field;
+	    }
 	    return null;
 	}
 

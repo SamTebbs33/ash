@@ -31,6 +31,7 @@ public class Error {
 
 	VAR_ALREADY_EXISTS("Variable already exists (%s)"),
 	VAR_DOES_NOT_EXIST("Variable does not exist (%s)"),
+	VAR_IS_NOT_VISIBLE("Variable is not visible in the current context (%s)"),
 	CONST_VAR_IS_PROPERTY("Cannot declare a const property (%s)"),
 	PROPERTY_IN_FUNC("Cannot declare a property in a function (%s)"),
 
