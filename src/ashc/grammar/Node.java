@@ -596,11 +596,11 @@ public abstract class Node {
 		if (!type.id.equals("void")) returnType = new TypeI(type);
 		else if (block.singleLineExpr != null) returnType = block.singleLineExpr.getExprType();
 		else returnType = TypeI.getVoidType();
-		func.returnType = returnType.isNull() ? TypeI.getObjectType().copy().setOptional(true) : returnType;
+		returnType = returnType.isNull() ? TypeI.getObjectType().copy().setOptional(true) : returnType;
 	    } else {
-		func.returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
-		returnType = func.returnType;
+		returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
 	    }
+	    func.returnType = returnType;
 
 	    Scope.pop();
 
@@ -854,7 +854,8 @@ public abstract class Node {
 		    return null;
 		} else {
 		    if(!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
-		    final TypeI funcType = func.returnType;
+		    final TypeI funcType = func.returnType.copy();
+		    // Transfer generics for non-tuple types
 		    if (!funcType.isTuple()) {
 			final Optional<Type> typeOpt = Semantics.getType(funcType.shortName);
 			if (!typeOpt.isPresent()) {
@@ -863,16 +864,12 @@ public abstract class Node {
 			    else return genericType;
 			}
 		    }
-		    if(unwrapped){
-			if(!funcType.optional) semanticError(this, line, column, UNWRAPPED_VALUE_NOT_OPTIONAL, funcType);
-			funcType.optional = false;
-		    }
 		    result = funcType;
 		}
 	    }
 	    if(unwrapped){
 		if(!result.optional) semanticError(this, line, column, UNWRAPPED_VALUE_NOT_OPTIONAL, result);
-		result.optional = false;
+		else result.optional = false;
 	    }
 	    return result;
 	}
@@ -885,7 +882,6 @@ public abstract class Node {
 	    if (prefix == null) func = Semantics.getFunc(id, args);
 	    else {
 		enclosingType = prefix.getExprType();
-		System.out.println(enclosingType);
 		func = Semantics.getFunc(id, enclosingType, args);
 		if(func != null && !func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
 	    }
