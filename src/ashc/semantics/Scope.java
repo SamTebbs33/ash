@@ -75,6 +75,11 @@ public class Scope {
     public void addVar(final Variable var) {
 	vars.add(var);
     }
+    
+    public boolean hasNullCheck(Field field){
+	if(!nullChecks.contains(field)) if(parent != null) return parent.hasNullCheck(field);
+	return false;
+    }
 
     public static FuncScope getFuncScope() {
 	for (int i = scopeStack.size() - 1; i >= 0; i--)

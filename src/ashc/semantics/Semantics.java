@@ -358,10 +358,10 @@ public class Semantics {
 	return exprType.isNull() ? TypeI.getObjectType().copy().setOptional(true) : exprType;
     }
 
-    public static TypeI checkOptional(TypeI exprType, Node node, IExpression expr) {
+    public static TypeI checkUnwrappedOptional(TypeI exprType, Node node, IExpression expr) {
 	if(expr instanceof NodeVariable){
 	    Field field = ((NodeVariable)expr).var;
-	    if(field != null) if(!Scope.getScope().nullChecks.contains(field)) warning(node.line, node.column, UNWRAPPED_VALUE_NOT_CHECKED, field.qualifiedName.shortName);
+	    if(field != null) if(!Scope.getScope().hasNullCheck(field)) warning(node.line, node.column, UNWRAPPED_VALUE_NOT_CHECKED, field.qualifiedName.shortName);
 	}
 	if(exprType != null){
 	    exprType = exprType.copy();

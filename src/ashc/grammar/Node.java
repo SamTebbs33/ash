@@ -872,7 +872,7 @@ public abstract class Node {
 		}
 	    }
 	    if(unwrapped){
-		return Semantics.checkOptional(result, this, this);
+		return Semantics.checkUnwrappedOptional(result, this, this);
 	    }
 	    return result;
 	}
@@ -953,7 +953,7 @@ public abstract class Node {
 		result = var.type;
 	    }
 	    if(unwrapped){
-		return Semantics.checkOptional(result, this, this);
+		return Semantics.checkUnwrappedOptional(result, this, this);
 	    }
 	    return result;
 	}
@@ -1661,7 +1661,7 @@ public abstract class Node {
 	@Override
 	public TypeI getExprType() {
 	    TypeI exprType = expr.getExprType();
-	    return Semantics.checkOptional(exprType, this, expr);
+	    return Semantics.checkUnwrappedOptional(exprType, this, expr);
 	}
 
 	@Override
