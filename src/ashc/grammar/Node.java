@@ -766,8 +766,8 @@ public abstract class Node {
 	    if (singleLineExpr != null) {
 		final FuncScope scope = Scope.getFuncScope();
 		final TypeI exprType = singleLineExpr.getExprType();
-		if (scope.returnType.isVoid()) semanticError(this, line, column, RETURN_EXPR_IN_VOID_FUNC);
-		else if (!scope.returnType.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, scope.returnType.toString(), exprType.toString());
+		if (scope.returnType.isVoid()) semanticError(this, ((Node)singleLineExpr).line, ((Node)singleLineExpr).column, RETURN_EXPR_IN_VOID_FUNC);
+		else if (!scope.returnType.canBeAssignedTo(exprType)) semanticError(this, ((Node)singleLineExpr).line, ((Node)singleLineExpr).column, CANNOT_ASSIGN, scope.returnType.toString(), exprType.toString());
 	    } else if (singleLineStmt != null) ((Node) singleLineStmt).analyse();
 	    else for (final IFuncStmt stmt : stmts)
 		((Node) stmt).analyse();
