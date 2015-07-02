@@ -52,6 +52,7 @@ public abstract class Node {
 
     public static interface IExpression {
 	public TypeI getExprType();
+	public void registerScopedChecks();
     }
 
     public static class NodeFile extends Node {
@@ -596,7 +597,7 @@ public abstract class Node {
 		if (!type.id.equals("void")) returnType = new TypeI(type);
 		else if (block.singleLineExpr != null) returnType = block.singleLineExpr.getExprType();
 		else returnType = TypeI.getVoidType();
-		returnType = returnType.isNull() ? TypeI.getObjectType().copy().setOptional(true) : returnType;
+		returnType = Semantics.filterNullType(returnType);
 	    } else {
 		returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
 	    }
@@ -736,7 +737,7 @@ public abstract class Node {
 	public void analyse() {
 	    super.analyse();
 	    if (expr != null) ((Node) expr).analyse();
-	    final TypeI type = expr.getExprType();
+	    final TypeI type = Semantics.filterNullType(expr.getExprType());
 	    if (!errored) Semantics.addVar(new Variable(id, type));
 	    analyseProperty(type);
 	}
@@ -786,6 +787,9 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    return null;
 	}
+
+	@Override
+	public void registerScopedChecks() {}
 
     }
 
@@ -868,8 +872,7 @@ public abstract class Node {
 		}
 	    }
 	    if(unwrapped){
-		if(!result.optional) semanticError(this, line, column, UNWRAPPED_VALUE_NOT_OPTIONAL, result);
-		else result.optional = false;
+		return Semantics.checkOptional(result, this, this);
 	    }
 	    return result;
 	}
@@ -902,6 +905,7 @@ public abstract class Node {
 	public NodeExprs exprs = new NodeExprs();
 	public TypeI type;
 	public boolean unwrapped;
+	public Field var;
 
 	public NodeVariable(final int line, final int column, final String id, final NodePrefix prefix, boolean unwrapped) {
 	    super(line, column);
@@ -917,7 +921,6 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    Field var = null;
 	    TypeI result;
 	    if (prefix == null) {
 		final Optional<Type> type = Semantics.getType(id);
@@ -950,15 +953,13 @@ public abstract class Node {
 		result = var.type;
 	    }
 	    if(unwrapped){
-		if(!result.optional) semanticError(this, line, column, UNWRAPPED_VALUE_NOT_OPTIONAL, result);
-		result.optional = false;
+		return Semantics.checkOptional(result, this, this);
 	    }
 	    return result;
 	}
 
 	@Override
 	public void analyse() {
-	    Field var = null;
 	    if (prefix == null) var = Semantics.getVar(id);
 	    else {
 		final TypeI type = prefix.getExprType();
@@ -1041,6 +1042,9 @@ public abstract class Node {
 	    return new TypeI(EnumPrimitive.INT);
 	}
 
+	@Override
+	public void registerScopedChecks() {}
+
     }
 
     public static class NodeLong extends Node implements IExpression {
@@ -1059,6 +1063,9 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    return new TypeI(EnumPrimitive.LONG);
 	}
+
+	@Override
+	public void registerScopedChecks() {}
 
     }
 
@@ -1079,6 +1086,9 @@ public abstract class Node {
 	    return new TypeI(EnumPrimitive.FLOAT);
 	}
 
+	@Override
+	public void registerScopedChecks() {}
+
     }
 
     public static class NodeDouble extends Node implements IExpression {
@@ -1097,6 +1107,9 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    return new TypeI(EnumPrimitive.DOUBLE);
 	}
+
+	@Override
+	public void registerScopedChecks() {}
 
     }
 
@@ -1156,6 +1169,9 @@ public abstract class Node {
 	    return new TypeI("String", 0, false);
 	}
 
+	@Override
+	public void registerScopedChecks() {}
+
     }
 
     public static class NodeBool extends Node implements IExpression {
@@ -1175,6 +1191,9 @@ public abstract class Node {
 	    return new TypeI(EnumPrimitive.BOOL);
 	}
 
+	@Override
+	public void registerScopedChecks() {}
+
     }
 
     public static class NodeChar extends Node implements IExpression {
@@ -1193,6 +1212,9 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    return new TypeI(EnumPrimitive.CHAR);
 	}
+
+	@Override
+	public void registerScopedChecks() {}
 
     }
 
@@ -1214,6 +1236,9 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    return Semantics.getPrecedentType(exprTrue.getExprType(), exprFalse.getExprType());
 	}
+
+	@Override
+	public void registerScopedChecks() {}
 
     }
 
@@ -1247,6 +1272,9 @@ public abstract class Node {
 	    return type;
 	}
 
+	@Override
+	public void registerScopedChecks() {}
+
     }
 
     public static class NodeBinary extends Node implements IExpression {
@@ -1260,6 +1288,12 @@ public abstract class Node {
 	}
 
 	@Override
+	public void analyse() {
+	    ((Node) expr1).analyse();
+	    ((Node) expr2).analyse();
+	}
+
+	@Override
 	public String toString() {
 	    return "NodeBinary [expr1=" + expr1 + ", expr2=" + expr2 + ", operator=" + operator + "]";
 	}
@@ -1268,6 +1302,14 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    return operator.operation.primitive == null ? Semantics.getPrecedentType(expr1.getExprType(), expr2.getExprType())
 		    : new TypeI(operator.operation.primitive);
+	}
+
+	@Override
+	public void registerScopedChecks() {
+	    if(expr2 instanceof NodeNull && operator.opStr.equals("!=") && expr1 instanceof NodeVariable){
+		NodeVariable varExpr = (NodeVariable)expr1;
+		if(varExpr.var != null) Scope.getScope().nullChecks.add(varExpr.var);
+	    }
 	}
     }
 
@@ -1293,6 +1335,9 @@ public abstract class Node {
 	    return expr.getExprType();
 	}
 
+	@Override
+	public void registerScopedChecks() {}
+
     }
 
     public static class NodeThis extends Node implements IExpression {
@@ -1304,6 +1349,9 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    return new TypeI(Semantics.typeStack.peek().qualifiedName.shortName, 0, false);
 	}
+
+	@Override
+	public void registerScopedChecks() {}
     }
 
     public static class NodeSelf extends Node implements IExpression {
@@ -1319,6 +1367,9 @@ public abstract class Node {
 	    return null;
 	}
 
+	@Override
+	public void registerScopedChecks() {}
+
     }
 
     public static class NodeNull extends Node implements IExpression {
@@ -1327,6 +1378,9 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    return new TypeI("null", 0, true);
 	}
+
+	@Override
+	public void registerScopedChecks() {}
 
     }
 
@@ -1366,6 +1420,9 @@ public abstract class Node {
 	    return type;
 	}
 
+	@Override
+	public void registerScopedChecks() {}
+
     }
 
     public static class NodeTupleExpr extends Node implements IExpression {
@@ -1401,6 +1458,9 @@ public abstract class Node {
 	    return type;
 	}
 
+	@Override
+	public void registerScopedChecks() {}
+
     }
 
     public static class NodeIf extends Node implements IFuncStmt, IConstruct {
@@ -1417,14 +1477,17 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
+	    Scope.push(new Scope());
 	    if (expr != null) {
 		((Node) expr).analyse();
 		if (!((Node) expr).errored) {
 		    final TypeI exprType = expr.getExprType();
 		    if ((EnumPrimitive.getPrimitive(exprType.shortName) != EnumPrimitive.BOOL) || exprType.isArray()) semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
 		}
+		expr.registerScopedChecks();
 	    }
 	    block.analyse();
+	    Scope.pop();
 	    if (elseStmt != null) elseStmt.analyse();
 	}
 
@@ -1598,12 +1661,11 @@ public abstract class Node {
 	@Override
 	public TypeI getExprType() {
 	    TypeI exprType = expr.getExprType();
-	    if(exprType != null){
-		if(!exprType.optional) semanticError(this, line, column, UNWRAPPED_VALUE_NOT_OPTIONAL, exprType);
-		exprType.optional = false;
-	    }else errored = true;
-	    return exprType;
+	    return Semantics.checkOptional(exprType, this, expr);
 	}
+
+	@Override
+	public void registerScopedChecks() {}
 	
     }
 

@@ -6,7 +6,12 @@ class Person(name : String, age : int){
 
 class Test : Person {
 
-	func makePerson(name : String, age : int = 0) -> Person(name, age)
-	const obj = makePerson("Sam").get()!
+	func main() {
+		var obj = null
+		if obj != null {
+			var obj2 = obj!
+		}
+		var obj2 = obj!
+	}
 	
 }

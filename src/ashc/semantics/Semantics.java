@@ -1,16 +1,19 @@
 package ashc.semantics;
 
+import static ashc.error.Error.*;
+import static ashc.error.Error.EnumError.*;
+
 import java.lang.reflect.*;
 import java.util.*;
 
-import ashc.grammar.Node.NodeExprs;
-import ashc.grammar.Node.NodeTupleType;
-import ashc.grammar.Node.NodeType;
+import ashc.grammar.*;
+import ashc.grammar.Node.*;
 import ashc.load.*;
 import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
+import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
@@ -349,6 +352,23 @@ public class Semantics {
 		else return new TypeI("Object", 0, false);
 	}
 	return null;
+    }
+
+    public static TypeI filterNullType(TypeI exprType) {
+	return exprType.isNull() ? TypeI.getObjectType().copy().setOptional(true) : exprType;
+    }
+
+    public static TypeI checkOptional(TypeI exprType, Node node, IExpression expr) {
+	if(expr instanceof NodeVariable){
+	    Field field = ((NodeVariable)expr).var;
+	    if(field != null) if(!Scope.getScope().nullChecks.contains(field)) warning(node.line, node.column, UNWRAPPED_VALUE_NOT_CHECKED, field.qualifiedName.shortName);
+	}
+	if(exprType != null){
+	    exprType = exprType.copy();
+	    if(!exprType.optional) semanticError(node, node.line, node.column, UNWRAPPED_VALUE_NOT_OPTIONAL, exprType);
+	    exprType.optional = false;
+	}else node.errored = true;
+	return exprType;
     }
 
 }

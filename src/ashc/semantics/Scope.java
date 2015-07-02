@@ -2,6 +2,8 @@ package ashc.semantics;
 
 import java.util.*;
 
+import ashc.semantics.Member.Field;
+import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
 import ashc.semantics.Semantics.TypeI;
 
@@ -39,6 +41,8 @@ public class Scope {
 
     public LinkedList<Variable> vars = new LinkedList<Variable>();
     public Scope parent;
+    public HashSet<Field> nullChecks = new HashSet<Field>();
+    public HashMap<Field, Type> castChecks = new HashMap<Field, Type>();
 
     public static Scope getScope() {
 	return scopeStack.size() > 0 ? scopeStack.peek() : null;
