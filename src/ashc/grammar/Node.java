@@ -754,6 +754,7 @@ public abstract class Node {
 	}
 
 	public boolean hasReturnStmt() {
+	    if(singleLineExpr != null) return true;
 	    for (final IFuncStmt stmt : stmts)
 		if (stmt instanceof NodeReturn) return true;
 		else if (stmt instanceof IConstruct) if (((IConstruct) stmt).hasReturnStmt()) return true;
@@ -808,13 +809,15 @@ public abstract class Node {
 	public NodeExprs args;
 	public NodePrefix prefix;
 	public NodeTypes generics;
+	public boolean unwrapped;
 
-	public NodeFuncCall(final int line, final int column, final String id, final NodeExprs args, final NodePrefix prefix, final NodeTypes generics) {
+	public NodeFuncCall(final int line, final int column, final String id, final NodeExprs args, final NodePrefix prefix, final NodeTypes generics, boolean unwrapped) {
 	    super(line, column);
 	    this.id = id;
 	    this.args = args;
 	    this.prefix = prefix;
 	    this.generics = generics;
+	    this.unwrapped = unwrapped;
 	}
 
 	@Override
@@ -824,10 +827,11 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
+	    TypeI result;
 	    if (prefix == null) {
 		final Function func = Semantics.getFunc(id, args);
 		if (func == null) {
-		    semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id);
+		    semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, Semantics.currentType().qualifiedName.shortName);
 		    return null;
 		} else {
 		    if(!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
@@ -840,13 +844,13 @@ public abstract class Node {
 			for (; i < func.generics.size(); i++)
 			    funcType.genericTypes.add(TypeI.getObjectType());
 		    }
-		    return funcType;
+		    result = funcType;
 		}
 	    } else {
 		final TypeI type = prefix.getExprType();
 		final Function func = Semantics.getFunc(id, type, args);
 		if (func == null) {
-		    semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id);
+		    semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, Semantics.currentType().qualifiedName.shortName);
 		    return null;
 		} else {
 		    if(!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
@@ -859,9 +863,18 @@ public abstract class Node {
 			    else return genericType;
 			}
 		    }
-		    return funcType;
+		    if(unwrapped){
+			if(!funcType.optional) semanticError(this, line, column, UNWRAPPED_VALUE_NOT_OPTIONAL, funcType);
+			funcType.optional = false;
+		    }
+		    result = funcType;
 		}
 	    }
+	    if(unwrapped){
+		if(!result.optional) semanticError(this, line, column, UNWRAPPED_VALUE_NOT_OPTIONAL, result);
+		result.optional = false;
+	    }
+	    return result;
 	}
 
 	@Override
@@ -872,6 +885,7 @@ public abstract class Node {
 	    if (prefix == null) func = Semantics.getFunc(id, args);
 	    else {
 		enclosingType = prefix.getExprType();
+		System.out.println(enclosingType);
 		func = Semantics.getFunc(id, enclosingType, args);
 		if(func != null && !func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
 	    }
@@ -891,11 +905,13 @@ public abstract class Node {
 	public NodePrefix prefix;
 	public NodeExprs exprs = new NodeExprs();
 	public TypeI type;
+	public boolean unwrapped;
 
-	public NodeVariable(final int line, final int column, final String id, final NodePrefix prefix) {
+	public NodeVariable(final int line, final int column, final String id, final NodePrefix prefix, boolean unwrapped) {
 	    super(line, column);
 	    this.id = id;
 	    this.prefix = prefix;
+	    this.unwrapped = unwrapped;
 	}
 
 	@Override
@@ -906,10 +922,11 @@ public abstract class Node {
 	@Override
 	public TypeI getExprType() {
 	    Field var = null;
+	    TypeI result;
 	    if (prefix == null) {
 		final Optional<Type> type = Semantics.getType(id);
 		// Check if it is a type name rather than a variable
-		if (type.isPresent()) return new TypeI(type.get().qualifiedName.shortName, 0, false);
+		if (type.isPresent()) result = new TypeI(type.get().qualifiedName.shortName, 0, false);
 		else {
 		    var = Semantics.getVar(id);
 		    if (var == null) {
@@ -917,7 +934,7 @@ public abstract class Node {
 			return null;
 		    }
 		    if(!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
-		    return var.type;
+		    result = var.type;
 		}
 	    } else {
 		final TypeI type = prefix.getExprType();
@@ -934,8 +951,13 @@ public abstract class Node {
 		for (final String generic : enclosingType.generics)
 		    if (generic.equals(var.type.shortName)) return type.genericTypes.get(i);
 		    else i++;
-		return var.type;
+		result = var.type;
 	    }
+	    if(unwrapped){
+		if(!result.optional) semanticError(this, line, column, UNWRAPPED_VALUE_NOT_OPTIONAL, result);
+		result.optional = false;
+	    }
+	    return result;
 	}
 
 	@Override
@@ -1561,6 +1583,32 @@ public abstract class Node {
 	public void analyse() {
 	    ((Node) expr).analyse();
 	}
+    }
+    
+    public static class NodeUnwrapOptional extends Node implements IExpression {
+	
+	public IExpression expr;
+
+	public NodeUnwrapOptional(int line, int column, IExpression expr) {
+	    super(line, column);
+	    this.expr = expr;
+	}
+
+	@Override
+	public void analyse() {
+	    ((Node) expr).analyse();
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    TypeI exprType = expr.getExprType();
+	    if(exprType != null){
+		if(!exprType.optional) semanticError(this, line, column, UNWRAPPED_VALUE_NOT_OPTIONAL, exprType);
+		exprType.optional = false;
+	    }else errored = true;
+	    return exprType;
+	}
+	
     }
 
 }

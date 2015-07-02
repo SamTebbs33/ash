@@ -19,7 +19,7 @@ public class Error {
 	EXPECTED_STRING_INTERP_TERMINATOR("Expected terminating } for string interpolated expression"),
 
 	FUNC_ALREADY_EXISTS("Function already exists (%s)"),
-	FUNC_DOES_NOT_EXIST("Function %s doesn't exist" /* in type %s */),
+	FUNC_DOES_NOT_EXIST("Function %s doesn't exist in type %s"),
 	FUNC_IS_NOT_VISIBLE("Function is not visible from the current context (%s)"),
 	CONSTRUCTOR_DOES_NOT_EXIST("Constructor does not exist in type %s"),
 	RETURN_EXPR_IN_VOID_FUNC("Cannot return an expression in a void function"),
@@ -42,6 +42,7 @@ public class Error {
 	CANNOT_USE_SELF("Cannot use the self keyword in the current context"),
 	EXPECTED_BOOL_EXPR("Expected a boolean expression, found %s"),
 	CANNOT_ITERATE_TYPE("Cannot iterate over type %s"),
+	UNWRAPPED_VALUE_NOT_OPTIONAL("An unwrapped value must be optional (%s)"),
 
 	CANNOT_EXTEND_FINAL_TYPE("Cannot extend a final type (%s)"),
 	CANNOT_EXTEND_TYPE("%s %s cannot extend %s %s (%s)"),

@@ -106,8 +106,9 @@ public class Member {
 	}
 
 	public Function getFunc(final String id, final LinkedList<TypeI> parameters) {
-	    for (final Function func : functions)
-		if (func.qualifiedName.shortName.equals(id)) if (func.paramsAreEqual(parameters)) return func;
+	    for (final Function func : functions){
+		if (func.qualifiedName.shortName.equals(id) && func.paramsAreEqual(parameters)) return func;
+	    }
 	    Function func = null;
 	    for (final Type superType : supers)
 		if ((func = superType.getFunc(id, parameters)) != null) return func;

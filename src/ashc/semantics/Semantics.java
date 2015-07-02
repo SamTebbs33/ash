@@ -1,5 +1,6 @@
 package ashc.semantics;
 
+import java.lang.reflect.*;
 import java.util.*;
 
 import ashc.grammar.Node.NodeExprs;
@@ -29,6 +30,7 @@ public class Semantics {
 	public int arrDims;
 	public boolean optional;
 	public LinkedList<TypeI> tupleTypes, genericTypes;
+	public QualifiedName qualifiedName;
 
 	public TypeI(final String shortName, final int arrDims, final boolean optional) {
 	    this.shortName = shortName;
@@ -68,8 +70,20 @@ public class Semantics {
 	    clsName = clsName.replace("[", "");
 	    arrDims = arrDims - clsName.length();
 	    final String shortName = clsName.substring(clsName.lastIndexOf('.') + 1);
-	    if (clsName.charAt(0) == 'L') TypeImporter.loadClass(clsName.substring(1).replace(";", ""));
-	    return new TypeI(shortName, arrDims, false);
+	    if(clsName.charAt(0) == 'L') clsName = clsName.substring(1);
+	    clsName = clsName.replace(";", "");
+	    TypeI type = new TypeI(shortName, arrDims, false);
+	    type.qualifiedName = new QualifiedName("");
+	    for(String section : clsName.split("\\.")) type.qualifiedName.add(section);
+	    /*if(!clsName.equals("void") && !EnumPrimitive.isJavaPrimitive(clsName)){
+		boolean isGeneric = false;
+		for(TypeVariable tVar : cls.getTypeParameters()) if(tVar.getName().equals(clsName)){
+		    isGeneric = true;
+		    break;
+		}
+		if(!isGeneric) TypeImporter.loadClass(clsName);
+	    }*/
+	    return type;
 	}
 
 	@Override
@@ -201,6 +215,13 @@ public class Semantics {
     public static boolean bindingExists(final String shortName) {
 	return typeNameMap.containsKey(shortName);
     }
+    
+    public static Optional<Type> getType(String id, QualifiedName name){
+	Optional<Type> type = getType(id);
+	if(type.isPresent()) return type;
+	if(name != null) TypeImporter.loadClass(name.toString());
+	return getType(id);
+    }
 
     public static Optional<Type> getType(final String id) {
 	return typeNameMap.containsKey(id) ? Optional.of(types.get(typeNameMap.get(id))) : Optional.empty();
@@ -282,7 +303,7 @@ public class Semantics {
     }
 
     public static Function getFunc(final String id, final TypeI type, final NodeExprs args) {
-	final Optional<Type> t = getType(type.shortName);
+	final Optional<Type> t = type.qualifiedName != null ? getType(type.shortName, type.qualifiedName) : getType(type.shortName);
 	if (t.isPresent()) return t.get().getFunc(id, args);
 	return null;
     }

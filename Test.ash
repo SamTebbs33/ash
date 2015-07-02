@@ -1,14 +1,10 @@
 //import java.lang.Iterable
 
-class Person(name : String, age : int){
-	protected var obj = 0
-}
+class Person(name : String, age : int)
 
 class Test : Person {
 
-	func foo(b : bool) {
-		var personObj = Person("Sam", 19)
-		var obj2 = obj
-	}
+	func makePerson(name : String, age : int = 0) -> Person(name, age)
+	var obj = makePerson("Sam")!
 	
 }
