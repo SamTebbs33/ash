@@ -22,6 +22,7 @@ public class Scope {
 	public boolean isMutFunc;
 
 	public FuncScope(final TypeI typeI, final boolean isMutFunc) {
+	    super();
 	    returnType = typeI;
 	    this.isMutFunc = isMutFunc;
 	}
@@ -37,7 +38,9 @@ public class Scope {
 
     private static QualifiedName namespace = new QualifiedName("");
 
-    public Scope() {}
+    public Scope() {
+	if(!scopeStack.isEmpty()) this.parent = scopeStack.peek();
+    }
 
     public LinkedList<Variable> vars = new LinkedList<Variable>();
     public Scope parent;
@@ -77,8 +80,10 @@ public class Scope {
     }
     
     public boolean hasNullCheck(Field field){
-	if(!nullChecks.contains(field)) if(parent != null) return parent.hasNullCheck(field);
+	if(nullChecks.contains(field)) return true;
+	else if(parent != null) return parent.hasNullCheck(field);
 	return false;
+	
     }
 
     public static FuncScope getFuncScope() {

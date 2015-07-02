@@ -5,7 +5,7 @@ class Tests {
 	func main() {
 		var obj = null
 		if obj != null {
-			var obj2 = obj!
+			if(true) var obj2 = obj!
 		}
 	}
 	
