@@ -1668,5 +1668,75 @@ public abstract class Node {
 	public void registerScopedChecks() {}
 	
     }
+    
+    public static class NodeIs extends Node implements IExpression {
+	public IExpression expr;
+	public NodeType nodeType;
+	public Type type;
+	
+	public NodeIs(int line, int column, IExpression expr, NodeType type) {
+	    super(line, column);
+	    this.expr = expr;
+	    this.nodeType = type;
+	}
+
+	@Override
+	public void analyse() {
+	    ((Node) expr).analyse();
+	    nodeType.analyse();
+	    if(!nodeType.errored && !((Node)expr).errored){
+		type = Semantics.getType(nodeType.id).get();
+	    }else errored = true;
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    return new TypeI(EnumPrimitive.BOOL);
+	}
+
+	@Override
+	public void registerScopedChecks() {
+	    if(!errored){
+	    if(expr instanceof NodeVariable && !((NodeVariable) expr).errored){
+		Field field = ((NodeVariable)expr).var;
+		if(field != null){
+		    Scope.getScope().castChecks.put(field, type);
+		}
+	    }
+	    }
+	}
+	
+    }
+    
+    public static class NodeAs extends Node implements IExpression {
+	public IExpression expr;
+	public NodeType nodeType;
+	public Type type;
+	
+	public NodeAs(int line, int column, IExpression expr, NodeType nodeType) {
+	    super(line, column);
+	    this.expr = expr;
+	    this.nodeType = nodeType;
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    return new TypeI(nodeType);
+	}
+
+	@Override
+	public void registerScopedChecks() {}
+
+	@Override
+	public void analyse() {
+	    ((Node) expr).analyse();
+	    nodeType.analyse();
+	    if(expr instanceof NodeVariable && !((NodeVariable) expr).errored){
+		Field field = ((NodeVariable)expr).var;
+		if(field != null) if(!Scope.getScope().hasCastCheck(field, Semantics.getType(nodeType.id).get())) warning(line, column, UNCHECKED_CAST, field.qualifiedName.shortName, nodeType.id);
+	    }
+	}
+	
+    }
 
 }

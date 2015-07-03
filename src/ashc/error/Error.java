@@ -42,8 +42,10 @@ public class Error {
 	CANNOT_USE_SELF("Cannot use the self keyword in the current context"),
 	EXPECTED_BOOL_EXPR("Expected a boolean expression, found %s"),
 	CANNOT_ITERATE_TYPE("Cannot iterate over type %s"),
+	
+	UNCHECKED_CAST("The casted variable has not been checked to make sure it can be casted (%s as %s)"),
 	UNWRAPPED_VALUE_NOT_OPTIONAL("An unwrapped value must be optional (%s)"),
-	UNWRAPPED_VALUE_NOT_CHECKED("The unwrapped variable has not been checked to make sure it is not null (%s)"),
+	UNCHECKED_UNWRAP("The unwrapped variable has not been checked to make sure it is not null (%s)"),
 
 	CANNOT_EXTEND_FINAL_TYPE("Cannot extend a final type (%s)"),
 	CANNOT_EXTEND_TYPE("%s %s cannot extend %s %s (%s)"),

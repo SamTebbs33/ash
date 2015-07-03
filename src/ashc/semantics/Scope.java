@@ -102,4 +102,8 @@ public class Scope {
 	return scopeStack.size() > 0;
     }
 
+    public boolean hasCastCheck(Field field, Type type) {
+	return castChecks.containsKey(field) ? castChecks.get(field).equals(type) : parent != null ? parent.hasCastCheck(field, type) : false;
+    }
+
 }

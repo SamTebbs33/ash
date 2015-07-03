@@ -605,6 +605,10 @@ public class Parser {
 	Token next = getNext();
 
 	switch (next.type) {
+	    case AS:
+		return new NodeAs(next.line, next.columnStart, expr, parseSuperType());
+	    case IS:
+		return new NodeIs(next.line, next.columnStart, expr, parseSuperType());
 	    // Postfix unary expression
 	    case UNARYOP:
 		if(next.data.equals("!")) return new NodeUnwrapOptional(next.line, next.columnStart, expr);
