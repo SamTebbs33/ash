@@ -19,7 +19,7 @@ def get_symbol(test_pass):
 		return "-"
 
 def print_tests():
-	print "\tExpected\tPassed\tTest name
+	print "\tExpected\tPassed\tName"
 	for test in result_list:
 		test_name = test[0]
 		test_pass = test[1]
