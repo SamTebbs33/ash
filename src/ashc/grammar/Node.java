@@ -1,7 +1,7 @@
 package ashc.grammar;
 
-import static ashc.error.Error.*;
-import static ashc.error.Error.EnumError.*;
+import static ashc.error.AshError.*;
+import static ashc.error.AshError.EnumError.*;
 
 import java.io.*;
 import java.lang.reflect.*;

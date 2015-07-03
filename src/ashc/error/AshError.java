@@ -8,7 +8,9 @@ import ashc.main.*;
  *
  * @author samtebbs, 15:44:44 - 23 May 2015
  */
-public class Error {
+public class AshError {
+    
+    public static int numErrors = 0;
 
     public static enum EnumError {
 	TYPE_ALREADY_EXISTS("Type already exists (%s)"),
@@ -74,6 +76,7 @@ public class Error {
     public static void semanticError(final int line, final int column, final EnumError error, final Object... args) {
 	System.err.printf("Error[%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
 	System.err.printf(error.format + "%n", args);
+	numErrors++;
     }
 
     public static void semanticError(final Node node, final int line, final int column, final EnumError error, final Object... args) {

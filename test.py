@@ -17,17 +17,18 @@ def get_symbol(test_pass):
 		return "+"
 	else:
 		return "-"
-	
+
 def print_tests():
+	print "\tExpected\tPassed\tTest name
 	for test in result_list:
 		test_name = test[0]
 		test_pass = test[1]
 		test_status_code = test[2]
 		if test_pass != test_status_code:
-			colour = "\033[91m"
+			colour = "\x1B[31m"
 		else:
-			colour = "\033[92m"
-		print colour+"\t["+get_symbol(test_pass)+"]\t["+get_symbol(test_status_code)+"]\t" + test_name + "\033[0m"		
+			colour = "\x1B[32m"
+		print colour+"\t["+get_symbol(test_pass)+"]\t["+get_symbol(test_status_code)+"]\t" + test_name + "\x1B[00m"		
 
 for test in yml:
 	test_name = test

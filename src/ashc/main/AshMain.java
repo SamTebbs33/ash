@@ -2,6 +2,7 @@ package ashc.main;
 
 import java.io.*;
 
+import ashc.error.*;
 import ashc.load.*;
 
 /**
@@ -19,6 +20,7 @@ public class AshMain {
 	compiler.parse();
 	compiler.preAnalyse();
 	compiler.analyse();
+	System.exit(AshError.numErrors == 0 ? 0 : 1);
     }
 
 }
