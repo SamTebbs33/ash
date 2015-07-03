@@ -14,6 +14,7 @@ public class AshError {
 
     public static enum EnumError {
 	TYPE_ALREADY_EXISTS("Type already exists (%s)"),
+	ALIAS_ALREADY_EXISTS("Alias already exists (%s)"),
 	TYPE_ALREADY_IMPORTED("Type has already been imported (%s)"),
 	TYPE_DOES_NOT_EXIST("Type doesn't exist (%s)"),
 	TYPE_DOES_NOT_EXTEND("Type (%s) does not extend %s"),

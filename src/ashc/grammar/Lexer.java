@@ -56,6 +56,7 @@ public class Lexer {
 	CONST("const "),
 	FUNC("func "),
 	MUT("mut "),
+	ALIAS("alias "),
 	CLASS("class "),
 	ENUM("enum "),
 	INTERFACE("interface "),

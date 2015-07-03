@@ -6,6 +6,7 @@ import ashc.grammar.Lexer.InvalidTokenException;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.TokenType;
 import ashc.grammar.Lexer.UnexpectedTokenException;
+import ashc.grammar.Node.NodeAlias;
 import ashc.grammar.Node.*;
 
 /**
@@ -855,8 +856,21 @@ public class Parser {
     private NodeFile parseFile() throws UnexpectedTokenException {
 	final NodePackage pkg = parsePackage();
 	final LinkedList<NodeImport> imports = parseImports();
+	final LinkedList<NodeAlias> aliases = parseAliases();
 	final LinkedList<NodeTypeDec> typeDecs = parseTypeDecs();
-	return new NodeFile(pkg, imports, typeDecs);
+	return new NodeFile(pkg, imports, aliases, typeDecs);
+    }
+
+    public LinkedList<NodeAlias> parseAliases() throws UnexpectedTokenException {
+	LinkedList<NodeAlias> result = new LinkedList<NodeAlias>();
+	Token next;
+	while((next = getNext()).type == TokenType.ALIAS){
+	    String alias = expect(TokenType.ID).data;
+	    expect(TokenType.ASSIGNOP);
+	    result.add(new NodeAlias(next.line, next.columnStart, alias, parseSuperType()));
+	}
+	rewind();
+	return result;
     }
 
     private NodeEnumInstance parseEnumInstance() throws UnexpectedTokenException {

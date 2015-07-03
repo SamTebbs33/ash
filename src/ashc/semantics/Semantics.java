@@ -24,6 +24,7 @@ public class Semantics {
 
     public static HashMap<QualifiedName, Type> types = new HashMap<QualifiedName, Type>();
     public static HashMap<String, QualifiedName> typeNameMap = new HashMap<String, QualifiedName>();
+    public static HashMap<String, Type> aliases = new HashMap<String, Type>();
     public static Stack<Type> typeStack = new Stack<Type>();
 
     public static class TypeI {
@@ -189,7 +190,7 @@ public class Semantics {
     public static boolean typeExists(final String typeName) {
 	if (typeStack.size() > 0) for (final String generic : typeStack.peek().generics)
 	    if (generic.equals(typeName)) return true;
-	return typeName.equals("void") || EnumPrimitive.isPrimitive(typeName) || typeNameMap.containsKey(typeName);
+	return typeName.equals("void") || EnumPrimitive.isPrimitive(typeName) || typeNameMap.containsKey(typeName) || aliases.containsKey(typeName);
     }
 
     public static boolean typeHasSuper(final String type, final String superType) {
@@ -229,7 +230,7 @@ public class Semantics {
     }
 
     public static Optional<Type> getType(final String id) {
-	return typeNameMap.containsKey(id) ? Optional.of(types.get(typeNameMap.get(id))) : Optional.empty();
+	return typeNameMap.containsKey(id) ? Optional.of(types.get(typeNameMap.get(id))) : aliases.containsKey(id) ? Optional.of(aliases.get(id)) : Optional.empty();
     }
 
     public static boolean funcExists(final Function func) {
@@ -369,6 +370,10 @@ public class Semantics {
 	    exprType.optional = false;
 	}else node.errored = true;
 	return exprType;
+    }
+
+    public static void addAlias(String alias, Type type) {
+	aliases.put(alias, type);
     }
 
 }

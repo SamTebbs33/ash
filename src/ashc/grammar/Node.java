@@ -65,15 +65,17 @@ public abstract class Node {
 	public NodePackage pkg;
 	public LinkedList<NodeImport> imports;
 	public LinkedList<NodeTypeDec> typeDecs;
+	public LinkedList<NodeAlias> aliases;
 
-	public NodeFile() {
+	public NodeFile(NodePackage pkg2, LinkedList<NodeImport> imports2, LinkedList<NodeTypeDec> typeDecs2) {
 	    super();
 	}
 
-	public NodeFile(final NodePackage pkg, final LinkedList<NodeImport> imports, final LinkedList<NodeTypeDec> typeDecs) {
+	public NodeFile(final NodePackage pkg, final LinkedList<NodeImport> imports, LinkedList<NodeAlias> aliases, final LinkedList<NodeTypeDec> typeDecs) {
 	    this.pkg = pkg;
 	    this.imports = imports;
 	    this.typeDecs = typeDecs;
+	    this.aliases = aliases;
 	}
 
 	@Override
@@ -90,6 +92,7 @@ public abstract class Node {
 		i.preAnalyse();
 	    if (typeDecs != null) for (final NodeTypeDec t : typeDecs)
 		t.preAnalyse();
+	    if(aliases != null) for (NodeAlias a : aliases) a.preAnalyse();
 	}
 
 	@Override
@@ -1735,6 +1738,26 @@ public abstract class Node {
 		Field field = ((NodeVariable)expr).var;
 		if(field != null) if(!Scope.getScope().hasCastCheck(field, Semantics.getType(nodeType.id).get())) warning(line, column, UNCHECKED_CAST, field.qualifiedName.shortName, nodeType.id);
 	    }
+	}
+	
+    }
+    
+    public static class NodeAlias extends Node {
+	public String alias;
+	public NodeType type;
+	
+	public NodeAlias(int line, int column, String alias, NodeType type) {
+	    super(line, column);
+	    this.alias = alias;
+	    this.type = type;
+	}
+
+	@Override
+	public void preAnalyse() {
+	    type.analyse();
+	    if(Semantics.typeExists(alias)) semanticError(this, line, column, TYPE_ALREADY_EXISTS, alias);
+	    else if(Semantics.aliases.containsKey(alias)) semanticError(this, line, column, ALIAS_ALREADY_EXISTS, alias);
+	    else if(!type.errored) Semantics.addAlias(alias, Semantics.getType(type.id).get());
 	}
 	
     }
