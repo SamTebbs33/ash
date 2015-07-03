@@ -1,6 +1,7 @@
 language: java
 jdk:
   - oraclejdk8
+install: "pip install PyYAML"
 script: 
   - ant compile
   - python test.py
