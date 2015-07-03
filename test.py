@@ -9,7 +9,7 @@ failed_tests = 0
 num_tests = 0
 
 def do_test(name):
-	print "Running test: " + name + "\n"
+	print "\tRunning test: " + name + "\n"
 	return subprocess.call(["java", "-cp", "build", "ashc/main/AshMain", name+".ash"])
 	
 def get_symbol(test_pass):
@@ -19,7 +19,8 @@ def get_symbol(test_pass):
 		return "-"
 
 def print_tests():
-	print "\tExpected\tPassed\tName"
+	print "\tResults"
+	print "\t\tExpect\tPass\tName"
 	for test in result_list:
 		test_name = test[0]
 		test_pass = test[1]
@@ -28,7 +29,7 @@ def print_tests():
 			colour = "\x1B[31m"
 		else:
 			colour = "\x1B[32m"
-		print colour+"\t["+get_symbol(test_pass)+"]\t["+get_symbol(test_status_code)+"]\t" + test_name + "\x1B[00m"		
+		print colour+"\t\t["+get_symbol(test_pass)+"]\t["+get_symbol(test_status_code)+"]\t" + test_name + "\x1B[00m"		
 
 for test in yml:
 	test_name = test
@@ -37,9 +38,8 @@ for test in yml:
 	if status_code != test_pass:
 		failed_tests += 1
 	num_tests += 1
-	print "Exit code: " + `status_code` + ", expected: " + `test_pass`
 	result_list.append((test_name, test_pass, status_code))
 	
 print_tests()
-print "\n" + `failed_tests` + "/" + `num_tests` + " tests failed\n"
+print "\n\t" + `failed_tests` + "/" + `num_tests` + " tests failed\n"
 sys.exit(0 if failed_tests == 0 else 1)

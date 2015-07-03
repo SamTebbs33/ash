@@ -21,9 +21,7 @@ public class AshMain {
 	compiler.parse();
 	compiler.preAnalyse();
 	compiler.analyse();
-	int code = AshError.numErrors == 0 ? 0 : 1;
-	System.out.printf("\tNumErrors: %d, Code: %d%n", AshError.numErrors, code);
-	System.exit(code);
+	System.exit(AshError.numErrors == 0 ? 0 : 1);
     }
 
 }
