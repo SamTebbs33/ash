@@ -13,7 +13,7 @@ def do_test(name):
 	return subprocess.call(["java", "-cp", "build", "ashc/main/AshMain", name+".ash"])
 	
 def get_symbol(test_pass):
-	if test_pass == 1:
+	if test_pass == 0:
 		return "+"
 	else:
 		return "-"
@@ -32,12 +32,12 @@ def print_tests():
 
 for test in yml:
 	test_name = test
-	test_pass = yml[test]["pass"]
+	test_pass = 0 if yml[test]["pass"] else 1
 	status_code = do_test(test_name)
 	if status_code != test_pass:
 		failed_tests += 1
 	num_tests += 1
-	print "Exit code: " + `status_code`
+	print "Exit code: " + `status_code` + ", expected: " + `test_pass`
 	result_list.append((test_name, test_pass, status_code))
 	
 print_tests()
