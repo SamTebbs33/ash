@@ -1,4 +1,4 @@
-# Ash
+# Ash [![Build Status](https://travis-ci.org/ash-lang/ash.svg?branch=master)](https://travis-ci.org/ash-lang/ash)
 The Ash programming language
 
 This is based on [SamTebbs33/AshLang](https://github.com/SamTebbs33/AshLang), which in turn was based on one of my old repos.
