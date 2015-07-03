@@ -6,6 +6,7 @@ file = open("tests.yml", "r")
 yml = yaml.load(file)
 result_list = []
 failed_tests = 0
+num_tests = 0
 
 def do_test(name):
 	print "Running test: " + name + "\n"
@@ -26,11 +27,7 @@ def print_tests():
 			colour = "\033[91m"
 		else:
 			colour = "\033[92m"
-		print colour+"\t"
-		print "["+get_symbol(test_pass)+"]\t"
-		print "["+get_symbol(test_status_code)+"]\t"
-		print test_name+"\033[0m\n"
-		
+		print colour+"\t["+get_symbol(test_pass)+"]\t["+get_symbol(test_status_code)+"]\t" + test_name + "\033[0m"		
 
 for test in yml:
 	test_name = test
@@ -38,9 +35,9 @@ for test in yml:
 	status_code = do_test(test_name)
 	if status_code != test_pass:
 		failed_tests += 1
+	num_tests += 1
 	result_list.append((test_name, test_pass, status_code))
+	
 print_tests()
-print "\n"
-print failed_tests
-print " tests failed\n"
+print "\n" + `failed_tests` + "/" + `num_tests` + " tests failed\n"
 sys.exit(0 if failed_tests == 0 else 1)
