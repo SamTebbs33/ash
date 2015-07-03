@@ -37,6 +37,7 @@ for test in yml:
 	if status_code != test_pass:
 		failed_tests += 1
 	num_tests += 1
+	print "Exit code: " + `status_code`
 	result_list.append((test_name, test_pass, status_code))
 	
 print_tests()
