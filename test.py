@@ -10,7 +10,7 @@ num_tests = 0
 
 def do_test(name):
 	print "Running test: " + name + "\n"
-	return subprocess.call(["java", "-cp build", "ashc/main/AshMain", name+".ash"])
+	return subprocess.call(["java", "-cp", "build", "ashc/main/AshMain", name+".ash"])
 	
 def get_symbol(test_pass):
 	if test_pass == 1:
