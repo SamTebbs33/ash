@@ -1,0 +1,20 @@
+<project>
+	<target name="clean">
+		<delete dir="build"/>
+	</target>
+	
+	<target name="compile">
+		<mkdir dir="build"/>
+		<javac srcdir="src" destdir="build"/>
+	</target>
+	
+	<target name="run">
+		<java classname="ashc.main.AshMain">
+			<classpath>
+				<pathelement location="build"/>
+			</classpath>
+			<arg value="Test.ash"/>
+		</java>
+	</target>
+	
+</project>
