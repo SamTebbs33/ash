@@ -1,11 +1,5 @@
 <project>
 	
-	<target name="test">
-		<antcall target="compile"/>
-		<antcall target="run"/>
-		<antcall target="clean"/>
-	</target>
-	
 	<target name="clean">
 		<delete dir="build"/>
 	</target>
@@ -15,13 +9,16 @@
 		<javac srcdir="src" destdir="build"/>
 	</target>
 	
-	<target name="run">
+	<!-- <target name="run">
+		<exec executable="python" failonerror="true">
+			<arg value="test.py"/>
+		</exec>
 		<java classname="ashc.main.AshMain">
 			<classpath>
 				<pathelement location="build"/>
 			</classpath>
 			<arg value="Test.ash"/>
 		</java>
-	</target>
-	
+	</target> -->
+
 </project>
