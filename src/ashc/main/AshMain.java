@@ -13,7 +13,6 @@ import ashc.load.*;
 public class AshMain {
 
     public static void main(final String[] args) throws FileNotFoundException, IOException {
-	System.out.printf("\tCompiling: %s%n", args[0]);
 	TypeImporter.loadClass("java.lang.String");
 	TypeImporter.loadClass("java.lang.Object");
 	TypeImporter.loadClass("java.lang.System");
