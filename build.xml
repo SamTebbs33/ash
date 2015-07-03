@@ -1,5 +1,11 @@
 <project>
 	
+	<target name="test">
+		<antcall target="compile"/>
+		<antcall target="run"/>
+		<antcall target="clean"/>
+	</target>
+	
 	<target name="clean">
 		<delete dir="build"/>
 	</target>
