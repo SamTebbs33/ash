@@ -63,7 +63,8 @@ public class AshError {
 	ELVIS_EXPR_NOT_OPTIONAL("The first expression in an elvis expression must be optional (%s)"),
 	ELVIS_EXPR_IS_OPTIONAL("The second expression in an elvis expression cannot be optional (%s)"),
 	ELVIS_EXPR_IS_PRIMITIVE("The first expression in an elvis expression cannot be a primitive (%s)"),
-	OPERATOR_CANNOT_BE_APPLIED("Operator %s cannot be applied to types %s and %s"),
+	OPERATOR_CANNOT_BE_APPLIED_TO_TYPES("Operator %s cannot be applied to types %s and %s"),
+	OPERATOR_CANNOT_BE_APPLIED_TO_TYPE("Operator %s cannot be applied to type %s"),
 
 	PRIMTIVE_CANNOT_BE_OPTIONAL("A primitive type cannot be optional (%s)"),
 	CANNOT_ASSIGN("Cannot assign %s to %s");

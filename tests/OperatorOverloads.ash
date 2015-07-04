@@ -1,8 +1,8 @@
 class Person(age : int) {
-	func *(operand : int) -> Person(age * operand)
-	func +(person : Person) -> Person(age + person.age)
+	func +(toAdd : int) -> Person(age + toAdd)
+	func ++() -> this + 1
 	
 	var person = Person(0)
-	var person2 = Person(0)
-	var person3 = person + person2 * 1
+	var person2 = person + 1
+	var person3 = person2++
 }
