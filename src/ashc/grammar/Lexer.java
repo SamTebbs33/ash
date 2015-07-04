@@ -35,8 +35,8 @@ public class Lexer {
 	LAMBDAARROW("->", "lambda arrow"),
 
 	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
-	BINARYOP("\\.\\.|<|>|<=|>=|==|!=|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|", "binary operator"),
 	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
+	BINARYOP("\\.\\.|<|>|<=|>=|==|!=|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|", "binary operator"),
 	ASSIGNOP("=", "assignment operator"),
 	WHITESPACE("[\n\t ]+", "whitespace"),
 

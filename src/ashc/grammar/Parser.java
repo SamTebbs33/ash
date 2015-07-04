@@ -284,13 +284,13 @@ public class Parser {
 
     private NodeFuncDec parseMutFuncDec(final boolean needsBody, final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
 	expect(TokenType.MUT);
-	final Token id = expect(TokenType.ID);
+	final Token id = expect(TokenType.ID, TokenType.BINARYOP, TokenType.UNARYOP);
 	final NodeArgs args = parseArgs();
 	NodeType throwsType = null;
 	NodeFuncBlock block = null;
-	if (expect(TokenType.ARROW, TokenType.BRACEL).type == TokenType.ARROW) throwsType = parseType();
+	if (expect(TokenType.ARROW, TokenType.BRACEL, TokenType.LAMBDAARROW).type == TokenType.ARROW) throwsType = parseType();
 	else rewind();
-	if (needsBody) block = parseFuncBlock(false, false);
+	if (needsBody) block = parseFuncBlock(true, false);
 	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, throwsType, block, new NodeTypes(), true);
     }
 
@@ -299,7 +299,7 @@ public class Parser {
      */
     private NodeFuncDec parseFuncDec(final boolean needsBody, final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
 	expect(TokenType.FUNC);
-	final Token id = expect(TokenType.ID);
+	final Token id = expect(TokenType.ID, TokenType.BINARYOP, TokenType.UNARYOP);
 	final NodeTypes types = parseGenericsDecs();
 	final NodeArgs args = parseArgs();
 	NodeType type = null, throwsType = null;
@@ -565,7 +565,7 @@ public class Parser {
 	    next = getNext();
 	    switch (next.type) {
 		case BINARYOP:
-		    return new NodeBinary(expr, next.data, parsePrimaryExpression());
+		    return new NodeBinary(next.line, next.columnStart, expr, next.data, parsePrimaryExpression());
 		default:
 		    rewind();
 	    }

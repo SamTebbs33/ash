@@ -7,6 +7,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import ashc.grammar.*;
+import ashc.grammar.Operator.EnumOperation;
 import ashc.grammar.Node.*;
 import ashc.load.*;
 import ashc.semantics.Member.Field;
@@ -29,7 +30,7 @@ public class Semantics {
 
     public static class TypeI {
 
-	private static TypeI objectType = new TypeI("Object", 0, false), voidType = new TypeI("void", 0, false);
+	private static TypeI objectType = new TypeI("Object", 0, false), voidType = new TypeI("void", 0, false), stringType = new TypeI("String", 0, false);
 	public String shortName, tupleName;
 	public int arrDims;
 	public boolean optional;
@@ -184,6 +185,14 @@ public class Semantics {
 	public TypeI setOptional(final boolean b) {
 	    optional = b;
 	    return this;
+	}
+
+	public boolean isNumeric() {
+	    return EnumPrimitive.isNumeric(shortName);
+	}
+
+	public static TypeI getStringType() {
+	    return stringType;
 	}
     }
 
@@ -374,6 +383,30 @@ public class Semantics {
 
     public static void addAlias(String alias, Type type) {
 	aliases.put(alias, type);
+    }
+
+    public static TypeI getOperationType(TypeI type1, TypeI type2, Operator operator) {
+	TypeI result = null;
+	if(type1.isNumeric() && type2.isNumeric()) return getPrecedentType(type1, type2);
+	else if(type1.equals(TypeI.getStringType()) && operator.operation == EnumOperation.ADD) return TypeI.getStringType();
+	
+	if(type1.isArray() || type1.isTuple() || type1.isVoid() || type1.isNull()) return null;
+	else if(type2.isArray() || type2.isTuple() || type2.isVoid() || type2.isNull()) return null;
+	
+	// Check for operator overloads, start with type 1
+	LinkedList<TypeI> parameter = new LinkedList<TypeI>();
+	parameter.add(type2);
+	Type type = Semantics.getType(type1.shortName).get();
+	Function func = type.getFunc(operator.opStr, parameter);
+	if(func != null) return func.returnType;
+	
+	// Check type 2 for operator overloads
+	parameter.clear();
+	parameter.add(type1);
+	type = Semantics.getType(type1.shortName).get();
+	func = type.getFunc(operator.opStr, parameter);
+	if(func != null) return func.returnType;
+	return null;
     }
 
 }
