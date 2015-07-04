@@ -31,7 +31,7 @@ public class Member {
 	// Check if the member was declared as public, or no modifiers were given (Members are implicitly public)
 	if(BitOp.and(modifiers, EnumModifier.PUBLIC.intVal) || modifiers == 0) return true;
 	// If the current type is the same type as the member's enclosing type, the member is visible
-	if(enclosingType.equals(Semantics.currentType())) return true;
+	if(enclosingType != null && enclosingType.equals(Semantics.currentType())) return true;
 	// If the member is private, it isn't visible
 	if(BitOp.and(modifiers, EnumModifier.PRIVATE.intVal)) return false;
 	// If the current type is a sub-type of the member's enclosing type, it is visible
@@ -54,6 +54,23 @@ public class Member {
 	public Type(final QualifiedName qualifiedName, final int modifiers, final EnumType type) {
 	    super(qualifiedName, modifiers);
 	    this.type = type;
+	}
+
+	public Type(Class<?> cls, String path) {
+	    super(QualifiedName.fromPath(path), cls.getModifiers());
+	    this.type = cls.isEnum() ? EnumType.ENUM : cls.isInterface() ? EnumType.INTERFACE : EnumType.CLASS;
+	    for (final TypeVariable genericType : cls.getTypeParameters())
+		generics.add(genericType.getName());
+	    if(cls.getSuperclass() != null){
+		Type superType = new Type(cls.getSuperclass(), cls.getSuperclass().getName());
+		supers.add(superType);
+	    }
+	    Semantics.addType(this);
+	    for (final Method method : cls.getMethods())
+		functions.add(Function.fromMethod(method));
+	    for (final java.lang.reflect.Field field : cls.getFields())
+		fields.add(ashc.semantics.Member.Field.from(field));
+	    Semantics.exitType();
 	}
 
 	public void addGeneric(final String typeName, final TypeI generic) {
@@ -117,11 +134,7 @@ public class Member {
 
 	@Override
 	public String toString() {
-	    return "Type [type=" + type + /*
-	     * ", functions=" + functions +
-	     * ", fields=" + fields + ", supers="
-	     * + supers +
-	     */", qualifiedName=" + qualifiedName + "]";
+	    return "Type [type=" + type + ", qualifiedName=" + qualifiedName + "]";
 	}
 
 	public LinkedList<TypeI> getGenerics(final String string) {
@@ -147,6 +160,7 @@ public class Member {
 
 	public Function(final QualifiedName qualifiedName, final int modifiers) {
 	    super(qualifiedName, modifiers);
+	    this.enclosingType = Semantics.currentType();
 	}
 
 	public static Function fromMethod(final Method method) {

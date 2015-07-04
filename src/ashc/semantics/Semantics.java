@@ -149,8 +149,9 @@ public class Semantics {
 	    if (!optional && exprType.optional) return false;
 	    // If they are both numeric and the array dimensions are 0
 	    if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && (arrDims == exprType.arrDims)) return true;
+	    	    
 	    return exprType.arrDims == arrDims
-		    && (this.shortName.equals(exprType.shortName) || (exprType.isNull() && !EnumPrimitive.isNumeric(shortName)) || Semantics.typeHasSuper(exprType.shortName, shortName));
+		   && (this.shortName.equals(exprType.shortName) || (exprType.isNull() && !EnumPrimitive.isNumeric(shortName)) || Semantics.typeHasSuper(exprType.shortName, shortName));
 	}
 
 	public boolean isNull() {
