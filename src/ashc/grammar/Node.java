@@ -9,6 +9,7 @@ import java.util.*;
 
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
+import ashc.grammar.Operator.EnumOperation;
 import ashc.load.*;
 import ashc.semantics.*;
 import ashc.semantics.Member.EnumType;
@@ -1311,7 +1312,7 @@ public abstract class Node {
 	    if(((Node)expr1).errored || ((Node)expr2).errored) return null;
 	    TypeI exprType1 = expr1.getExprType(), exprType2 = expr2.getExprType();
 	    TypeI type = Semantics.getOperationType(exprType1, exprType2, operator);
-	    if(type == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED, operator.opStr, exprType1, exprType2);
+	    if(type == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, operator.opStr, exprType1, exprType2);
 	    return type;
 	    /*return operator.operation.primitive == null ? Semantics.getPrecedentType(expr1.getExprType(), expr2.getExprType())
 		    : new TypeI(operator.operation.primitive);*/
@@ -1330,7 +1331,6 @@ public abstract class Node {
 	public IExpression expr;
 	public Operator operator;
 	public boolean prefix;
-	public TypeI type;
 
 	public NodeUnary(final int line, final int column, final IExpression expr, final String operator, final boolean prefix) {
 	    super(line, column);
@@ -1346,12 +1346,18 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    
+	    ((Node) expr).analyse();
 	}
 
 	@Override
 	public TypeI getExprType() {
-	    return expr.getExprType();
+	    TypeI type = null;
+	    if(!((NodeVariable)expr).errored){
+		TypeI exprType = expr.getExprType();
+		type = Semantics.getOperationType(exprType, operator);
+		if(type == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPE, operator.opStr, exprType);
+	    }
+	    return type;
 	}
 
 	@Override

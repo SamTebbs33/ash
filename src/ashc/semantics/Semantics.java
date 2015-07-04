@@ -418,4 +418,11 @@ public class Semantics {
 	return null;
     }
 
+    public static TypeI getOperationType(TypeI type, Operator operator) {
+	if(type.isNumeric()) return type;
+	if(type.isArray() || type.isNull() || type.isTuple() || type.isVoid()) return null;
+	Function func = Semantics.getType(type.shortName).get().getFunc(operator.opStr, new LinkedList<>());
+	return func != null ? func.returnType : null;
+    }
+
 }
