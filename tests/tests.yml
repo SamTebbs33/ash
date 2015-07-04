@@ -2,3 +2,6 @@
 # test_file_name:
 #   pass: [yes|no]
 #   args: {args}
+
+OperatorOverloads:
+  pass: yes
