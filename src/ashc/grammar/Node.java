@@ -629,7 +629,7 @@ public abstract class Node {
 	    block.analyse();
 	    // If the return type is not "void", all code paths must have a
 	    // return statement
-	    if (!returnType.isVoid()) if (!block.hasReturnStmt()) semanticError(this, line, column, NOT_ALL_PATHS_HAVE_RETURN);
+	    if (!returnType.isVoid() && !isMutFunc) if (!block.hasReturnStmt()) semanticError(this, line, column, NOT_ALL_PATHS_HAVE_RETURN);
 	    Scope.pop();
 	}
 
@@ -739,10 +739,14 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    super.analyse();
-	    if (expr != null) ((Node) expr).analyse();
-	    final TypeI type = Semantics.filterNullType(expr.getExprType());
-	    if (!errored) Semantics.addVar(new Variable(id, type));
-	    analyseProperty(type);
+	    if (expr != null){
+		((Node) expr).analyse();
+		if(!((Node)expr).errored){ 
+		    final TypeI type = Semantics.filterNullType(expr.getExprType());
+	    		Semantics.addVar(new Variable(id, type));
+	    		analyseProperty(type);
+	    	}
+	    }
 	}
 
     }
@@ -1284,7 +1288,8 @@ public abstract class Node {
 	public IExpression expr1, expr2;
 	public Operator operator;
 
-	public NodeBinary(final IExpression expr1, final String operator, final IExpression expr2) {
+	public NodeBinary(int line, int columnStart, final IExpression expr1, final String operator, final IExpression expr2) {
+	    super(line, columnStart);
 	    this.expr1 = expr1;
 	    this.expr2 = expr2;
 	    this.operator = new Operator(operator);
@@ -1303,8 +1308,13 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return operator.operation.primitive == null ? Semantics.getPrecedentType(expr1.getExprType(), expr2.getExprType())
-		    : new TypeI(operator.operation.primitive);
+	    if(((Node)expr1).errored || ((Node)expr2).errored) return null;
+	    TypeI exprType1 = expr1.getExprType(), exprType2 = expr2.getExprType();
+	    TypeI type = Semantics.getOperationType(exprType1, exprType2, operator);
+	    if(type == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED, operator.opStr, exprType1, exprType2);
+	    return type;
+	    /*return operator.operation.primitive == null ? Semantics.getPrecedentType(expr1.getExprType(), expr2.getExprType())
+		    : new TypeI(operator.operation.primitive);*/
 	}
 
 	@Override
@@ -1320,6 +1330,7 @@ public abstract class Node {
 	public IExpression expr;
 	public Operator operator;
 	public boolean prefix;
+	public TypeI type;
 
 	public NodeUnary(final int line, final int column, final IExpression expr, final String operator, final boolean prefix) {
 	    super(line, column);
@@ -1331,6 +1342,11 @@ public abstract class Node {
 	@Override
 	public String toString() {
 	    return "NodeUnary [expr=" + expr + ", operator=" + operator + ", prefix=" + prefix + "]";
+	}
+
+	@Override
+	public void analyse() {
+	    
 	}
 
 	@Override
