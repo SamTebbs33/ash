@@ -1326,7 +1326,7 @@ public abstract class Node {
 	}
     }
 
-    public static class NodeUnary extends Node implements IExpression {
+    public static class NodeUnary extends Node implements IExpression, IFuncStmt {
 	public IExpression expr;
 	public Operator operator;
 	public boolean prefix;

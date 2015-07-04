@@ -2,11 +2,11 @@ package ashc.grammar;
 
 import java.util.*;
 
+import ashc.error.*;
 import ashc.grammar.Lexer.InvalidTokenException;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.TokenType;
 import ashc.grammar.Lexer.UnexpectedTokenException;
-import ashc.grammar.Node.NodeAlias;
 import ashc.grammar.Node.*;
 
 /**
@@ -31,6 +31,7 @@ public class Parser {
 		tokens.add(token);
 	    } catch (final InvalidTokenException e) {
 		System.err.printf("Error:%d:%d Invalid token (%s)%n", e.line, e.column, e.data);
+		ashc.error.AshError.numErrors++;
 	    }
     }
 
@@ -52,6 +53,7 @@ public class Parser {
     public void handleException(final UnexpectedTokenException e) {
 	final int line = e.token.line + lineOffset, colStart = e.token.columnStart + columnOffset, colEnd = e.token.columnEnd + columnOffset;
 	System.err.printf("Error:%d:%d-%d %s%n", line, colStart, colEnd, e.msg);
+	AshError.numErrors++;
 
 	// Print out the line and location of the error
 	if (line <= lexer.lines.size()) {
@@ -373,8 +375,9 @@ public class Parser {
 		rewind();
 		final IFuncStmt stmt = parsePrefix();
 		if (stmt instanceof NodeVariable) {
-		    final Token assignOp = expect(TokenType.ASSIGNOP, TokenType.COMPOUNDASSIGNOP);
-		    return new NodeVarAssign(assignOp.line, assignOp.columnStart, (NodeVariable) stmt, assignOp.data, parseExpression());
+		    final Token op = expect(TokenType.ASSIGNOP, TokenType.COMPOUNDASSIGNOP, TokenType.UNARYOP);
+		    if(op.type == TokenType.UNARYOP) return new NodeUnary(op.line, op.columnStart, (NodeVariable)stmt, op.data, false);
+		    return new NodeVarAssign(op.line, op.columnStart, (NodeVariable) stmt, op.data, parseExpression());
 		} else return stmt;
 	    case IF:
 		return parseIfStmt();
