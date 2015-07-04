@@ -21,20 +21,20 @@ public class AshError {
 
 	EXPECTED_STRING_INTERP_TERMINATOR("Expected terminating } for string interpolated expression"),
 
-	FUNC_ALREADY_EXISTS("Function already exists (%s)"),
-	FUNC_DOES_NOT_EXIST("Function %s doesn't exist in type %s"),
-	FUNC_IS_NOT_VISIBLE("Function is not visible from the current context (%s)"),
-	CONSTRUCTOR_DOES_NOT_EXIST("Constructor does not exist in type %s"),
+	FUNC_ALREADY_EXISTS("The function \'%s\' already exists"),
+	FUNC_DOES_NOT_EXIST("The function \'%s\' with the given arguments doesn't exist in type %s"),
+	FUNC_IS_NOT_VISIBLE("The function \'%s\' is not visible from the current context"),
+	CONSTRUCTOR_DOES_NOT_EXIST("The constructor with given arguments does not exist in type %s"),
 	RETURN_EXPR_IN_VOID_FUNC("Cannot return an expression in a void function"),
 	RETURN_IN_MUT_FUNC("Cannot return in a mutator function"),
 	NOT_ALL_PATHS_HAVE_RETURN("Not all code paths have a return statement"),
 	RETURN_VOID_IN_NONVOID_FUNC("Cannot return void in a non-void function"),
 
-	FIELD_ALREADY_EXISTS("Field already exists (%s)"),
+	FIELD_ALREADY_EXISTS("\'%s\' already exists"),
 
-	VAR_ALREADY_EXISTS("Variable already exists (%s)"),
-	VAR_DOES_NOT_EXIST("Variable does not exist (%s)"),
-	VAR_IS_NOT_VISIBLE("Variable is not visible in the current context (%s)"),
+	VAR_ALREADY_EXISTS("\'%s\' already exists"),
+	VAR_DOES_NOT_EXIST("\'%s\' does not exist"),
+	VAR_IS_NOT_VISIBLE("\'%s\' is not visible from the current context"),
 	CONST_VAR_IS_PROPERTY("Cannot declare a const property (%s)"),
 	PROPERTY_IN_FUNC("Cannot declare a property in a function (%s)"),
 
@@ -48,7 +48,7 @@ public class AshError {
 	
 	UNCHECKED_CAST("The casted variable has not been checked to make sure it can be casted (%s as %s)"),
 	UNWRAPPED_VALUE_NOT_OPTIONAL("An unwrapped value must be optional (%s)"),
-	UNCHECKED_UNWRAP("The unwrapped variable has not been checked to make sure it is not null (%s)"),
+	UNCHECKED_UNWRAP("The unwrapped variable \'%s\' has not been checked to make sure it is not null"),
 
 	CANNOT_EXTEND_FINAL_TYPE("Cannot extend a final type (%s)"),
 	CANNOT_EXTEND_TYPE("%s %s cannot extend %s %s (%s)"),
@@ -63,7 +63,7 @@ public class AshError {
 	ELVIS_EXPR_NOT_OPTIONAL("The first expression in an elvis expression must be optional (%s)"),
 	ELVIS_EXPR_IS_OPTIONAL("The second expression in an elvis expression cannot be optional (%s)"),
 	ELVIS_EXPR_IS_PRIMITIVE("The first expression in an elvis expression cannot be a primitive (%s)"),
-	OPERATOR_CANNOT_BE_APPLIED("Operator %s cannot be applied to types (%s, %s)"),
+	OPERATOR_CANNOT_BE_APPLIED("Operator %s cannot be applied to types %s and %s"),
 
 	PRIMTIVE_CANNOT_BE_OPTIONAL("A primitive type cannot be optional (%s)"),
 	CANNOT_ASSIGN("Cannot assign %s to %s");

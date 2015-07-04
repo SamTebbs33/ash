@@ -194,6 +194,10 @@ public class Semantics {
 	public static TypeI getStringType() {
 	    return stringType;
 	}
+
+	public boolean isPrimitive() {
+	    return EnumPrimitive.isPrimitive(shortName);
+	}
     }
 
     public static boolean typeExists(final String typeName) {
@@ -395,17 +399,22 @@ public class Semantics {
 	
 	// Check for operator overloads, start with type 1
 	LinkedList<TypeI> parameter = new LinkedList<TypeI>();
-	parameter.add(type2);
-	Type type = Semantics.getType(type1.shortName).get();
-	Function func = type.getFunc(operator.opStr, parameter);
-	if(func != null) return func.returnType;
-	
-	// Check type 2 for operator overloads
-	parameter.clear();
-	parameter.add(type1);
-	type = Semantics.getType(type1.shortName).get();
-	func = type.getFunc(operator.opStr, parameter);
-	if(func != null) return func.returnType;
+	Type type;
+	Function func;
+	if(!type1.isPrimitive()){
+	    parameter.add(type2);
+	    type = Semantics.getType(type1.shortName).get();
+	    func = type.getFunc(operator.opStr, parameter);
+	    if(func != null) return func.returnType;
+	}
+	if(!type2.isPrimitive()){
+	    // Check type 2 for operator overloads
+	    parameter.clear();
+	    parameter.add(type1);
+	    type = Semantics.getType(type2.shortName).get();
+	    func = type.getFunc(operator.opStr, parameter);
+	    if(func != null) return func.returnType;
+	}
 	return null;
     }
 
