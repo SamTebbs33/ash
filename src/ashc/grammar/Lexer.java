@@ -40,6 +40,7 @@ public class Lexer {
 	ASSIGNOP("=", "assignment operator"),
 	WHITESPACE("[\n\t ]+", "whitespace"),
 
+	UNDERSCORE("_", "underscore"),
 	ARROW("=>", "throws arrow"),
 	PARENL("\\(", "left parenthesis"),
 	PARENR("\\)", "right parenthesis"),
@@ -48,7 +49,7 @@ public class Lexer {
 	BRACKETL("\\[", "left bracket"),
 	BRACKETR("\\]", "right bracket"),
 	ELLIPSIS("\\.\\.\\."),
-	DOUBLEDOT("\\.\\."),
+	DOUBLEDOT("\\.\\.", "double dot"),
 	DOT("\\.", "dot"),
 	COMMA(",", "comma"),
 	QUESTIONMARK("\\?", "question mark"),
@@ -87,6 +88,7 @@ public class Lexer {
 	ELSE("else"),
 	WHILE("while"),
 	FOR("for"),
+	MATCH("match "),
 	IN("in"),
 
 	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),

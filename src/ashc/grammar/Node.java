@@ -1826,5 +1826,32 @@ public abstract class Node {
 	public void registerScopedChecks() {}
 	
     }
+    
+    public static class NodeMatch extends Node implements IFuncStmt {
+	public IExpression expr;
+	public LinkedList<NodeMatchCase> matchCases = new LinkedList<NodeMatchCase>();
+	
+	public NodeMatch(int line, int column, IExpression expr) {
+	    super(line, column);
+	    this.expr = expr;
+	}
+	
+	public void add(NodeMatchCase matchCase){
+	    matchCases.add(matchCase);
+	}
+	
+    }
+    
+    public static class NodeMatchCase extends Node {
+	public IExpression expr;
+	public NodeFuncBlock block;
+	public boolean isTerminatingCase;
+	public NodeMatchCase(int line, int column, IExpression expr, NodeFuncBlock block) {
+	    super(line, column);
+	    this.expr = expr;
+	    this.block = block;
+	    if(expr == null) isTerminatingCase = true;
+	}
+    }
 
 }

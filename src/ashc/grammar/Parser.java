@@ -7,6 +7,8 @@ import ashc.grammar.Lexer.InvalidTokenException;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.TokenType;
 import ashc.grammar.Lexer.UnexpectedTokenException;
+import ashc.grammar.Node.IFuncStmt;
+import ashc.grammar.Node.NodeMatchCase;
 import ashc.grammar.Node.*;
 
 /**
@@ -360,7 +362,7 @@ public class Parser {
     }
 
     private IFuncStmt parseFuncStmt() throws UnexpectedTokenException {
-	final Token token = expect(TokenType.ID, TokenType.SELF, TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.VAR, TokenType.CONST, TokenType.RETURN);
+	final Token token = expect(TokenType.ID, TokenType.SELF, TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.MATCH, TokenType.VAR, TokenType.CONST, TokenType.RETURN);
 	switch (token.type) {
 	    case RETURN:
 		//rewind();
@@ -385,12 +387,38 @@ public class Parser {
 		return parseWhileStmt();
 	    case FOR:
 		return parseForStmt();
+	    case MATCH:
+		return parseMatchStmt();
 	    case VAR:
 	    case CONST:
 		rewind();
 		return parseVarDec(null);
 	}
 	return null;
+    }
+
+    private IFuncStmt parseMatchStmt() throws UnexpectedTokenException {
+	IExpression expr = parseExpression();
+	expect(TokenType.BRACEL);
+	NodeMatch match = new NodeMatch(((Node)expr).line, ((Node)expr).column, expr);
+	while(getNext().type != TokenType.BRACER){
+	    rewind();
+	    NodeMatchCase matchCase = parseMatchCase();
+	    match.add(matchCase);
+	    if(matchCase.isTerminatingCase){
+		expect(TokenType.BRACER);
+		break;
+	    }
+	}
+	return match;
+    }
+
+    private NodeMatchCase parseMatchCase() throws UnexpectedTokenException {
+	Token next;
+	if((next = getNext()).type == TokenType.UNDERSCORE) return new NodeMatchCase(next.line, next.columnStart, null, parseFuncBlock(true, false));
+	else rewind();
+	IExpression expr = parseExpression();
+	return new NodeMatchCase(((Node)expr).line, ((Node)expr).column, expr, parseFuncBlock(true, false));
     }
 
     private IFuncStmt parseForStmt() throws UnexpectedTokenException {
