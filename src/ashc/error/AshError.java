@@ -47,6 +47,7 @@ public class AshError {
 	EXPECTED_PRIMITIVE_TYPE("Expected a primitive type, but found %s"),
 	EXPECTED_NUMERIC_TYPE("Expected a numeric type, but found %s"),
 	CANNOT_ITERATE_TYPE("Cannot iterate over type %s"),
+	INCOMPATIBLE_TYPES("The types %s and %s are incompatible"),
 	
 	UNCHECKED_CAST("The casted variable has not been checked to make sure it can be casted (%s as %s)"),
 	UNWRAPPED_VALUE_NOT_OPTIONAL("An unwrapped value must be optional (%s)"),

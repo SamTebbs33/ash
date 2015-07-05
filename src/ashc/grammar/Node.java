@@ -1836,6 +1836,25 @@ public abstract class Node {
 	    this.expr = expr;
 	}
 	
+	@Override
+	public void analyse() {
+	    ((Node) expr).analyse();
+	    if(!((Node)expr).errored){
+		TypeI exprType = expr.getExprType();
+		for(NodeMatchCase matchCase : matchCases){
+		    matchCase.analyse();
+		    if(!matchCase.isTerminatingCase && !matchCase.errored){
+			TypeI caseType = matchCase.expr.getExprType();
+			// The generic used for ranges must be extracted
+			if(caseType.isRange()){
+			    caseType = caseType.genericTypes.size() > 0 ? caseType.genericTypes.getFirst() : TypeI.getObjectType();
+			}
+			if(!exprType.canBeAssignedTo(caseType)) semanticError(this, matchCase.line, matchCase.column, INCOMPATIBLE_TYPES, exprType, caseType);
+		    }
+		}
+	    }
+	}
+
 	public void add(NodeMatchCase matchCase){
 	    matchCases.add(matchCase);
 	}
@@ -1852,6 +1871,17 @@ public abstract class Node {
 	    this.block = block;
 	    if(expr == null) isTerminatingCase = true;
 	}
+	
+	@Override
+	public void analyse() {
+	    if(!isTerminatingCase){
+		((Node) expr).analyse();
+		if(((Node)expr).errored) errored = true;
+	    }
+	    block.analyse();
+	    if(block.errored) errored = true;
+	}
+	
     }
 
 }

@@ -88,6 +88,8 @@ public class Semantics {
 		}
 		if(!isGeneric) TypeImporter.loadClass(clsName);
 	    }*/
+	    // Since all Java types are nullable, this must be set to optional
+	    type.optional = true;
 	    return type;
 	}
 
@@ -198,6 +200,10 @@ public class Semantics {
 
 	public boolean isPrimitive() {
 	    return EnumPrimitive.isPrimitive(shortName);
+	}
+
+	public boolean isRange() {
+	    return shortName != null & shortName.equals("Range");
 	}
     }
 
