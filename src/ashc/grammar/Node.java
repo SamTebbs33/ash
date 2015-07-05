@@ -1625,9 +1625,10 @@ public abstract class Node {
 	    TypeI varType = TypeI.getObjectType();
 	    if (exprType.isTuple()) semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
 	    if (exprType.isArray()) {
-		exprType.arrDims--;
+		exprType.copy().arrDims--;
 		varType = exprType;
-	    } else {
+	    } else if(exprType.isRange()) varType = exprType.genericTypes.size() > 0 ? exprType.genericTypes.getFirst() : TypeI.getObjectType();
+	    else {
 		final Optional<Type> type = Semantics.getType(exprType.shortName);
 		if (type.isPresent()) if (type.get().hasSuper(new QualifiedName("java").add("lang").add("Iterable"))) {
 
