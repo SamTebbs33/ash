@@ -31,7 +31,7 @@ public class Lexer {
 	STRING("\"[^\"]*\"", "string"),
 	CHAR("\'.\'", "character"),
 	BOOL("true|false", "boolean"),
-	PRIMITIVE("bool|double|float|long|int|short|byte|ulong|uint|char|void", "primitive"),
+	PRIMITIVE("bool|double|float|long|int|short|byte|ubyte|ushort|ulong|uint|char|void", "primitive"),
 	LAMBDAARROW("->", "lambda arrow"),
 
 	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
