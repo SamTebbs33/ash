@@ -16,6 +16,8 @@ public enum EnumPrimitive {
     INT("int", "int", true, true),
     SHORT("short", "short", true, true),
     BYTE("byte", "byte", true, true),
+    UBYTE("ubyte", "byte", true, false),
+    USHORT("ushort", "short", true, false),
     ULONG("ulong", "long", true, false),
     UINT("uint", "int", true, false),
     CHAR("char", "char", false, false);
