@@ -6,13 +6,11 @@ class AshObject {
 
 class Test : AshObject {
 	func test() {
-		var a = 0
-		match a {
-			1..5 -> println("greeting 1")
-			2 {
-				println("greeting 2")
-			}
-			_ -> println("not a greeting")
+		var x = 42
+		match x {
+			0 -> println("zero")
+			1..<10 -> println(">= 1 and < 10")
+			_ -> println(">= 10")
 		}
 	}
 }

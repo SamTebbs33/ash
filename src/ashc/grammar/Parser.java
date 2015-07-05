@@ -561,34 +561,34 @@ public class Parser {
 		expect(TokenType.PARENR);
 		break;
 	    case OCTINT:
-		expr = new NodeInteger(Integer.parseInt(next.data, 8));
+		expr = new NodeInteger(next.line, next.columnStart, Integer.parseInt(next.data, 8));
 		break;
 	    case HEXINT:
-		expr = new NodeInteger(Integer.parseInt(next.data, 16));
+		expr = new NodeInteger(next.line, next.columnStart, Integer.parseInt(next.data, 16));
 		break;
 	    case BININT:
-		expr = new NodeInteger(Integer.parseInt(next.data, 2));
+		expr = new NodeInteger(next.line, next.columnStart, Integer.parseInt(next.data, 2));
 		break;
 	    case INT:
-		expr = new NodeInteger(Integer.parseInt(next.data, 10));
+		expr = new NodeInteger(next.line, next.columnStart, Integer.parseInt(next.data, 10));
 		break;
 	    case LONG:
-		expr = new NodeLong(Long.parseLong(next.data.substring(0, next.data.length() - 1)));
+		expr = new NodeLong(next.line, next.columnStart, Long.parseLong(next.data.substring(0, next.data.length() - 1)));
 		break;
 	    case FLOAT:
-		expr = new NodeFloat(Float.parseFloat(next.data));
+		expr = new NodeFloat(next.line, next.columnStart, Float.parseFloat(next.data));
 		break;
 	    case DOUBLE:
-		expr = new NodeDouble(Double.parseDouble(next.data));
+		expr = new NodeDouble(next.line, next.columnStart, Double.parseDouble(next.data));
 		break;
 	    case STRING:
 		expr = new NodeString(next.line, next.columnStart, next.data.substring(1, next.data.length() - 1));
 		break;
 	    case CHAR:
-		expr = new NodeChar(next.data.charAt(1));
+		expr = new NodeChar(next.line, next.columnStart, next.data.charAt(1));
 		break;
 	    case BOOL:
-		expr = new NodeBool(next.data.equals("true"));
+		expr = new NodeBool(next.line, next.columnStart, next.data.equals("true"));
 		break;
 	}
 	if (expr != null) {
@@ -636,7 +636,10 @@ public class Parser {
 	Token next = getNext();
 	switch (next.type) {
 	    case DOUBLEDOT:
-		return new NodeRange(next.line, next.columnStart, expr, parseExpression());
+		boolean exclusiveEnd = false;
+		if(getNext().data.equals("<")) exclusiveEnd = true;
+		else rewind();
+		return new NodeRange(next.line, next.columnStart, expr, parseExpression(), exclusiveEnd);
 	    case AS:
 		return new NodeAs(next.line, next.columnStart, expr, parseSuperType());
 	    case IS:

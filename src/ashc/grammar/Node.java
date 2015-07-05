@@ -1036,8 +1036,9 @@ public abstract class Node {
     public static class NodeInteger extends Node implements IExpression {
 	public int val;
 
-	public NodeInteger(final int val) {
-	    this.val = val;
+	public NodeInteger(final int line, int column, int i) {
+	    super(line, column);
+	    this.val = i;
 	}
 
 	@Override
@@ -1058,7 +1059,8 @@ public abstract class Node {
     public static class NodeLong extends Node implements IExpression {
 	public long val;
 
-	public NodeLong(final long val) {
+	public NodeLong(int line, int column, final long val) {
+	    super(line, column);
 	    this.val = val;
 	}
 
@@ -1080,7 +1082,8 @@ public abstract class Node {
     public static class NodeFloat extends Node implements IExpression {
 	public float val;
 
-	public NodeFloat(final float val) {
+	public NodeFloat(int line, int column, final float val) {
+	    super(line, column);
 	    this.val = val;
 	}
 
@@ -1102,7 +1105,8 @@ public abstract class Node {
     public static class NodeDouble extends Node implements IExpression {
 	public double val;
 
-	public NodeDouble(final double val) {
+	public NodeDouble(int line, int column, final double val) {
+	    super(line, column);
 	    this.val = val;
 	}
 
@@ -1185,7 +1189,8 @@ public abstract class Node {
     public static class NodeBool extends Node implements IExpression {
 	public boolean val;
 
-	public NodeBool(final boolean val) {
+	public NodeBool(int line, int column, final boolean val) {
+	    super(line, column);
 	    this.val = val;
 	}
 
@@ -1207,7 +1212,8 @@ public abstract class Node {
     public static class NodeChar extends Node implements IExpression {
 	public char val;
 
-	public NodeChar(final char val) {
+	public NodeChar(int line, int column, final char val) {
+	    super(line, column);
 	    this.val = val;
 	}
 
@@ -1786,11 +1792,13 @@ public abstract class Node {
     
     public static class NodeRange extends Node implements IExpression {
 	public IExpression start, end;
+	public boolean exclusiveEnd;
 
-	public NodeRange(int line, int column, IExpression start, IExpression end) {
+	public NodeRange(int line, int column, IExpression start, IExpression end, boolean exclusiveEnd) {
 	    super(line, column);
 	    this.start = start;
 	    this.end = end;
+	    this.exclusiveEnd = exclusiveEnd;
 	}
 
 	@Override
