@@ -1783,5 +1783,48 @@ public abstract class Node {
 	}
 	
     }
+    
+    public static class NodeRange extends Node implements IExpression {
+	public IExpression start, end;
+
+	public NodeRange(int line, int column, IExpression start, IExpression end) {
+	    super(line, column);
+	    this.start = start;
+	    this.end = end;
+	}
+
+	@Override
+	public void analyse() {
+	    ((Node) start).analyse();
+	    ((Node) end).analyse();
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    TypeI startType = null, endType = null;
+	    if(!((Node)start).errored){
+		startType = start.getExprType();
+		if(!startType.isPrimitive()) semanticError(this, line, column, EXPECTED_PRIMITIVE_TYPE, startType);
+		else if(!startType.isNumeric()) semanticError(this, line, column, EXPECTED_NUMERIC_TYPE, startType);
+	    }else errored = true;
+	    
+	    if(!((Node)end).errored){
+		endType = end.getExprType();
+		if(!endType.isPrimitive()) semanticError(this, line, column, EXPECTED_PRIMITIVE_TYPE, endType);
+		else if(!endType.isNumeric()) semanticError(this, line, column, EXPECTED_NUMERIC_TYPE, endType);
+	    }else errored = true;
+	    
+	    if(!errored){
+		TypeI result = new TypeI("Range", 0, false);
+		result.genericTypes.add(Semantics.getPrecedentType(startType, endType));
+		return result;
+	    }
+	    else return null;
+	}
+
+	@Override
+	public void registerScopedChecks() {}
+	
+    }
 
 }

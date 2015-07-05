@@ -44,6 +44,8 @@ public class AshError {
 	ARRAY_INDEX_NOT_NUMERIC("Array index must be numeric (%s)"),
 	CANNOT_USE_SELF("Cannot use the self keyword in the current context"),
 	EXPECTED_BOOL_EXPR("Expected a boolean expression, found %s"),
+	EXPECTED_PRIMITIVE_TYPE("Expected a primitive type, but found %s"),
+	EXPECTED_NUMERIC_TYPE("Expected a numeric type, but found %s"),
 	CANNOT_ITERATE_TYPE("Cannot iterate over type %s"),
 	
 	UNCHECKED_CAST("The casted variable has not been checked to make sure it can be casted (%s as %s)"),

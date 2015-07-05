@@ -506,7 +506,6 @@ public class Parser {
     private IExpression parsePrimaryExpression() throws UnexpectedTokenException {
 	Token next = expect(TokenType.NULL, TokenType.ID, TokenType.THIS, TokenType.SELF, TokenType.UNARYOP, TokenType.BRACKETL, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.LONG, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
 	IExpression expr = null;
-
 	switch (next.type) {
 	    case NULL:
 		expr = new NodeNull();
@@ -607,8 +606,9 @@ public class Parser {
     public IExpression parseExpression() throws UnexpectedTokenException {
 	final IExpression expr = parsePrimaryExpression();
 	Token next = getNext();
-
 	switch (next.type) {
+	    case DOUBLEDOT:
+		return new NodeRange(next.line, next.columnStart, expr, parseExpression());
 	    case AS:
 		return new NodeAs(next.line, next.columnStart, expr, parseSuperType());
 	    case IS:

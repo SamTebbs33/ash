@@ -28,7 +28,7 @@ public class Lexer {
 	DOUBLE("-?[0-9]+\\.[0-9]+", "double"),
 	LONG("-?[0-9]+L", "long"),
 	INT("-?[0-9]+", "integer"),
-	STRING("\".[^\"]*\"", "string"),
+	STRING("\"[^\"]*\"", "string"),
 	CHAR("\'.\'", "character"),
 	BOOL("true|false", "boolean"),
 	PRIMITIVE("bool|double|float|long|int|short|byte|ulong|uint|char|void", "primitive"),
@@ -36,7 +36,7 @@ public class Lexer {
 
 	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
 	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
-	BINARYOP("\\.\\.|<|>|<=|>=|==|!=|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|", "binary operator"),
+	BINARYOP("<|>|<=|>=|==|!=|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|", "binary operator"),
 	ASSIGNOP("=", "assignment operator"),
 	WHITESPACE("[\n\t ]+", "whitespace"),
 
@@ -47,6 +47,8 @@ public class Lexer {
 	BRACER("\\}", "right brace"),
 	BRACKETL("\\[", "left bracket"),
 	BRACKETR("\\]", "right bracket"),
+	ELLIPSIS("\\.\\.\\."),
+	DOUBLEDOT("\\.\\."),
 	DOT("\\.", "dot"),
 	COMMA(",", "comma"),
 	QUESTIONMARK("\\?", "question mark"),
