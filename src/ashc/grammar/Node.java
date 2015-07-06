@@ -205,7 +205,7 @@ public abstract class Node {
 			defConstructor.parameters.add(argType);
 		    }
 		}
-		type.functions.add(defConstructor);
+		type.addFunction(defConstructor);
 	    }
 
 	}
@@ -437,10 +437,10 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {
-	    for (final NodeFuncDec funcDec : funcDecs)
-		funcDec.preAnalyse();
 	    for (final NodeVarDec varDec : varDecs)
 		varDec.preAnalyse();
+	    for (final NodeFuncDec funcDec : funcDecs)
+		funcDec.preAnalyse();
 	}
 
 	@Override
@@ -862,13 +862,13 @@ public abstract class Node {
 		final TypeI type = prefix.getExprType();
 		final Function func = Semantics.getFunc(id, type, args);
 		if (func == null) {
-		    semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, Semantics.currentType().qualifiedName.shortName);
+		    semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, type);
 		    return null;
 		} else {
 		    if (!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
 		    final TypeI funcType = func.returnType.copy();
 		    // Transfer generics for non-tuple types
-		    if (!funcType.isTuple()) {
+		    if (!funcType.isTuple() && !funcType.isPrimitive()) {
 			final Optional<Type> typeOpt = Semantics.getType(funcType.shortName);
 			if (!typeOpt.isPresent()) {
 			    final TypeI genericType = Semantics.getGenericType(funcType.shortName, type);
@@ -902,13 +902,11 @@ public abstract class Node {
 	}
 
     }
-
+    
     public static class NodeVariable extends NodePrefix {
 
 	public String id;
 	public NodePrefix prefix;
-	public NodeExprs exprs = new NodeExprs();
-	public TypeI type;
 	public boolean unwrapped;
 	public Field var;
 
@@ -970,14 +968,7 @@ public abstract class Node {
 	    }
 	    if (var != null) {
 		if (!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
-		final TypeI varType = var.type;
-		if (exprs.exprs.size() > varType.arrDims) semanticError(this, line, column, TOO_MANY_ARRAY_ACCESSES, exprs.exprs.size() + "", varType.arrDims
-			+ "", id);
-		if (!errored) for (final IExpression expr : exprs.exprs) {
-		    final TypeI indexType = expr.getExprType();
-		    if (!EnumPrimitive.validForArrayIndex(indexType)) semanticError(this, line, column, ARRAY_INDEX_NOT_NUMERIC, indexType.toString());
-		}
-	    }
+	    }else errored = true;
 	}
 
     }
@@ -996,11 +987,11 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    var.analyse();
 	    ((Node) expr).analyse();
-	    if (var.type != null) {
-		final TypeI exprType = expr.getExprType();
-		if (!var.type.canBeAssignedTo(expr.getExprType())) semanticError(this, line, column, CANNOT_ASSIGN, var.type, exprType);
+	    final TypeI exprType = expr.getExprType();
+	    if (var.var != null) {
+		TypeI type = var.var.type;
+		if (!var.var.type.canBeAssignedTo(expr.getExprType())) semanticError(this, line, column, CANNOT_ASSIGN, var.var.type, exprType);
 	    }
 	}
 
@@ -1882,6 +1873,48 @@ public abstract class Node {
 	    if (block.errored) errored = true;
 	}
 
+    }
+    
+    public static class NodeArrayAccess extends Node implements IExpression {
+	public IExpression accessExpr;
+	public IExpression expr;
+	
+	public NodeArrayAccess(int line, int column, IExpression expr, IExpression accessExpr) {
+	    super(line, column);
+	    this.expr = expr;
+	    this.accessExpr = accessExpr;
+	}
+	
+	@Override
+	public void analyse() {
+	    ((Node) expr).analyse();
+	    
+	    ((Node) accessExpr).analyse();
+	    if(((Node) accessExpr).errored || ((Node)expr).errored) errored = true;
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    if(!errored){
+		TypeI exprType = expr.getExprType();
+		if(exprType.isPrimitive() || exprType.isTuple() || exprType.isVoid()) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPE, exprType);
+		else if(exprType.isArray()) return exprType.copy().setArrDims(exprType.arrDims-1);
+		else {
+		    // Find an operator overload
+		    LinkedList<TypeI> params = new LinkedList<TypeI>();
+		    params.add(accessExpr.getExprType());
+		    Function func = Semantics.getType(exprType.shortName).get().getFunc("[]", params);
+		    if(func == null) semanticError(this, line, column, FUNC_DOES_NOT_EXIST, "[]", exprType);
+		    else if(!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, "[]");
+		    else return func.returnType;
+		}
+	    }
+	    return null;
+	}
+
+	@Override
+	public void registerScopedChecks() {}
+	
     }
 
 }

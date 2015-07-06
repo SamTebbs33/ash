@@ -261,11 +261,11 @@ public class Semantics {
 	final Optional<Type> type = getType(func.qualifiedName.shortName);
 	// Check if it is a constructor for an existing type
 	if (type.isPresent()) return type.get().getFunc(func.qualifiedName.shortName, func.parameters) != null;
-	return typeStack.peek().functions.contains(func);
+	return typeStack.peek().getFunc(func.qualifiedName.shortName, func.parameters) != null;
     }
 
     public static void addFunc(final Function func) {
-	typeStack.peek().functions.add(func);
+	typeStack.peek().addFunction(func);
     }
 
     public static boolean fieldExists(final Field field) {

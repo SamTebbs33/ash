@@ -48,7 +48,7 @@ public class Member {
 
     public static class Type extends Member {
 	public EnumType type;
-	public LinkedList<Function> functions = new LinkedList<Function>();
+	public HashMap<String, LinkedList<Function>> functions = new HashMap<String, LinkedList<Function>>();
 	public LinkedList<Field> fields = new LinkedList<Field>();
 	public LinkedList<Type> supers = new LinkedList<Member.Type>();
 	public LinkedList<String> generics = new LinkedList<String>();
@@ -70,10 +70,22 @@ public class Member {
 	    }
 	    Semantics.addType(this);
 	    for (final Method method : cls.getMethods())
-		functions.add(Function.fromMethod(method));
+		addFunction(Function.fromExecutable(method));
+	    for (final Constructor constructor : cls.getConstructors())
+		addFunction(Function.fromExecutable(constructor));
 	    for (final java.lang.reflect.Field field : cls.getFields())
 		fields.add(ashc.semantics.Member.Field.from(field));
 	    Semantics.exitType();
+	}
+
+	public void addFunction(final Function func) {
+	    final String name = func.qualifiedName.shortName;
+	    if (functions.containsKey(name)) functions.get(name).add(func);
+	    else {
+		final LinkedList<Function> funcs = new LinkedList<Function>();
+		funcs.add(func);
+		functions.put(name, funcs);
+	    }
 	}
 
 	public void addGeneric(final String typeName, final TypeI generic) {
@@ -106,8 +118,8 @@ public class Member {
 	    final LinkedList<TypeI> parameters = new LinkedList<TypeI>();
 	    for (final IExpression arg : args.exprs)
 		parameters.add(arg.getExprType());
-	    for (final Function func : functions)
-		if (func.paramsAreEqual(parameters)) if (func.qualifiedName.shortName.equals(id)) return func.returnType;
+	    if (functions.containsKey(id)) for (final Function func : functions.get(id))
+		if (func.paramsAreEqual(parameters)) return func.returnType;
 	    return null;
 	}
 
@@ -126,8 +138,8 @@ public class Member {
 	}
 
 	public Function getFunc(final String id, final LinkedList<TypeI> parameters) {
-	    for (final Function func : functions)
-		if (func.qualifiedName.shortName.equals(id) && func.paramsAreEqual(parameters)) return func;
+	    if (functions.containsKey(id)) for (final Function func : functions.get(id))
+		if (func.paramsAreEqual(parameters)) return func;
 
 	    Function func = null;
 	    for (final Type superType : supers)
@@ -166,16 +178,19 @@ public class Member {
 	    enclosingType = Semantics.currentType();
 	}
 
-	public static Function fromMethod(final Method method) {
+	public static Function fromExecutable(final Executable method) {
 	    final QualifiedName name = QualifiedName.fromClass(method.getDeclaringClass());
-	    name.add(method.getName());
+	    name.add(method.getName().substring(method.getName().lastIndexOf('.') + 1));
 
 	    final Function func = new Function(name, method.getModifiers());
 
 	    final Parameter[] params = method.getParameters();
 	    for (final Parameter param : params)
 		func.parameters.add(TypeI.fromClass(param.getType()));
-	    func.returnType = TypeI.fromClass(method.getReturnType());
+	    // If it's a method, get the return type, otherwise it's a
+	    // constructor
+	    if (method instanceof Method) func.returnType = TypeI.fromClass(((Method) method).getReturnType());
+	    else func.returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
 	    return func;
 	}
 

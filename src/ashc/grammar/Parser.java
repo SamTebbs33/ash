@@ -12,6 +12,7 @@ import ashc.grammar.Node.IFuncStmt;
 import ashc.grammar.Node.NodeAlias;
 import ashc.grammar.Node.NodeArg;
 import ashc.grammar.Node.NodeArgs;
+import ashc.grammar.Node.NodeArrayAccess;
 import ashc.grammar.Node.NodeAs;
 import ashc.grammar.Node.NodeBinary;
 import ashc.grammar.Node.NodeBool;
@@ -357,7 +358,7 @@ public class Parser {
      */
     private NodeFuncDec parseFuncDec(final boolean needsBody, final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
 	expect(TokenType.FUNC);
-	final Token id = expect(TokenType.ID, TokenType.BINARYOP, TokenType.UNARYOP);
+	final Token id = expect(TokenType.ID, TokenType.BINARYOP, TokenType.UNARYOP, TokenType.ARRAYDIMENSION);
 	final NodeTypes types = parseGenericsDecs();
 	final NodeArgs args = parseArgs();
 	NodeType type = null, throwsType = null;
@@ -431,6 +432,11 @@ public class Parser {
 		rewind();
 		final IFuncStmt stmt = parsePrefix();
 		if (stmt instanceof NodeVariable) {
+		    /*
+		     * while(getNext().type == TokenType.BRACKETL){
+		     * ((NodeVariable)stmt).exprs.add(parseExpression());
+		     * expect(TokenType.BRACKETR); } rewind();
+		     */
 		    final Token op = expect(TokenType.ASSIGNOP, TokenType.COMPOUNDASSIGNOP, TokenType.UNARYOP);
 		    if (op.type == TokenType.UNARYOP) return new NodeUnary(op.line, op.columnStart, (NodeVariable) stmt, op.data, false);
 		    return new NodeVarAssign(op.line, op.columnStart, (NodeVariable) stmt, op.data, parseExpression());
@@ -560,11 +566,6 @@ public class Parser {
 		if (getNext().data.equals("!")) unwrapped = true;
 		else rewind();
 		prefix = new NodeVariable(id.line, id.columnStart, id.data, prefix, unwrapped);
-		while (getNext().type == TokenType.BRACKETL) {
-		    ((NodeVariable) prefix).exprs.exprs.add(parseExpression());
-		    expect(TokenType.BRACKETR);
-		}
-		rewind();
 	    }
 
 	} while (getNext().type == TokenType.DOT);
@@ -713,6 +714,15 @@ public class Parser {
 		final IExpression exprTrue = parseExpression();
 		expect(TokenType.COLON);
 		return new NodeTernary(expr, exprTrue, parseExpression());
+	    case BRACKETL:
+		NodeArrayAccess arrayExpr = new NodeArrayAccess(((Node) expr).line, ((Node) expr).column, expr, parseExpression());
+		expect(TokenType.BRACKETR);
+		while (getNext().type == TokenType.BRACKETL) {
+		    arrayExpr = new NodeArrayAccess(arrayExpr.line, arrayExpr.column, arrayExpr, parseExpression());
+		    expect(TokenType.BRACKETR);
+		}
+		rewind();
+		return arrayExpr;
 	}
 	rewind();
 	return expr;
@@ -845,10 +855,8 @@ public class Parser {
 	}
 
 	// Parse array dimensions
-	while (getNext().type == TokenType.BRACKETL) {
-	    expect(TokenType.BRACKETR);
+	while (getNext().type == TokenType.ARRAYDIMENSION)
 	    type.arrDims++;
-	}
 	rewind();
 	if (getNext().type == TokenType.QUESTIONMARK) type.optional = true;
 	else rewind();

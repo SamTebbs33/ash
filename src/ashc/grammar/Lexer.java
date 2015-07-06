@@ -37,6 +37,7 @@ public class Lexer {
 	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
 	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
 	BINARYOP("<|>|<=|>=|==|!=|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|", "binary operator"),
+	ARRAYDIMENSION("\\[\\]"),
 	ASSIGNOP("=", "assignment operator"),
 	WHITESPACE("[\n\t ]+", "whitespace"),
 
@@ -89,7 +90,7 @@ public class Lexer {
 	WHILE("while"),
 	FOR("for"),
 	MATCH("match "),
-	IN("in"),
+	IN("in "),
 
 	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),
 	EOF("\\Z", "end of file"),
