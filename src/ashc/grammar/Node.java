@@ -1853,12 +1853,14 @@ public abstract class Node {
 		for(NodeMatchCase matchCase : matchCases){
 		    matchCase.analyse();
 		    if(!matchCase.isTerminatingCase && !matchCase.errored){
-			TypeI caseType = matchCase.expr.getExprType();
-			// The generic used for ranges must be extracted
-			if(caseType.isRange()){
-			    caseType = caseType.genericTypes.size() > 0 ? caseType.genericTypes.getFirst() : TypeI.getObjectType();
+			for(IExpression expr : matchCase.exprs){
+			    TypeI caseType = expr.getExprType();
+			    // The generic used for ranges must be extracted
+			    if(caseType.isRange()){
+				caseType = caseType.genericTypes.size() > 0 ? caseType.genericTypes.getFirst() : TypeI.getObjectType();
+			    }
+			    if(!exprType.canBeAssignedTo(caseType)) semanticError(this, matchCase.line, matchCase.column, INCOMPATIBLE_TYPES, exprType, caseType);
 			}
-			if(!exprType.canBeAssignedTo(caseType)) semanticError(this, matchCase.line, matchCase.column, INCOMPATIBLE_TYPES, exprType, caseType);
 		    }
 		}
 	    }
@@ -1871,12 +1873,12 @@ public abstract class Node {
     }
     
     public static class NodeMatchCase extends Node {
-	public IExpression expr;
+	public LinkedList<IExpression> exprs = new LinkedList<IExpression>();
 	public NodeFuncBlock block;
 	public boolean isTerminatingCase;
 	public NodeMatchCase(int line, int column, IExpression expr, NodeFuncBlock block) {
 	    super(line, column);
-	    this.expr = expr;
+	    exprs.add(expr);
 	    this.block = block;
 	    if(expr == null) isTerminatingCase = true;
 	}
@@ -1884,8 +1886,10 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    if(!isTerminatingCase){
-		((Node) expr).analyse();
-		if(((Node)expr).errored) errored = true;
+		for(IExpression expr : exprs){
+		    ((Node) expr).analyse();
+		    if(((Node)expr).errored) errored = true;
+		}
 	    }
 	    block.analyse();
 	    if(block.errored) errored = true;

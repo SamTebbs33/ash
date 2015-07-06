@@ -6,7 +6,12 @@ class AshObject {
 
 class Test : AshObject {
 	func test() {
-		var range = 0..<10
-		for(a in range) println("iteration $a")
+		var x = 0
+		match x {
+			0 {}
+			1, 2, 3 {}
+			4..<10 {}
+			_ {}
+		}
 	}
 }

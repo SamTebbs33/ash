@@ -418,7 +418,11 @@ public class Parser {
 	if((next = getNext()).type == TokenType.UNDERSCORE) return new NodeMatchCase(next.line, next.columnStart, null, parseFuncBlock(true, false));
 	else rewind();
 	IExpression expr = parseExpression();
-	return new NodeMatchCase(((Node)expr).line, ((Node)expr).column, expr, parseFuncBlock(true, false));
+	NodeMatchCase matchCase = new NodeMatchCase(((Node)expr).line, ((Node)expr).column, expr, null);
+	while(getNext().type == TokenType.COMMA) matchCase.exprs.add(parseExpression());
+	rewind();
+	matchCase.block = parseFuncBlock(true, false);
+	return matchCase;
     }
 
     private IFuncStmt parseForStmt() throws UnexpectedTokenException {
