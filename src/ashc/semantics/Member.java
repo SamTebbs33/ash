@@ -25,17 +25,20 @@ public class Member {
 	this.qualifiedName = qualifiedName;
 	this.modifiers = modifiers;
     }
-    
-    public boolean isVisible(){
-	if(isLocal) return true;
-	// Check if the member was declared as public, or no modifiers were given (Members are implicitly public)
-	if(BitOp.and(modifiers, EnumModifier.PUBLIC.intVal) || modifiers == 0) return true;
-	// If the current type is the same type as the member's enclosing type, the member is visible
-	if(enclosingType != null && enclosingType.equals(Semantics.currentType())) return true;
+
+    public boolean isVisible() {
+	if (isLocal) return true;
+	// Check if the member was declared as public, or no modifiers were
+	// given (Members are implicitly public)
+	if (BitOp.and(modifiers, EnumModifier.PUBLIC.intVal) || (modifiers == 0)) return true;
+	// If the current type is the same type as the member's enclosing type,
+	// the member is visible
+	if ((enclosingType != null) && enclosingType.equals(Semantics.currentType())) return true;
 	// If the member is private, it isn't visible
-	if(BitOp.and(modifiers, EnumModifier.PRIVATE.intVal)) return false;
-	// If the current type is a sub-type of the member's enclosing type, it is visible
-	if(Semantics.currentType().hasSuper(enclosingType.qualifiedName)) return true;
+	if (BitOp.and(modifiers, EnumModifier.PRIVATE.intVal)) return false;
+	// If the current type is a sub-type of the member's enclosing type, it
+	// is visible
+	if (Semantics.currentType().hasSuper(enclosingType.qualifiedName)) return true;
 	return false;
     }
 
@@ -56,13 +59,13 @@ public class Member {
 	    this.type = type;
 	}
 
-	public Type(Class<?> cls, String path) {
+	public Type(final Class<?> cls, final String path) {
 	    super(QualifiedName.fromPath(path), cls.getModifiers());
-	    this.type = cls.isEnum() ? EnumType.ENUM : cls.isInterface() ? EnumType.INTERFACE : EnumType.CLASS;
+	    type = cls.isEnum() ? EnumType.ENUM : cls.isInterface() ? EnumType.INTERFACE : EnumType.CLASS;
 	    for (final TypeVariable genericType : cls.getTypeParameters())
 		generics.add(genericType.getName());
-	    if(cls.getSuperclass() != null){
-		Type superType = new Type(cls.getSuperclass(), cls.getSuperclass().getName());
+	    if (cls.getSuperclass() != null) {
+		final Type superType = new Type(cls.getSuperclass(), cls.getSuperclass().getName());
 		supers.add(superType);
 	    }
 	    Semantics.addType(this);
@@ -92,9 +95,9 @@ public class Member {
 	public Field getField(final String id) {
 	    for (final Field field : fields)
 		if (field.qualifiedName.shortName.equals(id)) return field;
-	    for(Type superType : supers){
-		Field field = superType.getField(id);
-		if(field != null) return field;
+	    for (final Type superType : supers) {
+		final Field field = superType.getField(id);
+		if (field != null) return field;
 	    }
 	    return null;
 	}
@@ -125,7 +128,7 @@ public class Member {
 	public Function getFunc(final String id, final LinkedList<TypeI> parameters) {
 	    for (final Function func : functions)
 		if (func.qualifiedName.shortName.equals(id) && func.paramsAreEqual(parameters)) return func;
-	    
+
 	    Function func = null;
 	    for (final Type superType : supers)
 		if ((func = superType.getFunc(id, parameters)) != null) return func;
@@ -160,7 +163,7 @@ public class Member {
 
 	public Function(final QualifiedName qualifiedName, final int modifiers) {
 	    super(qualifiedName, modifiers);
-	    this.enclosingType = Semantics.currentType();
+	    enclosingType = Semantics.currentType();
 	}
 
 	public static Function fromMethod(final Method method) {
@@ -170,9 +173,8 @@ public class Member {
 	    final Function func = new Function(name, method.getModifiers());
 
 	    final Parameter[] params = method.getParameters();
-	    for (final Parameter param : params){
+	    for (final Parameter param : params)
 		func.parameters.add(TypeI.fromClass(param.getType()));
-	    }
 	    func.returnType = TypeI.fromClass(method.getReturnType());
 	    return func;
 	}
@@ -213,7 +215,7 @@ public class Member {
 	public Variable(final String id, final TypeI type) {
 	    super(new QualifiedName(id), 0, type);
 	    this.id = id;
-	    this.isLocal = true;
+	    isLocal = true;
 	}
 
 	@Override
@@ -225,11 +227,11 @@ public class Member {
     public static class Field extends Member {
 
 	public TypeI type;
-	
+
 	public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type) {
 	    super(qualifiedName, modifiers);
 	    this.type = type;
-	    this.enclosingType = Semantics.currentType();
+	    enclosingType = Semantics.currentType();
 	}
 
 	public static Field from(final java.lang.reflect.Field field) {

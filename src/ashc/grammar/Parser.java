@@ -7,9 +7,63 @@ import ashc.grammar.Lexer.InvalidTokenException;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.TokenType;
 import ashc.grammar.Lexer.UnexpectedTokenException;
+import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.IFuncStmt;
+import ashc.grammar.Node.NodeAlias;
+import ashc.grammar.Node.NodeArg;
+import ashc.grammar.Node.NodeArgs;
+import ashc.grammar.Node.NodeAs;
+import ashc.grammar.Node.NodeBinary;
+import ashc.grammar.Node.NodeBool;
+import ashc.grammar.Node.NodeChar;
+import ashc.grammar.Node.NodeClassBlock;
+import ashc.grammar.Node.NodeClassDec;
+import ashc.grammar.Node.NodeDouble;
+import ashc.grammar.Node.NodeElvis;
+import ashc.grammar.Node.NodeEnumBlock;
+import ashc.grammar.Node.NodeEnumDec;
+import ashc.grammar.Node.NodeEnumInstance;
+import ashc.grammar.Node.NodeExprs;
+import ashc.grammar.Node.NodeFile;
+import ashc.grammar.Node.NodeFloat;
+import ashc.grammar.Node.NodeForIn;
+import ashc.grammar.Node.NodeForNormal;
+import ashc.grammar.Node.NodeFuncBlock;
+import ashc.grammar.Node.NodeFuncCall;
+import ashc.grammar.Node.NodeFuncDec;
+import ashc.grammar.Node.NodeIf;
+import ashc.grammar.Node.NodeImport;
+import ashc.grammar.Node.NodeInteger;
+import ashc.grammar.Node.NodeInterfaceDec;
+import ashc.grammar.Node.NodeIs;
+import ashc.grammar.Node.NodeLong;
+import ashc.grammar.Node.NodeMatch;
 import ashc.grammar.Node.NodeMatchCase;
-import ashc.grammar.Node.*;
+import ashc.grammar.Node.NodeModifier;
+import ashc.grammar.Node.NodeNull;
+import ashc.grammar.Node.NodePackage;
+import ashc.grammar.Node.NodePrefix;
+import ashc.grammar.Node.NodeQualifiedName;
+import ashc.grammar.Node.NodeRange;
+import ashc.grammar.Node.NodeReturn;
+import ashc.grammar.Node.NodeSelf;
+import ashc.grammar.Node.NodeString;
+import ashc.grammar.Node.NodeTernary;
+import ashc.grammar.Node.NodeThis;
+import ashc.grammar.Node.NodeTupleExpr;
+import ashc.grammar.Node.NodeTupleExprArg;
+import ashc.grammar.Node.NodeTupleType;
+import ashc.grammar.Node.NodeType;
+import ashc.grammar.Node.NodeTypeDec;
+import ashc.grammar.Node.NodeTypes;
+import ashc.grammar.Node.NodeUnary;
+import ashc.grammar.Node.NodeUnwrapOptional;
+import ashc.grammar.Node.NodeVarAssign;
+import ashc.grammar.Node.NodeVarDec;
+import ashc.grammar.Node.NodeVarDecExplicit;
+import ashc.grammar.Node.NodeVarDecImplicit;
+import ashc.grammar.Node.NodeVariable;
+import ashc.grammar.Node.NodeWhile;
 
 /**
  * Ash
@@ -150,12 +204,12 @@ public class Parser {
 	if (!found && !silenceErrors) throw new UnexpectedTokenException(token, t);
 	return token;
     }
-    
+
     private void savePointer() {
 	pointerTemp = pointer;
     }
-    
-    private void restorePointer(){
+
+    private void restorePointer() {
 	pointer = pointerTemp;
     }
 
@@ -365,12 +419,12 @@ public class Parser {
 	final Token token = expect(TokenType.ID, TokenType.SELF, TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.MATCH, TokenType.VAR, TokenType.CONST, TokenType.RETURN);
 	switch (token.type) {
 	    case RETURN:
-		//rewind();
+		// rewind();
 		silenceErrors = true;
 		savePointer();
 		final IExpression expr = parseExpression();
 		silenceErrors = false;
-		if(expr == null) restorePointer();
+		if (expr == null) restorePointer();
 		return new NodeReturn(token.line, token.columnStart, expr);
 	    case ID:
 	    case SELF:
@@ -378,7 +432,7 @@ public class Parser {
 		final IFuncStmt stmt = parsePrefix();
 		if (stmt instanceof NodeVariable) {
 		    final Token op = expect(TokenType.ASSIGNOP, TokenType.COMPOUNDASSIGNOP, TokenType.UNARYOP);
-		    if(op.type == TokenType.UNARYOP) return new NodeUnary(op.line, op.columnStart, (NodeVariable)stmt, op.data, false);
+		    if (op.type == TokenType.UNARYOP) return new NodeUnary(op.line, op.columnStart, (NodeVariable) stmt, op.data, false);
 		    return new NodeVarAssign(op.line, op.columnStart, (NodeVariable) stmt, op.data, parseExpression());
 		} else return stmt;
 	    case IF:
@@ -398,14 +452,14 @@ public class Parser {
     }
 
     private IFuncStmt parseMatchStmt() throws UnexpectedTokenException {
-	IExpression expr = parseExpression();
+	final IExpression expr = parseExpression();
 	expect(TokenType.BRACEL);
-	NodeMatch match = new NodeMatch(((Node)expr).line, ((Node)expr).column, expr);
-	while(getNext().type != TokenType.BRACER){
+	final NodeMatch match = new NodeMatch(((Node) expr).line, ((Node) expr).column, expr);
+	while (getNext().type != TokenType.BRACER) {
 	    rewind();
-	    NodeMatchCase matchCase = parseMatchCase();
+	    final NodeMatchCase matchCase = parseMatchCase();
 	    match.add(matchCase);
-	    if(matchCase.isTerminatingCase){
+	    if (matchCase.isTerminatingCase) {
 		expect(TokenType.BRACER);
 		break;
 	    }
@@ -415,11 +469,12 @@ public class Parser {
 
     private NodeMatchCase parseMatchCase() throws UnexpectedTokenException {
 	Token next;
-	if((next = getNext()).type == TokenType.UNDERSCORE) return new NodeMatchCase(next.line, next.columnStart, null, parseFuncBlock(true, false));
+	if ((next = getNext()).type == TokenType.UNDERSCORE) return new NodeMatchCase(next.line, next.columnStart, null, parseFuncBlock(true, false));
 	else rewind();
-	IExpression expr = parseExpression();
-	NodeMatchCase matchCase = new NodeMatchCase(((Node)expr).line, ((Node)expr).column, expr, null);
-	while(getNext().type == TokenType.COMMA) matchCase.exprs.add(parseExpression());
+	final IExpression expr = parseExpression();
+	final NodeMatchCase matchCase = new NodeMatchCase(((Node) expr).line, ((Node) expr).column, expr, null);
+	while (getNext().type == TokenType.COMMA)
+	    matchCase.exprs.add(parseExpression());
 	rewind();
 	matchCase.block = parseFuncBlock(true, false);
 	return matchCase;
@@ -496,13 +551,13 @@ public class Parser {
 		rewind();
 		final NodeExprs exprs = parseCallArgs(TokenType.PARENL, TokenType.PARENR);
 		boolean unwrapped = false;
-		if(getNext().data.equals("!")) unwrapped = true;
+		if (getNext().data.equals("!")) unwrapped = true;
 		else rewind();
 		prefix = new NodeFuncCall(id.line, id.columnStart, id.data, exprs, prefix, generics, unwrapped);
 	    } else {
 		rewind();
 		boolean unwrapped = false;
-		if(getNext().data.equals("!")) unwrapped = true;
+		if (getNext().data.equals("!")) unwrapped = true;
 		else rewind();
 		prefix = new NodeVariable(id.line, id.columnStart, id.data, prefix, unwrapped);
 		while (getNext().type == TokenType.BRACKETL) {
@@ -641,16 +696,16 @@ public class Parser {
 	switch (next.type) {
 	    case DOUBLEDOT:
 		boolean exclusiveEnd = false;
-		if(getNext().data.equals("<")) exclusiveEnd = true;
+		if (getNext().data.equals("<")) exclusiveEnd = true;
 		else rewind();
 		return new NodeRange(next.line, next.columnStart, expr, parseExpression(), exclusiveEnd);
 	    case AS:
 		return new NodeAs(next.line, next.columnStart, expr, parseSuperType());
 	    case IS:
 		return new NodeIs(next.line, next.columnStart, expr, parseSuperType());
-	    // Postfix unary expression
+		// Postfix unary expression
 	    case UNARYOP:
-		if(next.data.equals("!")) return new NodeUnwrapOptional(next.line, next.columnStart, expr);
+		if (next.data.equals("!")) return new NodeUnwrapOptional(next.line, next.columnStart, expr);
 		return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
 	    case QUESTIONMARK:
 		if ((next = getNext()).type == TokenType.QUESTIONMARK) return new NodeElvis(next.line, next.columnStart, expr, parseExpression());
@@ -900,10 +955,10 @@ public class Parser {
     }
 
     public LinkedList<NodeAlias> parseAliases() throws UnexpectedTokenException {
-	LinkedList<NodeAlias> result = new LinkedList<NodeAlias>();
+	final LinkedList<NodeAlias> result = new LinkedList<NodeAlias>();
 	Token next;
-	while((next = getNext()).type == TokenType.ALIAS){
-	    String alias = expect(TokenType.ID).data;
+	while ((next = getNext()).type == TokenType.ALIAS) {
+	    final String alias = expect(TokenType.ID).data;
 	    expect(TokenType.ASSIGNOP);
 	    result.add(new NodeAlias(next.line, next.columnStart, alias, parseSuperType()));
 	}

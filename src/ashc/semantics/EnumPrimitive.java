@@ -54,7 +54,7 @@ public enum EnumPrimitive {
 	return false;
     }
 
-    public static boolean isJavaPrimitive(String typeName) {
+    public static boolean isJavaPrimitive(final String typeName) {
 	for (final EnumPrimitive p : EnumPrimitive.values())
 	    if (p.javaName.equals(typeName)) return true;
 	return false;

@@ -3,18 +3,20 @@ package ashc.semantics;
 import static ashc.error.AshError.*;
 import static ashc.error.AshError.EnumError.*;
 
-import java.lang.reflect.*;
 import java.util.*;
 
 import ashc.grammar.*;
+import ashc.grammar.Node.IExpression;
+import ashc.grammar.Node.NodeExprs;
+import ashc.grammar.Node.NodeTupleType;
+import ashc.grammar.Node.NodeType;
+import ashc.grammar.Node.NodeVariable;
 import ashc.grammar.Operator.EnumOperation;
-import ashc.grammar.Node.*;
 import ashc.load.*;
 import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
-import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
@@ -75,19 +77,19 @@ public class Semantics {
 	    clsName = clsName.replace("[", "");
 	    arrDims = arrDims - clsName.length();
 	    final String shortName = clsName.substring(clsName.lastIndexOf('.') + 1);
-	    if(clsName.charAt(0) == 'L') clsName = clsName.substring(1);
+	    if (clsName.charAt(0) == 'L') clsName = clsName.substring(1);
 	    clsName = clsName.replace(";", "");
-	    TypeI type = new TypeI(shortName, arrDims, false);
+	    final TypeI type = new TypeI(shortName, arrDims, false);
 	    type.qualifiedName = new QualifiedName("");
-	    for(String section : clsName.split("\\.")) type.qualifiedName.add(section);
-	    /*if(!clsName.equals("void") && !EnumPrimitive.isJavaPrimitive(clsName)){
-		boolean isGeneric = false;
-		for(TypeVariable tVar : cls.getTypeParameters()) if(tVar.getName().equals(clsName)){
-		    isGeneric = true;
-		    break;
-		}
-		if(!isGeneric) TypeImporter.loadClass(clsName);
-	    }*/
+	    for (final String section : clsName.split("\\."))
+		type.qualifiedName.add(section);
+	    /*
+	     * if(!clsName.equals("void") &&
+	     * !EnumPrimitive.isJavaPrimitive(clsName)){ boolean isGeneric =
+	     * false; for(TypeVariable tVar : cls.getTypeParameters())
+	     * if(tVar.getName().equals(clsName)){ isGeneric = true; break; }
+	     * if(!isGeneric) TypeImporter.loadClass(clsName); }
+	     */
 	    // Since all Java types are nullable, this must be set to optional
 	    type.optional = true;
 	    return type;
@@ -146,14 +148,15 @@ public class Semantics {
 		}
 		return false;
 	    }
-	    
-	    // Optionals can be assigned to non-optionals, but not the other way around
+
+	    // Optionals can be assigned to non-optionals, but not the other way
+	    // around
 	    if (!optional && exprType.optional) return false;
 	    // If they are both numeric and the array dimensions are 0
 	    if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && (arrDims == exprType.arrDims)) return true;
-	    	    
-	    return exprType.arrDims == arrDims
-		   && (this.shortName.equals(exprType.shortName) || (exprType.isNull() && !EnumPrimitive.isNumeric(shortName)) || Semantics.typeHasSuper(exprType.shortName, shortName));
+
+	    return (exprType.arrDims == arrDims)
+		    && (shortName.equals(exprType.shortName) || (exprType.isNull() && !EnumPrimitive.isNumeric(shortName)) || Semantics.typeHasSuper(exprType.shortName, shortName));
 	}
 
 	public boolean isNull() {
@@ -203,7 +206,7 @@ public class Semantics {
 	}
 
 	public boolean isRange() {
-	    return shortName != null & shortName.equals("Range");
+	    return (shortName != null) & shortName.equals("Range");
 	}
     }
 
@@ -241,16 +244,17 @@ public class Semantics {
     public static boolean bindingExists(final String shortName) {
 	return typeNameMap.containsKey(shortName);
     }
-    
-    public static Optional<Type> getType(String id, QualifiedName name){
-	Optional<Type> type = getType(id);
-	if(type.isPresent()) return type;
-	if(name != null) TypeImporter.loadClass(name.toString());
+
+    public static Optional<Type> getType(final String id, final QualifiedName name) {
+	final Optional<Type> type = getType(id);
+	if (type.isPresent()) return type;
+	if (name != null) TypeImporter.loadClass(name.toString());
 	return getType(id);
     }
 
     public static Optional<Type> getType(final String id) {
-	return typeNameMap.containsKey(id) ? Optional.of(types.get(typeNameMap.get(id))) : aliases.containsKey(id) ? Optional.of(aliases.get(id)) : Optional.empty();
+	return typeNameMap.containsKey(id) ? Optional.of(types.get(typeNameMap.get(id))) : aliases.containsKey(id) ? Optional.of(aliases.get(id))
+		: Optional.empty();
     }
 
     public static boolean funcExists(final Function func) {
@@ -354,9 +358,7 @@ public class Semantics {
     }
 
     public static void addVar(final Variable variable) {
-	if (Scope.inScope()){
-	    Scope.getScope().vars.add(variable);
-	}
+	if (Scope.inScope()) Scope.getScope().vars.add(variable);
     }
 
     public static Type currentType() {
@@ -375,61 +377,64 @@ public class Semantics {
 	return null;
     }
 
-    public static TypeI filterNullType(TypeI exprType) {
+    public static TypeI filterNullType(final TypeI exprType) {
 	return exprType.isNull() ? TypeI.getObjectType().copy().setOptional(true) : exprType;
     }
 
-    public static TypeI checkUnwrappedOptional(TypeI exprType, Node node, IExpression expr) {
-	if(expr instanceof NodeVariable){
-	    Field field = ((NodeVariable)expr).var;
-	    if(field != null) if(!Scope.getScope().hasNullCheck(field)) warning(node.line, node.column, UNCHECKED_UNWRAP, field.qualifiedName.shortName);
+    public static TypeI checkUnwrappedOptional(TypeI exprType, final Node node, final IExpression expr) {
+	if (expr instanceof NodeVariable) {
+	    final Field field = ((NodeVariable) expr).var;
+	    if (field != null) if (!Scope.getScope().hasNullCheck(field)) warning(node.line, node.column, UNCHECKED_UNWRAP, field.qualifiedName.shortName);
 	}
-	if(exprType != null){
+	if (exprType != null) {
 	    exprType = exprType.copy();
-	    if(!exprType.optional) semanticError(node, node.line, node.column, UNWRAPPED_VALUE_NOT_OPTIONAL, exprType);
+	    if (!exprType.optional) semanticError(node, node.line, node.column, UNWRAPPED_VALUE_NOT_OPTIONAL, exprType);
 	    exprType.optional = false;
-	}else node.errored = true;
+	} else node.errored = true;
 	return exprType;
     }
 
-    public static void addAlias(String alias, Type type) {
+    public static void addAlias(final String alias, final Type type) {
 	aliases.put(alias, type);
     }
 
-    public static TypeI getOperationType(TypeI type1, TypeI type2, Operator operator) {
-	TypeI result = null;
-	if(type1.isNumeric() && type2.isNumeric()) return getPrecedentType(type1, type2);
-	else if(type1.equals(TypeI.getStringType()) && operator.operation == EnumOperation.ADD) return TypeI.getStringType();
-	
-	if(type1.isArray() || type1.isTuple() || type1.isVoid() || type1.isNull()) return null;
-	else if(type2.isArray() || type2.isTuple() || type2.isVoid() || type2.isNull()) return null;
-	
+    public static TypeI getOperationType(final TypeI type1, final TypeI type2, final Operator operator) {
+	if (type1.isNumeric() && type2.isNumeric()) return getPrecedentType(type1, type2);
+	else if (type1.equals(TypeI.getStringType()) && (operator.operation == EnumOperation.ADD)) return TypeI.getStringType();
+
+	if (type1.isArray() || type1.isTuple() || type1.isVoid() || type1.isNull()) return null;
+	else if (type2.isArray() || type2.isTuple() || type2.isVoid() || type2.isNull()) return null;
+
 	// Check for operator overloads, start with type 1
-	LinkedList<TypeI> parameter = new LinkedList<TypeI>();
+	final LinkedList<TypeI> parameter = new LinkedList<TypeI>();
 	Type type;
 	Function func;
-	if(!type1.isPrimitive()){
+	if (!type1.isPrimitive()) {
 	    parameter.add(type2);
 	    type = Semantics.getType(type1.shortName).get();
 	    func = type.getFunc(operator.opStr, parameter);
-	    if(func != null) return func.returnType;
+	    if (func != null) return func.returnType;
 	}
-	if(!type2.isPrimitive()){
+	if (!type2.isPrimitive()) {
 	    // Check type 2 for operator overloads
 	    parameter.clear();
 	    parameter.add(type1);
 	    type = Semantics.getType(type2.shortName).get();
 	    func = type.getFunc(operator.opStr, parameter);
-	    if(func != null) return func.returnType;
+	    if (func != null) return func.returnType;
 	}
 	return null;
     }
 
-    public static TypeI getOperationType(TypeI type, Operator operator) {
-	if(type.isNumeric()) return type;
-	if(type.isArray() || type.isNull() || type.isTuple() || type.isVoid()) return null;
-	Function func = Semantics.getType(type.shortName).get().getFunc(operator.opStr, new LinkedList<>());
+    public static TypeI getOperationType(final TypeI type, final Operator operator) {
+	if (type.isNumeric()) return type;
+	if (type.isArray() || type.isNull() || type.isTuple() || type.isVoid()) return null;
+	final Function func = Semantics.getType(type.shortName).get().getFunc(operator.opStr, new LinkedList<>());
 	return func != null ? func.returnType : null;
+    }
+
+    public static TypeI getGeneric(final LinkedList<TypeI> generics, final int index) {
+	return generics.size() <= index ? TypeI.getObjectType() : generics.get(index);
     }
 
 }

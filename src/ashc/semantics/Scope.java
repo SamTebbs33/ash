@@ -39,7 +39,7 @@ public class Scope {
     private static QualifiedName namespace = new QualifiedName("");
 
     public Scope() {
-	if(!scopeStack.isEmpty()) this.parent = scopeStack.peek();
+	if (!scopeStack.isEmpty()) parent = scopeStack.peek();
     }
 
     public LinkedList<Variable> vars = new LinkedList<Variable>();
@@ -78,12 +78,12 @@ public class Scope {
     public void addVar(final Variable var) {
 	vars.add(var);
     }
-    
-    public boolean hasNullCheck(Field field){
-	if(nullChecks.contains(field)) return true;
-	else if(parent != null) return parent.hasNullCheck(field);
+
+    public boolean hasNullCheck(final Field field) {
+	if (nullChecks.contains(field)) return true;
+	else if (parent != null) return parent.hasNullCheck(field);
 	return false;
-	
+
     }
 
     public static FuncScope getFuncScope() {
@@ -102,7 +102,7 @@ public class Scope {
 	return scopeStack.size() > 0;
     }
 
-    public boolean hasCastCheck(Field field, Type type) {
+    public boolean hasCastCheck(final Field field, final Type type) {
 	return castChecks.containsKey(field) ? castChecks.get(field).equals(type) : parent != null ? parent.hasCastCheck(field, type) : false;
     }
 

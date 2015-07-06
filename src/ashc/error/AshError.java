@@ -9,7 +9,7 @@ import ashc.main.*;
  * @author samtebbs, 15:44:44 - 23 May 2015
  */
 public class AshError {
-    
+
     public static int numErrors = 0;
 
     public static enum EnumError {
@@ -48,7 +48,7 @@ public class AshError {
 	EXPECTED_NUMERIC_TYPE("Expected a numeric type, but found %s"),
 	CANNOT_ITERATE_TYPE("Cannot iterate over type %s"),
 	INCOMPATIBLE_TYPES("The types %s and %s are incompatible"),
-	
+
 	UNCHECKED_CAST("The casted variable has not been checked to make sure it can be casted (%s as %s)"),
 	UNWRAPPED_VALUE_NOT_OPTIONAL("An unwrapped value must be optional (%s)"),
 	UNCHECKED_UNWRAP("The unwrapped variable \'%s\' has not been checked to make sure it is not null"),
@@ -89,8 +89,8 @@ public class AshError {
 	node.errored = true;
 	semanticError(line, column, error, args);
     }
-    
-    public static void warning(int line, int column, EnumError error, Object... args){
+
+    public static void warning(final int line, final int column, final EnumError error, final Object... args) {
 	System.err.printf("Warning[%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
 	System.err.printf(error.format + "%n", args);
     }
