@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.*;
 
 import ashc.codegen.*;
-import ashc.codegen.GenNode.*;
+import ashc.codegen.GenNode.GenNodeType;
 import ashc.grammar.*;
 import ashc.grammar.Node.NodeFile;
 
@@ -40,11 +40,12 @@ public class AshCompiler {
     public void analyse() {
 	if (fileNode != null) fileNode.analyse();
     }
-    
+
     public void generate() {
-	if(fileNode != null){
+	if (fileNode != null) {
 	    fileNode.generate();
-	    for(GenNodeType type : GenNode.types) type.generate(null);
+	    for (final GenNodeType type : GenNode.types)
+		type.generate(null);
 	}
     }
 

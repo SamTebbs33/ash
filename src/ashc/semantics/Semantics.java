@@ -218,19 +218,18 @@ public class Semantics {
 
 	public String toBytecodeName() {
 	    StringBuffer name = new StringBuffer();
-	    if(isArray()) {
-		for(int i = 0; i < arrDims; i++) name.append("[");
-	    }
-	    if(isTuple()){
-		for(TypeI type : tupleTypes){
-		    String tupleTypeName = type.toBytecodeName();
+	    if (isArray()) for (int i = 0; i < arrDims; i++)
+		name.append("[");
+	    if (isTuple()) {
+		for (final TypeI type : tupleTypes) {
+		    final String tupleTypeName = type.toBytecodeName();
 		    name.append(tupleTypeName.replace(';', ':'));
 		}
-		String tupleClassName = "Tuple:"+name.toString().replace("/", "-");
-		if(!GenNode.generatedTupleClasses.contains(tupleClassName)){
-		    GenNodeType tupleClass = new GenNodeType(tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC);
-		    GenNodeFunction tupleConstructor = new GenNodeFunction(tupleClassName+".<init>", Opcodes.ACC_PUBLIC, "()V");
-		    for(TypeI tupleType : tupleTypes){
+		final String tupleClassName = "Tuple:" + name.toString().replace("/", "-");
+		if (!GenNode.generatedTupleClasses.contains(tupleClassName)) {
+		    final GenNodeType tupleClass = new GenNodeType(tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC);
+		    final GenNodeFunction tupleConstructor = new GenNodeFunction(tupleClassName + ".<init>", Opcodes.ACC_PUBLIC, "()V");
+		    for (final TypeI tupleType : tupleTypes) {
 			tupleClass.fields.add(new GenNodeField(Opcodes.ACC_PUBLIC, tupleType.tupleName, tupleType.toBytecodeName()));
 			tupleConstructor.stmts.add(new GenNodeVarAssign(tupleType.tupleName));
 		    }
@@ -238,10 +237,10 @@ public class Semantics {
 		    GenNode.addGenNodeType(tupleClass);
 		    GenNode.generatedTupleClasses.add(tupleClassName);
 		}
-		name = new StringBuffer("L"+tupleClassName+";");
-	    }else if(isVoid()) name.append("V");
-	    else if(isPrimitive()) name.append(EnumPrimitive.getPrimitive(shortName).bytecodeName);
-	    else name.append("L"+Semantics.getType(shortName).get().qualifiedName.toString().replace('.', '/')+";");
+		name = new StringBuffer("L" + tupleClassName + ";");
+	    } else if (isVoid()) name.append("V");
+	    else if (isPrimitive()) name.append(EnumPrimitive.getPrimitive(shortName).bytecodeName);
+	    else name.append("L" + Semantics.getType(shortName).get().qualifiedName.toString().replace('.', '/') + ";");
 	    return name.toString();
 	}
     }

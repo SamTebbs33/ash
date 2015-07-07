@@ -27,6 +27,7 @@ import ashc.semantics.Member.Variable;
 import ashc.semantics.Scope.FuncScope;
 import ashc.semantics.Scope.PropertyScope;
 import ashc.semantics.Semantics.TypeI;
+import ashc.semantics.Member.Type;
 import ashc.util.*;
 
 /**
@@ -51,7 +52,7 @@ public abstract class Node {
     public void preAnalyse() {}
 
     public void analyse() {}
-    
+
     public abstract void generate();
 
     public static interface IFuncStmt {
@@ -117,7 +118,8 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    for(NodeTypeDec dec : typeDecs) dec.generate();
+	    for (final NodeTypeDec dec : typeDecs)
+		dec.generate();
 	}
 
     }
@@ -227,7 +229,7 @@ public abstract class Node {
 		    arg.preAnalyse();
 		    if (!arg.errored) {
 			final TypeI argType = new TypeI(arg.type);
-			Field field = new Field(Scope.getNamespace().copy().add(arg.id), EnumModifier.PUBLIC.intVal, argType);
+			final Field field = new Field(Scope.getNamespace().copy().add(arg.id), EnumModifier.PUBLIC.intVal, argType);
 			type.fields.add(field);
 			argFields.add(field);
 			defConstructor.parameters.add(argType);
@@ -241,7 +243,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    // Ensure the super-types are valid
-	    
+
 	    if (types != null) {
 		types.analyse();
 		boolean hasSuperClass = false;
@@ -251,37 +253,36 @@ public abstract class Node {
 		    if (!typeOpt.isPresent()) semanticError(line, column, TYPE_DOES_NOT_EXIST, typeNode.id);
 		    else {
 			final Type type = typeOpt.get();
-			if (type.type == EnumType.CLASS){
-			    if (getType() == EnumType.CLASS) {
-				if (hasSuperClass) semanticError(this, line, column, CANNOT_EXTEND_MULTIPLE_CLASSES, typeNode.id);
-				else hasSuperClass = true;
-			    }
+			if (type.type == EnumType.CLASS) {
+			    if (getType() == EnumType.CLASS) if (hasSuperClass) semanticError(this, line, column, CANNOT_EXTEND_MULTIPLE_CLASSES, typeNode.id);
+			    else hasSuperClass = true;
 			} else semanticError(this, line, column, CANNOT_EXTEND_TYPE, "an", getType().name().toLowerCase(), "a", "class", typeNode.id);
 			if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
 			if ((type.type == EnumType.ENUM) && (getType() != EnumType.ENUM)) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
 		    }
 		    if (!errored) type.supers.add(typeOpt.get());
 		}
-		if(!hasSuperClass) type.supers.addFirst(Semantics.getType("Object").get());
-		
-	    }else type.supers.addFirst(Semantics.getType("Object").get());
+		if (!hasSuperClass) type.supers.addFirst(Semantics.getType("Object").get());
+
+	    } else type.supers.addFirst(Semantics.getType("Object").get());
 	    Semantics.enterType(type);
 	}
-	
+
 	@Override
-	public void generate(){
-	    String name = type.qualifiedName.toString();
-	    String superClass = type.supers.getFirst().qualifiedName.toString();
+	public void generate() {
+	    final String name = type.qualifiedName.toString();
+	    final String superClass = type.supers.getFirst().qualifiedName.toString();
 	    String[] interfaces = null;
-	    if(type.supers.size() > 1){
-		interfaces = new String[type.supers.size()-1];
-		for(int i = 1; i < type.supers.size(); i++) interfaces[i-1] = type.supers.get(i).qualifiedName.toString();
+	    if (type.supers.size() > 1) {
+		interfaces = new String[type.supers.size() - 1];
+		for (int i = 1; i < type.supers.size(); i++)
+		    interfaces[i - 1] = type.supers.get(i).qualifiedName.toString();
 	    }
 	    genNodeType = new GenNodeType(name, superClass, interfaces, type.modifiers);
-	    if(defConstructor != null){
-		GenNodeFunction func = new GenNodeFunction("<init>", defConstructor.modifiers, "V");
+	    if (defConstructor != null) {
+		final GenNodeFunction func = new GenNodeFunction("<init>", defConstructor.modifiers, "V");
 		func.params = defConstructor.parameters;
-		for(Field field : argFields){
+		for (final Field field : argFields) {
 		    genNodeType.fields.add(new GenNodeField(field));
 		    func.stmts.add(new GenNodeVarAssign(field.qualifiedName.toString()));
 		}
@@ -342,11 +343,11 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    super.generate();
-	    for(NodeVarDec varDec : block.varDecs){
+	    for (final NodeVarDec varDec : block.varDecs) {
 		varDec.generate();
 		genNodeType.fields.add(varDec.genNodeField);
 	    }
-	    for(NodeFuncDec funcDec : block.funcDecs){
+	    for (final NodeFuncDec funcDec : block.funcDecs) {
 		funcDec.generate();
 		genNodeType.functions.add(funcDec.genNodeFunc);
 	    }
@@ -691,12 +692,12 @@ public abstract class Node {
 
 	    args.preAnalyse();
 	    if (args.hasDefExpr) func.hasDefExpr = true;
-	    
+
 	    // We need to push a new scope and add the parameters as variables
 	    // so that return type inference works
 	    Scope.push(new FuncScope(returnType, isMutFunc));
-	    for (final NodeArg arg : args.args) Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
-
+	    for (final NodeArg arg : args.args)
+		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
 
 	    if (!isMutFunc) {
 		if (!type.id.equals("void")) returnType = new TypeI(type);
@@ -705,7 +706,7 @@ public abstract class Node {
 		returnType = Semantics.filterNullType(returnType);
 	    } else returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
 	    func.returnType = returnType;
-	    
+
 	    Scope.getFuncScope().returnType = returnType;
 	    Scope.pop();
 
@@ -718,7 +719,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    args.analyse();
-	    if(id.equals(Semantics.currentType().qualifiedName.shortName)) isConstructor = true;
+	    if (id.equals(Semantics.currentType().qualifiedName.shortName)) isConstructor = true;
 	    if (type != null) type.analyse();
 	    if (throwsType != null) {
 		throwsType.analyse();
@@ -738,7 +739,7 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    String name = id, type = returnType.toBytecodeName();
-	    if(isConstructor){
+	    if (isConstructor) {
 		name = "<init>";
 		type = "V";
 	    }
@@ -787,17 +788,18 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    if(getBlock != null){
-		GenNodeFunction getFunc = new GenNodeFunction("$get"+id, Opcodes.ACC_PUBLIC, var.type.toBytecodeName());
+	    if (getBlock != null) {
+		final GenNodeFunction getFunc = new GenNodeFunction("$get" + id, Opcodes.ACC_PUBLIC, var.type.toBytecodeName());
 		getBlock.generate();
 		getFunc.stmts = getBlock.genStmts;
 		GenNode.typeStack.peek().functions.add(getFunc);
 	    }
-	    if(setBlock != null){
-		GenNodeFunction setFunc = new GenNodeFunction("$set"+id, Opcodes.ACC_PUBLIC, "V");
+	    if (setBlock != null) {
+		final GenNodeFunction setFunc = new GenNodeFunction("$set" + id, Opcodes.ACC_PUBLIC, "V");
 		setFunc.params.add(var.type);
 		setBlock.generate();
-		//TODO: Convert return statements in the block into assignment statements
+		// TODO: Convert return statements in the block into assignment
+		// statements
 		GenNode.typeStack.peek().functions.add(setFunc);
 	    }
 	}
@@ -888,7 +890,7 @@ public abstract class Node {
 		}
 	    }
 	}
-	
+
 	@Override
 	public void generate() {
 	    genNodeField = new GenNodeField(var);
@@ -931,7 +933,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    
+
 	}
 
     }
@@ -1060,7 +1062,7 @@ public abstract class Node {
 	}
 
     }
-    
+
     public static class NodeVariable extends NodePrefix {
 
 	public String id;
@@ -1126,7 +1128,7 @@ public abstract class Node {
 	    }
 	    if (var != null) {
 		if (!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
-	    }else errored = true;
+	    } else errored = true;
 	}
 
     }
@@ -1148,7 +1150,6 @@ public abstract class Node {
 	    ((Node) expr).analyse();
 	    final TypeI exprType = expr.getExprType();
 	    if (var.var != null) {
-		TypeI type = var.var.type;
 		if (!var.var.type.canBeAssignedTo(expr.getExprType())) semanticError(this, line, column, CANNOT_ASSIGN, var.var.type, exprType);
 	    }
 	}
@@ -1492,7 +1493,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    if (((Node) expr1).errored || ((Node) expr2).errored){
+	    if (((Node) expr1).errored || ((Node) expr2).errored) {
 		errored = true;
 		return null;
 	    }
@@ -2125,38 +2126,38 @@ public abstract class Node {
 	public void generate() {}
 
     }
-    
+
     public static class NodeArrayAccess extends Node implements IExpression {
 	public IExpression accessExpr;
 	public IExpression expr;
-	
-	public NodeArrayAccess(int line, int column, IExpression expr, IExpression accessExpr) {
+
+	public NodeArrayAccess(final int line, final int column, final IExpression expr, final IExpression accessExpr) {
 	    super(line, column);
 	    this.expr = expr;
 	    this.accessExpr = accessExpr;
 	}
-	
+
 	@Override
 	public void analyse() {
 	    ((Node) expr).analyse();
-	    
+
 	    ((Node) accessExpr).analyse();
-	    if(((Node) accessExpr).errored || ((Node)expr).errored) errored = true;
+	    if (((Node) accessExpr).errored || ((Node) expr).errored) errored = true;
 	}
 
 	@Override
 	public TypeI getExprType() {
-	    if(!errored){
-		TypeI exprType = expr.getExprType();
-		if(exprType.isPrimitive() || exprType.isTuple() || exprType.isVoid()) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPE, exprType);
-		else if(exprType.isArray()) return exprType.copy().setArrDims(exprType.arrDims-1);
+	    if (!errored) {
+		final TypeI exprType = expr.getExprType();
+		if (exprType.isPrimitive() || exprType.isTuple() || exprType.isVoid()) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPE, exprType);
+		else if (exprType.isArray()) return exprType.copy().setArrDims(exprType.arrDims - 1);
 		else {
 		    // Find an operator overload
-		    LinkedList<TypeI> params = new LinkedList<TypeI>();
+		    final LinkedList<TypeI> params = new LinkedList<TypeI>();
 		    params.add(accessExpr.getExprType());
-		    Function func = Semantics.getType(exprType.shortName).get().getFunc("[]", params);
-		    if(func == null) semanticError(this, line, column, FUNC_DOES_NOT_EXIST, "[]", exprType);
-		    else if(!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, "[]");
+		    final Function func = Semantics.getType(exprType.shortName).get().getFunc("[]", params);
+		    if (func == null) semanticError(this, line, column, FUNC_DOES_NOT_EXIST, "[]", exprType);
+		    else if (!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, "[]");
 		    else return func.returnType;
 		}
 	    }
@@ -2168,7 +2169,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {}
-	
+
     }
 
 }

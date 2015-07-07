@@ -9,23 +9,27 @@ import ashc.semantics.Semantics.TypeI;
  */
 public enum EnumPrimitive {
 
-    BOOL("bool", "boolean", "Z", false, false),
-    DOUBLE("double", "double", "D", true, false),
-    FLOAT("float", "float", "F", true, false),
-    LONG("long", "long", "J", true, false),
-    INT("int", "int", "I", true, true),
-    SHORT("short", "short", "S", true, true),
-    BYTE("byte", "byte", "B", true, true),
-    UBYTE("ubyte", "byte", "B", true, false),
-    USHORT("ushort", "short", "S", true, false),
-    ULONG("ulong", "long", "J", true, false),
-    UINT("uint", "int", "I", true, false),
-    CHAR("char", "char", "C", false, false);
+    BOOL("bool", "boolean", "Z", false, false), DOUBLE("double", "double", "D", true, false), FLOAT("float", "float", "F", true, false), LONG(
+	    "long",
+	    "long",
+	    "J",
+	    true,
+	    false), INT("int", "int", "I", true, true), SHORT("short", "short", "S", true, true), BYTE("byte", "byte", "B", true, true), UBYTE(
+	    "ubyte",
+	    "byte",
+	    "B",
+	    true,
+	    false), USHORT("ushort", "short", "S", true, false), ULONG("ulong", "long", "J", true, false), UINT("uint", "int", "I", true, false), CHAR(
+	    "char",
+	    "char",
+	    "C",
+	    false,
+	    false);
 
     public String ashName, javaName, bytecodeName;
     public boolean validForArrayIndex, isNumeric;
 
-    private EnumPrimitive(final String ashName, final String javaName, String bytecodeName, final boolean isNumeric, final boolean wholeNumber) {
+    private EnumPrimitive(final String ashName, final String javaName, final String bytecodeName, final boolean isNumeric, final boolean wholeNumber) {
 	this.ashName = ashName;
 	this.javaName = javaName;
 	this.bytecodeName = bytecodeName;

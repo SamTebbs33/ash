@@ -20,7 +20,7 @@ public class AshMain {
 	compiler.parse();
 	compiler.preAnalyse();
 	compiler.analyse();
-	if(AshError.numErrors == 0) compiler.generate();
+	if (AshError.numErrors == 0) compiler.generate();
 	System.exit(AshError.numErrors == 0 ? 0 : 1);
     }
 

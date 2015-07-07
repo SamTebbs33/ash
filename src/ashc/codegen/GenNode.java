@@ -10,38 +10,39 @@ import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
+ * 
  * @author samtebbs, 11:23:26 - 7 Jul 2015
  */
 public abstract class GenNode {
-    
+
     public static LinkedList<GenNodeType> types = new LinkedList<GenNodeType>();
     public static Stack<GenNodeType> typeStack = new Stack<GenNodeType>();
     public static HashSet<String> generatedTupleClasses = new HashSet<String>();
-    
+
     public abstract void generate(Object visitor);
-    
-    public static void addGenNodeType(GenNodeType node){
+
+    public static void addGenNodeType(final GenNodeType node) {
 	types.add(node);
 	typeStack.push(node);
     }
-    
-    public static void exitGenNodeType(){
+
+    public static void exitGenNodeType() {
 	typeStack.pop();
     }
-        
+
     public static interface IGenNodeStmt {
-	
+
     }
-    
+
     public static class GenNodeType extends GenNode {
-	
+
 	public String name, superclass;
 	public String[] interfaces;
 	public int modifiers;
 	public LinkedList<GenNodeField> fields = new LinkedList<GenNodeField>();
 	public LinkedList<GenNodeFunction> functions = new LinkedList<GenNodeFunction>();
 
-	public GenNodeType(String name, String superclass, String[] interfaces, int modifiers) {
+	public GenNodeType(final String name, final String superclass, final String[] interfaces, final int modifiers) {
 	    this.name = name;
 	    this.superclass = superclass;
 	    this.interfaces = interfaces;
@@ -49,59 +50,63 @@ public abstract class GenNode {
 	}
 
 	@Override
-	public void generate(Object visitor) {
-	    ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+	public void generate(final Object visitor) {
+	    final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 	    cw.visit(Opcodes.V1_6, modifiers | Opcodes.ACC_SUPER, name, null, superclass, interfaces);
-	    String[] folders = name.split("\\.");
+	    final String[] folders = name.split("\\.");
 	    int i = 0;
-	    StringBuffer dirSb = new StringBuffer("classes/");
-	    for(; i < folders.length-1; i++) dirSb.append(folders[i]+"/");
-	    String shortName = folders[i];
-	    File parentFolders = new File(dirSb.toString());
+	    final StringBuffer dirSb = new StringBuffer("classes/");
+	    for (; i < (folders.length - 1); i++)
+		dirSb.append(folders[i] + "/");
+	    final String shortName = folders[i];
+	    final File parentFolders = new File(dirSb.toString());
 	    parentFolders.mkdirs();
-	    cw.visitSource(shortName+".ash", null);
-	    
-	    for(GenNodeField field : fields) field.generate(cw);
-	    for(GenNodeFunction func : functions) func.generate(cw);
-	    
+	    cw.visitSource(shortName + ".ash", null);
+
+	    for (final GenNodeField field : fields)
+		field.generate(cw);
+	    for (final GenNodeFunction func : functions)
+		func.generate(cw);
+
 	    cw.visitEnd();
-	    
-	    File classFile = new File(dirSb.toString()+shortName+".class");
-	    if(classFile.exists()) classFile.delete();
+
+	    final File classFile = new File(dirSb.toString() + shortName + ".class");
+	    if (classFile.exists()) classFile.delete();
 	    try {
 		System.out.println("Generating: " + classFile.getAbsolutePath());
 		classFile.createNewFile();
-		FileOutputStream fos = new FileOutputStream(classFile);
+		final FileOutputStream fos = new FileOutputStream(classFile);
 		fos.write(cw.toByteArray());
 		fos.close();
-	    } catch (IOException e) {
+	    } catch (final IOException e) {
 		e.printStackTrace();
 	    }
 	}
-	
+
     }
-    
+
     public static class GenNodeFunction extends GenNode {
-	
+
 	public String name;
 	public int modifiers;
 	public String type;
 	public LinkedList<TypeI> params = new LinkedList<TypeI>();
 	public LinkedList<IGenNodeStmt> stmts = new LinkedList<IGenNodeStmt>();
 
-	public GenNodeFunction(String name, int modifiers, String type) {
+	public GenNodeFunction(final String name, final int modifiers, final String type) {
 	    this.name = name;
 	    this.modifiers = modifiers;
 	    this.type = type;
 	}
 
 	@Override
-	public void generate(Object visitor) {
-	    ClassWriter cw = (ClassWriter)visitor;
-	    StringBuffer signature = new StringBuffer("(");
-	    if(params != null) for(TypeI type : params) signature.append(type.toBytecodeName());
-	    signature.append(")"+type);
-	    MethodVisitor mv = cw.visitMethod(modifiers, name, signature.toString(), null, null);
+	public void generate(final Object visitor) {
+	    final ClassWriter cw = (ClassWriter) visitor;
+	    final StringBuffer signature = new StringBuffer("(");
+	    if (params != null) for (final TypeI type : params)
+		signature.append(type.toBytecodeName());
+	    signature.append(")" + type);
+	    final MethodVisitor mv = cw.visitMethod(modifiers, name, signature.toString(), null, null);
 	    mv.visitEnd();
 	}
 
@@ -109,30 +114,30 @@ public abstract class GenNode {
 	public String toString() {
 	    return "GenNodeFunction [name=" + name + ", modifiers=" + modifiers + ", type=" + type + ", params=" + params + ", stmts=" + stmts + "]";
 	}
-	
+
     }
-    
+
     public static class GenNodeField extends GenNode {
 
 	public int modifiers;
 	public String name, type;
-	
-	public GenNodeField(int modifiers, String name, String type) {
+
+	public GenNodeField(final int modifiers, final String name, final String type) {
 	    this.modifiers = modifiers;
 	    this.name = name;
 	    this.type = type;
 	}
 
-	public GenNodeField(Field field) {
-	    this.modifiers = field.modifiers;
-	    this.name = field.qualifiedName.toString();
-	    this.type = field.type.toBytecodeName();
+	public GenNodeField(final Field field) {
+	    modifiers = field.modifiers;
+	    name = field.qualifiedName.toString();
+	    type = field.type.toBytecodeName();
 	}
 
 	@Override
-	public void generate(Object visitor) {
-	    ClassWriter cw = (ClassWriter)visitor;
-	    FieldVisitor fieldV = cw.visitField(modifiers, name, type, null, null);
+	public void generate(final Object visitor) {
+	    final ClassWriter cw = (ClassWriter) visitor;
+	    final FieldVisitor fieldV = cw.visitField(modifiers, name, type, null, null);
 	    fieldV.visitEnd();
 	}
 
@@ -140,22 +145,20 @@ public abstract class GenNode {
 	public String toString() {
 	    return "GenNodeField [modifiers=" + modifiers + ", name=" + name + ", type=" + type + "]";
 	}
-	
+
     }
-    
+
     public static class GenNodeVarAssign extends GenNode implements IGenNodeStmt {
-	
+
 	public String varName;
 
-	public GenNodeVarAssign(String varName) {
+	public GenNodeVarAssign(final String varName) {
 	    this.varName = varName;
 	}
 
 	@Override
-	public void generate(Object visitor) {
-	    MethodVisitor mv = (MethodVisitor)visitor;
-	}
-	
+	public void generate(final Object visitor) {}
+
     }
 
 }

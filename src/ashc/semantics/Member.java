@@ -138,9 +138,8 @@ public class Member {
 	}
 
 	public Function getFunc(final String id, final LinkedList<TypeI> parameters) {
-	    if (functions.containsKey(id)){
-		for (final Function func : functions.get(id)) if (func.paramsAreEqual(parameters)) return func;
-	    }
+	    if (functions.containsKey(id)) for (final Function func : functions.get(id))
+		if (func.paramsAreEqual(parameters)) return func;
 
 	    Function func = null;
 	    for (final Type superType : supers)
