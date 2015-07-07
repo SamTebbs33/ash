@@ -7,6 +7,14 @@ import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 
+import com.sun.xml.internal.ws.org.objectweb.asm.*;
+
+import ashc.codegen.*;
+import ashc.codegen.GenNode.GenNodeField;
+import ashc.codegen.GenNode.GenNodeFunction;
+import ashc.codegen.GenNode.GenNodeType;
+import ashc.codegen.GenNode.GenNodeVarAssign;
+import ashc.codegen.GenNode.IGenNodeStmt;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
 import ashc.load.*;
@@ -43,8 +51,12 @@ public abstract class Node {
     public void preAnalyse() {}
 
     public void analyse() {}
+    
+    public abstract void generate();
 
-    public static interface IFuncStmt {}
+    public static interface IFuncStmt {
+	public IGenNodeStmt genStmt = null;
+    }
 
     public static interface IConstruct {
 	public boolean hasReturnStmt();
@@ -103,6 +115,11 @@ public abstract class Node {
 		t.analyse();
 	}
 
+	@Override
+	public void generate() {
+	    for(NodeTypeDec dec : typeDecs) dec.generate();
+	}
+
     }
 
     public static class NodePackage extends Node {
@@ -116,6 +133,9 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {}
+
+	@Override
+	public void generate() {}
 
     }
 
@@ -135,6 +155,9 @@ public abstract class Node {
 	    else TypeImporter.loadClass(qualifiedName.toString());
 	}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static abstract class NodeTypeDec extends Node {
@@ -146,6 +169,9 @@ public abstract class Node {
 	public NodeTypes generics;
 
 	public Type type;
+	public LinkedList<Field> argFields = new LinkedList<Field>();
+	public Function defConstructor;
+	public GenNodeType genNodeType;
 
 	public NodeTypeDec(final int line, final int column) {
 	    super(line, column);
@@ -193,7 +219,7 @@ public abstract class Node {
 	    // Create the default constructor and add fields supplied by the
 	    // arguments
 	    if (args != null) {
-		final Function defConstructor = new Function(Scope.getNamespace().copy().add(id.data), EnumModifier.PUBLIC.intVal);
+		defConstructor = new Function(Scope.getNamespace().copy().add(id.data), EnumModifier.PUBLIC.intVal);
 		defConstructor.returnType = new TypeI(name.shortName, 0, false);
 		for (final NodeType generic : generics.types)
 		    defConstructor.generics.add(generic.id);
@@ -201,7 +227,9 @@ public abstract class Node {
 		    arg.preAnalyse();
 		    if (!arg.errored) {
 			final TypeI argType = new TypeI(arg.type);
-			type.fields.add(new Field(Scope.getNamespace().copy().add(arg.id), EnumModifier.PUBLIC.intVal, argType));
+			Field field = new Field(Scope.getNamespace().copy().add(arg.id), EnumModifier.PUBLIC.intVal, argType);
+			type.fields.add(field);
+			argFields.add(field);
 			defConstructor.parameters.add(argType);
 		    }
 		}
@@ -213,6 +241,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    // Ensure the super-types are valid
+	    
 	    if (types != null) {
 		types.analyse();
 		boolean hasSuperClass = false;
@@ -222,17 +251,43 @@ public abstract class Node {
 		    if (!typeOpt.isPresent()) semanticError(line, column, TYPE_DOES_NOT_EXIST, typeNode.id);
 		    else {
 			final Type type = typeOpt.get();
-			if (type.type == EnumType.CLASS) if (getType() == EnumType.CLASS) {
-			    if (hasSuperClass) semanticError(this, line, column, CANNOT_EXTEND_MULTIPLE_CLASSES, typeNode.id);
-			    else hasSuperClass = true;
+			if (type.type == EnumType.CLASS){
+			    if (getType() == EnumType.CLASS) {
+				if (hasSuperClass) semanticError(this, line, column, CANNOT_EXTEND_MULTIPLE_CLASSES, typeNode.id);
+				else hasSuperClass = true;
+			    }
 			} else semanticError(this, line, column, CANNOT_EXTEND_TYPE, "an", getType().name().toLowerCase(), "a", "class", typeNode.id);
 			if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
 			if ((type.type == EnumType.ENUM) && (getType() != EnumType.ENUM)) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
 		    }
 		    if (!errored) type.supers.add(typeOpt.get());
 		}
-	    }
+		if(!hasSuperClass) type.supers.addFirst(Semantics.getType("Object").get());
+		
+	    }else type.supers.addFirst(Semantics.getType("Object").get());
 	    Semantics.enterType(type);
+	}
+	
+	@Override
+	public void generate(){
+	    String name = type.qualifiedName.toString();
+	    String superClass = type.supers.getFirst().qualifiedName.toString();
+	    String[] interfaces = null;
+	    if(type.supers.size() > 1){
+		interfaces = new String[type.supers.size()-1];
+		for(int i = 1; i < type.supers.size(); i++) interfaces[i-1] = type.supers.get(i).qualifiedName.toString();
+	    }
+	    genNodeType = new GenNodeType(name, superClass, interfaces, type.modifiers);
+	    if(defConstructor != null){
+		GenNodeFunction func = new GenNodeFunction("<init>", defConstructor.modifiers, "V");
+		func.params = defConstructor.parameters;
+		for(Field field : argFields){
+		    genNodeType.fields.add(new GenNodeField(field));
+		    func.stmts.add(new GenNodeVarAssign(field.qualifiedName.toString()));
+		}
+		genNodeType.functions.add(func);
+	    }
+	    GenNode.addGenNodeType(genNodeType);
 	}
 
 	protected abstract EnumType getType();
@@ -251,6 +306,9 @@ public abstract class Node {
 		if (modifier.name().equalsIgnoreCase(mod)) return modifier.intVal;
 	    return 0;
 	}
+
+	@Override
+	public void generate() {}
     }
 
     public static class NodeClassDec extends NodeTypeDec {
@@ -279,6 +337,21 @@ public abstract class Node {
 	    super.analyse();
 	    block.analyse();
 	    Semantics.exitType();
+	}
+
+	@Override
+	public void generate() {
+	    super.generate();
+	    for(NodeVarDec varDec : block.varDecs){
+		varDec.generate();
+		genNodeType.fields.add(varDec.genNodeField);
+	    }
+	    for(NodeFuncDec funcDec : block.funcDecs){
+		funcDec.generate();
+		genNodeType.functions.add(funcDec.genNodeFunc);
+	    }
+	    block.generate();
+	    GenNode.exitGenNodeType();
 	}
 
 	@Override
@@ -363,6 +436,9 @@ public abstract class Node {
 	    type.analyse();
 	}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeArgs extends Node {
@@ -401,6 +477,9 @@ public abstract class Node {
 		if (hasDupes) continue;
 	    }
 	}
+
+	@Override
+	public void generate() {}
     }
 
     public static class NodeTypes extends Node {
@@ -420,6 +499,9 @@ public abstract class Node {
 		    if ((i++ != j++) && type.id.equals(type2.id)) semanticError(this, line, column, DUPLICATE_TYPES, type.id);
 	    }
 	}
+
+	@Override
+	public void generate() {}
 
     }
 
@@ -451,6 +533,9 @@ public abstract class Node {
 		funcDec.analyse();
 	}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeEnumBlock extends Node {
@@ -463,6 +548,9 @@ public abstract class Node {
 	    this.block = block;
 	}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeEnumInstance extends Node {
@@ -474,6 +562,9 @@ public abstract class Node {
 	    this.exprs = exprs;
 	    this.id = id.data;
 	}
+
+	@Override
+	public void generate() {}
     }
 
     public static class NodeType extends Node {
@@ -516,6 +607,9 @@ public abstract class Node {
 	    }
 	}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeQualifiedName extends Node {
@@ -549,10 +643,14 @@ public abstract class Node {
 	    shortName = data;
 	}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeFuncDec extends Node {
 
+	public GenNodeFunction genNodeFunc;
 	public LinkedList<NodeModifier> mods;
 	public String id;
 	public NodeArgs args;
@@ -561,7 +659,8 @@ public abstract class Node {
 	public NodeTypes generics;
 
 	private TypeI returnType;
-	private boolean isMutFunc;
+	private Function func;
+	private boolean isMutFunc, isConstructor;
 
 	public NodeFuncDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String id, final NodeArgs args, final NodeType type, final NodeType throwsType, final NodeFuncBlock block, final NodeTypes types) {
 	    super(line, column);
@@ -586,7 +685,7 @@ public abstract class Node {
 	    int modifiers = 0;
 	    for (final NodeModifier mod : mods)
 		modifiers |= mod.asInt();
-	    final Function func = new Function(name, modifiers);
+	    func = new Function(name, modifiers);
 	    for (final NodeType generic : generics.types)
 		func.generics.add(generic.id);
 
@@ -617,6 +716,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    args.analyse();
+	    if(id.equals(Semantics.currentType().qualifiedName.shortName)) isConstructor = true;
 	    if (type != null) type.analyse();
 	    if (throwsType != null) {
 		throwsType.analyse();
@@ -633,13 +733,26 @@ public abstract class Node {
 	    Scope.pop();
 	}
 
+	@Override
+	public void generate() {
+	    String name = id, type = returnType.toBytecodeName();
+	    if(isConstructor){
+		name = "<init>";
+		type = "V";
+	    }
+	    genNodeFunc = new GenNodeFunction(name, func.modifiers, type);
+	    genNodeFunc.params = func.parameters;
+	}
+
     }
 
     public static class NodeVarDec extends Node implements IFuncStmt {
+	public GenNodeField genNodeField;
 	public LinkedList<NodeModifier> mods;
 	public String keyword;
 	public String id;
 	public NodeFuncBlock getBlock, setBlock;
+	public Variable var;
 
 	public NodeVarDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id) {
 	    super(line, column);
@@ -668,6 +781,23 @@ public abstract class Node {
 	    // Only check if this var exists if we're in a scope, since variable
 	    // declarations in types are already handled
 	    if ((Scope.getScope() != null) && Semantics.varExists(id)) semanticError(this, line, column, VAR_ALREADY_EXISTS, id);
+	}
+
+	@Override
+	public void generate() {
+	    if(getBlock != null){
+		GenNodeFunction getFunc = new GenNodeFunction("$get"+id, Opcodes.ACC_PUBLIC, var.type.toBytecodeName());
+		getBlock.generate();
+		getFunc.stmts = getBlock.genStmts;
+		GenNode.typeStack.peek().functions.add(getFunc);
+	    }
+	    if(setBlock != null){
+		GenNodeFunction setFunc = new GenNodeFunction("$set"+id, Opcodes.ACC_PUBLIC, "V");
+		setFunc.params.add(var.type);
+		setBlock.generate();
+		//TODO: Convert return statements in the block into assignment statements
+		GenNode.typeStack.peek().functions.add(setFunc);
+	    }
 	}
 
     }
@@ -709,8 +839,15 @@ public abstract class Node {
 		final TypeI exprType = expr.getExprType();
 		if (exprType != null) if (!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType, typeI.toString());
 	    }
-	    Semantics.addVar(new Variable(id, typeI));
+	    var = new Variable(id, typeI);
+	    Semantics.addVar(var);
 	    analyseProperty(typeI);
+	}
+
+	@Override
+	public void generate() {
+	    genNodeField = new GenNodeField(var);
+	    super.generate();
 	}
 
     }
@@ -743,16 +880,24 @@ public abstract class Node {
 		((Node) expr).analyse();
 		if (!((Node) expr).errored) {
 		    final TypeI type = Semantics.filterNullType(expr.getExprType());
-		    Semantics.addVar(new Variable(id, type));
+		    var = new Variable(id, type);
+		    Semantics.addVar(var);
 		    analyseProperty(type);
 		}
 	    }
+	}
+	
+	@Override
+	public void generate() {
+	    genNodeField = new GenNodeField(var);
+	    super.generate();
 	}
 
     }
 
     public static class NodeFuncBlock extends Node {
 
+	public LinkedList<IGenNodeStmt> genStmts;
 	public IExpression singleLineExpr;
 	LinkedList<IFuncStmt> stmts = new LinkedList<IFuncStmt>();
 	public IFuncStmt singleLineStmt;
@@ -782,6 +927,11 @@ public abstract class Node {
 
 	}
 
+	@Override
+	public void generate() {
+	    
+	}
+
     }
 
     public static class NodePrefix extends Node implements IFuncStmt, IExpression {
@@ -798,6 +948,9 @@ public abstract class Node {
 	@Override
 	public void registerScopedChecks() {}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeExprs extends Node {
@@ -812,6 +965,9 @@ public abstract class Node {
 	    for (final IExpression expr : exprs)
 		((Node) expr).analyse();
 	}
+
+	@Override
+	public void generate() {}
 
     }
 
@@ -995,6 +1151,9 @@ public abstract class Node {
 	    }
 	}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeReturn extends Node implements IFuncStmt {
@@ -1016,6 +1175,9 @@ public abstract class Node {
 	    } else if (!scope.returnType.isVoid()) semanticError(this, line, column, RETURN_VOID_IN_NONVOID_FUNC);
 
 	}
+
+	@Override
+	public void generate() {}
 
     }
 
@@ -1040,6 +1202,9 @@ public abstract class Node {
 	@Override
 	public void registerScopedChecks() {}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeLong extends Node implements IExpression {
@@ -1062,6 +1227,9 @@ public abstract class Node {
 
 	@Override
 	public void registerScopedChecks() {}
+
+	@Override
+	public void generate() {}
 
     }
 
@@ -1086,6 +1254,9 @@ public abstract class Node {
 	@Override
 	public void registerScopedChecks() {}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeDouble extends Node implements IExpression {
@@ -1108,6 +1279,9 @@ public abstract class Node {
 
 	@Override
 	public void registerScopedChecks() {}
+
+	@Override
+	public void generate() {}
 
     }
 
@@ -1170,6 +1344,9 @@ public abstract class Node {
 	@Override
 	public void registerScopedChecks() {}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeBool extends Node implements IExpression {
@@ -1192,6 +1369,9 @@ public abstract class Node {
 
 	@Override
 	public void registerScopedChecks() {}
+
+	@Override
+	public void generate() {}
 
     }
 
@@ -1216,6 +1396,9 @@ public abstract class Node {
 	@Override
 	public void registerScopedChecks() {}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeTernary extends Node implements IExpression {
@@ -1239,6 +1422,9 @@ public abstract class Node {
 
 	@Override
 	public void registerScopedChecks() {}
+
+	@Override
+	public void generate() {}
 
     }
 
@@ -1274,6 +1460,9 @@ public abstract class Node {
 
 	@Override
 	public void registerScopedChecks() {}
+
+	@Override
+	public void generate() {}
 
     }
 
@@ -1320,6 +1509,9 @@ public abstract class Node {
 		if (varExpr.var != null) Scope.getScope().nullChecks.add(varExpr.var);
 	    }
 	}
+
+	@Override
+	public void generate() {}
     }
 
     public static class NodeUnary extends Node implements IExpression, IFuncStmt {
@@ -1358,6 +1550,9 @@ public abstract class Node {
 	@Override
 	public void registerScopedChecks() {}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeThis extends Node implements IExpression {
@@ -1372,6 +1567,9 @@ public abstract class Node {
 
 	@Override
 	public void registerScopedChecks() {}
+
+	@Override
+	public void generate() {}
     }
 
     public static class NodeSelf extends Node implements IExpression {
@@ -1390,6 +1588,9 @@ public abstract class Node {
 	@Override
 	public void registerScopedChecks() {}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeNull extends Node implements IExpression {
@@ -1401,6 +1602,9 @@ public abstract class Node {
 
 	@Override
 	public void registerScopedChecks() {}
+
+	@Override
+	public void generate() {}
 
     }
 
@@ -1443,6 +1647,9 @@ public abstract class Node {
 	@Override
 	public void registerScopedChecks() {}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeTupleExpr extends Node implements IExpression {
@@ -1481,6 +1688,9 @@ public abstract class Node {
 	@Override
 	public void registerScopedChecks() {}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeIf extends Node implements IFuncStmt, IConstruct {
@@ -1518,6 +1728,9 @@ public abstract class Node {
 	    return false;
 	}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeWhile extends Node implements IFuncStmt, IConstruct {
@@ -1545,6 +1758,9 @@ public abstract class Node {
 	public boolean hasReturnStmt() {
 	    return false;
 	}
+
+	@Override
+	public void generate() {}
 
     }
 
@@ -1575,6 +1791,9 @@ public abstract class Node {
 	public boolean hasReturnStmt() {
 	    return false;
 	}
+
+	@Override
+	public void generate() {}
 
     }
 
@@ -1649,6 +1868,9 @@ public abstract class Node {
 	    type.analyse();
 	}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeTupleExprArg extends Node {
@@ -1663,6 +1885,9 @@ public abstract class Node {
 	public void analyse() {
 	    ((Node) expr).analyse();
 	}
+
+	@Override
+	public void generate() {}
     }
 
     public static class NodeUnwrapOptional extends Node implements IExpression {
@@ -1687,6 +1912,9 @@ public abstract class Node {
 
 	@Override
 	public void registerScopedChecks() {}
+
+	@Override
+	public void generate() {}
 
     }
 
@@ -1722,6 +1950,9 @@ public abstract class Node {
 	    }
 	}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeAs extends Node implements IExpression {
@@ -1753,6 +1984,9 @@ public abstract class Node {
 	    }
 	}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeAlias extends Node {
@@ -1772,6 +2006,9 @@ public abstract class Node {
 	    else if (Semantics.aliases.containsKey(alias)) semanticError(this, line, column, ALIAS_ALREADY_EXISTS, alias);
 	    else if (!type.errored) Semantics.addAlias(alias, Semantics.getType(type.id).get());
 	}
+
+	@Override
+	public void generate() {}
 
     }
 
@@ -1817,6 +2054,9 @@ public abstract class Node {
 	@Override
 	public void registerScopedChecks() {}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeMatch extends Node implements IFuncStmt {
@@ -1849,6 +2089,9 @@ public abstract class Node {
 	    matchCases.add(matchCase);
 	}
 
+	@Override
+	public void generate() {}
+
     }
 
     public static class NodeMatchCase extends Node {
@@ -1872,6 +2115,9 @@ public abstract class Node {
 	    block.analyse();
 	    if (block.errored) errored = true;
 	}
+
+	@Override
+	public void generate() {}
 
     }
     
@@ -1914,6 +2160,9 @@ public abstract class Node {
 
 	@Override
 	public void registerScopedChecks() {}
+
+	@Override
+	public void generate() {}
 	
     }
 

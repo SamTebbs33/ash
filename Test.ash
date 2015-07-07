@@ -1,24 +1,7 @@
-import java.util.LinkedList
-import java.lang.Integer
-
-class AshObject {
-	public func println(obj : Object) {
-		System.out.println(obj)
+class Test(name : String, age : int) : Object {
+	var test = "" -> {
+		get -> "hi"
+		set -> "hi"
 	}
-}
-
-class ListHolder() {
-	public var list = LinkedList()
-	
-	public func [](index : int) -> list.get(index)
-	public func [](index : String) -> list.get(Integer.parseInt(index))
-	
-}
-
-class Test : AshObject {
-	func test() {
-		var list = ListHolder()
-		var obj = list[0]
-		var obj2 = list["1"]
-	}
+	public func foo(str : String) -> ""
 }

@@ -5,6 +5,13 @@ import static ashc.error.AshError.EnumError.*;
 
 import java.util.*;
 
+import com.sun.xml.internal.ws.org.objectweb.asm.*;
+
+import ashc.codegen.*;
+import ashc.codegen.GenNode.GenNodeField;
+import ashc.codegen.GenNode.GenNodeFunction;
+import ashc.codegen.GenNode.GenNodeType;
+import ashc.codegen.GenNode.GenNodeVarAssign;
 import ashc.grammar.*;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeExprs;
@@ -207,6 +214,35 @@ public class Semantics {
 
 	public boolean isRange() {
 	    return (shortName != null) & shortName.equals("Range");
+	}
+
+	public String toBytecodeName() {
+	    StringBuffer name = new StringBuffer();
+	    if(isArray()) {
+		for(int i = 0; i < arrDims; i++) name.append("[");
+	    }
+	    if(isTuple()){
+		for(TypeI type : tupleTypes){
+		    String tupleTypeName = type.toBytecodeName();
+		    name.append(tupleTypeName.replace(';', ':'));
+		}
+		String tupleClassName = "Tuple:"+name.toString().replace("/", "-");
+		if(!GenNode.generatedTupleClasses.contains(tupleClassName)){
+		    GenNodeType tupleClass = new GenNodeType(tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC);
+		    GenNodeFunction tupleConstructor = new GenNodeFunction(tupleClassName+".<init>", Opcodes.ACC_PUBLIC, "()V");
+		    for(TypeI tupleType : tupleTypes){
+			tupleClass.fields.add(new GenNodeField(Opcodes.ACC_PUBLIC, tupleType.tupleName, tupleType.toBytecodeName()));
+			tupleConstructor.stmts.add(new GenNodeVarAssign(tupleType.tupleName));
+		    }
+		    tupleClass.functions.add(tupleConstructor);
+		    GenNode.addGenNodeType(tupleClass);
+		    GenNode.generatedTupleClasses.add(tupleClassName);
+		}
+		name = new StringBuffer("L"+tupleClassName+";");
+	    }else if(isVoid()) name.append("V");
+	    else if(isPrimitive()) name.append(EnumPrimitive.getPrimitive(shortName).bytecodeName);
+	    else name.append("L"+Semantics.getType(shortName).get().qualifiedName.toString().replace('.', '/')+";");
+	    return name.toString();
 	}
     }
 
