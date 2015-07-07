@@ -1,7 +1,5 @@
 package ashc.codegen;
 
-import java.io.*;
-
 import ashc.grammar.Node.NodeArg;
 import ashc.grammar.Node.NodeBinary;
 import ashc.grammar.Node.NodeBool;
@@ -29,6 +27,7 @@ import ashc.grammar.Node.NodeType;
 import ashc.grammar.Node.NodeTypeDec;
 import ashc.grammar.Node.NodeTypes;
 import ashc.grammar.Node.NodeUnary;
+import ashc.grammar.Node.NodeVarDec;
 import ashc.grammar.Node.NodeVarDecExplicit;
 import ashc.grammar.Node.NodeVarDecImplicit;
 import ashc.grammar.Node.NodeVariable;
@@ -40,7 +39,7 @@ import ashc.grammar.Node.NodeVariable;
  */
 public interface CodeGenerator {
 
-    public void start() throws FileNotFoundException;
+    public void start();
 
     public void end();
 
@@ -105,5 +104,7 @@ public interface CodeGenerator {
     public void generateVarDecImplicit(NodeVarDecImplicit dec);
 
     public void generateVariable(NodeVariable var);
+
+    public void generateVarDec(NodeVarDec varDec);
 
 }

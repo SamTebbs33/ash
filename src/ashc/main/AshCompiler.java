@@ -3,6 +3,8 @@ package ashc.main;
 import java.io.*;
 import java.util.*;
 
+import ashc.codegen.*;
+import ashc.codegen.GenNode.*;
 import ashc.grammar.*;
 import ashc.grammar.Node.NodeFile;
 
@@ -37,6 +39,13 @@ public class AshCompiler {
 
     public void analyse() {
 	if (fileNode != null) fileNode.analyse();
+    }
+    
+    public void generate() {
+	if(fileNode != null){
+	    fileNode.generate();
+	    for(GenNodeType type : GenNode.types) type.generate(null);
+	}
     }
 
     public static AshCompiler get() {
