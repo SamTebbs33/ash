@@ -5,7 +5,7 @@ import static ashc.error.AshError.EnumError.*;
 
 import java.util.*;
 
-import com.sun.xml.internal.ws.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 
 import ashc.codegen.*;
 import ashc.codegen.GenNode.GenNodeField;

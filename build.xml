@@ -4,9 +4,17 @@
 		<delete dir="build"/>
 	</target>
 	
+	<path id="classpath">
+		<fileset dir="lib/">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+	
 	<target name="compile">
 		<mkdir dir="build"/>
-		<javac srcdir="src" destdir="build"/>
+		<javac srcdir="src" destdir="build">
+			<classpath refid="classpath"/>
+		</javac>
 	</target>
 	
 	<!-- <target name="run">
