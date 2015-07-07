@@ -17,6 +17,12 @@
 		</javac>
 	</target>
 	
+	<target name="test">
+		<exec dir="tests" executable="python" failonerror="true">
+			<arg value="test.py"/>
+		</exec>
+	</target>
+	
 	<!-- <target name="run">
 		<exec executable="python" failonerror="true">
 			<arg value="test.py"/>

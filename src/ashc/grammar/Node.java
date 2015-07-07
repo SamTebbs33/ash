@@ -519,10 +519,10 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {
-	    for (final NodeVarDec varDec : varDecs)
-		varDec.preAnalyse();
 	    for (final NodeFuncDec funcDec : funcDecs)
 		funcDec.preAnalyse();
+	    for (final NodeVarDec varDec : varDecs)
+		varDec.preAnalyse();
 	}
 
 	@Override
@@ -691,11 +691,12 @@ public abstract class Node {
 
 	    args.preAnalyse();
 	    if (args.hasDefExpr) func.hasDefExpr = true;
+	    
 	    // We need to push a new scope and add the parameters as variables
 	    // so that return type inference works
 	    Scope.push(new FuncScope(returnType, isMutFunc));
-	    for (final NodeArg arg : args.args)
-		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
+	    for (final NodeArg arg : args.args) Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
+
 
 	    if (!isMutFunc) {
 		if (!type.id.equals("void")) returnType = new TypeI(type);
@@ -704,7 +705,8 @@ public abstract class Node {
 		returnType = Semantics.filterNullType(returnType);
 	    } else returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
 	    func.returnType = returnType;
-
+	    
+	    Scope.getFuncScope().returnType = returnType;
 	    Scope.pop();
 
 	    for (final NodeArg arg : args.args)
@@ -1490,7 +1492,10 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    if (((Node) expr1).errored || ((Node) expr2).errored) return null;
+	    if (((Node) expr1).errored || ((Node) expr2).errored){
+		errored = true;
+		return null;
+	    }
 	    final TypeI exprType1 = expr1.getExprType(), exprType2 = expr2.getExprType();
 	    final TypeI type = Semantics.getOperationType(exprType1, exprType2, operator);
 	    if (type == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, operator.opStr, exprType1, exprType2);
