@@ -21,6 +21,7 @@ public abstract class GenNode {
     public static LinkedList<GenNodeType> types = new LinkedList<GenNodeType>();
     public static Stack<GenNodeType> typeStack = new Stack<GenNodeType>();
     public static HashSet<String> generatedTupleClasses = new HashSet<String>();
+    public static GenNodeFunction currentFunction;
 
     public abstract void generate(Object visitor);
 
@@ -42,7 +43,7 @@ public abstract class GenNode {
     }
     
     public static enum EnumInstructionOperand {
-	REFERENCE, BOOL, BYTE, CHAR, INT, LONG, FLOAT, DOUBLE, ARRAY, SHORT
+	REFERENCE, BOOL, BYTE, CHAR, INT, LONG, FLOAT, DOUBLE, ARRAY, SHORT, VOID
     }
 
     public static class GenNodeType extends GenNode {
@@ -51,13 +52,17 @@ public abstract class GenNode {
 	public String[] interfaces;
 	public int modifiers;
 	public LinkedList<GenNodeField> fields = new LinkedList<GenNodeField>();
-	public LinkedList<GenNodeFunction> functions = new LinkedList<GenNodeFunction>();
+	private LinkedList<GenNodeFunction> functions = new LinkedList<GenNodeFunction>();
 
 	public GenNodeType(final String name, final String superclass, final String[] interfaces, final int modifiers) {
 	    this.name = name;
 	    this.superclass = superclass;
 	    this.interfaces = interfaces;
 	    this.modifiers = modifiers;
+	}
+	
+	public void addFunction(GenNodeFunction func){
+	    functions.add(func);
 	}
 
 	@Override
@@ -102,9 +107,10 @@ public abstract class GenNode {
 	public int modifiers;
 	public String type;
 	public LinkedList<TypeI> params = new LinkedList<TypeI>();
-	public LinkedList<IGenNodeStmt> stmts = new LinkedList<IGenNodeStmt>();
+	public LinkedList<GenNode> stmts = new LinkedList<GenNode>();
 
 	public GenNodeFunction(final String name, final int modifiers, final String type) {
+	    currentFunction = this;
 	    this.name = name;
 	    this.modifiers = modifiers;
 	    this.type = type;
@@ -119,7 +125,7 @@ public abstract class GenNode {
 	    signature.append(")" + type);
 	    final MethodVisitor mv = cw.visitMethod(modifiers, name, signature.toString(), null, null);
 	    mv.visitCode();
-	    for(IGenNodeStmt stmt : stmts) ((GenNode) stmt).generate(mv);
+	    for(GenNode stmt : stmts) stmt.generate(mv);
 	    mv.visitEnd();
 	}
 
@@ -316,6 +322,174 @@ public abstract class GenNode {
 	    else if(publicFunc) opcode = INVOKEVIRTUAL;
 	    // INVOKESPECIAL for constructors and private methods, INVOKEINTERFACE for methods overriden from interfaces and INVOKEVIRTUAL for others
 	    mv.visitMethodInsn(opcode, enclosingType, name, signature, interfaceFunc);
+	}
+	
+    }
+    
+    public static class GenNodeNull extends GenNode implements IGenNodeExpr {
+
+	@Override
+	public void generate(Object visitor) {
+	    ((MethodVisitor)visitor).visitInsn(ACONST_NULL);
+	}
+	
+    }
+    
+    public static class GenNodeInt extends GenNode implements IGenNodeExpr {
+	public int val;
+
+	public GenNodeInt(int val) {
+	    this.val = val;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    MethodVisitor mv = (MethodVisitor)visitor;
+	    switch(val){
+		case -1:
+		    mv.visitInsn(ICONST_M1);
+		case 0:
+		    mv.visitInsn(ICONST_0);
+		    break;
+		case 1:
+		    mv.visitInsn(ICONST_1);
+		    break;
+		case 2:
+		    mv.visitInsn(ICONST_2);
+		    break;
+		case 3:
+		    mv.visitInsn(ICONST_3);
+		    break;
+		case 4:
+		    mv.visitInsn(ICONST_4);
+		    break;
+		case 5:
+		    mv.visitInsn(ICONST_5);
+		    break;
+		default:
+		    if(val >= Byte.MIN_VALUE && val <= Byte.MAX_VALUE) mv.visitIntInsn(BIPUSH, val);
+		    else if(val >= Short.MIN_VALUE && val <= Short.MAX_VALUE) mv.visitIntInsn(SIPUSH, val);
+		    else mv.visitLdcInsn(new Integer(val));
+	    }
+	}
+    }
+    
+    public static class GenNodeString extends GenNode implements IGenNodeExpr {
+
+	public String val;
+	
+	public GenNodeString(String val) {
+	    this.val = val;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    ((MethodVisitor)visitor).visitLdcInsn(val);
+	}
+	
+    }
+    
+    public static class GenNodeDouble extends GenNode implements IGenNodeExpr {
+	
+	public double val;
+
+	public GenNodeDouble(double val) {
+	    this.val = val;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    MethodVisitor mv = (MethodVisitor)visitor;
+	    if(Double.compare(val, 0.0) == 0) mv.visitInsn(DCONST_0);
+	    else if(Double.compare(val, 1.0) == 0) mv.visitInsn(DCONST_1);
+	    else mv.visitLdcInsn(new Double(val));
+	}
+	
+    }
+    
+    public static class GenNodeFloat extends GenNode implements IGenNodeExpr {
+	
+	public float val;
+
+	public GenNodeFloat(float val) {
+	    this.val = val;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    MethodVisitor mv = (MethodVisitor)visitor;
+	    if(Float.compare(val, 0.0f) == 0) mv.visitInsn(FCONST_0);
+	    else if(Float.compare(val, 1.0f) == 0) mv.visitInsn(FCONST_1);
+	    else mv.visitLdcInsn(new Float(val));
+	}
+	
+    }
+    
+    public static class GenNodeLong extends GenNode implements IGenNodeExpr {
+	
+	public long val;
+
+	public GenNodeLong(long val) {
+	    this.val = val;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    MethodVisitor mv = (MethodVisitor) visitor;
+	    if(val == 0) mv.visitInsn(LCONST_0);
+	    else if(val == 1) mv.visitInsn(LCONST_1);
+	    else mv.visitLdcInsn(new Long(val));
+	}
+	
+    }
+    
+    public static class GenNodeReturn extends GenNode {
+
+	EnumInstructionOperand type;
+	
+	public GenNodeReturn(EnumInstructionOperand type) {
+	    this.type = type;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    int opcode = RETURN;
+	    switch(type){
+		case ARRAY:
+		case REFERENCE:
+		    opcode = ARETURN;
+		    break;
+		case BOOL:
+		case BYTE:
+		case CHAR:
+		case INT:
+		case SHORT:
+		    opcode = IRETURN;
+		    break;
+		case DOUBLE:
+		    opcode = DRETURN;
+		    break;
+		case FLOAT:
+		    opcode = FRETURN;
+		    break;
+		case LONG:
+		    opcode = LRETURN;
+		    break;
+		case VOID:
+		    opcode = RETURN;
+		    break;
+	    }
+	    ((MethodVisitor)visitor).visitInsn(opcode);
+	}
+	
+    }
+    
+    public static class GenNodeThis extends GenNode {
+
+	@Override
+	public void generate(Object visitor) {
+	    // The instance is stored as the first local variable
+	    ((MethodVisitor)visitor).visitIntInsn(ALOAD, 0);
 	}
 	
     }

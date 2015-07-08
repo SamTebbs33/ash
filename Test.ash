@@ -1,3 +1,3 @@
 class Test : Object {
-	public var a : String?
+	public func test() -> "hello"
 }
