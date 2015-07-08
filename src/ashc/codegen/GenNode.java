@@ -1,11 +1,14 @@
 package ashc.codegen;
 
+import static org.objectweb.asm.Opcodes.*;
+
 import java.io.*;
 import java.util.*;
 
 import org.objectweb.asm.*;
 
 import ashc.semantics.Member.Field;
+import ashc.semantics.Member.Function;
 import ashc.semantics.Semantics.TypeI;
 
 /**
@@ -32,6 +35,14 @@ public abstract class GenNode {
 
     public static interface IGenNodeStmt {
 
+    }
+    
+    public static interface IGenNodeExpr  {
+	
+    }
+    
+    public static enum EnumInstructionOperand {
+	REFERENCE, BOOL, BYTE, CHAR, INT, LONG, FLOAT, DOUBLE, ARRAY, SHORT
     }
 
     public static class GenNodeType extends GenNode {
@@ -107,6 +118,8 @@ public abstract class GenNode {
 		signature.append(type.toBytecodeName());
 	    signature.append(")" + type);
 	    final MethodVisitor mv = cw.visitMethod(modifiers, name, signature.toString(), null, null);
+	    mv.visitCode();
+	    for(IGenNodeStmt stmt : stmts) ((GenNode) stmt).generate(mv);
 	    mv.visitEnd();
 	}
 
@@ -150,15 +163,161 @@ public abstract class GenNode {
 
     public static class GenNodeVarAssign extends GenNode implements IGenNodeStmt {
 
-	public String varName;
+	public int varID;
+	public IGenNodeExpr expr;
+	public EnumInstructionOperand operand;
 
-	public GenNodeVarAssign(final String varName) {
-	    this.varName = varName;
+	public GenNodeVarAssign(final int varID, IGenNodeExpr expr, EnumInstructionOperand operand) {
+	    this.varID = varID;
+	    this.expr = expr;
+	    this.operand = operand;
 	}
 
 	@Override
-	public void generate(final Object visitor) {}
+	public void generate(final Object visitor) {
+	    MethodVisitor mv = (MethodVisitor)visitor;
+	    ((GenNode)expr).generate(mv);
+	    int opcode = ASTORE;
+	    mv.visitVarInsn(opcode, varID);
+	}
 
+    }
+    
+    public static class GenNodeFieldAssign extends GenNode implements IGenNodeStmt {
+	
+	public String varName;
+	public String enclosingType;
+	public String type;
+	public IGenNodeExpr expr;
+
+	public GenNodeFieldAssign(String varName, String enclosingType, String type, IGenNodeExpr expr) {
+	    this.varName = varName;
+	    this.enclosingType = enclosingType;
+	    this.type = type;
+	    this.expr = expr;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    System.out.println(this);
+	    MethodVisitor mv = (MethodVisitor) visitor;
+	    ((GenNode)expr).generate(mv);
+	    mv.visitFieldInsn(PUTFIELD, enclosingType, varName, type);
+	}
+
+	@Override
+	public String toString() {
+	    StringBuilder builder = new StringBuilder();
+	    builder.append("GenNodeFieldAssign [varName=");
+	    builder.append(varName);
+	    builder.append(", enclosingType=");
+	    builder.append(enclosingType);
+	    builder.append(", type=");
+	    builder.append(type);
+	    builder.append(", expr=");
+	    builder.append(expr);
+	    builder.append("]");
+	    return builder.toString();
+	}
+	
+    }
+    
+    public static class GenNodeFieldLoad extends GenNode implements IGenNodeExpr {
+	
+	public String varName, enclosingType, type;
+
+	@Override
+	public void generate(Object visitor) {
+	    MethodVisitor mv = (MethodVisitor)visitor;
+	    mv.visitFieldInsn(GETFIELD, enclosingType, varName, type);
+	}
+	
+    }
+    
+    public static class GenNodeFieldStore extends GenNode implements IGenNodeStmt {
+	
+	public String varName, enclosingType, type;
+
+	public GenNodeFieldStore(String varName, String enclosingType, String type) {
+	    this.varName = varName;
+	    this.enclosingType = enclosingType;
+	    this.type = type;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    ((MethodVisitor)visitor).visitFieldInsn(PUTFIELD, enclosingType, varName, type);
+	}
+	
+    }
+    
+    public static class GenNodeVarLoad extends GenNode implements IGenNodeExpr {
+	
+	public EnumInstructionOperand operand;
+	public int varID;
+
+	public GenNodeVarLoad(EnumInstructionOperand operand, int varID) {
+	    this.operand = operand;
+	    this.varID = varID;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    MethodVisitor mv = (MethodVisitor)visitor;
+	    int opcode = ALOAD;
+	    switch(operand){
+		case ARRAY:
+		    opcode = AALOAD;
+		    break;
+		case BYTE:
+		case INT:
+		case SHORT:
+		case BOOL:
+		case CHAR:
+		    opcode = ILOAD;
+		    break;
+		case DOUBLE:
+		    opcode = DLOAD;
+		    break;
+		case FLOAT:
+		    opcode = FLOAD;
+		    break;
+		case LONG:
+		    opcode = LLOAD;
+		    break;
+		case REFERENCE:
+		    opcode = ALOAD;
+	    }
+	    mv.visitVarInsn(opcode, varID);
+	}
+	
+    }
+    
+    public static class GenNodeFuncCall extends GenNode implements IGenNodeExpr, IGenNodeStmt {
+	
+	public String enclosingType, name, signature;
+	public boolean interfaceFunc, publicFunc, staticFunc;
+
+	public GenNodeFuncCall(String enclosingType, String name, String signature, boolean interfaceFunc, boolean publicFunc, boolean staticFunc) {
+	    this.enclosingType = enclosingType;
+	    this.name = name;
+	    this.signature = signature;
+	    this.interfaceFunc = interfaceFunc;
+	    this.publicFunc = publicFunc;
+	    this.staticFunc = staticFunc;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    MethodVisitor mv = (MethodVisitor)visitor;
+	    int opcode = INVOKESPECIAL;
+	    if(interfaceFunc) opcode = INVOKEINTERFACE;
+	    else if(staticFunc) opcode = INVOKESTATIC;
+	    else if(publicFunc) opcode = INVOKEVIRTUAL;
+	    // INVOKESPECIAL for constructors and private methods, INVOKEINTERFACE for methods overriden from interfaces and INVOKEVIRTUAL for others
+	    mv.visitMethodInsn(opcode, enclosingType, name, signature, interfaceFunc);
+	}
+	
     }
 
 }

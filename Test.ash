@@ -1,7 +1,3 @@
-class Test(name : String, age : int) : Object {
-	var test = "" -> {
-		get -> "hi"
-		set -> "hi"
-	}
-	public func foo(str : String) -> ""
+class Test : Object {
+	public var a : String?
 }

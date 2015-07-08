@@ -1,5 +1,6 @@
 package ashc.semantics;
 
+import ashc.codegen.GenNode.*;
 import ashc.semantics.Semantics.TypeI;
 
 /**
@@ -9,31 +10,43 @@ import ashc.semantics.Semantics.TypeI;
  */
 public enum EnumPrimitive {
 
-    BOOL("bool", "boolean", "Z", false, false), DOUBLE("double", "double", "D", true, false), FLOAT("float", "float", "F", true, false), LONG(
-	    "long",
+    BOOL("bool", "boolean", "Z", false, EnumInstructionOperand.BOOL, false), 
+    DOUBLE("double", "double", "D", true, EnumInstructionOperand.DOUBLE, false), 
+    FLOAT("float", "float", "F", true, EnumInstructionOperand.FLOAT, false), 
+    LONG("long",
 	    "long",
 	    "J",
 	    true,
-	    false), INT("int", "int", "I", true, true), SHORT("short", "short", "S", true, true), BYTE("byte", "byte", "B", true, true), UBYTE(
+	    EnumInstructionOperand.LONG, false), 
+	    INT("int", "int", "I", true, EnumInstructionOperand.INT, true), 
+	    SHORT("short", "short", "S", true, EnumInstructionOperand.SHORT, true), 
+	    BYTE("byte", "byte", "B", true, EnumInstructionOperand.BYTE, true), 
+	    UBYTE(
 	    "ubyte",
 	    "byte",
 	    "B",
 	    true,
-	    false), USHORT("ushort", "short", "S", true, false), ULONG("ulong", "long", "J", true, false), UINT("uint", "int", "I", true, false), CHAR(
+	    EnumInstructionOperand.BYTE, false), 
+	    USHORT("ushort", "short", "S", true, EnumInstructionOperand.SHORT, false), 
+	    ULONG("ulong", "long", "J", true, EnumInstructionOperand.LONG, false), 
+	    UINT("uint", "int", "I", true, EnumInstructionOperand.INT, false), 
+	    CHAR(
 	    "char",
 	    "char",
 	    "C",
 	    false,
-	    false);
+	    EnumInstructionOperand.CHAR, false);
 
     public String ashName, javaName, bytecodeName;
     public boolean validForArrayIndex, isNumeric;
+    public EnumInstructionOperand instructionType;
 
-    private EnumPrimitive(final String ashName, final String javaName, final String bytecodeName, final boolean isNumeric, final boolean wholeNumber) {
+    private EnumPrimitive(final String ashName, final String javaName, final String bytecodeName, final boolean isNumeric, EnumInstructionOperand type, final boolean wholeNumber) {
 	this.ashName = ashName;
 	this.javaName = javaName;
 	this.bytecodeName = bytecodeName;
 	this.isNumeric = isNumeric;
+	this.instructionType = type;
 	validForArrayIndex = wholeNumber;
     }
 

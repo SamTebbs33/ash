@@ -9,7 +9,7 @@ import java.util.*;
  */
 public class QualifiedName {
 
-    public String shortName;
+    public String shortName = null, enclosingType = "";
     public LinkedList<String> sections = new LinkedList<String>();
 
     public QualifiedName(final String section) {
@@ -19,6 +19,10 @@ public class QualifiedName {
     public QualifiedName add(final String section) {
 	if (!section.isEmpty()) {
 	    sections.add(section);
+	    if(shortName != null){
+		if(enclosingType.isEmpty()) enclosingType = shortName;
+		else enclosingType += "."+shortName;
+	    }
 	    shortName = section;
 	}
 	return this;
@@ -70,6 +74,10 @@ public class QualifiedName {
 
     public void pop() {
 	if (!sections.isEmpty()) sections.removeLast();
+    }
+
+    public String toBytecodeName() {
+	return toString().replace('.', '/');
     }
 
 }

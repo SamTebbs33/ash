@@ -8,13 +8,21 @@ import java.util.*;
 import org.objectweb.asm.*;
 
 import ashc.codegen.*;
+import ashc.codegen.GenNode.EnumInstructionOperand;
 import ashc.codegen.GenNode.GenNodeField;
+import ashc.codegen.GenNode.GenNodeFieldAssign;
 import ashc.codegen.GenNode.GenNodeFunction;
 import ashc.codegen.GenNode.GenNodeType;
-import ashc.codegen.GenNode.GenNodeVarAssign;
+import ashc.codegen.GenNode.GenNodeVarLoad;
 import ashc.grammar.*;
 import ashc.grammar.Node.IExpression;
+import ashc.grammar.Node.NodeBool;
+import ashc.grammar.Node.NodeDouble;
 import ashc.grammar.Node.NodeExprs;
+import ashc.grammar.Node.NodeFloat;
+import ashc.grammar.Node.NodeInteger;
+import ashc.grammar.Node.NodeLong;
+import ashc.grammar.Node.NodeNull;
 import ashc.grammar.Node.NodeTupleType;
 import ashc.grammar.Node.NodeType;
 import ashc.grammar.Node.NodeVariable;
@@ -228,10 +236,13 @@ public class Semantics {
 		final String tupleClassName = "Tuple:" + name.toString().replace("/", "-");
 		if (!GenNode.generatedTupleClasses.contains(tupleClassName)) {
 		    final GenNodeType tupleClass = new GenNodeType(tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC);
-		    final GenNodeFunction tupleConstructor = new GenNodeFunction(tupleClassName + ".<init>", Opcodes.ACC_PUBLIC, "()V");
+		    final GenNodeFunction tupleConstructor = new GenNodeFunction(tupleClassName + ".<init>", Opcodes.ACC_PUBLIC, "V");
+		    int tupleTypeNum = 1;
 		    for (final TypeI tupleType : tupleTypes) {
 			tupleClass.fields.add(new GenNodeField(Opcodes.ACC_PUBLIC, tupleType.tupleName, tupleType.toBytecodeName()));
-			tupleConstructor.stmts.add(new GenNodeVarAssign(tupleType.tupleName));
+			tupleConstructor.params.add(tupleType);
+			tupleConstructor.stmts.add(new GenNodeFieldAssign(tupleType.tupleName, tupleClassName, tupleType.toBytecodeName(), new GenNodeVarLoad(tupleType.getInstructionType(), tupleTypeNum)));
+			tupleTypeNum++;
 		    }
 		    tupleClass.functions.add(tupleConstructor);
 		    GenNode.addGenNodeType(tupleClass);
@@ -242,6 +253,29 @@ public class Semantics {
 	    else if (isPrimitive()) name.append(EnumPrimitive.getPrimitive(shortName).bytecodeName);
 	    else name.append("L" + Semantics.getType(shortName).get().qualifiedName.toString().replace('.', '/') + ";");
 	    return name.toString();
+	}
+
+	public EnumInstructionOperand getInstructionType() {
+	    if(isArray()) return EnumInstructionOperand.ARRAY;
+	    else if(isPrimitive()) return EnumPrimitive.getPrimitive(shortName).instructionType;
+	    else return EnumInstructionOperand.REFERENCE;
+	}
+
+	public IExpression getDefaultValue() {
+	    if(isPrimitive()){
+		switch(EnumPrimitive.getPrimitive(shortName)){
+		    case BOOL:
+			return new NodeBool(0, 0, false);
+		    case LONG:
+			return new NodeLong(0, 0, 0);
+		    case DOUBLE:
+			return new NodeDouble(0, 0, 0.0);
+		    case FLOAT:
+			return new NodeFloat(0, 0, 0.0f);
+		    default:
+			return new NodeInteger(0, 0, 0);
+		}
+	    }else return new NodeNull();
 	}
     }
 
