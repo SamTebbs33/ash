@@ -244,7 +244,7 @@ public class Semantics {
 			tupleConstructor.stmts.add(new GenNodeFieldAssign(tupleType.tupleName, tupleClassName, tupleType.toBytecodeName(), new GenNodeVarLoad(tupleType.getInstructionType(), tupleTypeNum)));
 			tupleTypeNum++;
 		    }
-		    tupleClass.functions.add(tupleConstructor);
+		    tupleClass.addFunction(tupleConstructor);
 		    GenNode.addGenNodeType(tupleClass);
 		    GenNode.generatedTupleClasses.add(tupleClassName);
 		}
