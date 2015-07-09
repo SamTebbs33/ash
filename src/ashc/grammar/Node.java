@@ -1551,7 +1551,6 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    Label lbl0 = new Label(), lbl1 = new Label();
-	    ((Node) expr).generate();
 	    GenNode.currentFunction.stmts.add(new GenNodeConditionalJump(expr, lbl0));
 	    ((Node) exprTrue).generate();
 	    GenNode.currentFunction.stmts.add(new GenNodeJump(lbl1));
@@ -1885,7 +1884,30 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	  //TODO
+	    generate(new Label(), new Label());
+	}
+
+	public void generate(Label endLabel, Label thisLabel) {
+	    // Create a label that corresponds to this else-statement
+	    if(thisLabel != null) GenNode.currentFunction.stmts.add(new GenNodeLabel(thisLabel));
+	    
+	    // Create a new label to jump to in case the condition fails, this represents the next else-statement
+	    thisLabel = new Label();
+	    if(expr != null){
+		GenNode.currentFunction.stmts.add(new GenNodeConditionalJump(expr, thisLabel));
+	    }
+	    block.generate();
+	    // Jump to the end of the if-else block
+	    if(expr != null) GenNode.currentFunction.stmts.add(new GenNodeJump(endLabel));
+	    
+	    if(elseStmt == null){
+		// If this is the end of the block, place the label
+		GenNode.currentFunction.stmts.add(new GenNodeLabel(endLabel));
+	    }else{
+		// If we're not at the end of the block, then generate the next block
+		elseStmt.generate(endLabel, thisLabel);
+	    }
+	    
 	}
 
     }

@@ -509,6 +509,7 @@ public abstract class GenNode {
 
 	@Override
 	public void generate(Object visitor) {
+	    System.out.println("condJump gen");
 	    int opcode = GOTO;
 	    MethodVisitor mv = (MethodVisitor)visitor;
 	    if(expr instanceof NodeBinary){
@@ -614,14 +615,15 @@ public abstract class GenNode {
 		    }
 		}else{
 		    // If it is an operator overloaded expression, then generate the function call and then check if the return value was true
-		    expr.generate();
+		    specialGenerate(mv, expr);
 		    opcode = IFEQ;
 		}
 	    }else{
 		// If it isn't a binary expression, then generate it and check if the return value was true
-		expr.generate();
+		specialGenerate(mv, expr);
 		opcode = IFEQ;
 	    }
+	    System.out.println("condJump opcode: " + opcode);
 	    mv.visitJumpInsn(opcode, label);
 	}
 
