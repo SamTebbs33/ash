@@ -19,10 +19,8 @@ public class QualifiedName {
     public QualifiedName add(final String section) {
 	if (!section.isEmpty()) {
 	    sections.add(section);
-	    if(shortName != null){
-		if(enclosingType.isEmpty()) enclosingType = shortName;
-		else enclosingType += "."+shortName;
-	    }
+	    if (shortName != null) if (enclosingType.isEmpty()) enclosingType = shortName;
+	    else enclosingType += "." + shortName;
 	    shortName = section;
 	}
 	return this;

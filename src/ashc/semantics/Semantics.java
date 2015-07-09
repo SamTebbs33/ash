@@ -256,26 +256,25 @@ public class Semantics {
 	}
 
 	public EnumInstructionOperand getInstructionType() {
-	    if(isArray()) return EnumInstructionOperand.ARRAY;
-	    else if(isPrimitive()) return EnumPrimitive.getPrimitive(shortName).instructionType;
+	    if (isArray()) return EnumInstructionOperand.ARRAY;
+	    else if (isPrimitive()) return EnumPrimitive.getPrimitive(shortName).instructionType;
 	    else return EnumInstructionOperand.REFERENCE;
 	}
 
 	public IExpression getDefaultValue() {
-	    if(isPrimitive()){
-		switch(EnumPrimitive.getPrimitive(shortName)){
-		    case BOOL:
-			return new NodeBool(0, 0, false);
-		    case LONG:
-			return new NodeLong(0, 0, 0);
-		    case DOUBLE:
-			return new NodeDouble(0, 0, 0.0);
-		    case FLOAT:
-			return new NodeFloat(0, 0, 0.0f);
-		    default:
-			return new NodeInteger(0, 0, 0);
-		}
-	    }else return new NodeNull();
+	    if (isPrimitive()) switch (EnumPrimitive.getPrimitive(shortName)) {
+		case BOOL:
+		    return new NodeBool(0, 0, false);
+		case LONG:
+		    return new NodeLong(0, 0, 0);
+		case DOUBLE:
+		    return new NodeDouble(0, 0, 0.0);
+		case FLOAT:
+		    return new NodeFloat(0, 0, 0.0f);
+		default:
+		    return new NodeInteger(0, 0, 0);
+	    }
+	    else return new NodeNull();
 	}
     }
 
@@ -467,10 +466,11 @@ public class Semantics {
 	aliases.put(alias, type);
     }
 
-    // Returning an array here is a messy hack, but the best way I can think of returning both a TypeI and Function, rather than using a new class
+    // Returning an array here is a messy hack, but the best way I can think of
+    // returning both a TypeI and Function, rather than using a new class
     public static Object[] getOperationType(final TypeI type1, final TypeI type2, final Operator operator) {
-	if (type1.isNumeric() && type2.isNumeric()) return new Object[]{getPrecedentType(type1, type2), null};
-	else if (type1.equals(TypeI.getStringType()) && (operator.operation == EnumOperation.ADD)) return new Object[]{TypeI.getStringType(), null};
+	if (type1.isNumeric() && type2.isNumeric()) return new Object[] { getPrecedentType(type1, type2), null };
+	else if (type1.equals(TypeI.getStringType()) && (operator.operation == EnumOperation.ADD)) return new Object[] { TypeI.getStringType(), null };
 
 	if (type1.isArray() || type1.isTuple() || type1.isVoid() || type1.isNull()) return null;
 	else if (type2.isArray() || type2.isTuple() || type2.isVoid() || type2.isNull()) return null;
@@ -483,7 +483,7 @@ public class Semantics {
 	    parameter.add(type2);
 	    type = Semantics.getType(type1.shortName).get();
 	    func = type.getFunc(operator.opStr, parameter);
-	    if (func != null) return new Object[]{func.returnType, func};
+	    if (func != null) return new Object[] { func.returnType, func };
 	}
 	if (!type2.isPrimitive()) {
 	    // Check type 2 for operator overloads
@@ -491,7 +491,7 @@ public class Semantics {
 	    parameter.add(type1);
 	    type = Semantics.getType(type2.shortName).get();
 	    func = type.getFunc(operator.opStr, parameter);
-	    if (func != null) return new Object[]{func.returnType, func};
+	    if (func != null) return new Object[] { func.returnType, func };
 	}
 	return null;
     }
