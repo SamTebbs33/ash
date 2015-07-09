@@ -11,6 +11,7 @@ import org.objectweb.asm.*;
 
 import ashc.codegen.*;
 import ashc.codegen.GenNode.EnumInstructionOperand;
+import ashc.codegen.GenNode.GenNodeConditionalJump;
 import ashc.codegen.GenNode.GenNodeDouble;
 import ashc.codegen.GenNode.GenNodeField;
 import ashc.codegen.GenNode.GenNodeFieldAssign;
@@ -19,6 +20,8 @@ import ashc.codegen.GenNode.GenNodeFloat;
 import ashc.codegen.GenNode.GenNodeFuncCall;
 import ashc.codegen.GenNode.GenNodeFunction;
 import ashc.codegen.GenNode.GenNodeInt;
+import ashc.codegen.GenNode.GenNodeJump;
+import ashc.codegen.GenNode.GenNodeLabel;
 import ashc.codegen.GenNode.GenNodeLong;
 import ashc.codegen.GenNode.GenNodeNull;
 import ashc.codegen.GenNode.GenNodeReturn;
@@ -79,6 +82,8 @@ public abstract class Node {
 	public TypeI getExprType();
 
 	public void registerScopedChecks();
+
+	public void generate();
     }
 
     public static class NodeFile extends Node {
@@ -1535,7 +1540,14 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    //TODO
+	    Label lbl0 = new Label(), lbl1 = new Label();
+	    ((Node) expr).generate();
+	    GenNode.currentFunction.stmts.add(new GenNodeConditionalJump(expr, lbl0));
+	    ((Node) exprTrue).generate();
+	    GenNode.currentFunction.stmts.add(new GenNodeJump(lbl1));
+	    GenNode.currentFunction.stmts.add(new GenNodeLabel(lbl0));
+	    ((Node) exprFalse).generate();
+	    GenNode.currentFunction.stmts.add(new GenNodeLabel(lbl1));
 	}
 
     }
@@ -1583,6 +1595,8 @@ public abstract class Node {
     public static class NodeBinary extends Node implements IExpression {
 	public IExpression expr1, expr2;
 	public Operator operator;
+	public Function operatorOverloadFunc;
+	public TypeI exprType1, exprType2;
 
 	public NodeBinary(final int line, final int columnStart, final IExpression expr1, final String operator, final IExpression expr2) {
 	    super(line, columnStart);
@@ -1608,15 +1622,15 @@ public abstract class Node {
 		errored = true;
 		return null;
 	    }
-	    final TypeI exprType1 = expr1.getExprType(), exprType2 = expr2.getExprType();
-	    final TypeI type = Semantics.getOperationType(exprType1, exprType2, operator);
-	    if (type == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, operator.opStr, exprType1, exprType2);
-	    return type;
-	    /*
-	     * return operator.operation.primitive == null ?
-	     * Semantics.getPrecedentType(expr1.getExprType(),
-	     * expr2.getExprType()) : new TypeI(operator.operation.primitive);
-	     */
+	    exprType1 = expr1.getExprType();
+	    exprType2 = expr2.getExprType();
+	    
+	    // Returning an array here is a messy hack, but the best way I can think of returning both a TypeI and Function, rather than using a new class
+	    final Object[] operation = Semantics.getOperationType(exprType1, exprType2, operator);
+	    if (operation == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, operator.opStr, exprType1, exprType2);
+	    operatorOverloadFunc = (Function) operation[1];
+	    return (TypeI) operation[0];
+
 	}
 
 	@Override

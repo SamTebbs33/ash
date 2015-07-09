@@ -1,3 +1,3 @@
 class Test : Object {
-	public func test() -> "hello"
+	public func test() -> true ? 1 : 0
 }

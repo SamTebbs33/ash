@@ -33,6 +33,7 @@ public class Operator {
 	LESS(EnumPrimitive.BOOL),
 	GREATER(EnumPrimitive.BOOL),
 	EQUAL(EnumPrimitive.BOOL),
+	NOT_EQUAL(EnumPrimitive.BOOL),
 	LESS_EQUAL(EnumPrimitive.BOOL),
 	GREATER_EQUAL(EnumPrimitive.BOOL),
 	L_SHIFT,

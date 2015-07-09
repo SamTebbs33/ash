@@ -7,8 +7,11 @@ import java.util.*;
 
 import org.objectweb.asm.*;
 
+import ashc.grammar.Node.IExpression;
+import ashc.grammar.Node.NodeBinary;
+import ashc.grammar.Node.NodeNull;
 import ashc.semantics.Member.Field;
-import ashc.semantics.Member.Function;
+import ashc.semantics.*;
 import ashc.semantics.Semantics.TypeI;
 
 /**
@@ -492,6 +495,176 @@ public abstract class GenNode {
 	    ((MethodVisitor)visitor).visitIntInsn(ALOAD, 0);
 	}
 	
+    }
+    
+    public static class GenNodeConditionalJump extends GenNode {
+	
+	public IExpression expr;
+	public Label label;
+
+	public GenNodeConditionalJump(IExpression expr, Label label) {
+	    this.expr = expr;
+	    this.label = label;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    int opcode = GOTO;
+	    MethodVisitor mv = (MethodVisitor)visitor;
+	    if(expr instanceof NodeBinary){
+		NodeBinary node = (NodeBinary)expr;
+		if(node.operatorOverloadFunc == null){
+		    // If it doesn't use an operator overload, check the operator used
+		    
+		    // Null comparisons are handled later on in the switch statement
+		    if(!(node.expr1 instanceof NodeNull)) node.expr1.generate();
+		    if(!(node.expr2 instanceof NodeNull)) node.expr2.generate();
+		    
+		    // Get the precedent type of the operands to decide how they should be compared
+		    EnumInstructionOperand type = Semantics.getPrecedentType(node.exprType1, node.exprType2).getInstructionType();
+		    
+		    // Cast the binary expression's sub expressions if necessary
+		    if(node.exprType1.getInstructionType() != type){
+			(new GenNodePrimitiveCast(node.exprType1.getInstructionType(), type)).generate(mv);
+		    }else if(node.exprType2.getInstructionType() != type){
+			(new GenNodePrimitiveCast(node.exprType2.getInstructionType(), type)).generate(mv);
+		    }
+		    
+		    // Decide which opcode to use
+		    switch(type){
+			case INT:
+			case BYTE:
+			case SHORT:
+			case BOOL:
+			    // Integer type operands are handled by one single opcode
+			    switch(node.operator.operation){
+				case LESS:
+				    opcode = IF_ICMPLT;
+				    break;
+				case GREATER:
+				    opcode = IF_ICMPGT;
+				    break;
+				case EQUAL:
+				    opcode = IF_ICMPEQ;
+				    break;
+				case NOT_EQUAL:
+				    opcode = IF_ICMPNE;
+				    break;
+				case LESS_EQUAL:
+				    opcode = IF_ICMPLE;
+				    break;
+				case GREATER_EQUAL:
+				    opcode = IF_ICMPGE;
+				    break;
+			    }
+			    break;
+			case LONG:
+			case DOUBLE:
+			case FLOAT:
+			    // Non integer-types must be compared first
+			    if(type == EnumInstructionOperand.LONG) mv.visitInsn(LCMP);
+			    else if(type == EnumInstructionOperand.DOUBLE) mv.visitInsn(DCMPG);
+			    else if(type == EnumInstructionOperand.FLOAT) mv.visitInsn(FCMPG);
+			    switch(node.operator.operation){
+				case LESS:
+				    opcode = IFLT;
+				    break;
+				case GREATER:
+				    opcode = IFGT;
+				    break;
+				case EQUAL:
+				    opcode = IFEQ;
+				    break;
+				case NOT_EQUAL:
+				    opcode = IFNE;
+				    break;
+				case LESS_EQUAL:
+				    opcode = IFLE;
+				    break;
+				case GREATER_EQUAL:
+				    opcode = IFGE;
+				    break;
+			    }
+			    break;
+		      default:
+			  // If it is a null comparison expression
+			  if(node.expr1 instanceof NodeNull ^ node.expr2 instanceof NodeNull){
+			      switch(node.operator.operation){
+				  case NOT_EQUAL:
+				      opcode = IFNONNULL;
+				      break;
+				  case EQUAL:
+				      opcode= IFNULL;
+				      break;
+			      }
+			  }else{
+			      // Compare the references
+			      switch(node.operator.operation){
+				  case NOT_EQUAL:
+				      opcode = IF_ACMPNE;
+				      break;
+				  case EQUAL:
+				      opcode = IF_ACMPEQ;
+				      break;
+			      }
+			  }
+				
+		    }
+		}else{
+		    // If it is an operator overloaded expression, then generate the function call and then check if the return value was true
+		    expr.generate();
+		    opcode = IFEQ;
+		}
+	    }else{
+		// If it isn't a binary expression, then generate it and check if the return value was true
+		expr.generate();
+		opcode = IFEQ;
+	    }
+	    mv.visitJumpInsn(opcode, label);
+	}
+	
+    }
+    
+    public static class GenNodePrimitiveCast extends GenNode {
+
+	public EnumInstructionOperand fromType, toType;
+	
+	public GenNodePrimitiveCast(EnumInstructionOperand fromType, EnumInstructionOperand toType) {
+	    this.fromType = fromType;
+	    this.toType = toType;
+	}
+
+	@Override
+	public void generate(Object visitor) {}
+	
+    }
+    
+    public static class GenNodeJump extends GenNode {
+	
+	public Label label;
+	
+	public GenNodeJump(Label label) {
+	    this.label = label;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    ((MethodVisitor)visitor).visitJumpInsn(GOTO, label);
+	}
+	
+    }
+    
+    public static class GenNodeLabel extends GenNode {
+	public Label label;
+
+	public GenNodeLabel(Label label) {
+	    this.label = label;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    ((MethodVisitor)visitor).visitLabel(label);
+	}
     }
 
 }
