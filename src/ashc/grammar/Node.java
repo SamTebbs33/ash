@@ -84,6 +84,8 @@ public abstract class Node {
 	public void registerScopedChecks();
 
 	public void generate();
+
+	public void analyse();
     }
 
     public static class NodeFile extends Node {
@@ -988,6 +990,7 @@ public abstract class Node {
 	public void analyse() {
 	    funcReturnType = Scope.getFuncScope().returnType;
 	    if (singleLineExpr != null) {
+		singleLineExpr.analyse();
 		final FuncScope scope = Scope.getFuncScope();
 		TypeI singleLineExprType = singleLineExpr.getExprType();
 		if (scope.returnType.isVoid()) semanticError(this, ((Node) singleLineExpr).line, ((Node) singleLineExpr).column, RETURN_EXPR_IN_VOID_FUNC);
@@ -1526,6 +1529,13 @@ public abstract class Node {
 	}
 
 	@Override
+	public void analyse() {
+	    expr.analyse();
+	    exprTrue.analyse();
+	    exprFalse.analyse();
+	}
+
+	@Override
 	public String toString() {
 	    return "NodeTernary [expr=" + expr + ", exprTrue=" + exprTrue + ", exprFalse=" + exprFalse + "]";
 	}
@@ -1609,6 +1619,11 @@ public abstract class Node {
 	public void analyse() {
 	    ((Node) expr1).analyse();
 	    ((Node) expr2).analyse();
+	    if(((Node)expr1).errored || ((Node)expr1).errored) errored = true;
+	    else {
+		exprType1 = expr1.getExprType();
+		exprType2 = expr2.getExprType();
+	    }
 	}
 
 	@Override
@@ -1618,12 +1633,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    if (((Node) expr1).errored || ((Node) expr2).errored) {
-		errored = true;
-		return null;
-	    }
-	    exprType1 = expr1.getExprType();
-	    exprType2 = expr2.getExprType();
+	    if(errored) return null;
 	    
 	    // Returning an array here is a messy hack, but the best way I can think of returning both a TypeI and Function, rather than using a new class
 	    final Object[] operation = Semantics.getOperationType(exprType1, exprType2, operator);
