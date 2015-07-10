@@ -1346,6 +1346,7 @@ public abstract class Node {
 	    final FuncScope scope = Scope.getFuncScope();
 	    if (scope.isMutFunc) semanticError(this, line, column, RETURN_IN_MUT_FUNC);
 	    if (expr != null) {
+		expr.analyse();
 		exprType = expr.getExprType();
 		if (scope.returnType.isVoid()) semanticError(this, line, column, RETURN_EXPR_IN_VOID_FUNC);
 		else if (!scope.returnType.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, scope.returnType.toString(), exprType.toString());
@@ -2333,7 +2334,7 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    ((Node) expr).analyse();
+	    expr.analyse();
 	    nodeType.analyse();
 	    if (!nodeType.errored && !((Node) expr).errored) type = Semantics.getType(nodeType.id).get();
 	    else errored = true;
@@ -2354,7 +2355,8 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    // TODO
+	    expr.generate();
+	    GenNode.addFuncStmt(new GenNodeTypeOpcode(Opcodes.INSTANCEOF, type.qualifiedName.toBytecodeName()));
 	}
 
     }
