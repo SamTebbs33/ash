@@ -1,8 +1,8 @@
 public class Person : Object {
 	func main(){
-		var a = false
-		while(a){
-			a = a ? true : false
+		var a = 0
+		for var i = 0, i < 10, i = i + 1 {
+			a = a + 1
 		}
 	}
 }

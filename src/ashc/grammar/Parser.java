@@ -498,9 +498,9 @@ public class Parser {
 	    final IExpression expr = parseExpression();
 	    while (parens-- > 0)
 		expect(TokenType.PARENR);
-	    final NodeForIn forIn = new NodeForIn(line, column, next.data, expr, parseConstructBlock());
-	    return forIn;
+	    return new NodeForIn(line, column, next.data, expr, parseConstructBlock());
 	} else {
+	    rewind();
 	    IFuncStmt initStmt = null, endStmt = null;
 	    IExpression condition = null;
 	    if (next.type != TokenType.COMMA) {

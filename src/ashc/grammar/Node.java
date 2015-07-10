@@ -81,6 +81,10 @@ public abstract class Node {
 
     public static interface IFuncStmt {
 	public IGenNodeStmt genStmt = null;
+
+	void generate();
+
+	void analyse();
     }
 
     public static interface IConstruct {
@@ -1203,11 +1207,6 @@ public abstract class Node {
 	}
 
 	@Override
-	public String toString() {
-	    return "NodeVariable [id=" + id + ", prefix=" + prefix + "]";
-	}
-
-	@Override
 	public TypeI getExprType() {
 	    TypeI result;
 	    if (prefix == null) {
@@ -1256,9 +1255,8 @@ public abstract class Node {
 		final TypeI type = prefix.getExprType();
 		var = Semantics.getVar(id, type);
 	    }
-	    if (var != null) {
-		if (!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
-	    } else errored = true;
+	    if (var == null) semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
+	    else if (!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
 	}
 
 	@Override
@@ -1291,7 +1289,7 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    ((Node) expr).analyse();
+	    expr.analyse();
 	    final TypeI exprType = expr.getExprType();
 	    var.analyse();
 	    if(var.errored) errored = true;
@@ -1317,6 +1315,19 @@ public abstract class Node {
 		GenNode.addFuncStmt(node);
 	    }
 	    
+	}
+
+	@Override
+	public String toString() {
+	    StringBuilder builder = new StringBuilder();
+	    builder.append("NodeVarAssign [var=");
+	    builder.append(var);
+	    builder.append(", assignOp=");
+	    builder.append(assignOp);
+	    builder.append(", expr=");
+	    builder.append(expr);
+	    builder.append("]");
+	    return builder.toString();
 	}
 
     }
@@ -2130,7 +2141,7 @@ public abstract class Node {
 
     }
 
-    public static class NodeFor extends Node implements IFuncStmt, IConstruct {
+    public static abstract class NodeFor extends Node implements IFuncStmt, IConstruct {
 	public IExpression expr;
 	public NodeFuncBlock block;
 
@@ -2158,11 +2169,6 @@ public abstract class Node {
 	    return false;
 	}
 
-	@Override
-	public void generate() {
-	    // TODO
-	}
-
     }
 
     public static class NodeForNormal extends NodeFor implements IFuncStmt {
@@ -2176,9 +2182,32 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    if (initStmt != null) ((Node) initStmt).analyse();
-	    if (endStmt != null) ((Node) endStmt).analyse();
+	    if (initStmt != null){
+		initStmt.analyse();
+		if(((Node)initStmt).errored){
+		    errored = true;
+		}
+	    }
+	    if (endStmt != null){
+		endStmt.analyse();
+		if(((Node)endStmt).errored){
+		    errored = true;
+		}
+	    }
+	    block.analyse();
 	    super.analyse();
+	}
+
+	@Override
+	public void generate() {
+	    if(initStmt != null) initStmt.generate();
+	    Label lbl0 = new Label(), lbl1 = new Label();
+	    GenNode.addFuncStmt(new GenNodeLabel(lbl0));
+	    GenNode.addFuncStmt(new GenNodeConditionalJump(expr, lbl1));
+	    block.generate();
+	    if(endStmt != null) endStmt.generate();
+	    GenNode.addFuncStmt(new GenNodeJump(lbl0));
+	    GenNode.addFuncStmt(new GenNodeLabel(lbl1));
 	}
 
     }
@@ -2219,6 +2248,9 @@ public abstract class Node {
 	    block.analyse();
 	    Scope.pop();
 	}
+
+	@Override
+	public void generate() {}
 
     }
 
