@@ -1685,7 +1685,39 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    // TODO
+	    if(operatorOverloadFunc == null){
+		// Simple binary expression on primitive types
+		EnumInstructionOperand precedentType = Semantics.getPrecedentType(exprType1, exprType2).getInstructionType();
+		
+		// Generate the expressions and add the necessary casts
+		expr1.generate();
+		if(exprType1.getInstructionType() != precedentType){
+		    GenNode.currentFunction.stmts.add(new GenNodePrimitiveCast(exprType1.getInstructionType(), precedentType));
+		}
+		expr2.generate();
+		if(exprType2.getInstructionType() != precedentType){
+		    GenNode.currentFunction.stmts.add(new GenNodePrimitiveCast(exprType2.getInstructionType(), precedentType));
+		}
+		GenNode.currentFunction.stmts.add(new GenNodeBinary(operator, precedentType));
+	    }else{
+		// Operator-overloaded binary expression
+		String enclosingType = null;
+		boolean interfaceFunc = operatorOverloadFunc.enclosingType.type == EnumType.INTERFACE, privateFunc = BitOp.and(operatorOverloadFunc.modifiers, EnumModifier.PRIVATE.intVal);
+		if(operatorOverloadFunc.enclosingType.qualifiedName.shortName.equals(exprType1.shortName)){
+		    // expression 1 is the reference from which the method should be called
+		    expr1.generate();
+		    // expr2 is the parameter to the method
+		    expr2.generate();
+		    enclosingType = exprType1.qualifiedName.toBytecodeName();
+		}else{
+		    // expression 2 is the reference from which the method should be called
+		    expr2.generate();
+		    // expr1 is the parameter to the method
+		    expr1.generate();
+		    enclosingType = exprType2.qualifiedName.toBytecodeName();
+		}
+		GenNode.currentFunction.stmts.add(new GenNodeFuncCall(enclosingType, operator.opStr, operatorOverloadFunc.returnType.toBytecodeName(), interfaceFunc, privateFunc, false, false));
+	    }
 	}
     }
 

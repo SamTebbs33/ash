@@ -7,10 +7,13 @@ import java.util.*;
 
 import org.objectweb.asm.*;
 
-import ashc.codegen.GenNode.EnumInstructionOperand;
+import com.sun.media.jai.rmi.*;
+
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeBinary;
 import ashc.grammar.Node.NodeNull;
+import ashc.grammar.*;
+import ashc.grammar.Operator.EnumOperation;
 import ashc.semantics.Member.Field;
 import ashc.semantics.*;
 import ashc.semantics.Semantics.TypeI;
@@ -738,6 +741,152 @@ public abstract class GenNode {
 	public void generate(final Object visitor) {
 	    ((MethodVisitor) visitor).visitLabel(label);
 	}
+    }
+    
+    public static class GenNodeBinary extends GenNode {
+	public Operator operator;
+	public EnumInstructionOperand type;
+	
+	public GenNodeBinary(Operator operator, EnumInstructionOperand type) {
+	    this.operator = operator;
+	    this.type = type;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    MethodVisitor mv = (MethodVisitor)visitor;
+	    int opcode = 0;
+	    EnumOperation operation = operator.operation;
+	    switch(type){
+		case BYTE:
+		case CHAR:
+		case INT:
+		case SHORT:
+		case BOOL:
+		    switch(operation){			    
+			case ADD:
+			    opcode = IADD;
+			    break;
+			case BIT_AND:
+			    opcode = IAND;
+			    break;
+			case BIT_OR:
+			    opcode = IOR;
+			    break;
+			case BIT_XOR:
+			    opcode = IXOR;
+			    break;
+			case DIVIDE:
+			    opcode = IDIV;
+			    break;
+			case L_SHIFT:
+			    opcode = ISHL;
+			    break;
+			case R_SHIFT:
+			    opcode = ISHR;
+			    break;
+			case R_SHIFT_LOGICAL:
+			    opcode = IUSHR;
+			    break;
+			case MOD:
+			    opcode = IREM;
+			    break;
+			case MULTIPLY:
+			    opcode = IMUL;
+			    break;
+			//case POW: Pow is not defined for integers
+			case SUBTRACT:
+			    opcode = ISUB;
+			    break;
+			default:
+			    // I curse Java for not having an opcode that simply checks integer equality... 
+			    Label l0 = new Label(), l1 = new Label();
+			    if(operation == EnumOperation.EQUAL) opcode = IF_ICMPNE;
+			    else if(operation == EnumOperation.GREATER) opcode = IF_ICMPLE;
+			    else if(operation == EnumOperation.LESS) opcode = IF_ICMPGE;
+			    else if(operation == EnumOperation.NOT_EQUAL) opcode = IF_ICMPEQ;
+			    else if(operation == EnumOperation.GREATER_EQUAL) opcode = IF_ICMPLT;
+			    else if(operation == EnumOperation.LESS_EQUAL) opcode = IF_ICMPGT;
+			    else if(operation == EnumOperation.AND){
+				// Checks if either of the two pushed expressions are 0, and if so, jumps to label 0
+				mv.visitJumpInsn(IFEQ, l0);
+				mv.visitJumpInsn(IFEQ, l0);
+			    }else if(operation == EnumOperation.OR){
+				// Checks if either of the two pushed expressions are 0, and if so, jumps to label 0
+				mv.visitJumpInsn(IFNE, l0);
+				mv.visitJumpInsn(IFNE, l0);
+			    }
+			    mv.visitJumpInsn(opcode, l0);
+			    mv.visitInsn(ICONST_1);
+			    mv.visitJumpInsn(GOTO, l1);
+			    mv.visitLabel(l0);
+			    mv.visitInsn(ICONST_0);
+			    mv.visitLabel(l1);
+			    return; // No more to do here
+		    }
+		    break;
+		default:
+		    switch(operation){
+			case ADD:
+			    if(type == EnumInstructionOperand.DOUBLE) opcode = DADD;
+			    else if(type == EnumInstructionOperand.FLOAT) opcode = FADD;
+			    else if(type == EnumInstructionOperand.LONG) opcode = LADD;
+			    break;
+			case SUBTRACT:
+			    if(type == EnumInstructionOperand.DOUBLE) opcode = DSUB;
+			    else if(type == EnumInstructionOperand.FLOAT) opcode = FSUB;
+			    else if(type == EnumInstructionOperand.LONG) opcode = LSUB;
+			    break;
+			case DIVIDE:
+			    if(type == EnumInstructionOperand.DOUBLE) opcode = DDIV;
+			    else if(type == EnumInstructionOperand.FLOAT) opcode = FDIV;
+			    else if(type == EnumInstructionOperand.LONG) opcode = LDIV;
+			    break;
+			case MOD:
+			    if(type == EnumInstructionOperand.DOUBLE) opcode = DREM;
+			    else if(type == EnumInstructionOperand.FLOAT) opcode = FREM;
+			    else if(type == EnumInstructionOperand.LONG) opcode = LREM;
+			    break;
+			case MULTIPLY:
+			    if(type == EnumInstructionOperand.DOUBLE) opcode = DMUL;
+			    else if(type == EnumInstructionOperand.FLOAT) opcode = FMUL;
+			    else if(type == EnumInstructionOperand.LONG) opcode = LMUL;
+			    break;
+			case POW:
+			    // Only doubles should be using this
+			    GenNodeFuncCall powCall = new GenNodeFuncCall("java/lang/Math", "pow", "(DD)D", false, false, true, false);
+			    powCall.generate(mv);
+			    return; // No more to do here
+			case EQUAL:
+			case LESS:
+			case GREATER:
+			case NOT_EQUAL:
+			case LESS_EQUAL:
+			case GREATER_EQUAL:
+			    int compOpcode = DCMPL;
+			    if(type == EnumInstructionOperand.FLOAT) compOpcode = FCMPL;
+			    else if(type == EnumInstructionOperand.LONG) compOpcode = LCMP;
+			    mv.visitInsn(compOpcode);
+			    
+			    if(operation == EnumOperation.EQUAL) opcode = IFNE;
+			    else if(operation == EnumOperation.NOT_EQUAL) opcode = IFEQ;
+			    else if(operation == EnumOperation.LESS) opcode = IFGE;
+			    else if(operation == EnumOperation.GREATER) opcode = IFLE;
+			    else if(operation == EnumOperation.LESS_EQUAL) opcode = IFGT;
+			    else if(operation == EnumOperation.GREATER_EQUAL) opcode = IFLT;
+			    Label l0 = new Label(), l1 = new Label();
+			    mv.visitJumpInsn(opcode, l0);
+			    mv.visitInsn(ICONST_1);
+			    mv.visitJumpInsn(GOTO, l1);
+			    mv.visitLabel(l0);
+			    mv.visitInsn(ICONST_0);
+			    mv.visitLabel(l1);
+			    return;
+		    }
+		    break;
+	    }
+	}
+	
     }
 
 }
