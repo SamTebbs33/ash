@@ -7,8 +7,6 @@ import java.util.*;
 
 import org.objectweb.asm.*;
 
-import com.sun.media.jai.rmi.*;
-
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeBinary;
 import ashc.grammar.Node.NodeNull;
@@ -36,6 +34,10 @@ public abstract class GenNode {
 	types.add(node);
 	typeStack.push(node);
     }
+    
+    public static void addFuncStmt(GenNode node){
+	currentFunction.stmts.add(node);
+    }
 
     public static void exitGenNodeType() {
 	typeStack.pop();
@@ -55,13 +57,13 @@ public abstract class GenNode {
 
     public static class GenNodeType extends GenNode {
 
-	public String name, superclass;
+	public String name, superclass, shortName;
 	public String[] interfaces;
 	public int modifiers;
 	private LinkedList<GenNodeField> fields = new LinkedList<GenNodeField>();
 	private final LinkedList<GenNodeFunction> functions = new LinkedList<GenNodeFunction>();
 
-	public GenNodeType(final String name, final String superclass, final String[] interfaces, final int modifiers) {
+	public GenNodeType(final String name, String shortName, final String superclass, final String[] interfaces, final int modifiers) {
 	    this.name = name;
 	    this.superclass = superclass;
 	    this.interfaces = interfaces;
@@ -364,9 +366,8 @@ public abstract class GenNode {
 	    final MethodVisitor mv = (MethodVisitor) visitor;
 	    int opcode = INVOKEVIRTUAL;
 	    if (interfaceFunc) opcode = INVOKEINTERFACE;
-	    else if (staticFunc) opcode = INVOKESTATIC;
-	    else if (constructor || privateFunc) opcode = INVOKESPECIAL;
-	    if (constructor) mv.visitTypeInsn(NEW, enclosingType);
+	    if (staticFunc) opcode = INVOKESTATIC;
+	    if (constructor || privateFunc) opcode = INVOKESPECIAL;
 	    // INVOKESPECIAL for constructors and private methods,
 	    // INVOKEINTERFACE for methods overriden from interfaces and
 	    // INVOKEVIRTUAL for others
@@ -763,7 +764,7 @@ public abstract class GenNode {
 		case INT:
 		case SHORT:
 		case BOOL:
-		    switch(operation){			    
+		    switch(operation){		    
 			case ADD:
 			    opcode = IADD;
 			    break;
@@ -885,8 +886,82 @@ public abstract class GenNode {
 		    }
 		    break;
 	    }
+	    mv.visitInsn(opcode);
 	}
 	
+    }
+    
+    public static class GenNodeUnary extends GenNode {
+	public EnumInstructionOperand type;
+	public Operator operator;
+	boolean prefix;
+	
+	public GenNodeUnary(EnumInstructionOperand type, Operator operator, boolean prefix) {
+	    this.type = type;
+	    this.operator = operator;
+	    this.prefix = prefix;
+	}
+	
+	@Override
+	public void generate(Object visitor) {
+	    int opcode = 0;
+	    MethodVisitor mv = (MethodVisitor)visitor;
+	    if(!prefix) mv.visitInsn(DUP);
+	    //TODO: 
+	}
+	
+    }
+    
+    public static class GenNodeOpcode extends GenNode {
+	public int opcode;
+
+	public GenNodeOpcode(int opecode) {
+	    this.opcode = opecode;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    ((MethodVisitor)visitor).visitInsn(opcode);
+	}
+    }
+    
+    public static class GenNodeNew extends GenNode {
+	public String type;
+
+	public GenNodeNew(String type) {
+	    this.type = type;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    ((MethodVisitor)visitor).visitTypeInsn(NEW, type);
+	}
+    }
+    
+    public static class GenNodeTypeOpcode extends GenNode {
+	int opcode;
+	String type;
+	public GenNodeTypeOpcode(int opcode, String type) {
+	    this.opcode = opcode;
+	    this.type = type;
+	}
+	@Override
+	public void generate(Object visitor) {
+	    ((MethodVisitor)visitor).visitTypeInsn(opcode, type);
+	}
+    }
+    
+    public static class GenNodeIntOpcode extends GenNode {
+	public int opcode;
+	public int operand;
+	public GenNodeIntOpcode(int opcode, int operand) {
+	    this.opcode = opcode;
+	    this.operand = operand;
+	}
+	@Override
+	public void generate(Object visitor) {
+	    ((MethodVisitor)visitor).visitIntInsn(opcode, operand);
+	}
     }
 
 }

@@ -30,9 +30,12 @@ public class Scope {
     }
 
     public static class PropertyScope extends FuncScope {
+	
+	public Field field;
 
-	public PropertyScope(final TypeI varType) {
-	    super(varType, false);
+	public PropertyScope(final Field field) {
+	    super(field.type, false);
+	    this.field = field;
 	}
     }
 
@@ -108,6 +111,10 @@ public class Scope {
 
     public static boolean inFuncScope() {
 	return getFuncScope() != null;
+    }
+
+    public static boolean inPropertyScope() {
+	return getPropertyScope() != null;
     }
 
 }

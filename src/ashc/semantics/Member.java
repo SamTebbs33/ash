@@ -222,7 +222,7 @@ public class Member {
 	}
 
 	public boolean isConstructor() {
-	    return qualifiedName.shortName.equals("init");
+	    return qualifiedName.shortName.equals(enclosingType.qualifiedName.shortName);
 	}
 
     }

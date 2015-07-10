@@ -10,7 +10,34 @@ import java.util.*;
 import org.objectweb.asm.*;
 
 import ashc.codegen.*;
-import ashc.codegen.GenNode.*;
+import ashc.codegen.GenNode.EnumInstructionOperand;
+import ashc.codegen.GenNode.GenNodeBinary;
+import ashc.codegen.GenNode.GenNodeConditionalJump;
+import ashc.codegen.GenNode.GenNodeDouble;
+import ashc.codegen.GenNode.GenNodeField;
+import ashc.codegen.GenNode.GenNodeFieldLoad;
+import ashc.codegen.GenNode.GenNodeFieldStore;
+import ashc.codegen.GenNode.GenNodeFloat;
+import ashc.codegen.GenNode.GenNodeFuncCall;
+import ashc.codegen.GenNode.GenNodeFunction;
+import ashc.codegen.GenNode.GenNodeInt;
+import ashc.codegen.GenNode.GenNodeIntOpcode;
+import ashc.codegen.GenNode.GenNodeJump;
+import ashc.codegen.GenNode.GenNodeLabel;
+import ashc.codegen.GenNode.GenNodeLong;
+import ashc.codegen.GenNode.GenNodeNew;
+import ashc.codegen.GenNode.GenNodeNull;
+import ashc.codegen.GenNode.GenNodeOpcode;
+import ashc.codegen.GenNode.GenNodePrimitiveCast;
+import ashc.codegen.GenNode.GenNodeReturn;
+import ashc.codegen.GenNode.GenNodeString;
+import ashc.codegen.GenNode.GenNodeThis;
+import ashc.codegen.GenNode.GenNodeType;
+import ashc.codegen.GenNode.GenNodeTypeOpcode;
+import ashc.codegen.GenNode.GenNodeUnary;
+import ashc.codegen.GenNode.GenNodeVarLoad;
+import ashc.codegen.GenNode.GenNodeVarStore;
+import ashc.codegen.GenNode.IGenNodeStmt;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
 import ashc.load.*;
@@ -22,7 +49,9 @@ import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
 import ashc.semantics.Scope.FuncScope;
 import ashc.semantics.Scope.PropertyScope;
+import ashc.semantics.Semantics.Operation;
 import ashc.semantics.Semantics.TypeI;
+import ashc.semantics.Member.Type;
 import ashc.util.*;
 
 /**
@@ -279,7 +308,7 @@ public abstract class Node {
 		for (int i = 1; i < type.supers.size(); i++)
 		    interfaces[i - 1] = type.supers.get(i).qualifiedName.toString();
 	    }
-	    genNodeType = new GenNodeType(name, superClass, interfaces, type.modifiers);
+	    genNodeType = new GenNodeType(name, type.qualifiedName.shortName, superClass, interfaces, type.modifiers);
 
 	    // Build the costructor
 	    if (defConstructor != null) {
@@ -540,7 +569,7 @@ public abstract class Node {
 		// already declared
 		final LinkedList<NodeModifier> mods = new LinkedList<NodeModifier>();
 		mods.add(new NodeModifier(0, 0, "public"));
-		funcDecs.add(new NodeFuncDec(0, 0, mods, "init", new NodeArgs(), null, new NodeFuncBlock(), new NodeTypes(), false));
+		funcDecs.add(new NodeFuncDec(0, 0, mods, Semantics.currentType().qualifiedName.shortName, new NodeArgs(), null, new NodeFuncBlock(), new NodeTypes(), false));
 		funcDecs.getLast().preAnalyse();
 	    }
 	    for (final NodeVarDec varDec : varDecs)
@@ -727,7 +756,10 @@ public abstract class Node {
 
 	    if (!isMutFunc) {
 		if (!type.id.equals("void")) returnType = new TypeI(type);
-		else if (block.singleLineExpr != null) returnType = block.singleLineExpr.getExprType();
+		else if (block.singleLineExpr != null){
+		    block.singleLineExpr.analyse();
+		    returnType = block.singleLineExpr.getExprType();
+		}
 		else returnType = TypeI.getVoidType();
 		returnType = Semantics.filterNullType(returnType);
 	    } else returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
@@ -815,12 +847,12 @@ public abstract class Node {
 	    if ((getBlock != null) || (setBlock != null)) if (keyword.equals("const")) semanticError(this, line, column, CONST_VAR_IS_PROPERTY, id);
 	    else if (Scope.getFuncScope() != null) semanticError(this, line, column, PROPERTY_IN_FUNC, id);
 	    if (getBlock != null) {
-		Scope.push(new PropertyScope(type));
+		Scope.push(new PropertyScope(var));
 		getBlock.analyse();
 		Scope.pop();
 	    }
 	    if (setBlock != null) {
-		Scope.push(new PropertyScope(type));
+		Scope.push(new PropertyScope(var));
 		setBlock.analyse();
 		Scope.pop();
 	    }
@@ -836,12 +868,14 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    if (getBlock != null) {
+		System.out.println("getBlock");
 		final GenNodeFunction getFunc = new GenNodeFunction("$get" + id, Opcodes.ACC_PUBLIC, var.type.toBytecodeName());
 		getBlock.generate();
 		getFunc.stmts = getBlock.genStmts;
 		GenNode.typeStack.peek().addFunction(getFunc);
 	    }
 	    if (setBlock != null) {
+		System.out.println("setBlock");
 		final GenNodeFunction setFunc = new GenNodeFunction("$set" + id, Opcodes.ACC_PUBLIC, "V");
 		setFunc.params.add(var.type);
 		setBlock.generate();
@@ -932,14 +966,13 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    super.analyse();
-	    if (expr != null) {
+	    expr.analyse();
 		if (!((Node) expr).errored) {
 		    final TypeI type = Semantics.filterNullType(expr.getExprType());
 		    var = new Variable(id, type);
 		    Semantics.addVar(var);
 		    analyseProperty(type);
 		}
-	    }
 	}
 
 	@Override
@@ -950,7 +983,7 @@ public abstract class Node {
 	    }else{
 		GenNode.currentFunction.locals++;
 		expr.generate();
-		GenNode.currentFunction.stmts.add(new GenNodeVarStore(var.type.getInstructionType(), var.localID));
+		GenNode.addFuncStmt(new GenNodeVarStore(var.type.getInstructionType(), var.localID));
 	    }
 	    super.generate();
 	}
@@ -996,15 +1029,15 @@ public abstract class Node {
 	public void generate() {
 	    if (singleLineExpr != null) {
 		((Node) singleLineExpr).generate();
-		GenNode.currentFunction.stmts.add(new GenNodeReturn(funcReturnType.getInstructionType()));
+		GenNode.addFuncStmt(new GenNodeReturn(funcReturnType.getInstructionType()));
 	    } else if (singleLineStmt != null) {
 		((Node) singleLineStmt).generate();
-		GenNode.currentFunction.stmts.add(new GenNodeReturn(EnumInstructionOperand.VOID));
+		GenNode.addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
 	    } else {
 		for (final IFuncStmt stmt : stmts)
 		    ((Node) stmt).generate();
 		// Add a return statement if the func is void
-		if ((funcReturnType != null) && funcReturnType.isVoid()) GenNode.currentFunction.stmts.add(new GenNodeReturn(EnumInstructionOperand.VOID));
+		if ((funcReturnType != null) && funcReturnType.isVoid()) GenNode.addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
 	    }
 	}
 
@@ -1145,9 +1178,13 @@ public abstract class Node {
 	    for (final TypeI type : func.parameters)
 		sb.append(type.toBytecodeName());
 	    sb.append(")" + func.returnType.toBytecodeName());
-	    if(prefix == null) GenNode.currentFunction.stmts.add(new GenNodeThis());
+	    if(func.isConstructor()){
+		GenNode.addFuncStmt(new GenNodeNew(func.enclosingType.qualifiedName.toBytecodeName()));
+		GenNode.addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
+	    }else if(prefix == null) GenNode.addFuncStmt(new GenNodeThis());
 	    else prefix.generate();
-	    GenNode.currentFunction.stmts.add(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), func.qualifiedName.shortName, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
+	    for(IExpression expr : args.exprs) expr.generate();
+	    GenNode.addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), func.qualifiedName.shortName, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
 	}
 
     }
@@ -1210,7 +1247,12 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    if (prefix == null) var = Semantics.getVar(id);
+	    if(id.equals("self")){
+		if(Scope.inPropertyScope()){
+		    PropertyScope scope = Scope.getPropertyScope();
+		    var = scope.field;
+		}else semanticError(this, line, column, CANNOT_USE_SELF);
+	    }else if (prefix == null) var = Semantics.getVar(id);
 	    else {
 		final TypeI type = prefix.getExprType();
 		var = Semantics.getVar(id, type);
@@ -1224,12 +1266,12 @@ public abstract class Node {
 	public void generate() {
 	    if(prefix != null){
 		prefix.generate();
-		GenNode.currentFunction.stmts.add(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName()));
+		GenNode.addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName()));
 	    }else{
-		if(var.isLocal) GenNode.currentFunction.stmts.add(new GenNodeVarLoad(var.type.getInstructionType(), var.localID));
+		if(var.isLocal) GenNode.addFuncStmt(new GenNodeVarLoad(var.type.getInstructionType(), var.localID));
 		else{
-		    GenNode.currentFunction.stmts.add(new GenNodeThis());
-		    GenNode.currentFunction.stmts.add(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName()));
+		    GenNode.addFuncStmt(new GenNodeThis());
+		    GenNode.addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName()));
 		}
 	    }
 	}
@@ -1261,7 +1303,7 @@ public abstract class Node {
 	    if(var.prefix != null){
 		var.prefix.generate();
 		expr.generate();
-		GenNode.currentFunction.stmts.add(new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName()));
+		GenNode.addFuncStmt(new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName()));
 	    }else{
 		GenNode node = null;
 		if(var.var.isLocal){
@@ -1269,11 +1311,11 @@ public abstract class Node {
 		    node = new GenNodeVarStore(var.var.type.getInstructionType(), var.var.localID);
 		}
 		else{
-		    GenNode.currentFunction.stmts.add(new GenNodeThis());
+		    GenNode.addFuncStmt(new GenNodeThis());
 		    expr.generate();
 		    node = new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName());
 		}
-		GenNode.currentFunction.stmts.add(node);
+		GenNode.addFuncStmt(node);
 	    }
 	    
 	}
@@ -1304,7 +1346,7 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    ((Node) expr).generate();
-	    GenNode.currentFunction.stmts.add(new GenNodeReturn(exprType.getInstructionType()));
+	    GenNode.addFuncStmt(new GenNodeReturn(exprType.getInstructionType()));
 	}
 
     }
@@ -1332,7 +1374,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.currentFunction.stmts.add(new GenNodeInt(val));
+	    GenNode.addFuncStmt(new GenNodeInt(val));
 	}
 
     }
@@ -1360,7 +1402,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.currentFunction.stmts.add(new GenNodeLong(val));
+	    GenNode.addFuncStmt(new GenNodeLong(val));
 	}
 
     }
@@ -1388,7 +1430,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.currentFunction.stmts.add(new GenNodeFloat(val));
+	    GenNode.addFuncStmt(new GenNodeFloat(val));
 	}
 
     }
@@ -1416,7 +1458,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.currentFunction.stmts.add(new GenNodeDouble(val));
+	    GenNode.addFuncStmt(new GenNodeDouble(val));
 	}
 
     }
@@ -1482,7 +1524,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.currentFunction.stmts.add(new GenNodeString(val));
+	    GenNode.addFuncStmt(new GenNodeString(val));
 	}
 
     }
@@ -1510,7 +1552,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.currentFunction.stmts.add(new GenNodeInt(val ? 1 : 0));
+	    GenNode.addFuncStmt(new GenNodeInt(val ? 1 : 0));
 	}
 
     }
@@ -1538,7 +1580,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.currentFunction.stmts.add(new GenNodeInt(val));
+	    GenNode.addFuncStmt(new GenNodeInt(val));
 	}
 
     }
@@ -1575,12 +1617,12 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    final Label lbl0 = new Label(), lbl1 = new Label();
-	    GenNode.currentFunction.stmts.add(new GenNodeConditionalJump(expr, lbl0));
+	    GenNode.addFuncStmt(new GenNodeConditionalJump(expr, lbl0));
 	    ((Node) exprTrue).generate();
-	    GenNode.currentFunction.stmts.add(new GenNodeJump(lbl1));
-	    GenNode.currentFunction.stmts.add(new GenNodeLabel(lbl0));
+	    GenNode.addFuncStmt(new GenNodeJump(lbl1));
+	    GenNode.addFuncStmt(new GenNodeLabel(lbl0));
 	    ((Node) exprFalse).generate();
-	    GenNode.currentFunction.stmts.add(new GenNodeLabel(lbl1));
+	    GenNode.addFuncStmt(new GenNodeLabel(lbl1));
 	}
 
     }
@@ -1622,12 +1664,12 @@ public abstract class Node {
 	public void generate() {
 	    exprOptional.generate();
 	    final Label lbl = new Label(), lbl2 = new Label();
-	    GenNode.currentFunction.stmts.add(new GenNodeConditionalJump(Opcodes.IFNONNULL, lbl));
+	    GenNode.addFuncStmt(new GenNodeConditionalJump(Opcodes.IFNONNULL, lbl));
 	    exprOptional.generate();
-	    GenNode.currentFunction.stmts.add(new GenNodeJump(lbl2));
-	    GenNode.currentFunction.stmts.add(new GenNodeLabel(lbl));
+	    GenNode.addFuncStmt(new GenNodeJump(lbl2));
+	    GenNode.addFuncStmt(new GenNodeLabel(lbl));
 	    exprNotNull.generate();
-	    GenNode.currentFunction.stmts.add(new GenNodeLabel(lbl2));
+	    GenNode.addFuncStmt(new GenNodeLabel(lbl2));
 	}
 
     }
@@ -1665,7 +1707,7 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    if (errored) return null;
 
-	    // Returning an array here is a messy hack, but the best way I can
+	    // Returning an array here is messy, but the best way I can
 	    // think of returning both a TypeI and Function, rather than using a
 	    // new class
 	    final Object[] operation = Semantics.getOperationType(exprType1, exprType2, operator);
@@ -1692,31 +1734,29 @@ public abstract class Node {
 		// Generate the expressions and add the necessary casts
 		expr1.generate();
 		if(exprType1.getInstructionType() != precedentType){
-		    GenNode.currentFunction.stmts.add(new GenNodePrimitiveCast(exprType1.getInstructionType(), precedentType));
+		    GenNode.addFuncStmt(new GenNodePrimitiveCast(exprType1.getInstructionType(), precedentType));
 		}
 		expr2.generate();
 		if(exprType2.getInstructionType() != precedentType){
-		    GenNode.currentFunction.stmts.add(new GenNodePrimitiveCast(exprType2.getInstructionType(), precedentType));
+		    GenNode.addFuncStmt(new GenNodePrimitiveCast(exprType2.getInstructionType(), precedentType));
 		}
-		GenNode.currentFunction.stmts.add(new GenNodeBinary(operator, precedentType));
+		GenNode.addFuncStmt(new GenNodeBinary(operator, precedentType));
 	    }else{
 		// Operator-overloaded binary expression
-		String enclosingType = null;
+		String enclosingType = operatorOverloadFunc.enclosingType.qualifiedName.toBytecodeName();
 		boolean interfaceFunc = operatorOverloadFunc.enclosingType.type == EnumType.INTERFACE, privateFunc = BitOp.and(operatorOverloadFunc.modifiers, EnumModifier.PRIVATE.intVal);
 		if(operatorOverloadFunc.enclosingType.qualifiedName.shortName.equals(exprType1.shortName)){
 		    // expression 1 is the reference from which the method should be called
 		    expr1.generate();
 		    // expr2 is the parameter to the method
 		    expr2.generate();
-		    enclosingType = exprType1.qualifiedName.toBytecodeName();
 		}else{
 		    // expression 2 is the reference from which the method should be called
 		    expr2.generate();
 		    // expr1 is the parameter to the method
 		    expr1.generate();
-		    enclosingType = exprType2.qualifiedName.toBytecodeName();
 		}
-		GenNode.currentFunction.stmts.add(new GenNodeFuncCall(enclosingType, operator.opStr, operatorOverloadFunc.returnType.toBytecodeName(), interfaceFunc, privateFunc, false, false));
+		GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, operator.opStr, operatorOverloadFunc.returnType.toBytecodeName(), interfaceFunc, privateFunc, false, false));
 	    }
 	}
     }
@@ -1725,6 +1765,8 @@ public abstract class Node {
 	public IExpression expr;
 	public Operator operator;
 	public boolean prefix;
+	public Function overloadFunc;
+	public TypeI type;
 
 	public NodeUnary(final int line, final int column, final IExpression expr, final String operator, final boolean prefix) {
 	    super(line, column);
@@ -1745,11 +1787,14 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    TypeI type = null;
 	    if (!((NodeVariable) expr).errored) {
 		final TypeI exprType = expr.getExprType();
-		type = Semantics.getOperationType(exprType, operator);
-		if (type == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPE, operator.opStr, exprType);
+		Operation op = Semantics.getOperationType(exprType, operator);
+		if (op == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPE, operator.opStr, exprType);
+		else{
+		    overloadFunc = op.overloadFunc;
+		    type = op.type;
+		}
 	    }
 	    return type;
 	}
@@ -1759,7 +1804,15 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    // TODO
+	    if(overloadFunc == null){
+		expr.generate();
+		GenNode.addFuncStmt(new GenNodeUnary(type.getInstructionType(), operator, prefix));
+	    }else{
+		expr.generate();
+		String enclosingType = overloadFunc.enclosingType.qualifiedName.toBytecodeName(), returnType = overloadFunc.returnType.toBytecodeName();
+		boolean privateFunc = BitOp.and(overloadFunc.modifiers, EnumModifier.PRIVATE.intVal), interfaceFunc = overloadFunc.enclosingType.type == EnumType.INTERFACE;
+		GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, operator.opStr, "()" + returnType, interfaceFunc, privateFunc, false, false));
+	    }
 	}
 
     }
@@ -1779,11 +1832,13 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.currentFunction.stmts.add(new GenNodeThis());
+	    GenNode.addFuncStmt(new GenNodeThis());
 	}
     }
 
     public static class NodeSelf extends Node implements IExpression {
+	
+	public Field field;
 
 	public NodeSelf(final int line, final int columnStart) {
 	    super(line, columnStart);
@@ -1791,7 +1846,11 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    if (Scope.getPropertyScope() != null) return Scope.getPropertyScope().returnType;
+	    if (Scope.getPropertyScope() != null){
+		PropertyScope scope = Scope.getPropertyScope();
+		field = scope.field;
+		return scope.returnType;
+	    }
 	    else semanticError(this, line, column, CANNOT_USE_SELF);
 	    return null;
 	}
@@ -1801,7 +1860,8 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    // TODO
+	    GenNode.addFuncStmt(new GenNodeThis());
+	    GenNode.addFuncStmt(new GenNodeFieldLoad(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName()));
 	}
 
     }
@@ -1818,7 +1878,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.currentFunction.stmts.add(new GenNodeNull());
+	    GenNode.addFuncStmt(new GenNodeNull());
 	}
 
     }
@@ -1826,9 +1886,11 @@ public abstract class Node {
     public static class NodeArray extends Node implements IExpression {
 
 	public NodeExprs exprs = new NodeExprs();
+	public TypeI arrayType, elementType;
 
-	public NodeArray(final int line, final int column) {
+	public NodeArray(final int line, final int column, NodeExprs nodeExprs) {
 	    super(line, column);
+	    this.exprs = nodeExprs;
 	}
 
 	public void add(final IExpression expr) {
@@ -1851,12 +1913,12 @@ public abstract class Node {
 	    // Just infer an Object array
 	    if (exprList.size() == 0) return TypeI.getObjectType().copy().setArrDims(1);
 	    // Infer the precedent type within this array expression
-	    TypeI type = exprList.getFirst().getExprType();
+	    elementType = exprList.getFirst().getExprType();
 	    for (int i = 1; i < exprList.size(); i++)
-		type = Semantics.getPrecedentType(type, exprList.get(i).getExprType());
-	    type.arrDims += 1; // Add one to show that this is an array
+		elementType = Semantics.getPrecedentType(elementType, exprList.get(i).getExprType());
+	    arrayType = elementType.copy().setArrDims(elementType.arrDims+1);
 	    // expression
-	    return type;
+	    return arrayType;
 	}
 
 	@Override
@@ -1864,7 +1926,63 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    // TODO
+	    int len = exprs.exprs.size();
+	    int arrayStoreOpcode = Opcodes.AASTORE;
+	    EnumInstructionOperand type = elementType.getInstructionType();
+	    GenNode arrayCreateNode = null;
+	    System.out.println(elementType);
+	    switch(type){
+		case ARRAY:
+		    arrayCreateNode = new GenNodeTypeOpcode(Opcodes.ANEWARRAY, elementType.toBytecodeName());
+		    arrayStoreOpcode = Opcodes.AASTORE;
+		    break;
+		case BOOL:
+		    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN);
+		    arrayStoreOpcode = Opcodes.BASTORE;
+		    break;
+		case BYTE:
+		    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_BYTE);
+		    arrayStoreOpcode = Opcodes.BASTORE;
+		    break;
+		case CHAR:
+		    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_CHAR);
+		    arrayStoreOpcode = Opcodes.CASTORE;
+		    break;
+		case SHORT:
+		    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_SHORT);
+		    arrayStoreOpcode = Opcodes.SASTORE;
+		    break;
+		case INT:
+		    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_INT);
+		    arrayStoreOpcode = Opcodes.IASTORE;
+		    break;
+		case DOUBLE:
+		    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_DOUBLE);
+		    arrayStoreOpcode = Opcodes.DASTORE;
+		    break;
+		case FLOAT:
+		    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_FLOAT);
+		    arrayStoreOpcode = Opcodes.FASTORE;
+		    break;
+		case LONG:
+		    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_LONG);
+		    arrayStoreOpcode = Opcodes.LASTORE;
+		    break;
+		case REFERENCE:
+		    arrayCreateNode = new GenNodeTypeOpcode(Opcodes.ANEWARRAY, Semantics.getType(elementType.shortName).get().qualifiedName.toBytecodeName());
+		    arrayStoreOpcode = Opcodes.AASTORE;
+		    break;
+		    
+	    }
+	    GenNode.addFuncStmt(new GenNodeInt(len));
+	    GenNode.addFuncStmt(arrayCreateNode);
+	    int index = 0;
+	    for(IExpression expr : exprs.exprs){
+		GenNode.addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
+		GenNode.addFuncStmt(new GenNodeInt(index++));
+		expr.generate();
+		GenNode.addFuncStmt(new GenNodeOpcode(arrayStoreOpcode));
+	    }
 	}
 
     }
@@ -1954,20 +2072,20 @@ public abstract class Node {
 
 	public void generate(final Label endLabel, Label thisLabel) {
 	    // Create a label that corresponds to this else-statement
-	    if (thisLabel != null) GenNode.currentFunction.stmts.add(new GenNodeLabel(thisLabel));
+	    if (thisLabel != null) GenNode.addFuncStmt(new GenNodeLabel(thisLabel));
 
 	    // Create a new label to jump to in case the condition fails, this
 	    // represents the next else-statement
 	    thisLabel = new Label();
-	    if (expr != null) GenNode.currentFunction.stmts.add(new GenNodeConditionalJump(expr, thisLabel));
+	    if (expr != null) GenNode.addFuncStmt(new GenNodeConditionalJump(expr, thisLabel));
 	    block.generate();
 	    // Jump to the end of the if-else block if the last statement was
 	    // not a return statement
-	    if ((expr != null) && !block.lastIsReturn()) GenNode.currentFunction.stmts.add(new GenNodeJump(endLabel));
+	    if ((expr != null) && !block.lastIsReturn()) GenNode.addFuncStmt(new GenNodeJump(endLabel));
 
 	    if (elseStmt == null) // If this is the end of the block, place the
 				  // label
-		GenNode.currentFunction.stmts.add(new GenNodeLabel(endLabel));
+		GenNode.addFuncStmt(new GenNodeLabel(endLabel));
 	    else // If we're not at the end of the block, then generate the next
 		 // block
 		elseStmt.generate(endLabel, thisLabel);

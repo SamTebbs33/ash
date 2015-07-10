@@ -12,6 +12,7 @@ import ashc.grammar.Node.IFuncStmt;
 import ashc.grammar.Node.NodeAlias;
 import ashc.grammar.Node.NodeArg;
 import ashc.grammar.Node.NodeArgs;
+import ashc.grammar.Node.NodeArray;
 import ashc.grammar.Node.NodeArrayAccess;
 import ashc.grammar.Node.NodeAs;
 import ashc.grammar.Node.NodeBinary;
@@ -592,7 +593,7 @@ public class Parser {
     }
 
     private IExpression parsePrimaryExpression() throws UnexpectedTokenException {
-	Token next = expect(TokenType.NULL, TokenType.ID, TokenType.THIS, TokenType.SELF, TokenType.UNARYOP, TokenType.BRACKETL, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.LONG, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
+	Token next = expect(TokenType.NULL, TokenType.BRACEL, TokenType.ID, TokenType.THIS, TokenType.SELF, TokenType.UNARYOP, TokenType.BRACKETL, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.LONG, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
 	IExpression expr = null;
 	switch (next.type) {
 	    case NULL:
@@ -610,6 +611,10 @@ public class Parser {
 		break;
 	    case UNARYOP:
 		expr = new NodeUnary(next.line, next.columnStart, parsePrimaryExpression(), next.data, true);
+		break;
+	    case BRACEL:
+		rewind();
+		expr = new NodeArray(next.line, next.columnStart, parseCallArgs(TokenType.BRACEL, TokenType.BRACER));
 		break;
 	    case BRACKETL:
 		expr = new NodeTupleExpr(next.line, next.columnStart);

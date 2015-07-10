@@ -44,6 +44,15 @@ public class Semantics {
     public static HashMap<String, QualifiedName> typeNameMap = new HashMap<String, QualifiedName>();
     public static HashMap<String, Type> aliases = new HashMap<String, Type>();
     public static Stack<Type> typeStack = new Stack<Type>();
+    
+    public static class Operation {
+	public Function overloadFunc;
+	public TypeI type;
+	public Operation(Function overloadFunc, TypeI type) {
+	    this.overloadFunc = overloadFunc;
+	    this.type = type;
+	}
+    }
 
     public static class TypeI {
 
@@ -235,7 +244,7 @@ public class Semantics {
 		}
 		final String tupleClassName = "Tuple:" + name.toString().replace("/", "-");
 		if (!GenNode.generatedTupleClasses.contains(tupleClassName)) {
-		    final GenNodeType tupleClass = new GenNodeType(tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC);
+		    final GenNodeType tupleClass = new GenNodeType(tupleClassName, tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC);
 		    final GenNodeFunction tupleConstructor = new GenNodeFunction(tupleClassName + ".<init>", Opcodes.ACC_PUBLIC, "V");
 		    int tupleTypeNum = 1;
 		    for (final TypeI tupleType : tupleTypes) {
@@ -499,11 +508,11 @@ public class Semantics {
 	return null;
     }
 
-    public static TypeI getOperationType(final TypeI type, final Operator operator) {
-	if (type.isNumeric()) return type;
+    public static Operation getOperationType(final TypeI type, final Operator operator) {
+	if (type.isNumeric()) return new Operation(null, type);
 	if (type.isArray() || type.isNull() || type.isTuple() || type.isVoid()) return null;
 	final Function func = Semantics.getType(type.shortName).get().getFunc(operator.opStr, new LinkedList<>());
-	return func != null ? func.returnType : null;
+	return func != null ? new Operation(func, func.returnType) : null;
     }
 
     public static TypeI getGeneric(final LinkedList<TypeI> generics, final int index) {

@@ -1,5 +1,5 @@
-public class Test : Object {
-    
-    var a : bool = 1.0 == 2.0
-
+public class Person : Object {
+	func main(){
+		var a = {{"a"}, {"b"}, {"c"}}
+	}
 }
