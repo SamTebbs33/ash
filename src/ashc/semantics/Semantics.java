@@ -239,7 +239,7 @@ public class Semantics {
 		    final GenNodeFunction tupleConstructor = new GenNodeFunction(tupleClassName + ".<init>", Opcodes.ACC_PUBLIC, "V");
 		    int tupleTypeNum = 1;
 		    for (final TypeI tupleType : tupleTypes) {
-			tupleClass.fields.add(new GenNodeField(Opcodes.ACC_PUBLIC, tupleType.tupleName, tupleType.toBytecodeName()));
+			tupleClass.addField(new GenNodeField(Opcodes.ACC_PUBLIC, tupleType.tupleName, tupleType.toBytecodeName()));
 			tupleConstructor.params.add(tupleType);
 			tupleConstructor.stmts.add(new GenNodeFieldAssign(tupleType.tupleName, tupleClassName, tupleType.toBytecodeName(), new GenNodeVarLoad(tupleType.getInstructionType(), tupleTypeNum)));
 			tupleTypeNum++;

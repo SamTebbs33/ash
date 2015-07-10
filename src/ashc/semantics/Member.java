@@ -221,6 +221,10 @@ public class Member {
 	    return "Function [parameters=" + parameters + ", returnType=" + returnType + ", qualifiedName=" + qualifiedName + ", modifiers=" + modifiers + "]";
 	}
 
+	public boolean isConstructor() {
+	    return qualifiedName.shortName.equals("init");
+	}
+
     }
 
     public static class Variable extends Field {
@@ -230,7 +234,8 @@ public class Member {
 	public Variable(final String id, final TypeI type) {
 	    super(new QualifiedName(id), 0, type);
 	    this.id = id;
-	    isLocal = true;
+	    this.localID = Scope.inScope() ? Scope.getScope().vars.size()+1 : 0;
+	    isLocal = Scope.inFuncScope();
 	}
 
 	@Override
@@ -242,6 +247,7 @@ public class Member {
     public static class Field extends Member {
 
 	public TypeI type;
+	public int localID;
 
 	public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type) {
 	    super(qualifiedName, modifiers);

@@ -10,26 +10,7 @@ import java.util.*;
 import org.objectweb.asm.*;
 
 import ashc.codegen.*;
-import ashc.codegen.GenNode.EnumInstructionOperand;
-import ashc.codegen.GenNode.GenNodeConditionalJump;
-import ashc.codegen.GenNode.GenNodeDouble;
-import ashc.codegen.GenNode.GenNodeField;
-import ashc.codegen.GenNode.GenNodeFieldAssign;
-import ashc.codegen.GenNode.GenNodeFieldStore;
-import ashc.codegen.GenNode.GenNodeFloat;
-import ashc.codegen.GenNode.GenNodeFuncCall;
-import ashc.codegen.GenNode.GenNodeFunction;
-import ashc.codegen.GenNode.GenNodeInt;
-import ashc.codegen.GenNode.GenNodeJump;
-import ashc.codegen.GenNode.GenNodeLabel;
-import ashc.codegen.GenNode.GenNodeLong;
-import ashc.codegen.GenNode.GenNodeNull;
-import ashc.codegen.GenNode.GenNodeReturn;
-import ashc.codegen.GenNode.GenNodeString;
-import ashc.codegen.GenNode.GenNodeThis;
-import ashc.codegen.GenNode.GenNodeType;
-import ashc.codegen.GenNode.GenNodeVarLoad;
-import ashc.codegen.GenNode.IGenNodeStmt;
+import ashc.codegen.GenNode.*;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
 import ashc.load.*;
@@ -42,7 +23,6 @@ import ashc.semantics.Member.Variable;
 import ashc.semantics.Scope.FuncScope;
 import ashc.semantics.Scope.PropertyScope;
 import ashc.semantics.Semantics.TypeI;
-import ashc.semantics.Member.Type;
 import ashc.util.*;
 
 /**
@@ -307,12 +287,15 @@ public abstract class Node {
 		func.params = defConstructor.parameters;
 		int argID = 1;
 		// Call the super class' constructor
-		func.stmts.add(new GenNodeFuncCall(superClass, "<init>", "()V", false, true, false));
+		func.stmts.add(new GenNodeFuncCall(superClass, "<init>", "()V", false, true, false, true));
 		for (final Field field : argFields) {
-		    genNodeType.fields.add(new GenNodeField(field));
-		    func.stmts.add(new GenNodeFieldAssign(field.qualifiedName.shortName, field.qualifiedName.enclosingType, field.type.toBytecodeName(), new GenNodeVarLoad(field.type.getInstructionType(), argID)));
+		    genNodeType.addField(new GenNodeField(field));
+		    func.stmts.add(new GenNodeThis());
+		    func.stmts.add(new GenNodeVarLoad(field.type.getInstructionType(), argID));
+		    func.stmts.add(new GenNodeFieldStore(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName()));
 		    argID++;
 		}
+		func.stmts.add(new GenNodeReturn(EnumInstructionOperand.VOID));
 		genNodeType.addFunction(func);
 	    }
 	    GenNode.addGenNodeType(genNodeType);
@@ -370,10 +353,6 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    super.generate();
-	    for (final NodeVarDec varDec : block.varDecs) {
-		varDec.generate();
-		genNodeType.fields.add(varDec.genNodeField);
-	    }
 	    for (final NodeFuncDec funcDec : block.funcDecs) {
 		if (!funcDec.isConstructor) funcDec.generate();
 		else funcDec.generateConstructor(block.varDecs);
@@ -811,6 +790,7 @@ public abstract class Node {
 		type = "V";
 	    }
 	    genNodeFunc = new GenNodeFunction(name, func.modifiers, type);
+	    //TODO: Generate constructor calls if this function is a constructor
 	    genNodeFunc.params = func.parameters;
 	    block.generate();
 	}
@@ -818,7 +798,6 @@ public abstract class Node {
     }
 
     public static class NodeVarDec extends Node implements IFuncStmt {
-	public GenNodeField genNodeField;
 	public LinkedList<NodeModifier> mods;
 	public String keyword;
 	public String id;
@@ -918,7 +897,10 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    genNodeField = new GenNodeField(var);
+	    if(!var.isLocal){
+		GenNode.typeStack.peek().addField(new GenNodeField(var));
+	    }
+	    else GenNode.currentFunction.locals++;
 	    // Variable initialisation is handled by the class block
 	    super.generate();
 	}
@@ -962,8 +944,14 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    genNodeField = new GenNodeField(var);
-	    // Variable initialisation is handled by the class block
+	    if(!var.isLocal){
+		GenNode.typeStack.peek().addField(new GenNodeField(var));
+		// Field initialisation is handled by the class block, so there's no need to do it here
+	    }else{
+		GenNode.currentFunction.locals++;
+		expr.generate();
+		GenNode.currentFunction.stmts.add(new GenNodeVarStore(var.type.getInstructionType(), var.localID));
+	    }
 	    super.generate();
 	}
 
@@ -1136,7 +1124,6 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    Function func = null;
 	    args.analyse();
 	    TypeI enclosingType = null;
 	    if (prefix == null) func = Semantics.getFunc(id, args);
@@ -1158,7 +1145,9 @@ public abstract class Node {
 	    for (final TypeI type : func.parameters)
 		sb.append(type.toBytecodeName());
 	    sb.append(")" + func.returnType.toBytecodeName());
-	    GenNode.currentFunction.stmts.add(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), func.qualifiedName.shortName, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PUBLIC.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal)));
+	    if(prefix == null) GenNode.currentFunction.stmts.add(new GenNodeThis());
+	    else prefix.generate();
+	    GenNode.currentFunction.stmts.add(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), func.qualifiedName.shortName, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
 	}
 
     }
@@ -1215,7 +1204,6 @@ public abstract class Node {
 		    else i++;
 		result = var.type;
 	    }
-	    System.out.println("NodeVariable " + id + ": " + result);
 	    if (unwrapped) return Semantics.checkUnwrappedOptional(result, this, this);
 	    return result;
 	}
@@ -1234,7 +1222,16 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    // TODO
+	    if(prefix != null){
+		prefix.generate();
+		GenNode.currentFunction.stmts.add(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName()));
+	    }else{
+		if(var.isLocal) GenNode.currentFunction.stmts.add(new GenNodeVarLoad(var.type.getInstructionType(), var.localID));
+		else{
+		    GenNode.currentFunction.stmts.add(new GenNodeThis());
+		    GenNode.currentFunction.stmts.add(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName()));
+		}
+	    }
 	}
 
     }
@@ -1255,12 +1252,30 @@ public abstract class Node {
 	public void analyse() {
 	    ((Node) expr).analyse();
 	    final TypeI exprType = expr.getExprType();
+	    var.analyse();
 	    if (var.var != null) if (!var.var.type.canBeAssignedTo(expr.getExprType())) semanticError(this, line, column, CANNOT_ASSIGN, var.var.type, exprType);
 	}
 
 	@Override
 	public void generate() {
-	    // TODO
+	    if(var.prefix != null){
+		var.prefix.generate();
+		expr.generate();
+		GenNode.currentFunction.stmts.add(new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName()));
+	    }else{
+		GenNode node = null;
+		if(var.var.isLocal){
+		    expr.generate();
+		    node = new GenNodeVarStore(var.var.type.getInstructionType(), var.var.localID);
+		}
+		else{
+		    GenNode.currentFunction.stmts.add(new GenNodeThis());
+		    expr.generate();
+		    node = new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName());
+		}
+		GenNode.currentFunction.stmts.add(node);
+	    }
+	    
 	}
 
     }

@@ -106,4 +106,8 @@ public class Scope {
 	return castChecks.containsKey(field) ? castChecks.get(field).equals(type) : parent != null ? parent.hasCastCheck(field, type) : false;
     }
 
+    public static boolean inFuncScope() {
+	return getFuncScope() != null;
+    }
+
 }
