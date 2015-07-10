@@ -469,7 +469,10 @@ public class Semantics {
     // Returning an array here is a messy hack, but the best way I can think of
     // returning both a TypeI and Function, rather than using a new class
     public static Object[] getOperationType(final TypeI type1, final TypeI type2, final Operator operator) {
-	if (type1.isNumeric() && type2.isNumeric()) return new Object[] { getPrecedentType(type1, type2), null };
+	if (type1.isNumeric() && type2.isNumeric()){
+	    EnumPrimitive result = operator.operation.primitive;
+	    return result == null ? new Object[]{getPrecedentType(type1, type2), null} : new Object[]{new TypeI(result), null};
+	}
 	else if (type1.equals(TypeI.getStringType()) && (operator.operation == EnumOperation.ADD)) return new Object[] { TypeI.getStringType(), null };
 
 	if (type1.isArray() || type1.isTuple() || type1.isVoid() || type1.isNull()) return null;

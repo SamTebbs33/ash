@@ -1,5 +1,5 @@
 public class Test : Object {
     
-    var a = 1.0 == 2.0
+    var a : bool = 1.0 == 2.0
 
 }
