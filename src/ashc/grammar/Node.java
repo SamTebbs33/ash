@@ -2,6 +2,7 @@ package ashc.grammar;
 
 import static ashc.error.AshError.*;
 import static ashc.error.AshError.EnumError.*;
+import static ashc.codegen.GenNode.addFuncStmt;
 
 import java.io.*;
 import java.lang.reflect.*;
@@ -986,7 +987,7 @@ public abstract class Node {
 	    }else{
 		GenNode.currentFunction.locals++;
 		expr.generate();
-		GenNode.addFuncStmt(new GenNodeVarStore(var.type.getInstructionType(), var.localID));
+		addFuncStmt(new GenNodeVarStore(var.type.getInstructionType(), var.localID));
 	    }
 	    super.generate();
 	}
@@ -1032,15 +1033,15 @@ public abstract class Node {
 	public void generate() {
 	    if (singleLineExpr != null) {
 		((Node) singleLineExpr).generate();
-		if(inFunction) GenNode.addFuncStmt(new GenNodeReturn(funcReturnType.getInstructionType()));
+		if(inFunction) addFuncStmt(new GenNodeReturn(funcReturnType.getInstructionType()));
 	    } else if (singleLineStmt != null) {
 		((Node) singleLineStmt).generate();
-		if(inFunction) GenNode.addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
+		if(inFunction) addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
 	    } else {
 		for (final IFuncStmt stmt : stmts)
 		    ((Node) stmt).generate();
 		// Add a return statement if the func is void
-		if (inFunction && funcReturnType != null && funcReturnType.isVoid()) GenNode.addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
+		if (inFunction && funcReturnType != null && funcReturnType.isVoid()) addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
 	    }
 	}
 
@@ -1182,12 +1183,12 @@ public abstract class Node {
 		sb.append(type.toBytecodeName());
 	    sb.append(")" + func.returnType.toBytecodeName());
 	    if(func.isConstructor()){
-		GenNode.addFuncStmt(new GenNodeNew(func.enclosingType.qualifiedName.toBytecodeName()));
-		GenNode.addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
-	    }else if(prefix == null) GenNode.addFuncStmt(new GenNodeThis());
+		addFuncStmt(new GenNodeNew(func.enclosingType.qualifiedName.toBytecodeName()));
+		addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
+	    }else if(prefix == null) addFuncStmt(new GenNodeThis());
 	    else prefix.generate();
 	    for(IExpression expr : args.exprs) expr.generate();
-	    GenNode.addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), func.qualifiedName.shortName, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
+	    addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), func.qualifiedName.shortName, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
 	}
 
     }
@@ -1263,12 +1264,12 @@ public abstract class Node {
 	public void generate() {
 	    if(prefix != null){
 		prefix.generate();
-		GenNode.addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName()));
+		addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName()));
 	    }else{
-		if(var.isLocal) GenNode.addFuncStmt(new GenNodeVarLoad(var.type.getInstructionType(), var.localID));
+		if(var.isLocal) addFuncStmt(new GenNodeVarLoad(var.type.getInstructionType(), var.localID));
 		else{
-		    GenNode.addFuncStmt(new GenNodeThis());
-		    GenNode.addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName()));
+		    addFuncStmt(new GenNodeThis());
+		    addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName()));
 		}
 	    }
 	}
@@ -1301,18 +1302,18 @@ public abstract class Node {
 	    if(var.prefix != null){
 		var.prefix.generate();
 		expr.generate();
-		GenNode.addFuncStmt(new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName()));
+		addFuncStmt(new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName()));
 	    }else{
 		GenNode node = null;
 		if(var.var.isLocal){
 		    expr.generate();
 		    node = new GenNodeVarStore(var.var.type.getInstructionType(), var.var.localID);
 		}else{
-		    GenNode.addFuncStmt(new GenNodeThis());
+		    addFuncStmt(new GenNodeThis());
 		    expr.generate();
 		    node = new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName());
 		}
-		GenNode.addFuncStmt(node);
+		addFuncStmt(node);
 	    }
 	    
 	}
@@ -1357,7 +1358,7 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    ((Node) expr).generate();
-	    GenNode.addFuncStmt(new GenNodeReturn(exprType.getInstructionType()));
+	    addFuncStmt(new GenNodeReturn(exprType.getInstructionType()));
 	}
 
     }
@@ -1385,7 +1386,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.addFuncStmt(new GenNodeInt(val));
+	    addFuncStmt(new GenNodeInt(val));
 	}
 
     }
@@ -1413,7 +1414,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.addFuncStmt(new GenNodeLong(val));
+	    addFuncStmt(new GenNodeLong(val));
 	}
 
     }
@@ -1441,7 +1442,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.addFuncStmt(new GenNodeFloat(val));
+	    addFuncStmt(new GenNodeFloat(val));
 	}
 
     }
@@ -1469,7 +1470,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.addFuncStmt(new GenNodeDouble(val));
+	    addFuncStmt(new GenNodeDouble(val));
 	}
 
     }
@@ -1535,7 +1536,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.addFuncStmt(new GenNodeString(val));
+	    addFuncStmt(new GenNodeString(val));
 	}
 
     }
@@ -1563,7 +1564,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.addFuncStmt(new GenNodeInt(val ? 1 : 0));
+	    addFuncStmt(new GenNodeInt(val ? 1 : 0));
 	}
 
     }
@@ -1591,7 +1592,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.addFuncStmt(new GenNodeInt(val));
+	    addFuncStmt(new GenNodeInt(val));
 	}
 
     }
@@ -1628,12 +1629,12 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    final Label lbl0 = new Label(), lbl1 = new Label();
-	    GenNode.addFuncStmt(new GenNodeConditionalJump(expr, lbl0));
+	    addFuncStmt(new GenNodeConditionalJump(expr, lbl0));
 	    ((Node) exprTrue).generate();
-	    GenNode.addFuncStmt(new GenNodeJump(lbl1));
-	    GenNode.addFuncStmt(new GenNodeLabel(lbl0));
+	    addFuncStmt(new GenNodeJump(lbl1));
+	    addFuncStmt(new GenNodeLabel(lbl0));
 	    ((Node) exprFalse).generate();
-	    GenNode.addFuncStmt(new GenNodeLabel(lbl1));
+	    addFuncStmt(new GenNodeLabel(lbl1));
 	}
 
     }
@@ -1675,12 +1676,12 @@ public abstract class Node {
 	public void generate() {
 	    exprOptional.generate();
 	    final Label lbl = new Label(), lbl2 = new Label();
-	    GenNode.addFuncStmt(new GenNodeConditionalJump(Opcodes.IFNONNULL, lbl));
+	    addFuncStmt(new GenNodeConditionalJump(Opcodes.IFNONNULL, lbl));
 	    exprOptional.generate();
-	    GenNode.addFuncStmt(new GenNodeJump(lbl2));
-	    GenNode.addFuncStmt(new GenNodeLabel(lbl));
+	    addFuncStmt(new GenNodeJump(lbl2));
+	    addFuncStmt(new GenNodeLabel(lbl));
 	    exprNotNull.generate();
-	    GenNode.addFuncStmt(new GenNodeLabel(lbl2));
+	    addFuncStmt(new GenNodeLabel(lbl2));
 	}
 
     }
@@ -1745,13 +1746,13 @@ public abstract class Node {
 		// Generate the expressions and add the necessary casts
 		expr1.generate();
 		if(exprType1.getInstructionType() != precedentType){
-		    GenNode.addFuncStmt(new GenNodePrimitiveCast(exprType1.getInstructionType(), precedentType));
+		    addFuncStmt(new GenNodePrimitiveCast(exprType1.getInstructionType(), precedentType));
 		}
 		expr2.generate();
 		if(exprType2.getInstructionType() != precedentType){
-		    GenNode.addFuncStmt(new GenNodePrimitiveCast(exprType2.getInstructionType(), precedentType));
+		    addFuncStmt(new GenNodePrimitiveCast(exprType2.getInstructionType(), precedentType));
 		}
-		GenNode.addFuncStmt(new GenNodeBinary(operator, precedentType));
+		addFuncStmt(new GenNodeBinary(operator, precedentType));
 	    }else{
 		// Operator-overloaded binary expression
 		String enclosingType = operatorOverloadFunc.enclosingType.qualifiedName.toBytecodeName();
@@ -1767,7 +1768,7 @@ public abstract class Node {
 		    // expr1 is the parameter to the method
 		    expr1.generate();
 		}
-		GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, operator.opStr, operatorOverloadFunc.returnType.toBytecodeName(), interfaceFunc, privateFunc, false, false));
+		addFuncStmt(new GenNodeFuncCall(enclosingType, operator.opStr, operatorOverloadFunc.returnType.toBytecodeName(), interfaceFunc, privateFunc, false, false));
 	    }
 	}
     }
@@ -1817,12 +1818,12 @@ public abstract class Node {
 	public void generate() {
 	    if(overloadFunc == null){
 		expr.generate();
-		GenNode.addFuncStmt(new GenNodeUnary(type.getInstructionType(), operator, prefix));
+		addFuncStmt(new GenNodeUnary(type.getInstructionType(), operator, prefix));
 	    }else{
 		expr.generate();
 		String enclosingType = overloadFunc.enclosingType.qualifiedName.toBytecodeName(), returnType = overloadFunc.returnType.toBytecodeName();
 		boolean privateFunc = BitOp.and(overloadFunc.modifiers, EnumModifier.PRIVATE.intVal), interfaceFunc = overloadFunc.enclosingType.type == EnumType.INTERFACE;
-		GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, operator.opStr, "()" + returnType, interfaceFunc, privateFunc, false, false));
+		addFuncStmt(new GenNodeFuncCall(enclosingType, operator.opStr, "()" + returnType, interfaceFunc, privateFunc, false, false));
 	    }
 	}
 
@@ -1843,7 +1844,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.addFuncStmt(new GenNodeThis());
+	    addFuncStmt(new GenNodeThis());
 	}
     }
 
@@ -1871,8 +1872,8 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.addFuncStmt(new GenNodeThis());
-	    GenNode.addFuncStmt(new GenNodeFieldLoad(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName()));
+	    addFuncStmt(new GenNodeThis());
+	    addFuncStmt(new GenNodeFieldLoad(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName()));
 	}
 
     }
@@ -1889,7 +1890,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.addFuncStmt(new GenNodeNull());
+	    addFuncStmt(new GenNodeNull());
 	}
 
     }
@@ -1984,14 +1985,14 @@ public abstract class Node {
 		    break;
 		    
 	    }
-	    GenNode.addFuncStmt(new GenNodeInt(len));
-	    GenNode.addFuncStmt(arrayCreateNode);
+	    addFuncStmt(new GenNodeInt(len));
+	    addFuncStmt(arrayCreateNode);
 	    int index = 0;
 	    for(IExpression expr : exprs.exprs){
-		GenNode.addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
-		GenNode.addFuncStmt(new GenNodeInt(index++));
+		addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
+		addFuncStmt(new GenNodeInt(index++));
 		expr.generate();
-		GenNode.addFuncStmt(new GenNodeOpcode(arrayStoreOpcode));
+		addFuncStmt(new GenNodeOpcode(arrayStoreOpcode));
 	    }
 	}
 
@@ -2082,20 +2083,20 @@ public abstract class Node {
 
 	public void generate(final Label endLabel, Label thisLabel) {
 	    // Create a label that corresponds to this else-statement
-	    if (thisLabel != null) GenNode.addFuncStmt(new GenNodeLabel(thisLabel));
+	    if (thisLabel != null) addFuncStmt(new GenNodeLabel(thisLabel));
 
 	    // Create a new label to jump to in case the condition fails, this
 	    // represents the next else-statement
 	    thisLabel = new Label();
-	    if (expr != null) GenNode.addFuncStmt(new GenNodeConditionalJump(expr, thisLabel));
+	    if (expr != null) addFuncStmt(new GenNodeConditionalJump(expr, thisLabel));
 	    block.generate();
 	    // Jump to the end of the if-else block if the last statement was
 	    // not a return statement
-	    if ((expr != null) && !block.lastIsReturn()) GenNode.addFuncStmt(new GenNodeJump(endLabel));
+	    if ((expr != null) && !block.lastIsReturn()) addFuncStmt(new GenNodeJump(endLabel));
 
 	    if (elseStmt == null) // If this is the end of the block, place the
 				  // label
-		GenNode.addFuncStmt(new GenNodeLabel(endLabel));
+		addFuncStmt(new GenNodeLabel(endLabel));
 	    else // If we're not at the end of the block, then generate the next
 		 // block
 		elseStmt.generate(endLabel, thisLabel);
@@ -2133,11 +2134,11 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    Label lbl0 = new Label(), lbl1 = new Label();
-	    GenNode.addFuncStmt(new GenNodeLabel(lbl1));
-	    GenNode.addFuncStmt(new GenNodeConditionalJump(expr, lbl0));
+	    addFuncStmt(new GenNodeLabel(lbl1));
+	    addFuncStmt(new GenNodeConditionalJump(expr, lbl0));
 	    block.generate();
-	    GenNode.addFuncStmt(new GenNodeJump(lbl1));
-	    GenNode.addFuncStmt(new GenNodeLabel(lbl0));
+	    addFuncStmt(new GenNodeJump(lbl1));
+	    addFuncStmt(new GenNodeLabel(lbl0));
 	}
 
     }
@@ -2203,12 +2204,12 @@ public abstract class Node {
 	public void generate() {
 	    if(initStmt != null) initStmt.generate();
 	    Label lbl0 = new Label(), lbl1 = new Label();
-	    GenNode.addFuncStmt(new GenNodeLabel(lbl0));
-	    GenNode.addFuncStmt(new GenNodeConditionalJump(expr, lbl1));
+	    addFuncStmt(new GenNodeLabel(lbl0));
+	    addFuncStmt(new GenNodeConditionalJump(expr, lbl1));
 	    block.generate();
 	    if(endStmt != null) endStmt.generate();
-	    GenNode.addFuncStmt(new GenNodeJump(lbl0));
-	    GenNode.addFuncStmt(new GenNodeLabel(lbl1));
+	    addFuncStmt(new GenNodeJump(lbl0));
+	    addFuncStmt(new GenNodeLabel(lbl1));
 	}
 
     }
@@ -2356,7 +2357,7 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    expr.generate();
-	    GenNode.addFuncStmt(new GenNodeTypeOpcode(Opcodes.INSTANCEOF, type.qualifiedName.toBytecodeName()));
+	    addFuncStmt(new GenNodeTypeOpcode(Opcodes.INSTANCEOF, type.qualifiedName.toBytecodeName()));
 	}
 
     }
@@ -2391,9 +2392,7 @@ public abstract class Node {
 	}
 
 	@Override
-	public void generate() {
-	    // TODO
-	}
+	public void generate() {}
 
     }
 
@@ -2464,7 +2463,13 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    // TODO
+	    // Create a new Range object
+	    addFuncStmt(new GenNodeNew("ash.lang.Range"));
+	    addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
+	    // Call Range's constructor
+	    start.generate();
+	    end.generate();
+	    addFuncStmt(new GenNodeFuncCall("java.lang.Range", "<init>", "(II)V", false, false, false, true));
 	}
 
     }
