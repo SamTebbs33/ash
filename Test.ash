@@ -1,5 +1,8 @@
 public class Person : Object {
 	func main(){
-		var a = {{"a"}, {"b"}, {"c"}}
+		var a = false
+		while(a){
+			a = a ? true : false
+		}
 	}
 }

@@ -727,6 +727,7 @@ public abstract class Node {
 	    this.throwsType = throwsType;
 	    this.block = block;
 	    generics = types;
+	    this.block.inFunction = true;
 	}
 
 	public NodeFuncDec(final int line, final int columnStart, final LinkedList<NodeModifier> mods2, final String data, final NodeArgs args2, final NodeType throwsType2, final NodeFuncBlock block2, final NodeTypes nodeTypes, final boolean isMutFunc) {
@@ -868,14 +869,12 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    if (getBlock != null) {
-		System.out.println("getBlock");
 		final GenNodeFunction getFunc = new GenNodeFunction("$get" + id, Opcodes.ACC_PUBLIC, var.type.toBytecodeName());
 		getBlock.generate();
 		getFunc.stmts = getBlock.genStmts;
 		GenNode.typeStack.peek().addFunction(getFunc);
 	    }
 	    if (setBlock != null) {
-		System.out.println("setBlock");
 		final GenNodeFunction setFunc = new GenNodeFunction("$set" + id, Opcodes.ACC_PUBLIC, "V");
 		setFunc.params.add(var.type);
 		setBlock.generate();
@@ -997,6 +996,7 @@ public abstract class Node {
 	public TypeI funcReturnType;
 	LinkedList<IFuncStmt> stmts = new LinkedList<IFuncStmt>();
 	public IFuncStmt singleLineStmt;
+	public boolean inFunction = false;
 
 	public void add(final IFuncStmt funcStmt) {
 	    stmts.add(funcStmt);
@@ -1022,22 +1022,21 @@ public abstract class Node {
 	    } else if (singleLineStmt != null) ((Node) singleLineStmt).analyse();
 	    else for (final IFuncStmt stmt : stmts)
 		((Node) stmt).analyse();
-
 	}
 
 	@Override
 	public void generate() {
 	    if (singleLineExpr != null) {
 		((Node) singleLineExpr).generate();
-		GenNode.addFuncStmt(new GenNodeReturn(funcReturnType.getInstructionType()));
+		if(inFunction) GenNode.addFuncStmt(new GenNodeReturn(funcReturnType.getInstructionType()));
 	    } else if (singleLineStmt != null) {
 		((Node) singleLineStmt).generate();
-		GenNode.addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
+		if(inFunction) GenNode.addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
 	    } else {
 		for (final IFuncStmt stmt : stmts)
 		    ((Node) stmt).generate();
 		// Add a return statement if the func is void
-		if ((funcReturnType != null) && funcReturnType.isVoid()) GenNode.addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
+		if (inFunction && funcReturnType != null && funcReturnType.isVoid()) GenNode.addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
 	    }
 	}
 
@@ -1295,6 +1294,7 @@ public abstract class Node {
 	    ((Node) expr).analyse();
 	    final TypeI exprType = expr.getExprType();
 	    var.analyse();
+	    if(var.errored) errored = true;
 	    if (var.var != null) if (!var.var.type.canBeAssignedTo(expr.getExprType())) semanticError(this, line, column, CANNOT_ASSIGN, var.var.type, exprType);
 	}
 
@@ -1309,8 +1309,7 @@ public abstract class Node {
 		if(var.var.isLocal){
 		    expr.generate();
 		    node = new GenNodeVarStore(var.var.type.getInstructionType(), var.var.localID);
-		}
-		else{
+		}else{
 		    GenNode.addFuncStmt(new GenNodeThis());
 		    expr.generate();
 		    node = new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName());
@@ -1930,7 +1929,6 @@ public abstract class Node {
 	    int arrayStoreOpcode = Opcodes.AASTORE;
 	    EnumInstructionOperand type = elementType.getInstructionType();
 	    GenNode arrayCreateNode = null;
-	    System.out.println(elementType);
 	    switch(type){
 		case ARRAY:
 		    arrayCreateNode = new GenNodeTypeOpcode(Opcodes.ANEWARRAY, elementType.toBytecodeName());
@@ -2109,8 +2107,8 @@ public abstract class Node {
 	    ((Node) expr).analyse();
 	    if (!((Node) expr).errored) {
 		final TypeI exprType = expr.getExprType();
-		if (EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL) if (!exprType.isArray()) return;
-		semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
+		if (EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL && !exprType.isArray());
+		else semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
 	    }
 	    block.analyse();
 	}
@@ -2122,7 +2120,12 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    // TODO
+	    Label lbl0 = new Label(), lbl1 = new Label();
+	    GenNode.addFuncStmt(new GenNodeLabel(lbl1));
+	    GenNode.addFuncStmt(new GenNodeConditionalJump(expr, lbl0));
+	    block.generate();
+	    GenNode.addFuncStmt(new GenNodeJump(lbl1));
+	    GenNode.addFuncStmt(new GenNodeLabel(lbl0));
 	}
 
     }
