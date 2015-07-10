@@ -922,6 +922,7 @@ public abstract class Node {
 	    int modifiers = 0;
 	    for (final NodeModifier mod : mods)
 		modifiers |= mod.asInt();
+	    expr.analyse();
 	    final TypeI exprType = expr.getExprType();
 	    final Field field = new Field(name, modifiers, exprType);
 	    if (!Semantics.fieldExists(field)) Semantics.addField(field);
@@ -932,7 +933,6 @@ public abstract class Node {
 	public void analyse() {
 	    super.analyse();
 	    if (expr != null) {
-		((Node) expr).analyse();
 		if (!((Node) expr).errored) {
 		    final TypeI type = Semantics.filterNullType(expr.getExprType());
 		    var = new Variable(id, type);

@@ -1,9 +1,5 @@
 public class Test : Object {
     
-    public func test(){
-		var name = test2() ? "Sam" : "Tebbs"
-    }
-    
-    public func test2() -> false
+    var a = 1.0 == 2.0
 
 }

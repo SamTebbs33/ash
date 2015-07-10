@@ -58,7 +58,7 @@ public class Operator {
 
     public Operator(String opStr) {
 	this.opStr = opStr;
-	if (opStr.charAt(opStr.length() - 1) == '=') {
+	if (opStr.charAt(opStr.length() - 1) == '=' && !opStr.equals("==")) {
 	    type = EnumOperatorType.ASSIGNMENT;
 	    opStr = opStr.substring(0, opStr.length() - 1);
 	} else type = EnumOperatorType.ARITHMETIC;
@@ -129,6 +129,12 @@ public class Operator {
 
 	    case "!":
 		return EnumOperation.NOT;
+		
+	    case "==":
+		return EnumOperation.EQUAL;
+		
+	    case "!=":
+		return EnumOperation.NOT_EQUAL;
 
 	    default:
 		return null;
