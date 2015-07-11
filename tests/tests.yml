@@ -1,7 +1,9 @@
 # Syntax
 # test_file_name:
 #   pass: [yes|no]
+#   path: file_path
 #   args: {args}
 
-OperatorOverloads:
+operator overloads:
+  path: OperatorOverloads
   pass: yes
