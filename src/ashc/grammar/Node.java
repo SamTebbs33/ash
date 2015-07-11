@@ -760,10 +760,6 @@ public abstract class Node {
 
 	    if (!isMutFunc) {
 		if (!type.id.equals("void")) returnType = new TypeI(type);
-		else if (block.singleLineExpr != null){
-		    block.singleLineExpr.analyse();
-		    returnType = block.singleLineExpr.getExprType();
-		}
 		else returnType = TypeI.getVoidType();
 		returnType = Semantics.filterNullType(returnType);
 	    } else returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
