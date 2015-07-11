@@ -164,6 +164,10 @@ public class Member {
 	    return null;
 	}
 
+	public Type getSuperClass() {
+	    return supers.getFirst();
+	}
+
     }
 
     public static class Function extends Member {

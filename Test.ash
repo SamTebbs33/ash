@@ -1,7 +1,3 @@
-public class Person : Object {
-	func [](operand : int) -> 0
-	func main() {
-		var person = Person()
-		var a = person[0]
-	}
+public class Person(name : String, age : int) : Object {
+	public func Person(name2 : String) -> this(name2, 0)
 }

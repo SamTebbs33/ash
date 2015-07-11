@@ -418,7 +418,7 @@ public class Parser {
     }
 
     private IFuncStmt parseFuncStmt() throws UnexpectedTokenException {
-	final Token token = expect(TokenType.ID, TokenType.SELF, TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.MATCH, TokenType.VAR, TokenType.CONST, TokenType.RETURN);
+	final Token token = expect(TokenType.ID, TokenType.SELF, TokenType.THIS, TokenType.SUPER, TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.MATCH, TokenType.VAR, TokenType.CONST, TokenType.RETURN);
 	switch (token.type) {
 	    case RETURN:
 		// rewind();
@@ -430,6 +430,8 @@ public class Parser {
 		return new NodeReturn(token.line, token.columnStart, expr);
 	    case ID:
 	    case SELF:
+	    case THIS:
+	    case SUPER:
 		rewind();
 		final IFuncStmt stmt = parsePrefix();
 		if (stmt instanceof NodeVariable) {
@@ -552,7 +554,8 @@ public class Parser {
     private NodePrefix parsePrefix() throws UnexpectedTokenException {
 	NodePrefix prefix = null;
 	do {
-	    final Token id = expect(TokenType.ID, TokenType.SELF);
+	    final Token id = expect(TokenType.ID, TokenType.SELF, TokenType.SUPER, TokenType.THIS);
+	    System.out.println(id);
 	    final NodeTypes generics = parseGenerics(false);
 	    if (getNext().type == TokenType.PARENL) {
 		rewind();
@@ -560,7 +563,7 @@ public class Parser {
 		boolean unwrapped = false;
 		if (getNext().data.equals("!")) unwrapped = true;
 		else rewind();
-		prefix = new NodeFuncCall(id.line, id.columnStart, id.data, exprs, prefix, generics, unwrapped);
+		prefix = new NodeFuncCall(id.line, id.columnStart, id.data, exprs, prefix, generics, unwrapped, id.type == TokenType.THIS, id.type == TokenType.SUPER);
 	    } else {
 		rewind();
 		boolean unwrapped = false;
