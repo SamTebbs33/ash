@@ -17,7 +17,7 @@ def get_symbol(test_pass):
 		return "-"
 
 def print_tests():
-	print "\tx1B[34m Results:"
+	print "\n\t\x1B[34m Results:"
 	print "\t\tExpect\tPass\tName"
 	if result_list is not None:
 		for test in result_list:
