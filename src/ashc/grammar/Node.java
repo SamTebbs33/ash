@@ -388,11 +388,6 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    super.generate();
-	    for (final NodeFuncDec funcDec : block.funcDecs) {
-		if (!funcDec.isConstructor) funcDec.generate();
-		else funcDec.generateConstructor(block.varDecs);
-		genNodeType.addFunction(funcDec.genNodeFunc);
-	    }
 	    block.generate();
 	    GenNode.exitGenNodeType();
 	}
@@ -592,10 +587,11 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    for (final NodeFuncDec dec : funcDecs)
-		dec.generate();
-	    for (final NodeVarDec dec : varDecs)
-		dec.generate();
+	    for (final NodeFuncDec funcDec : funcDecs) {
+		if (!funcDec.isConstructor) funcDec.generate();
+		else funcDec.generateConstructor(varDecs);
+	    }
+	    for (final NodeVarDec dec : varDecs) dec.generate();
 	}
 
     }
@@ -712,7 +708,6 @@ public abstract class Node {
 
     public static class NodeFuncDec extends Node {
 
-	public GenNodeFunction genNodeFunc;
 	public LinkedList<NodeModifier> mods;
 	public String id;
 	public NodeArgs args;
@@ -723,6 +718,7 @@ public abstract class Node {
 	private TypeI returnType;
 	private Function func;
 	private boolean isMutFunc, isConstructor;
+	private GenNodeFunction genNodeFunc;
 
 	public NodeFuncDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String id, final NodeArgs args, final NodeType type, final NodeType throwsType, final NodeFuncBlock block, final NodeTypes types) {
 	    super(line, column);
@@ -831,6 +827,7 @@ public abstract class Node {
 	    genNodeFunc = new GenNodeFunction(name, func.modifiers, type);
 	    //TODO: Generate constructor calls if this function is a constructor
 	    genNodeFunc.params = func.parameters;
+	    GenNode.addGenNodeFunction(genNodeFunc);
 	    block.generate();
 	}
 

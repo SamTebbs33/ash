@@ -7,6 +7,7 @@ import java.util.*;
 
 import org.objectweb.asm.*;
 
+import ashc.codegen.GenNode.GenNodeFunction;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeBinary;
 import ashc.grammar.Node.NodeNull;
@@ -33,6 +34,11 @@ public abstract class GenNode {
     public static void addGenNodeType(final GenNodeType node) {
 	types.add(node);
 	typeStack.push(node);
+    }
+    
+    public static void addGenNodeFunction(GenNodeFunction genNodeFunc) {
+	typeStack.peek().addFunction(genNodeFunc);
+	currentFunction = genNodeFunc;
     }
     
     public static void addFuncStmt(GenNode node){
