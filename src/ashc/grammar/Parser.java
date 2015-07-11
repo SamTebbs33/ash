@@ -376,7 +376,7 @@ public class Parser {
 	if (getNext().type == TokenType.ARROW) throwsType = parseType();
 	else rewind();
 
-	if (needsBody) block = parseFuncBlock(true, true);
+	if (needsBody) block = parseFuncBlock(true, !type.id.equals("void"));
 
 	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, type, throwsType, block, types);
     }
@@ -555,7 +555,6 @@ public class Parser {
 	NodePrefix prefix = null;
 	do {
 	    final Token id = expect(TokenType.ID, TokenType.SELF, TokenType.SUPER, TokenType.THIS);
-	    System.out.println(id);
 	    final NodeTypes generics = parseGenerics(false);
 	    if (getNext().type == TokenType.PARENL) {
 		rewind();
