@@ -7,7 +7,7 @@ failed_tests = 0
 num_tests = 0
 
 def do_test(name, path):
-	print "\n\tRunning test: " + name + "\x1B[30m"
+	print "\n\tRunning test: " + name + "\x1B[33m"
 	result = subprocess.call(["java", "-cp", "../build:../lib/asm-5.0.4.jar", "ashc/main/AshMain", path+".ash"])
 	print "\x1B[00m"
 	return result
