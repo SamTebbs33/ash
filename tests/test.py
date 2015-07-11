@@ -7,10 +7,8 @@ failed_tests = 0
 num_tests = 0
 
 def do_test(name, path):
-	print "\n\t\x1B[33m Running test: " + name + "\x1B[32m"
-	result = subprocess.call(["java", "-cp", "../build:../lib/asm-5.0.4.jar", "ashc/main/AshMain", path+".ash"])
-	print "\x1B[00m"
-	return result
+	print "\n\t\x1B[34m Running test: " + name
+	return subprocess.call(["java", "-cp", "../build:../lib/asm-5.0.4.jar", "ashc/main/AshMain", path+".ash"])
 
 def get_symbol(test_pass):
 	if test_pass == 0:
@@ -19,7 +17,7 @@ def get_symbol(test_pass):
 		return "-"
 
 def print_tests():
-	print "\tResults:"
+	print "\tx1B[34m Results:"
 	print "\t\tExpect\tPass\tName"
 	if result_list is not None:
 		for test in result_list:
