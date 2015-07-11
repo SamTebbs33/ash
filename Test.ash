@@ -1,6 +1,7 @@
 public class Person : Object {
-	func main() : bool {
-		var str = ""
-		return str is Object
+	func [](operand : int) -> 0
+	func main() {
+		var person = Person()
+		var a = person[0]
 	}
 }

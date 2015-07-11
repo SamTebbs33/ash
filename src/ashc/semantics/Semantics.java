@@ -226,7 +226,7 @@ public class Semantics {
 	}
 
 	public boolean isPrimitive() {
-	    return EnumPrimitive.isPrimitive(shortName);
+	    return EnumPrimitive.isPrimitive(shortName) && !isArray();
 	}
 
 	public boolean isRange() {
@@ -284,6 +284,10 @@ public class Semantics {
 		    return new NodeInteger(0, 0, 0);
 	    }
 	    else return new NodeNull();
+	}
+
+	public boolean isValidArrayAccessor() {
+	    return isNumeric() && EnumPrimitive.getPrimitive(shortName).validForArrayIndex;
 	}
     }
 

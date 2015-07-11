@@ -1,8 +1,8 @@
 package ashc.grammar;
 
+import static ashc.codegen.GenNode.*;
 import static ashc.error.AshError.*;
 import static ashc.error.AshError.EnumError.*;
-import static ashc.codegen.GenNode.addFuncStmt;
 
 import java.io.*;
 import java.lang.reflect.*;
@@ -12,6 +12,7 @@ import org.objectweb.asm.*;
 
 import ashc.codegen.*;
 import ashc.codegen.GenNode.EnumInstructionOperand;
+import ashc.codegen.GenNode.GenNodeArrayIndexLoad;
 import ashc.codegen.GenNode.GenNodeBinary;
 import ashc.codegen.GenNode.GenNodeConditionalJump;
 import ashc.codegen.GenNode.GenNodeDouble;
@@ -2543,6 +2544,8 @@ public abstract class Node {
     public static class NodeArrayAccess extends Node implements IExpression {
 	public IExpression accessExpr;
 	public IExpression expr;
+	TypeI exprType, accessType;
+	Function overloadFunc;
 
 	public NodeArrayAccess(final int line, final int column, final IExpression expr, final IExpression accessExpr) {
 	    super(line, column);
@@ -2561,17 +2564,20 @@ public abstract class Node {
 	@Override
 	public TypeI getExprType() {
 	    if (!errored) {
-		final TypeI exprType = expr.getExprType();
-		if (exprType.isPrimitive() || exprType.isTuple() || exprType.isVoid()) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPE, exprType);
-		else if (exprType.isArray()) return exprType.copy().setArrDims(exprType.arrDims - 1);
-		else {
+		accessType = accessExpr.getExprType();
+		exprType = expr.getExprType();
+		if (exprType.isPrimitive() || exprType.isTuple() || exprType.isVoid()) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, "[]", exprType, accessType);
+		else if (exprType.isArray()){
+		    if(accessType.isValidArrayAccessor()) return exprType.copy().setArrDims(exprType.arrDims - 1);
+		    else semanticError(this, line, column, ARRAY_INDEX_NOT_NUMERIC, accessType);
+		}else {
 		    // Find an operator overload
 		    final LinkedList<TypeI> params = new LinkedList<TypeI>();
 		    params.add(accessExpr.getExprType());
-		    final Function func = Semantics.getType(exprType.shortName).get().getFunc("[]", params);
-		    if (func == null) semanticError(this, line, column, FUNC_DOES_NOT_EXIST, "[]", exprType);
-		    else if (!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, "[]");
-		    else return func.returnType;
+		    overloadFunc = Semantics.getType(exprType.shortName).get().getFunc("[]", params);
+		    if (overloadFunc == null) semanticError(this, line, column, FUNC_DOES_NOT_EXIST, "[]", exprType);
+		    else if (!overloadFunc.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, "[]");
+		    else return overloadFunc.returnType;
 		}
 	    }
 	    return null;
@@ -2582,7 +2588,15 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    // TODO
+	    expr.generate();
+	    accessExpr.generate();
+	    if(overloadFunc == null){
+		GenNode.addFuncStmt(new GenNodeArrayIndexLoad(exprType.getInstructionType()));
+	    }else{
+		String enclosingType = overloadFunc.enclosingType.qualifiedName.toBytecodeName(), signature = "("+accessType.toBytecodeName()+")"+overloadFunc.returnType.toBytecodeName();
+		boolean interfaceFunc = overloadFunc.enclosingType.type == EnumType.INTERFACE, privateFunc = BitOp.and(overloadFunc.modifiers, EnumModifier.PRIVATE.intVal);
+		GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, "[]", signature, interfaceFunc, privateFunc, false, false));
+	    }
 	}
 
     }

@@ -36,6 +36,7 @@ public abstract class GenNode {
     }
     
     public static void addFuncStmt(GenNode node){
+	System.out.println("adding: " + node);
 	currentFunction.stmts.add(node);
     }
 
@@ -317,10 +318,11 @@ public abstract class GenNode {
 	@Override
 	public void generate(final Object visitor) {
 	    final MethodVisitor mv = (MethodVisitor) visitor;
-	    int opcode = ALOAD;
+	    int opcode = 0;
 	    switch (operand) {
+		case REFERENCE:
 		case ARRAY:
-		    opcode = AALOAD;
+		    opcode = ALOAD;
 		    break;
 		case BYTE:
 		case INT:
@@ -338,8 +340,6 @@ public abstract class GenNode {
 		case LONG:
 		    opcode = LLOAD;
 		    break;
-		case REFERENCE:
-		    opcode = ALOAD;
 	    }
 	    mv.visitVarInsn(opcode, varID);
 	}
@@ -961,6 +961,48 @@ public abstract class GenNode {
 	@Override
 	public void generate(Object visitor) {
 	    ((MethodVisitor)visitor).visitIntInsn(opcode, operand);
+	}
+    }
+    
+    public static class GenNodeArrayIndexLoad extends GenNode {
+	public EnumInstructionOperand type;
+
+	public GenNodeArrayIndexLoad(EnumInstructionOperand type) {
+	    this.type = type;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    int opcode = 0;
+	    switch(type){
+		case ARRAY:
+		case REFERENCE:
+		    opcode = AALOAD;
+		    break;
+		case BOOL:
+		case BYTE:
+		    opcode = BALOAD;
+		    break;
+		case CHAR:
+		    opcode = CALOAD;
+		    break;
+		case SHORT:
+		    opcode = SALOAD;
+		    break;
+		case INT:
+		    opcode = IALOAD;
+		    break;
+		case LONG:
+		    opcode = LALOAD;
+		    break;
+		case FLOAT:
+		    opcode = FALOAD;
+		    break;
+		case DOUBLE:
+		    opcode = DALOAD;
+		    break;
+	    }
+	    ((MethodVisitor)visitor).visitInsn(opcode);
 	}
     }
 
