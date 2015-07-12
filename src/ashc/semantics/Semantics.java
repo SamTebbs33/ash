@@ -33,6 +33,7 @@ import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
+import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
@@ -76,7 +77,7 @@ public class Semantics {
 	    this(type.id, type.arrDims, type.optional);
 	    for (final NodeType nodeType : type.generics.types)
 		genericTypes.add(new TypeI(nodeType));
-	    for (final NodeTupleType nodeType : type.tupleTypes)
+	    for (final NodeType nodeType : type.tupleTypes)
 		tupleTypes.add(new TypeI(nodeType));
 	}
 
@@ -239,6 +240,7 @@ public class Semantics {
 	    if (isArray()) for (int i = 0; i < arrDims; i++)
 		name.append("[");
 	    if (isTuple()) {
+		// The tuple class name is "Tuple" followed by the number of fields
 		final String tupleClassName = "Tuple" + tupleTypes.size();
 		if (!GenNode.generatedTupleClasses.contains(tupleClassName)) {
 		    final GenNodeType tupleClass = new GenNodeType(tupleClassName, tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC);
@@ -258,9 +260,10 @@ public class Semantics {
 		    tupleConstructor.stmts.add(new GenNodeReturn());
 		    tupleClass.addFunction(tupleConstructor);
 		    GenNode.addGenNodeType(tupleClass);
+		    GenNode.exitGenNodeType();
 		    GenNode.generatedTupleClasses.add(tupleClassName);
 		}
-		name = new StringBuffer("L" + tupleClassName + ";");
+		name = new StringBuffer("L" + tupleClassName + "; ");
 	    } else if (isVoid()) name.append("V");
 	    else if (isPrimitive()) name.append(EnumPrimitive.getPrimitive(shortName).bytecodeName);
 	    else name.append("L" + Semantics.getType(shortName).get().qualifiedName.toString().replace('.', '/') + ";");
@@ -291,6 +294,11 @@ public class Semantics {
 
 	public boolean isValidArrayAccessor() {
 	    return isNumeric() && EnumPrimitive.getPrimitive(shortName).validForArrayIndex;
+	}
+
+	public TypeI setTupleName(String valueOf) {
+	    tupleName = valueOf;
+	    return this;
 	}
     }
 

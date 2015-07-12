@@ -636,7 +636,7 @@ public abstract class Node {
 	public String id;
 	public int arrDims;
 	public boolean optional;
-	public LinkedList<NodeTupleType> tupleTypes = new LinkedList<NodeTupleType>();
+	public LinkedList<NodeType> tupleTypes = new LinkedList<NodeType>();
 	public NodeTypes generics = new NodeTypes();
 
 	public NodeType(final int line, final int column, final String data) {
@@ -659,11 +659,8 @@ public abstract class Node {
 		    } else if (!EnumPrimitive.isPrimitive(id)) if (generics.types.size() > typeOpt.get().generics.size()) semanticError(this, line, column, TOO_MANY_GENERICS);
 		}
 		if (EnumPrimitive.isPrimitive(id) && optional) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
-	    } else for (int i = 0; i < tupleTypes.size(); i++) {
-		tupleTypes.get(i).analyse();
-		for (int j = i + 1; j < tupleTypes.size(); j++)
-		    if (tupleTypes.get(i).name.equals(tupleTypes.get(j).name)) semanticError(this, line, column, DUPLICATE_ARGUMENTS, tupleTypes.get(i).name);
-	    }
+	    } else for (int i = 0; i < tupleTypes.size(); i++) tupleTypes.get(i).analyse();
+	    
 	}
 
 	@Override
@@ -1228,8 +1225,7 @@ public abstract class Node {
 	    } else {
 		final TypeI type = prefix.getExprType();
 		final Optional<Type> typeOpt = Semantics.getType(type.shortName);
-		if (!typeOpt.isPresent()) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, type.shortName);
-		final Type enclosingType = typeOpt.get();
+		final Type enclosingType = typeOpt.isPresent() ? typeOpt.get() : null;
 		var = Semantics.getVar(id, type);
 		if (var == null) {
 		    semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
@@ -1237,9 +1233,11 @@ public abstract class Node {
 		}
 		if (!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
 		int i = 0;
-		for (final String generic : enclosingType.generics)
-		    if (generic.equals(var.type.shortName)) return type.genericTypes.get(i);
-		    else i++;
+		if(enclosingType != null){
+		    for (final String generic : enclosingType.generics)
+			if (generic.equals(var.type.shortName)) return type.genericTypes.get(i);
+			else i++;
+		}
 		result = var.type;
 	    }
 	    if (unwrapped) return Semantics.checkUnwrappedOptional(result, this, this);
@@ -2027,7 +2025,7 @@ public abstract class Node {
 
     public static class NodeTupleExpr extends Node implements IExpression {
 
-	public LinkedList<NodeTupleExprArg> exprs = new LinkedList<Node.NodeTupleExprArg>();
+	public NodeExprs exprs = new NodeExprs();
 
 	public NodeTupleExpr(final int line, final int column) {
 	    super(line, column);
@@ -2035,25 +2033,22 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {
-	    for (final NodeTupleExprArg arg : exprs)
-		arg.preAnalyse();
+	    exprs.preAnalyse();
 	}
 
 	@Override
 	public void analyse() {
-	    for (final NodeTupleExprArg arg : exprs)
-		arg.analyse();
+	    exprs.analyse();
 	}
 
 	@Override
 	public TypeI getExprType() {
 	    // Just infer an Object array
-	    if (exprs.size() == 0) return TypeI.getObjectType();
+	    if (exprs.exprs.size() == 0) return TypeI.getObjectType();
 	    final TypeI type = new TypeI("", 0, false);
-	    for (final NodeTupleExprArg arg : exprs) {
-		final TypeI argType = arg.expr.getExprType();
-		argType.tupleName = arg.name;
-		type.tupleTypes.add(argType);
+	    char name = 'a';
+	    for (final IExpression expr : exprs.exprs){
+		type.tupleTypes.add(expr.getExprType().copy().setTupleName(String.valueOf(name++)));
 	    }
 	    return type;
 	}

@@ -621,7 +621,7 @@ public class Parser {
 	    case BRACKETL:
 		expr = new NodeTupleExpr(next.line, next.columnStart);
 		rewind();
-		((NodeTupleExpr) expr).exprs = parseTupleExpr();
+		((NodeTupleExpr) expr).exprs = parseCallArgs(TokenType.BRACKETL, TokenType.BRACKETR);
 		break;
 	    case PARENL:
 		expr = parseExpression();
@@ -852,15 +852,8 @@ public class Parser {
 	final NodeType type = new NodeType();
 	// Parse tuple types
 	if (getNext().type == TokenType.BRACKETL) {
-	    boolean named = false, unnamed = false;
 	    do {
-		final NodeTupleType tupleType = parseTupleType(named, unnamed);
-		if (tupleType.name != null) named = true;
-		else {
-		    tupleType.name = (char) ('a' + type.tupleTypes.size()) + "";
-		    unnamed = true;
-		}
-		type.tupleTypes.add(tupleType);
+		type.tupleTypes.add(parseType());
 	    } while (expect(TokenType.COMMA, TokenType.BRACKETR).type == TokenType.COMMA);
 	} else {
 	    rewind();
@@ -880,19 +873,6 @@ public class Parser {
 	if (getNext().type == TokenType.QUESTIONMARK) type.optional = true;
 	else rewind();
 	return type;
-    }
-
-    public NodeTupleType parseTupleType(final boolean mustBeNamed, final boolean mustBeUnnamed) throws UnexpectedTokenException {
-	final String id = expect(TokenType.ID, TokenType.PRIMITIVE).data;
-	final Token next = getNext();
-	if (next.type == TokenType.COLON) {
-	    if (mustBeUnnamed) throw new UnexpectedTokenException(next, TokenType.COMMA, TokenType.BRACKETR);
-	    final NodeTupleType type = new NodeTupleType(line, column, parseType());
-	    type.name = id;
-	    return type;
-	} else if (mustBeNamed) throw new UnexpectedTokenException(next, TokenType.COLON);
-	rewind(2);
-	return new NodeTupleType(line, column, parseType());
     }
 
     private NodeType parseSuperType() throws UnexpectedTokenException {

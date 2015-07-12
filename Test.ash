@@ -1,3 +1,3 @@
 public class Test {
-	public var tuple = ["Sam", 19]
+	var tuple = ["Sam", 19]
 }
