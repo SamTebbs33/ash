@@ -7,5 +7,6 @@ public class Test {
 	}
 	public func test(){
 		name = "Yo"
+		var name2 = name
 	}
 }

@@ -878,7 +878,7 @@ public abstract class Node {
 		getBlock.generate();
 	    }
 	    if (setBlock != null) {
-		final GenNodeFunction setFunc = new GenNodeFunction("$set" + id, Opcodes.ACC_PUBLIC, "V");
+		final GenNodeFunction setFunc = new GenNodeFunction("$set" + id, Opcodes.ACC_PUBLIC, var.type.toBytecodeName());
 		setFunc.params.add(var.type);
 		GenNode.addGenNodeFunction(setFunc);
 		setBlock.generate();
@@ -1268,14 +1268,23 @@ public abstract class Node {
 	public void generate() {
 	    if(prefix != null){
 		prefix.generate();
-		addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName()));
+		if(!var.isGetProperty) addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName()));
+		else generateGetFuncCall(var);
 	    }else{
 		if(var.isLocal) addFuncStmt(new GenNodeVarLoad(var.type.getInstructionType(), var.localID));
 		else{
 		    addFuncStmt(new GenNodeThis());
-		    addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName()));
+		    if(!var.isGetProperty) addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName()));
+		    else generateGetFuncCall(var);
 		}
 	    }
+	}
+
+	private void generateGetFuncCall(Field var) {
+	    String enclosingType = var.enclosingType.qualifiedName.toBytecodeName();
+	    String getFuncName = "$get" + var.qualifiedName.shortName;
+	    String signature = "()" + var.type.toBytecodeName();
+	    GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, getFuncName, signature, false, false, false, false));
 	}
 
     }
