@@ -12,6 +12,7 @@ import ashc.codegen.GenNode.EnumInstructionOperand;
 import ashc.codegen.GenNode.GenNodeField;
 import ashc.codegen.GenNode.GenNodeFieldAssign;
 import ashc.codegen.GenNode.GenNodeFunction;
+import ashc.codegen.GenNode.GenNodeReturn;
 import ashc.codegen.GenNode.GenNodeType;
 import ashc.codegen.GenNode.GenNodeVarLoad;
 import ashc.grammar.*;
@@ -238,21 +239,23 @@ public class Semantics {
 	    if (isArray()) for (int i = 0; i < arrDims; i++)
 		name.append("[");
 	    if (isTuple()) {
-		for (final TypeI type : tupleTypes) {
-		    final String tupleTypeName = type.toBytecodeName();
-		    name.append(tupleTypeName.replace(';', ':'));
-		}
-		final String tupleClassName = "Tuple:" + name.toString().replace("/", "-");
+		final String tupleClassName = "Tuple" + tupleTypes.size();
 		if (!GenNode.generatedTupleClasses.contains(tupleClassName)) {
 		    final GenNodeType tupleClass = new GenNodeType(tupleClassName, tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC);
 		    final GenNodeFunction tupleConstructor = new GenNodeFunction(tupleClassName + ".<init>", Opcodes.ACC_PUBLIC, "V");
 		    int tupleTypeNum = 1;
+		    char tupleFieldName = 'a', tupleFieldType = 'A';
 		    for (final TypeI tupleType : tupleTypes) {
-			tupleClass.addField(new GenNodeField(Opcodes.ACC_PUBLIC, tupleType.tupleName, tupleType.toBytecodeName()));
-			tupleConstructor.params.add(tupleType);
-			tupleConstructor.stmts.add(new GenNodeFieldAssign(tupleType.tupleName, tupleClassName, tupleType.toBytecodeName(), new GenNodeVarLoad(tupleType.getInstructionType(), tupleTypeNum)));
+			String tupleFieldNameStr = String.valueOf(tupleFieldName), tupleFieldTypeStr = String.valueOf(tupleFieldType);
+			tupleClass.generics.add(tupleFieldTypeStr);
+			tupleClass.addField(new GenNodeField(Opcodes.ACC_PUBLIC, tupleFieldNameStr, "Ljava/lang/Object;", tupleFieldTypeStr));
+			tupleConstructor.params.add(TypeI.getObjectType());
+			tupleConstructor.stmts.add(new GenNodeFieldAssign(tupleFieldNameStr, tupleClassName, "Ljava/lang/Object;", new GenNodeVarLoad(tupleType.getInstructionType(), tupleTypeNum)));
 			tupleTypeNum++;
+			tupleFieldName++;
+			tupleFieldType++;
 		    }
+		    tupleConstructor.stmts.add(new GenNodeReturn());
 		    tupleClass.addFunction(tupleConstructor);
 		    GenNode.addGenNodeType(tupleClass);
 		    GenNode.generatedTupleClasses.add(tupleClassName);

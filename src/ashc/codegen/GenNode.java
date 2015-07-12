@@ -69,6 +69,7 @@ public abstract class GenNode {
 	public int modifiers;
 	private LinkedList<GenNodeField> fields = new LinkedList<GenNodeField>();
 	private final LinkedList<GenNodeFunction> functions = new LinkedList<GenNodeFunction>();
+	public final LinkedList<String> generics = new LinkedList<String>();
 
 	public GenNodeType(final String name, String shortName, final String superclass, final String[] interfaces, final int modifiers) {
 	    this.name = name;
@@ -88,7 +89,14 @@ public abstract class GenNode {
 	@Override
 	public void generate(final Object visitor) {
 	    final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-	    cw.visit(52, modifiers | Opcodes.ACC_SUPER, name, null, superclass, interfaces);
+	    StringBuffer genericsSignature = null;
+	    if(generics.size() > 0){
+		genericsSignature = new StringBuffer();
+		genericsSignature.append("<");
+		for(String g : generics) genericsSignature.append(g+":"+"Ljava/lang/Object;");
+		genericsSignature.append(">Ljava/lang/Object;");
+	    }
+	    cw.visit(52, modifiers | Opcodes.ACC_SUPER, name, genericsSignature != null ? genericsSignature.toString() : null, superclass, interfaces);
 	    final String[] folders = name.split("\\.");
 	    int i = 0;
 	    final StringBuffer dirSb = new StringBuffer("classes/");
@@ -163,12 +171,17 @@ public abstract class GenNode {
     public static class GenNodeField extends GenNode {
 
 	public int modifiers;
-	public String name, type;
+	public String name, type, genericType;
 
 	public GenNodeField(final int modifiers, final String name, final String type) {
 	    this.modifiers = modifiers;
 	    this.name = name;
 	    this.type = type;
+	}
+	
+	public GenNodeField(final int modifiers, final String name, final String type, String genericType) {
+	    this(modifiers, name, type);
+	    this.genericType = "T"+genericType+";";
 	}
 
 	public GenNodeField(final Field field) {
@@ -180,7 +193,7 @@ public abstract class GenNode {
 	@Override
 	public void generate(final Object visitor) {
 	    final ClassWriter cw = (ClassWriter) visitor;
-	    final FieldVisitor fieldV = cw.visitField(modifiers, name, type, null, null);
+	    final FieldVisitor fieldV = cw.visitField(modifiers, name, type, genericType, null);
 	    fieldV.visitEnd();
 	}
 
@@ -506,6 +519,10 @@ public abstract class GenNode {
 
 	public GenNodeReturn(final EnumInstructionOperand type) {
 	    this.type = type;
+	}
+
+	public GenNodeReturn() {
+	    this(EnumInstructionOperand.VOID);
 	}
 
 	@Override
