@@ -315,26 +315,27 @@ public abstract class Node {
 		    interfaces[i - 1] = type.supers.get(i).qualifiedName.toString();
 	    }
 	    genNodeType = new GenNodeType(name, type.qualifiedName.shortName, superClass, interfaces, type.modifiers);
+	    GenNode.addGenNodeType(genNodeType);
 
 	    // Build the costructor
 	    if (defConstructor != null) {
 		final GenNodeFunction func = new GenNodeFunction("<init>", defConstructor.modifiers, "V");
+		GenNode.addGenNodeFunction(func);
 		func.params = defConstructor.parameters;
 		int argID = 1;
 		// Call the super class' constructor
 		// TODO: Change so it calls the right constructor for classes that don't extend Object
-		func.stmts.add(new GenNodeFuncCall(superClass, "<init>", "()V", false, true, false, true));
+		GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", "()V", false, true, false, true));
 		for (final Field field : argFields) {
 		    genNodeType.addField(new GenNodeField(field));
-		    func.stmts.add(new GenNodeThis());
-		    func.stmts.add(new GenNodeVarLoad(field.type.getInstructionType(), argID));
-		    func.stmts.add(new GenNodeFieldStore(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName()));
+		    GenNode.addFuncStmt(new GenNodeThis());
+		    GenNode.addFuncStmt(new GenNodeVarLoad(field.type.getInstructionType(), argID));
+		    GenNode.addFuncStmt(new GenNodeFieldStore(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName()));
 		    argID++;
 		}
-		func.stmts.add(new GenNodeReturn(EnumInstructionOperand.VOID));
-		genNodeType.addFunction(func);
+		GenNode.addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
+		GenNode.exitGenNodeFunction();
 	    }
-	    GenNode.addGenNodeType(genNodeType);
 	}
 
 	protected abstract EnumType getType();
@@ -792,7 +793,16 @@ public abstract class Node {
 	}
 
 	public void generateConstructor(final LinkedList<NodeVarDec> varDecs) {
-	    generate();
+	    String name = id, type = returnType.toBytecodeName();
+	    if (isConstructor) {
+		name = "<init>";
+		type = "V";
+	    }
+	    genNodeFunc = new GenNodeFunction(name, func.modifiers, type);
+	    //TODO: Generate constructor calls if this function is a constructor
+	    genNodeFunc.params = func.parameters;
+	    GenNode.addGenNodeFunction(genNodeFunc);
+	    block.generate();
 	    for(IFuncStmt stmt : block.stmts){
 		if(stmt instanceof NodeFuncCall){
 		    // If this constructor calls another class constructor, we don't need to initialise the class' fields here
@@ -811,20 +821,18 @@ public abstract class Node {
 		((Node) expr).generate();
 		genNodeFunc.stmts.add(new GenNodeFieldStore(dec.var.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName()));
 	    }
+	    GenNode.exitGenNodeFunction();
 	}
 
 	@Override
 	public void generate() {
 	    String name = id, type = returnType.toBytecodeName();
-	    if (isConstructor) {
-		name = "<init>";
-		type = "V";
-	    }
 	    genNodeFunc = new GenNodeFunction(name, func.modifiers, type);
 	    //TODO: Generate constructor calls if this function is a constructor
 	    genNodeFunc.params = func.parameters;
 	    GenNode.addGenNodeFunction(genNodeFunc);
 	    block.generate();
+	    GenNode.exitGenNodeFunction();
 	}
 
     }
@@ -929,7 +937,7 @@ public abstract class Node {
 	    if(!var.isLocal){
 		GenNode.typeStack.peek().addField(new GenNodeField(var));
 	    }
-	    else GenNode.currentFunction.locals++;
+	    else GenNode.getCurrentFunction().locals++;
 	    // Variable initialisation is handled by the class block
 	    super.generate();
 	}
@@ -976,7 +984,7 @@ public abstract class Node {
 		GenNode.typeStack.peek().addField(new GenNodeField(var));
 		// Field initialisation is handled by the class block, so there's no need to do it here
 	    }else{
-		GenNode.currentFunction.locals++;
+		GenNode.getCurrentFunction().locals++;
 		expr.generate();
 		addFuncStmt(new GenNodeVarStore(var.type.getInstructionType(), var.localID));
 	    }
@@ -1075,7 +1083,9 @@ public abstract class Node {
 	}
 
 	@Override
-	public void generate() {}
+	public void generate() {
+	    for(IExpression expr : exprs) expr.generate();
+	}
 
     }
 
@@ -1182,6 +1192,7 @@ public abstract class Node {
 	    // Create a new object for cosntructor calls
 	    // However, don't do this if we're calling "this" or "super"
 	    if(func.isConstructor() && !isThisCall && !isSuperCall){
+		System.out.println("yo");
 		addFuncStmt(new GenNodeNew(func.enclosingType.qualifiedName.toBytecodeName()));
 		addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 	    }else if(prefix == null) addFuncStmt(new GenNodeThis());
@@ -2026,6 +2037,7 @@ public abstract class Node {
     public static class NodeTupleExpr extends Node implements IExpression {
 
 	public NodeExprs exprs = new NodeExprs();
+	public TypeI type;
 
 	public NodeTupleExpr(final int line, final int column) {
 	    super(line, column);
@@ -2045,7 +2057,7 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    // Just infer an Object array
 	    if (exprs.exprs.size() == 0) return TypeI.getObjectType();
-	    final TypeI type = new TypeI("", 0, false);
+	    type = new TypeI("", 0, false);
 	    char name = 'a';
 	    for (final IExpression expr : exprs.exprs){
 		type.tupleTypes.add(expr.getExprType().copy().setTupleName(String.valueOf(name++)));
@@ -2058,7 +2070,14 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    // TODO
+	    System.out.println("yo2");
+	    GenNode.addFuncStmt(new GenNodeNew(type.toBytecodeName()));
+	    GenNode.addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
+	    exprs.generate();
+	    StringBuilder signature = new StringBuilder("(");
+	    for(TypeI t : type.tupleTypes) signature.append(t.toBytecodeName());
+	    signature.append(")V");
+	    GenNode.addFuncStmt(new GenNodeFuncCall("Tuple"+exprs.exprs.size(), "<init>", signature.toString(), false, false, false, true));
 	}
 
     }
@@ -2486,6 +2505,7 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    // Create a new Range object
+	    System.out.println("yo3");
 	    addFuncStmt(new GenNodeNew("ash.lang.Range"));
 	    addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 	    // Call Range's constructor

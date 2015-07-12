@@ -1,3 +1,5 @@
 public class Test {
-	var tuple = ["Sam", 19]
+	func test(){
+		var tuple = ["Sam", 19]
+	}
 }

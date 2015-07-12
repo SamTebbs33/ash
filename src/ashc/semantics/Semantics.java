@@ -244,7 +244,9 @@ public class Semantics {
 		final String tupleClassName = "Tuple" + tupleTypes.size();
 		if (!GenNode.generatedTupleClasses.contains(tupleClassName)) {
 		    final GenNodeType tupleClass = new GenNodeType(tupleClassName, tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC);
+		    GenNode.addGenNodeType(tupleClass);
 		    final GenNodeFunction tupleConstructor = new GenNodeFunction(tupleClassName + ".<init>", Opcodes.ACC_PUBLIC, "V");
+		    GenNode.addGenNodeFunction(tupleConstructor);
 		    int tupleTypeNum = 1;
 		    char tupleFieldName = 'a', tupleFieldType = 'A';
 		    for (final TypeI tupleType : tupleTypes) {
@@ -258,8 +260,7 @@ public class Semantics {
 			tupleFieldType++;
 		    }
 		    tupleConstructor.stmts.add(new GenNodeReturn());
-		    tupleClass.addFunction(tupleConstructor);
-		    GenNode.addGenNodeType(tupleClass);
+		    GenNode.exitGenNodeFunction();
 		    GenNode.exitGenNodeType();
 		    GenNode.generatedTupleClasses.add(tupleClassName);
 		}
