@@ -20,6 +20,7 @@ public class Scope {
 
 	public TypeI returnType;
 	public boolean isMutFunc;
+	public int locals = 0;
 
 	public FuncScope(final TypeI typeI, final boolean isMutFunc) {
 	    super();

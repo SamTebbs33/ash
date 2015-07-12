@@ -68,6 +68,8 @@ public class Member {
 		final Type superType = new Type(cls.getSuperclass(), cls.getSuperclass().getName());
 		supers.add(superType);
 	    }
+	    for(Class i : cls.getInterfaces()) supers.add(new Type(i, i.getName()));
+	    
 	    Semantics.addType(this);
 	    for (final Method method : cls.getMethods())
 		addFunction(Function.fromExecutable(method));
@@ -124,9 +126,10 @@ public class Member {
 	}
 
 	public boolean hasSuper(final QualifiedName name) {
-	    for (final Type type : supers)
+	    for (final Type type : supers){
 		if (type.qualifiedName.equals(name)) return true;
 		else if (type.hasSuper(name)) return true;
+	    }
 	    return false;
 	}
 
@@ -238,7 +241,7 @@ public class Member {
 	public Variable(final String id, final TypeI type) {
 	    super(new QualifiedName(id), 0, type, false, false);
 	    this.id = id;
-	    this.localID = Scope.inScope() ? Scope.getScope().vars.size()+1 : 0;
+	    this.localID = (Scope.inFuncScope() ? Scope.getFuncScope().locals++ : 0) + 1; // Local variables start with 1 since 0 is "this"
 	    isLocal = Scope.inFuncScope();
 	}
 

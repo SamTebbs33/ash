@@ -736,14 +736,20 @@ public abstract class GenNode {
     public static class GenNodeJump extends GenNode {
 
 	public Label label;
+	public int opcode;
 
 	public GenNodeJump(final Label label) {
-	    this.label = label;
+	    this(GOTO, label);
+	}
+
+	public GenNodeJump(int opcode, Label lbl0) {
+	    this.opcode = opcode;
+	    this.label = lbl0;
 	}
 
 	@Override
 	public void generate(final Object visitor) {
-	    ((MethodVisitor) visitor).visitJumpInsn(GOTO, label);
+	    ((MethodVisitor) visitor).visitJumpInsn(opcode, label);
 	}
 
     }

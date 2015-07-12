@@ -1,5 +1,10 @@
+import java.util.LinkedList
+
 public class Test {
 	func test(){
-		var tuple = ["Sam", 19]
+		var list = LinkedList()
+		for(element in list){
+			
+		}
 	}
 }

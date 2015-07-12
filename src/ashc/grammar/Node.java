@@ -1192,7 +1192,6 @@ public abstract class Node {
 	    // Create a new object for cosntructor calls
 	    // However, don't do this if we're calling "this" or "super"
 	    if(func.isConstructor() && !isThisCall && !isSuperCall){
-		System.out.println("yo");
 		addFuncStmt(new GenNodeNew(func.enclosingType.qualifiedName.toBytecodeName()));
 		addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 	    }else if(prefix == null) addFuncStmt(new GenNodeThis());
@@ -2070,7 +2069,6 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    System.out.println("yo2");
 	    GenNode.addFuncStmt(new GenNodeNew(type.toBytecodeName()));
 	    GenNode.addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 	    exprs.generate();
@@ -2187,6 +2185,8 @@ public abstract class Node {
     public static abstract class NodeFor extends Node implements IFuncStmt, IConstruct {
 	public IExpression expr;
 	public NodeFuncBlock block;
+	
+	public TypeI exprType;
 
 	public NodeFor(final int line, final int column, final IExpression expr, final NodeFuncBlock block) {
 	    super(line, column);
@@ -2198,7 +2198,7 @@ public abstract class Node {
 	public void analyse() {
 	    ((Node) expr).analyse();
 	    if (!((Node) expr).errored) {
-		final TypeI exprType = expr.getExprType();
+		exprType = expr.getExprType();
 		if (EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL) if (!exprType.isArray()) return;
 		semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
 	    }
@@ -2258,6 +2258,7 @@ public abstract class Node {
     public static class NodeForIn extends NodeFor implements IFuncStmt {
 
 	public String varId;
+	public Variable var;
 
 	public NodeForIn(final int line, final int column, final String data, final IExpression parseExpression, final NodeFuncBlock block) {
 	    super(line, column, parseExpression, block);
@@ -2269,7 +2270,7 @@ public abstract class Node {
 	public void analyse() {
 	    // The only types that can be iterated over are arrays and those
 	    // that implement java.lang.Iterable
-	    final TypeI exprType = expr.getExprType();
+	    exprType = expr.getExprType();
 	    TypeI varType = TypeI.getObjectType();
 	    if (exprType.isTuple()) semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
 	    if (exprType.isArray()) {
@@ -2287,13 +2288,35 @@ public abstract class Node {
 		} else semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
 	    }
 	    Scope.push(new Scope());
-	    Semantics.addVar(new Variable(varId, varType));
+	    var = new Variable(varId, varType);
+	    Scope.getFuncScope().locals++; // We have to reserve one local variable for the iterator instance
+	    Semantics.addVar(var);
 	    block.analyse();
 	    Scope.pop();
 	}
 
 	@Override
-	public void generate() {}
+	public void generate() {
+	    expr.generate();
+	    int iteratorVarID = var.localID + 1;
+	    if(!exprType.isArray()){
+		String enclosingType = Semantics.getType(exprType.shortName).get().qualifiedName.toBytecodeName();
+		GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, "iterator", "()Ljava/util/Iterator;", false, false, false, false));
+		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.REFERENCE, iteratorVarID));
+		
+		Label lbl0 = new Label(), lbl1 = new Label();
+		GenNode.addFuncStmt(new GenNodeLabel(lbl0));
+		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.REFERENCE, iteratorVarID));
+		GenNode.addFuncStmt(new GenNodeFuncCall("java/util/Iterator", "hasNext", "()Z", true, false, false, false));
+		GenNode.addFuncStmt(new GenNodeJump(Opcodes.IFEQ, lbl1));
+		
+		GenNode.addFuncStmt(new GenNodeFuncCall("java/util/Iterator", "next", "()Ljava/lang/Object;", true, false, false, false));
+		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.REFERENCE, var.localID));
+		block.generate();
+		GenNode.addFuncStmt(new GenNodeJump(lbl0));
+		GenNode.addFuncStmt(new GenNodeLabel(lbl1));
+	    }
+	}
 
     }
 
@@ -2505,7 +2528,6 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    // Create a new Range object
-	    System.out.println("yo3");
 	    addFuncStmt(new GenNodeNew("ash.lang.Range"));
 	    addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 	    // Call Range's constructor
