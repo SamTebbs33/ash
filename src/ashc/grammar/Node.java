@@ -263,7 +263,7 @@ public abstract class Node {
 		    arg.preAnalyse();
 		    if (!arg.errored) {
 			final TypeI argType = new TypeI(arg.type);
-			final Field field = new Field(Scope.getNamespace().copy().add(arg.id), EnumModifier.PUBLIC.intVal, argType);
+			final Field field = new Field(Scope.getNamespace().copy().add(arg.id), EnumModifier.PUBLIC.intVal, argType, false, false);
 			type.fields.add(field);
 			argFields.add(field);
 			defConstructor.parameters.add(argType);
@@ -874,17 +874,14 @@ public abstract class Node {
 	public void generate() {
 	    if (getBlock != null) {
 		final GenNodeFunction getFunc = new GenNodeFunction("$get" + id, Opcodes.ACC_PUBLIC, var.type.toBytecodeName());
+		GenNode.addGenNodeFunction(getFunc);
 		getBlock.generate();
-		getFunc.stmts = getBlock.genStmts;
-		GenNode.typeStack.peek().addFunction(getFunc);
 	    }
 	    if (setBlock != null) {
 		final GenNodeFunction setFunc = new GenNodeFunction("$set" + id, Opcodes.ACC_PUBLIC, "V");
 		setFunc.params.add(var.type);
+		GenNode.addGenNodeFunction(setFunc);
 		setBlock.generate();
-		// TODO: Convert return statements in the block into assignment
-		// statements
-		GenNode.typeStack.peek().addFunction(setFunc);
 	    }
 	}
 
@@ -908,7 +905,7 @@ public abstract class Node {
 	    int modifiers = 0;
 	    for (final NodeModifier mod : mods)
 		modifiers |= mod.asInt();
-	    final Field field = new Field(name, modifiers, new TypeI(type));
+	    final Field field = new Field(name, modifiers, new TypeI(type), setBlock != null, getBlock != null);
 	    if (!Semantics.fieldExists(field)) Semantics.addField(field);
 	    else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
 	}
@@ -961,7 +958,7 @@ public abstract class Node {
 		modifiers |= mod.asInt();
 	    expr.analyse();
 	    final TypeI exprType = expr.getExprType();
-	    final Field field = new Field(name, modifiers, exprType);
+	    final Field field = new Field(name, modifiers, exprType, setBlock != null, getBlock != null);
 	    if (!Semantics.fieldExists(field)) Semantics.addField(field);
 	    else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
 	}
@@ -995,7 +992,6 @@ public abstract class Node {
 
     public static class NodeFuncBlock extends Node {
 
-	public LinkedList<GenNode> genStmts;
 	public IExpression singleLineExpr;
 	public TypeI funcReturnType;
 	LinkedList<IFuncStmt> stmts = new LinkedList<IFuncStmt>();
@@ -1310,6 +1306,10 @@ public abstract class Node {
 	    if(var.prefix != null){
 		var.prefix.generate();
 		expr.generate();
+		// If the variable is a property with a set block, we have to call the set function and assign the variable to the result
+		if(var.var.isSetProperty){
+		    generateSetFuncCall(var.var);
+		}
 		addFuncStmt(new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName()));
 	    }else{
 		GenNode node = null;
@@ -1319,11 +1319,23 @@ public abstract class Node {
 		}else{
 		    addFuncStmt(new GenNodeThis());
 		    expr.generate();
+		    // If the variable is a property with a set block, we have to call the set function and assign the variable to the result
+		    if(var.var.isSetProperty){
+			generateSetFuncCall(var.var);
+		    }
 		    node = new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName());
 		}
 		addFuncStmt(node);
 	    }
 	    
+	}
+
+	private void generateSetFuncCall(Field var) {
+	    String setFuncName = "$set" + var.qualifiedName.shortName;
+	    String enclosingType = var.enclosingType.qualifiedName.toBytecodeName();
+	    String varType = var.type.toBytecodeName();
+	    String signature = "(" + varType + ")" + varType;
+	    addFuncStmt(new GenNodeFuncCall(enclosingType, setFuncName, signature, false, false, false, false));
 	}
 
 	@Override

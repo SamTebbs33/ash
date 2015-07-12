@@ -236,7 +236,7 @@ public class Member {
 	public String id;
 
 	public Variable(final String id, final TypeI type) {
-	    super(new QualifiedName(id), 0, type);
+	    super(new QualifiedName(id), 0, type, false, false);
 	    this.id = id;
 	    this.localID = Scope.inScope() ? Scope.getScope().vars.size()+1 : 0;
 	    isLocal = Scope.inFuncScope();
@@ -252,11 +252,14 @@ public class Member {
 
 	public TypeI type;
 	public int localID;
+	public boolean isSetProperty, isGetProperty;
 
-	public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type) {
+	public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type, boolean isSetProperty, boolean isGetProperty) {
 	    super(qualifiedName, modifiers);
 	    this.type = type;
 	    enclosingType = Semantics.currentType();
+	    this.isGetProperty = isGetProperty;
+	    this.isSetProperty = isSetProperty;
 	}
 
 	public static Field from(final java.lang.reflect.Field field) {
@@ -264,7 +267,7 @@ public class Member {
 	    final TypeI type = TypeI.fromClass(field.getType());
 	    final QualifiedName name = QualifiedName.fromClass(field.getDeclaringClass());
 	    name.add(field.getName());
-	    return new Field(name, mods, type);
+	    return new Field(name, mods, type, false, false);
 	}
 
 	@Override

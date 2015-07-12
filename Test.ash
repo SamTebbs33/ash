@@ -1,3 +1,11 @@
-public class Person(name : String, age : int) : Object {
-	public func Person(name2 : String) -> this(name2, 0)
+public class Test {
+	public var name = "Sam" -> {
+		set {
+			if(true) return "Tebby"
+			else return "Tebbs"
+		}
+	}
+	public func test(){
+		name = "Yo"
+	}
 }

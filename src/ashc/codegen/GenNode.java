@@ -146,8 +146,9 @@ public abstract class GenNode {
 	    signature.append(")" + type);
 	    final MethodVisitor mv = cw.visitMethod(modifiers, name, signature.toString(), null, null);
 	    mv.visitCode();
-	    for (final GenNode stmt : stmts)
-		stmt.generate(mv);
+	    for (int i = 0; i < stmts.size(); i++){
+		stmts.get(i).generate(mv);
+	    }
 	    mv.visitMaxs(locals, locals);
 	    mv.visitEnd();
 	}

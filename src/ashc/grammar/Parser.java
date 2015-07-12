@@ -741,6 +741,7 @@ public class Parser {
 	Token next = expect(TokenType.COLON, TokenType.ASSIGNOP);
 	NodeVarDec varDec;
 	final TokenType type = next.type;
+	// If a type is given, parse it as an explicit var declaration, otherwise parse it as an implicit var declaration
 	if (type == TokenType.COLON) {
 	    final NodeType nodeType = parseType();
 	    varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, null);
@@ -748,11 +749,14 @@ public class Parser {
 	    else rewind();
 	} else varDec = new NodeVarDecImplicit(id.line, id.columnStart, mods, keyword.data, id.data, parseExpression());
 
+	// Parse a property block
 	if (getNext().type == TokenType.LAMBDAARROW) {
 	    expect(TokenType.BRACEL);
 	    NodeFuncBlock getBlock = null, setBlock = null;
+	    // A right brace ends the property block
 	    while (getNext().type != TokenType.BRACER) {
 		rewind();
+		// If neither a set block or get block have been defined yet, parse either
 		if ((setBlock == null) && (getBlock == null)) {
 		    next = expect(TokenType.GET, TokenType.SET);
 		    if (next.type == TokenType.SET) setBlock = parseFuncBlock(true, true);
@@ -760,12 +764,16 @@ public class Parser {
 		}
 		next = getNext();
 		if (next.type == TokenType.GET) {
+		    // If a get block has already been defined, throw errors
 		    if (getBlock != null) {
+			// If a set block has not been defined, then say we expected a set block instead of another get block
 			if (setBlock == null) throw new UnexpectedTokenException(next, TokenType.SET, TokenType.BRACER);
 			else throw new UnexpectedTokenException(next, TokenType.BRACER);
 		    } else getBlock = parseFuncBlock(true, true);
 		} else if (next.type == TokenType.SET) {
+		    // If a set block has already been defined, throw errors
 		    if (setBlock != null) {
+			// If a get block has not been defined, then say we expected a get block instead of another set block
 			if (getBlock == null) throw new UnexpectedTokenException(next, TokenType.GET, TokenType.BRACER);
 			else throw new UnexpectedTokenException(next, TokenType.BRACER);
 		    } else setBlock = parseFuncBlock(true, true);
@@ -773,6 +781,10 @@ public class Parser {
 	    }
 	    varDec.getBlock = getBlock;
 	    varDec.setBlock = setBlock;
+	    
+	    // The get and set block will become functions in the bytecode, so tell the blocks that they are indeed in functions
+	    if(varDec.getBlock != null) varDec.getBlock.inFunction = true;
+	    if(varDec.setBlock != null) varDec.setBlock.inFunction = true;
 	} else rewind();
 	return varDec;
     }
