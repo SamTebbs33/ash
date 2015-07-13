@@ -393,10 +393,6 @@ public class Parser {
     public NodeTypes parseGenerics(final boolean necessary) throws UnexpectedTokenException {
 	if (getNext().data.equals("<")) {
 	    final NodeTypes types = parseTypes(necessary);
-	    if ((types == null) && !necessary) {
-		rewind();
-		return null;
-	    }
 	    expect(">");
 	    return types;
 	} else rewind();
@@ -555,14 +551,14 @@ public class Parser {
 	NodePrefix prefix = null;
 	do {
 	    final Token id = expect(TokenType.ID, TokenType.SELF, TokenType.SUPER, TokenType.THIS);
-	    final NodeTypes generics = parseGenerics(false);
+	    //final NodeTypes generics = parseGenerics(false);
 	    if (getNext().type == TokenType.PARENL) {
 		rewind();
 		final NodeExprs exprs = parseCallArgs(TokenType.PARENL, TokenType.PARENR);
 		boolean unwrapped = false;
 		if (getNext().data.equals("!")) unwrapped = true;
 		else rewind();
-		prefix = new NodeFuncCall(id.line, id.columnStart, id.data, exprs, prefix, generics, unwrapped, id.type == TokenType.THIS, id.type == TokenType.SUPER);
+		prefix = new NodeFuncCall(id.line, id.columnStart, id.data, exprs, prefix, unwrapped, id.type == TokenType.THIS, id.type == TokenType.SUPER);
 	    } else {
 		rewind();
 		boolean unwrapped = false;

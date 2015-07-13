@@ -162,7 +162,7 @@ public class Semantics {
 	    if (equals(exprType)) return true;
 	    // If the expr is null, and this is optional, and it has more than 0
 	    // array dimensions
-	    if (exprType.isNull() && optional && (!EnumPrimitive.isPrimitive(shortName) || (arrDims > 0))) return true;
+	    if (exprType.isNull() && optional && (!EnumPrimitive.isPrimitive(shortName) || arrDims > 0)) return true;
 	    // If this is a tuple and the expression is a tuple expression
 	    if (tupleTypes.size() > 0) {
 		if (tupleTypes.size() == exprType.tupleTypes.size()) {

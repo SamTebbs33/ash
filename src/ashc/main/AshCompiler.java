@@ -44,8 +44,7 @@ public class AshCompiler {
     public void generate() {
 	if (fileNode != null) {
 	    fileNode.generate();
-	    for (final GenNodeType type : GenNode.types)
-		type.generate(null);
+	    GenNode.generate();
 	}
     }
 

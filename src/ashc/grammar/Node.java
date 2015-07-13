@@ -22,6 +22,7 @@ import ashc.codegen.GenNode.GenNodeFieldStore;
 import ashc.codegen.GenNode.GenNodeFloat;
 import ashc.codegen.GenNode.GenNodeFuncCall;
 import ashc.codegen.GenNode.GenNodeFunction;
+import ashc.codegen.GenNode.GenNodeIncrement;
 import ashc.codegen.GenNode.GenNodeInt;
 import ashc.codegen.GenNode.GenNodeIntOpcode;
 import ashc.codegen.GenNode.GenNodeJump;
@@ -659,7 +660,7 @@ public abstract class Node {
 			semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
 		    } else if (!EnumPrimitive.isPrimitive(id)) if (generics.types.size() > typeOpt.get().generics.size()) semanticError(this, line, column, TOO_MANY_GENERICS);
 		}
-		if (EnumPrimitive.isPrimitive(id) && optional) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
+		if (EnumPrimitive.isPrimitive(id) && optional && arrDims == 0) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
 	    } else for (int i = 0; i < tupleTypes.size(); i++) tupleTypes.get(i).analyse();
 	    
 	}
@@ -806,7 +807,10 @@ public abstract class Node {
 	    for(IFuncStmt stmt : block.stmts){
 		if(stmt instanceof NodeFuncCall){
 		    // If this constructor calls another class constructor, we don't need to initialise the class' fields here
-		    if(((NodeFuncCall)stmt).isThisCall) return;
+		    if(((NodeFuncCall)stmt).isThisCall){
+			GenNode.exitGenNodeFunction();
+			return;
+		    }
 		}
 	    }
 	    // We have to initlialse the class' fields to their default values
@@ -935,7 +939,7 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    if(!var.isLocal){
-		GenNode.typeStack.peek().addField(new GenNodeField(var));
+		GenNode.addGenNodeField(new GenNodeField(var));
 	    }
 	    else GenNode.getCurrentFunction().locals++;
 	    // Variable initialisation is handled by the class block
@@ -981,7 +985,7 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    if(!var.isLocal){
-		GenNode.typeStack.peek().addField(new GenNodeField(var));
+		GenNode.addGenNodeField(new GenNodeField(var));
 		// Field initialisation is handled by the class block, so there's no need to do it here
 	    }else{
 		GenNode.getCurrentFunction().locals++;
@@ -1094,16 +1098,14 @@ public abstract class Node {
 	public String id;
 	public NodeExprs args;
 	public NodePrefix prefix;
-	public NodeTypes generics;
 	public boolean unwrapped;
 
 	public Function func;
 
-	public NodeFuncCall(final int line, final int column, final String id, final NodeExprs args, final NodePrefix prefix, final NodeTypes generics, final boolean unwrapped, boolean isThisCall, boolean isSuperCall) {
+	public NodeFuncCall(final int line, final int column, final String id, final NodeExprs args, final NodePrefix prefix, final boolean unwrapped, boolean isThisCall, boolean isSuperCall) {
 	    super(line, column);
 	    this.args = args;
 	    this.prefix = prefix;
-	    this.generics = generics;
 	    this.unwrapped = unwrapped;
 	    this.id = id;
 	    this.isThisCall = isThisCall;
@@ -1126,14 +1128,20 @@ public abstract class Node {
 		} else {
 		    if (!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
 		    final TypeI funcType = func.returnType.copy();
-		    if (generics.types.size() > func.generics.size()) semanticError(this, line, column, TOO_MANY_GENERICS);
-		    else {
-			int i = 0;
-			for (; i < generics.types.size(); i++)
-			    funcType.genericTypes.add(new TypeI(generics.types.get(i)));
-			// Fill in the unspecified generics as Objects
-			for (; i < func.generics.size(); i++)
-			    funcType.genericTypes.add(TypeI.getObjectType());
+		    // Fill in the function's generics based on the arguments
+		    int i = 0;
+		    for(String g : func.generics){
+			boolean foundGeneric = false;
+			int paramIndex = 0;
+			for(TypeI t : func.parameters){
+			    if(t.shortName.equals(g)){
+				funcType.genericTypes.set(i, args.exprs.get(paramIndex).getExprType());
+				foundGeneric = true;
+				break;
+			    }
+			    paramIndex++;
+			}
+			i++;
 		    }
 		    result = funcType;
 		}
@@ -2243,6 +2251,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
+	    System.out.println("for normal gen");
 	    if(initStmt != null) initStmt.generate();
 	    Label lbl0 = new Label(), lbl1 = new Label();
 	    addFuncStmt(new GenNodeLabel(lbl0));
@@ -2251,6 +2260,7 @@ public abstract class Node {
 	    if(endStmt != null) endStmt.generate();
 	    addFuncStmt(new GenNodeJump(lbl0));
 	    addFuncStmt(new GenNodeLabel(lbl1));
+	    System.out.println("for normal gen end");
 	}
 
     }
@@ -2289,7 +2299,7 @@ public abstract class Node {
 	    }
 	    Scope.push(new Scope());
 	    var = new Variable(varId, varType);
-	    Scope.getFuncScope().locals++; // We have to reserve one local variable for the iterator instance
+	    Scope.getFuncScope().locals += exprType.isArray() ? 3 : 1; // We have to reserve some local variables for the iterator instance
 	    Semantics.addVar(var);
 	    block.analyse();
 	    Scope.pop();
@@ -2298,21 +2308,54 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    expr.generate();
-	    int iteratorVarID = var.localID + 1;
+	    int iteratorVarID = var.localID + 1; // Get the varID that we reserved in the analyse() method
 	    if(!exprType.isArray()){
 		String enclosingType = Semantics.getType(exprType.shortName).get().qualifiedName.toBytecodeName();
 		GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, "iterator", "()Ljava/util/Iterator;", false, false, false, false));
 		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.REFERENCE, iteratorVarID));
 		
+		// Check if the iterator has a next value
 		Label lbl0 = new Label(), lbl1 = new Label();
 		GenNode.addFuncStmt(new GenNodeLabel(lbl0));
 		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.REFERENCE, iteratorVarID));
 		GenNode.addFuncStmt(new GenNodeFuncCall("java/util/Iterator", "hasNext", "()Z", true, false, false, false));
 		GenNode.addFuncStmt(new GenNodeJump(Opcodes.IFEQ, lbl1));
 		
+		// Get the iterator's next value and jump to the conditional branch
 		GenNode.addFuncStmt(new GenNodeFuncCall("java/util/Iterator", "next", "()Ljava/lang/Object;", true, false, false, false));
 		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.REFERENCE, var.localID));
 		block.generate();
+		GenNode.addFuncStmt(new GenNodeJump(lbl0));
+		GenNode.addFuncStmt(new GenNodeLabel(lbl1));
+	    }else{
+		EnumInstructionOperand elementType = exprType.copy().setArrDims(exprType.arrDims-1).getInstructionType();
+		int indexVarID = iteratorVarID + 1, lengthVarID = indexVarID + 1;
+		// Cache the array reference to a local variable so we don't have to re-generate the expression when accessing an index
+		GenNode.addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
+		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.ARRAY, iteratorVarID));
+		// Save the array length to a local variable
+		GenNode.addFuncStmt(new GenNodeOpcode(Opcodes.ARRAYLENGTH));
+		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.INT, lengthVarID));
+		// Save the first index (0) to a local variable
+		GenNode.addFuncStmt(new GenNodeInt(0));
+		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.INT, indexVarID));
+		
+		Label lbl0 = new Label(), lbl1 = new Label();
+		// This is the label to which we will jump when the iteration is finished
+		GenNode.addFuncStmt(new GenNodeLabel(lbl0));
+		// Load the current index, the array length and then compare them. Jump if the index is no less than the array length
+		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.INT, indexVarID));
+		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.INT, lengthVarID));
+		GenNode.addFuncStmt(new GenNodeConditionalJump(Opcodes.IF_ICMPLT, lbl1));
+		
+		// Load the element at the index of the array into the variable specified in the source code
+		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.ARRAY, iteratorVarID));
+		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.INT, indexVarID));
+		GenNode.addFuncStmt(new GenNodeArrayIndexLoad(elementType));
+		GenNode.addFuncStmt(new GenNodeVarStore(elementType, var.localID));
+		block.generate();
+		// Increment the index and jump back to the evaluation label
+		GenNode.addFuncStmt(new GenNodeIncrement(indexVarID, 1));
 		GenNode.addFuncStmt(new GenNodeJump(lbl0));
 		GenNode.addFuncStmt(new GenNodeLabel(lbl1));
 	    }

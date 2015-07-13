@@ -2,9 +2,9 @@ import java.util.LinkedList
 
 public class Test {
 	func test(){
-		var list = LinkedList()
-		for(element in list){
-			
+		var array = {0, 1, 2}
+		for var i = 0, i < array.length, i += 1 {
+		
 		}
 	}
 }

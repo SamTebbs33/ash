@@ -7,7 +7,6 @@ import java.util.*;
 
 import org.objectweb.asm.*;
 
-import ashc.codegen.GenNode.GenNodeFunction;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeBinary;
 import ashc.grammar.Node.NodeNull;
@@ -24,12 +23,16 @@ import ashc.semantics.Semantics.TypeI;
  */
 public abstract class GenNode {
 
-    public static LinkedList<GenNodeType> types = new LinkedList<GenNodeType>();
-    public static Stack<GenNodeType> typeStack = new Stack<GenNodeType>();
+    private static LinkedList<GenNodeType> types = new LinkedList<GenNodeType>();
+    private static Stack<GenNodeType> typeStack = new Stack<GenNodeType>();
     public static HashSet<String> generatedTupleClasses = new HashSet<String>();
     private static Stack<GenNodeFunction> functionStack = new Stack<GenNodeFunction>();
 
     public abstract void generate(Object visitor);
+    
+    public static void generate() {
+	for(GenNodeType type : types) type.generate(null);
+    }
 
     public static void addGenNodeType(final GenNodeType node) {
 	types.add(node);
@@ -39,6 +42,10 @@ public abstract class GenNode {
     public static void addGenNodeFunction(GenNodeFunction genNodeFunc) {
 	typeStack.peek().functions.add(genNodeFunc);
 	functionStack.push(genNodeFunc);
+    }
+    
+    public static void addGenNodeField(GenNodeField field){
+	typeStack.peek().fields.add(field);
     }
     
     public static void addFuncStmt(GenNode node){
@@ -51,6 +58,10 @@ public abstract class GenNode {
     
     public static void exitGenNodeFunction(){
 	functionStack.pop();
+    }
+    
+    public static GenNodeFunction getCurrentFunction() {
+	return functionStack.peek();
     }
 
     public static interface IGenNodeStmt {
@@ -155,7 +166,7 @@ public abstract class GenNode {
 	    for (int i = 0; i < stmts.size(); i++){
 		stmts.get(i).generate(mv);
 	    }
-	    mv.visitMaxs(locals, locals);
+	    //mv.visitMaxs(locals, locals);
 	    mv.visitEnd();
 	}
 
@@ -566,10 +577,13 @@ public abstract class GenNode {
 	public IExpression expr;
 	public Label label;
 	public int opcode;
+	
+	LinkedList<Integer> extraOpcodes = new LinkedList<Integer>();
 
 	public GenNodeConditionalJump(final IExpression expr, final Label label) {
 	    this.expr = expr;
 	    this.label = label;
+	    compute();
 	}
 
 	public GenNodeConditionalJump(final int opcode, final Label label) {
@@ -577,9 +591,7 @@ public abstract class GenNode {
 	    this.opcode = opcode;
 	}
 
-	@Override
-	public void generate(final Object visitor) {
-	    final MethodVisitor mv = (MethodVisitor) visitor;
+	public void compute() {
 	    if (expr != null) if (expr instanceof NodeBinary) {
 		final NodeBinary node = (NodeBinary) expr;
 		if (node.operatorOverloadFunc == null) {
@@ -588,8 +600,8 @@ public abstract class GenNode {
 		    final EnumInstructionOperand type = Semantics.getPrecedentType(node.exprType1, node.exprType2).getInstructionType();
 
 		    // Cast the binary expression's sub expressions if necessary
-		    if (node.exprType1.getInstructionType() != type) (new GenNodePrimitiveCast(node.exprType1.getInstructionType(), type)).generate(mv);
-		    else if (node.exprType2.getInstructionType() != type) (new GenNodePrimitiveCast(node.exprType2.getInstructionType(), type)).generate(mv);
+		    if (node.exprType1.getInstructionType() != type) addFuncStmt(new GenNodePrimitiveCast(node.exprType1.getInstructionType(), type));
+		    else if (node.exprType2.getInstructionType() != type) addFuncStmt(new GenNodePrimitiveCast(node.exprType2.getInstructionType(), type));
 
 		    // Decide which opcode to use
 		    switch (type) {
@@ -597,7 +609,8 @@ public abstract class GenNode {
 			case BYTE:
 			case SHORT:
 			case BOOL:
-			    specialGenerate(mv, node.expr1, node.expr2);
+			     node.expr1.generate();
+			     node.expr2.generate();
 
 			    // Integer type operands are handled by one single
 			    // opcode
@@ -625,11 +638,12 @@ public abstract class GenNode {
 			case LONG:
 			case DOUBLE:
 			case FLOAT:
-			    specialGenerate(mv, node.expr1, node.expr2);
+			    node.expr1.generate();
+			    node.expr2.generate();
 			    // Non integer-types must be compared first
-			    if (type == EnumInstructionOperand.LONG) mv.visitInsn(LCMP);
-			    else if (type == EnumInstructionOperand.DOUBLE) mv.visitInsn(DCMPG);
-			    else if (type == EnumInstructionOperand.FLOAT) mv.visitInsn(FCMPG);
+			    if (type == EnumInstructionOperand.LONG) extraOpcodes.add(Opcodes.LCMP);
+			    else if (type == EnumInstructionOperand.DOUBLE) extraOpcodes.add(DCMPG);
+			    else if (type == EnumInstructionOperand.FLOAT) extraOpcodes.add(FCMPG);
 			    switch (node.operator.operation) {
 				case LESS:
 				    opcode = IFLT;
@@ -684,37 +698,22 @@ public abstract class GenNode {
 		    // If it is an operator overloaded expression, then generate
 		    // the function call and then check if the return value was
 		    // true
-		    specialGenerate(mv, expr);
+		    expr.generate();
 		    opcode = IFEQ;
 		}
 	    } else {
 		// If it isn't a binary expression, then generate it and check
 		// if the return value was true
-		specialGenerate(mv, expr);
+		expr.generate();
 		opcode = IFEQ;
 	    }
-	    mv.visitJumpInsn(opcode, label);
 	}
 
-	/**
-	 * Generates the IExpressions, and then generates the resulting GenNodes
-	 * 
-	 * @param visitor
-	 * @param exprs
-	 *
-	 */
-	private void specialGenerate(final MethodVisitor visitor, final IExpression... exprs) {
-	    final int stmtPtr = getCurrentFunction().stmts.size();
-	    for (final IExpression expr : exprs) {
-		expr.generate();
-		int i = 0;
-		final int num = getCurrentFunction().stmts.size() - stmtPtr;
-		// Run through the GenNodes generated by the expressions, remove
-		// them from the function statements
-		// and write them to the methodvisitor instead
-		while (i++ < num)
-		    getCurrentFunction().stmts.remove(stmtPtr).generate(visitor);
-	    }
+	@Override
+	public void generate(Object visitor) {
+	    MethodVisitor mv = (MethodVisitor)visitor;
+	    for(Integer i : extraOpcodes) mv.visitInsn(i);
+	    mv.visitJumpInsn(opcode, label);
 	}
 
     }
@@ -1028,9 +1027,21 @@ public abstract class GenNode {
 	    ((MethodVisitor)visitor).visitInsn(opcode);
 	}
     }
+    
+    public static class GenNodeIncrement extends GenNode {
+	
+	public int varID, amount;
 
-    public static GenNodeFunction getCurrentFunction() {
-	return functionStack.peek();
+	public GenNodeIncrement(int varID, int amount) {
+	    this.varID = varID;
+	    this.amount = amount;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    ((MethodVisitor)visitor).visitIincInsn(varID, amount);
+	}
+	
     }
 
 }
