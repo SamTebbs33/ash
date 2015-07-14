@@ -33,6 +33,12 @@ public abstract class GenNode {
     public static void generate() {
 	for(GenNodeType type : types) type.generate(null);
     }
+    
+    public static void addToStackRequirement(int toAdd){
+	if(getCurrentFunction().stack + toAdd > getCurrentFunction().maxStack) getCurrentFunction().maxStack = getCurrentFunction().stack + toAdd;
+	getCurrentFunction().stack += toAdd;
+
+    }
 
     public static void addGenNodeType(final GenNodeType node) {
 	types.add(node);
@@ -73,7 +79,13 @@ public abstract class GenNode {
     }
 
     public static enum EnumInstructionOperand {
-	REFERENCE, BOOL, BYTE, CHAR, INT, LONG, FLOAT, DOUBLE, ARRAY, SHORT, VOID
+	REFERENCE(1), BOOL(1), BYTE(1), CHAR(1), INT(1), LONG(2), FLOAT(1), DOUBLE(2), ARRAY(1), SHORT(1), VOID(0);
+	
+	public int size;
+
+	private EnumInstructionOperand(int size) {
+	    this.size = size;
+	}
     }
 
     public static class GenNodeType extends GenNode {
@@ -106,6 +118,7 @@ public abstract class GenNode {
 		for(String g : generics) genericsSignature.append(g+":"+"Ljava/lang/Object;");
 		genericsSignature.append(">Ljava/lang/Object;");
 	    }
+	    System.out.println("Super: " + superclass);
 	    cw.visit(52, modifiers | Opcodes.ACC_SUPER, name, genericsSignature != null ? genericsSignature.toString() : null, superclass, interfaces);
 	    final String[] folders = name.split("\\.");
 	    int i = 0;
@@ -146,7 +159,7 @@ public abstract class GenNode {
 	public String type;
 	public LinkedList<TypeI> params = new LinkedList<TypeI>();
 	public LinkedList<GenNode> stmts = new LinkedList<GenNode>();
-	public int locals;
+	public int locals, stack, maxStack;
 
 	public GenNodeFunction(final String name, final int modifiers, final String type) {
 	    this.name = name;
@@ -166,7 +179,7 @@ public abstract class GenNode {
 	    for (int i = 0; i < stmts.size(); i++){
 		stmts.get(i).generate(mv);
 	    }
-	    //mv.visitMaxs(locals, locals);
+	    mv.visitMaxs(maxStack, locals);
 	    mv.visitEnd();
 	}
 
@@ -258,17 +271,20 @@ public abstract class GenNode {
     public static class GenNodeFieldLoad extends GenNode implements IGenNodeExpr {
 
 	public String varName, enclosingType, type;
+	boolean isStatic;
 
-	public GenNodeFieldLoad(String varName, String enclosingType, String type) {
+	public GenNodeFieldLoad(String varName, String enclosingType, String type, boolean isStatic) {
 	    this.varName = varName;
 	    this.enclosingType = enclosingType;
 	    this.type = type;
+	    addToStackRequirement(1);
+	    this.isStatic = isStatic;
 	}
 
 	@Override
 	public void generate(final Object visitor) {
 	    final MethodVisitor mv = (MethodVisitor) visitor;
-	    mv.visitFieldInsn(GETFIELD, enclosingType, varName, type);
+	    mv.visitFieldInsn(isStatic ? GETSTATIC : GETFIELD, enclosingType, varName, type);
 	}
 
     }
@@ -298,6 +314,7 @@ public abstract class GenNode {
 	public GenNodeVarStore(EnumInstructionOperand instructionType, int localID) {
 	    this.operand = instructionType;
 	    this.varID = localID;
+	    addToStackRequirement(-operand.size);
 	}
 
 	@Override
@@ -337,6 +354,7 @@ public abstract class GenNode {
 	public GenNodeVarLoad(final EnumInstructionOperand operand, final int varID) {
 	    this.operand = operand;
 	    this.varID = varID;
+	    addToStackRequirement(operand.size);
 	}
 
 	@Override
@@ -383,6 +401,7 @@ public abstract class GenNode {
 	    this.privateFunc = privateFunc;
 	    this.staticFunc = staticFunc;
 	    this.constructor = constructor;
+	    addToStackRequirement(signature.endsWith("V") ? 0 : 2);
 	}
 
 	@Override
@@ -402,6 +421,11 @@ public abstract class GenNode {
 
     public static class GenNodeNull extends GenNode implements IGenNodeExpr {
 
+	public GenNodeNull() {
+	    super();
+	    addToStackRequirement(2);
+	}
+
 	@Override
 	public void generate(final Object visitor) {
 	    ((MethodVisitor) visitor).visitInsn(ACONST_NULL);
@@ -414,6 +438,7 @@ public abstract class GenNode {
 
 	public GenNodeInt(final int val) {
 	    this.val = val;
+	    addToStackRequirement(1);
 	}
 
 	@Override
@@ -454,6 +479,7 @@ public abstract class GenNode {
 
 	public GenNodeString(final String val) {
 	    this.val = val;
+	    addToStackRequirement(1);
 	}
 
 	@Override
@@ -469,6 +495,7 @@ public abstract class GenNode {
 
 	public GenNodeDouble(final double val) {
 	    this.val = val;
+	    addToStackRequirement(2);
 	}
 
 	@Override
@@ -487,6 +514,7 @@ public abstract class GenNode {
 
 	public GenNodeFloat(final float val) {
 	    this.val = val;
+	    addToStackRequirement(1);
 	}
 
 	@Override
@@ -505,6 +533,7 @@ public abstract class GenNode {
 
 	public GenNodeLong(final long val) {
 	    this.val = val;
+	    addToStackRequirement(2);
 	}
 
 	@Override
@@ -523,6 +552,7 @@ public abstract class GenNode {
 
 	public GenNodeReturn(final EnumInstructionOperand type) {
 	    this.type = type;
+	    addToStackRequirement(type.size);
 	}
 
 	public GenNodeReturn() {
@@ -564,6 +594,11 @@ public abstract class GenNode {
 
     public static class GenNodeThis extends GenNode {
 
+	public GenNodeThis() {
+	    super();
+	    addToStackRequirement(1);
+	}
+
 	@Override
 	public void generate(final Object visitor) {
 	    // The instance is stored as the first local variable
@@ -584,6 +619,7 @@ public abstract class GenNode {
 	    this.expr = expr;
 	    this.label = label;
 	    compute();
+	    addToStackRequirement(-1);
 	}
 
 	public GenNodeConditionalJump(final int opcode, final Label label) {
@@ -725,6 +761,7 @@ public abstract class GenNode {
 	public GenNodePrimitiveCast(final EnumInstructionOperand fromType, final EnumInstructionOperand toType) {
 	    this.fromType = fromType;
 	    this.toType = toType;
+	    addToStackRequirement(toType.size - fromType.size);
 	}
 
 	@Override
@@ -773,6 +810,7 @@ public abstract class GenNode {
 	public GenNodeBinary(Operator operator, EnumInstructionOperand type) {
 	    this.operator = operator;
 	    this.type = type;
+	    addToStackRequirement(type.size);
 	}
 
 	@Override
@@ -937,8 +975,9 @@ public abstract class GenNode {
     public static class GenNodeOpcode extends GenNode {
 	public int opcode;
 
-	public GenNodeOpcode(int opecode) {
-	    this.opcode = opecode;
+	public GenNodeOpcode(int opcode) {
+	    this.opcode = opcode;
+	    if(opcode == DUP) addToStackRequirement(1);
 	}
 
 	@Override
@@ -952,6 +991,7 @@ public abstract class GenNode {
 
 	public GenNodeNew(String type) {
 	    this.type = type;
+	    addToStackRequirement(1);
 	}
 
 	@Override
@@ -966,6 +1006,7 @@ public abstract class GenNode {
 	public GenNodeTypeOpcode(int opcode, String type) {
 	    this.opcode = opcode;
 	    this.type = type;
+	    addToStackRequirement(1);
 	}
 	@Override
 	public void generate(Object visitor) {
@@ -991,6 +1032,7 @@ public abstract class GenNode {
 
 	public GenNodeArrayIndexLoad(EnumInstructionOperand type) {
 	    this.type = type;
+	    addToStackRequirement(type.size - 1);
 	}
 
 	@Override
