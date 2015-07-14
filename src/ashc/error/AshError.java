@@ -29,6 +29,8 @@ public class AshError {
 	RETURN_IN_MUT_FUNC("Cannot return in a mutator function"),
 	NOT_ALL_PATHS_HAVE_RETURN("Not all code paths have a return statement"),
 	RETURN_VOID_IN_NONVOID_FUNC("Cannot return void in a non-void function"),
+	NON_STATIC_FUNC_USED_IN_STATIC_CONTEXT("A non-static function cannot be used from a static context (%s)"),
+	NON_STATIC_VAR_USED_IN_STATIC_CONTEXT("A non-static variable/field cannot be used from a static context (%s)"),
 
 	FIELD_ALREADY_EXISTS("\'%s\' already exists"),
 

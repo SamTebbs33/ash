@@ -756,7 +756,7 @@ public abstract class Node {
 
 	    // We need to push a new scope and add the parameters as variables
 	    // so that return type inference works
-	    Scope.push(new FuncScope(returnType, isMutFunc));
+	    Scope.push(new FuncScope(returnType, isMutFunc, BitOp.and(modifiers, EnumModifier.STATIC.intVal)));
 	    for (final NodeArg arg : args.args)
 		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
 
@@ -786,7 +786,7 @@ public abstract class Node {
 		final Optional<Type> type = Semantics.getType(throwsType.id);
 		if (type.isPresent()) if (!type.get().hasSuper(new QualifiedName("").add("java").add("lang").add("Throwable"))) semanticError(this, line, column, TYPE_DOES_NOT_EXTEND, throwsType.id, "java.lang.Throwable");
 	    }
-	    Scope.push(new FuncScope(returnType, isMutFunc));
+	    Scope.push(new FuncScope(returnType, isMutFunc, BitOp.and(func.modifiers, EnumModifier.STATIC.intVal)));
 	    for (final NodeArg arg : args.args)
 		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
 	    block.analyse();
@@ -1191,7 +1191,10 @@ public abstract class Node {
 	    if (func == null) {
 		if (enclosingType == null) semanticError(this, line, column, CONSTRUCTOR_DOES_NOT_EXIST, id);
 		else semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, enclosingType);
-	    } else if (!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
+	    } else{
+		if(prefix == null) if(Scope.getFuncScope().isStatic && !func.isStatic()) semanticError(line, column, NON_STATIC_FUNC_USED_IN_STATIC_CONTEXT, func.qualifiedName.shortName);
+		if (!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
+	    }
 	}
 
 	@Override
@@ -1205,8 +1208,8 @@ public abstract class Node {
 	    if(func.isConstructor() && !isThisCall && !isSuperCall){
 		addFuncStmt(new GenNodeNew(func.enclosingType.qualifiedName.toBytecodeName()));
 		addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
-	    }else if(prefix == null) addFuncStmt(new GenNodeThis());
-	    else prefix.generate();
+	    }else if(prefix == null && !func.isStatic()) addFuncStmt(new GenNodeThis());
+	    else if(prefix != null) prefix.generate();
 	    for(IExpression expr : args.exprs) expr.generate();
 	    addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), func.qualifiedName.shortName, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
 	}
@@ -1287,6 +1290,7 @@ public abstract class Node {
 	    }
 	    if (var == null) semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
 	    else if (!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
+	    else if(!var.isLocal && Scope.getFuncScope().isStatic && !var.isStatic() && prefix == null) semanticError(this, line, column, NON_STATIC_VAR_USED_IN_STATIC_CONTEXT, var.qualifiedName.shortName);
 	}
 
 	@Override
@@ -1299,7 +1303,7 @@ public abstract class Node {
 	    }else{
 		if(var.isLocal) addFuncStmt(new GenNodeVarLoad(var.type.getInstructionType(), var.localID));
 		else{
-		    addFuncStmt(new GenNodeThis());
+		    if(!var.isStatic()) addFuncStmt(new GenNodeThis());
 		    if(!var.isGetProperty) addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName(), BitOp.and(var.modifiers, EnumModifier.STATIC.intVal)));
 		    else generateGetFuncCall(var);
 		}

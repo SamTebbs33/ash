@@ -41,6 +41,10 @@ public class Member {
 	if (Semantics.currentType().hasSuper(enclosingType.qualifiedName)) return true;
 	return false;
     }
+    
+    public boolean isStatic() {
+	return BitOp.and(modifiers, EnumModifier.STATIC.intVal);
+    }
 
     public static enum EnumType {
 	CLASS, ENUM, INTERFACE

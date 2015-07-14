@@ -3,6 +3,7 @@ package ashc.semantics;
 import java.util.*;
 
 import ashc.semantics.Member.Field;
+import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
 import ashc.semantics.Semantics.TypeI;
@@ -19,13 +20,14 @@ public class Scope {
     public static class FuncScope extends Scope {
 
 	public TypeI returnType;
-	public boolean isMutFunc;
+	public boolean isMutFunc, isStatic;
 	public int locals = 0;
 
-	public FuncScope(final TypeI typeI, final boolean isMutFunc) {
+	public FuncScope(final TypeI typeI, final boolean isMutFunc, boolean isStatic) {
 	    super();
 	    returnType = typeI;
 	    this.isMutFunc = isMutFunc;
+	    this.isStatic = isStatic;
 	}
 
     }
@@ -35,7 +37,7 @@ public class Scope {
 	public Field field;
 
 	public PropertyScope(final Field field) {
-	    super(field.type, false);
+	    super(field.type, false, false);
 	    this.field = field;
 	}
     }
