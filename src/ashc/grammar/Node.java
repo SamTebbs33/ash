@@ -851,13 +851,14 @@ public abstract class Node {
 	public String keyword;
 	public String id;
 	public NodeFuncBlock getBlock, setBlock;
-	public Variable var;
+	public Field var;
 
 	public NodeVarDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id) {
 	    super(line, column);
 	    this.mods = mods;
 	    this.keyword = keyword;
 	    this.id = id;
+	    
 	}
 
 	protected void analyseProperty(final TypeI type) {
@@ -885,12 +886,13 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    if (getBlock != null) {
-		final GenNodeFunction getFunc = new GenNodeFunction("$get" + id, Opcodes.ACC_PUBLIC, var.type.toBytecodeName());
+		System.out.println("property gen mods: " + var.modifiers);
+		final GenNodeFunction getFunc = new GenNodeFunction("$get" + id, var.modifiers, var.type.toBytecodeName());
 		GenNode.addGenNodeFunction(getFunc);
 		getBlock.generate();
 	    }
 	    if (setBlock != null) {
-		final GenNodeFunction setFunc = new GenNodeFunction("$set" + id, Opcodes.ACC_PUBLIC, var.type.toBytecodeName());
+		final GenNodeFunction setFunc = new GenNodeFunction("$set" + id, var.modifiers, var.type.toBytecodeName());
 		setFunc.params.add(var.type);
 		GenNode.addGenNodeFunction(setFunc);
 		setBlock.generate();
@@ -915,10 +917,11 @@ public abstract class Node {
 	    final QualifiedName name = Semantics.typeStack.peek().qualifiedName.copy();
 	    name.add(id);
 	    int modifiers = 0;
-	    for (final NodeModifier mod : mods)
+	    for (final NodeModifier mod : mods){
 		modifiers |= mod.asInt();
-	    final Field field = new Field(name, modifiers, new TypeI(type), setBlock != null, getBlock != null);
-	    if (!Semantics.fieldExists(field)) Semantics.addField(field);
+	    }
+	    var = new Field(name, modifiers, new TypeI(type), setBlock != null, getBlock != null);
+	    if (!Semantics.fieldExists(var)) Semantics.addField(var);
 	    else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
 	}
 
@@ -937,7 +940,9 @@ public abstract class Node {
 		if (exprType != null) if (!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType, typeI.toString());
 	    }
 	    var = new Variable(id, typeI);
-	    Semantics.addVar(var);
+	    for (final NodeModifier mod : mods)
+		var.modifiers |= mod.asInt();
+	    Semantics.addVar((Variable) var);
 	    analyseProperty(typeI);
 	}
 
@@ -982,7 +987,7 @@ public abstract class Node {
 		if (!((Node) expr).errored) {
 		    final TypeI type = Semantics.filterNullType(expr.getExprType());
 		    var = new Variable(id, type);
-		    Semantics.addVar(var);
+		    Semantics.addVar((Variable) var);
 		    analyseProperty(type);
 		}
 	}
@@ -1332,7 +1337,7 @@ public abstract class Node {
 	    String enclosingType = var.enclosingType.qualifiedName.toBytecodeName();
 	    String getFuncName = "$get" + var.qualifiedName.shortName;
 	    String signature = "()" + var.type.toBytecodeName();
-	    GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, getFuncName, signature, false, false, false, false));
+	    GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, getFuncName, signature, false, var.isPrivate(), var.isStatic(), false));
 	}
 
     }

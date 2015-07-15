@@ -46,6 +46,10 @@ public class Member {
     public boolean isStatic() {
 	return BitOp.and(modifiers, EnumModifier.STATIC.intVal);
     }
+    
+    public boolean isPrivate() {
+	return BitOp.and(modifiers, EnumModifier.PRIVATE.intVal);
+    }
 
     public static enum EnumType {
 	CLASS, ENUM, INTERFACE
@@ -241,11 +245,8 @@ public class Member {
 
     public static class Variable extends Field {
 
-	public String id;
-
 	public Variable(final String id, final TypeI type) {
 	    super(new QualifiedName(id), 0, type, false, false);
-	    this.id = id;
 	    if(Scope.inFuncScope()){
 		isLocal = true;
 		this.localID = ++Scope.getFuncScope().locals;
@@ -262,11 +263,13 @@ public class Member {
     public static class Field extends Member {
 
 	public TypeI type;
+	public String id;
 	public int localID;
 	public boolean isSetProperty, isGetProperty;
 
 	public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type, boolean isSetProperty, boolean isGetProperty) {
 	    super(qualifiedName, modifiers);
+	    this.id = qualifiedName.shortName;
 	    this.type = type;
 	    enclosingType = Semantics.currentType();
 	    this.isGetProperty = isGetProperty;
