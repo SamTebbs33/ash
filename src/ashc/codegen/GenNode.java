@@ -7,6 +7,7 @@ import java.util.*;
 
 import org.objectweb.asm.*;
 
+import ashc.codegen.GenNode.GenNodeFunction.LocalVariable;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeBinary;
 import ashc.grammar.Node.NodeNull;
@@ -153,18 +154,40 @@ public abstract class GenNode {
     }
 
     public static class GenNodeFunction extends GenNode {
+	
+	public static class LocalVariable {
+	    public String name, type;
+	    public int id;
+	    public boolean endLabelGenerated = true;
+	    public GenNodeLabel end = new GenNodeLabel(new Label());
+	    
+	    public LocalVariable(String name, String type, int id) {
+		this.name = name;
+		this.type = type;
+		this.id = id;
+	    }
+	    
+	    public void updateUse() {
+		/*endLabelGenerated = true;
+		getCurrentFunction().stmts.remove(end);
+		addFuncStmt(end);*/
+	    }
+	
+	}
 
-	public String name;
+	public String name, enclosingTypeName;
 	public int modifiers;
 	public String type;
 	public LinkedList<TypeI> params = new LinkedList<TypeI>();
 	public LinkedList<GenNode> stmts = new LinkedList<GenNode>();
-	public int locals, stack, maxStack;
+	public int stack, maxStack;
+	private HashMap<Integer, LocalVariable> locals = new HashMap<Integer, LocalVariable>();
 
 	public GenNodeFunction(final String name, final int modifiers, final String type) {
 	    this.name = name;
 	    this.modifiers = modifiers;
 	    this.type = type;
+	    this.enclosingTypeName = typeStack.peek().name;
 	}
 
 	@Override
@@ -179,8 +202,20 @@ public abstract class GenNode {
 	    for (int i = 0; i < stmts.size(); i++){
 		stmts.get(i).generate(mv);
 	    }
-	    mv.visitMaxs(maxStack, locals);
+	    for(LocalVariable local : locals.values()){
+		System.out.println("visitLabel: " + local.name);
+		mv.visitLabel(local.end.label);
+	    }
+	    mv.visitMaxs(maxStack, locals.size());
 	    mv.visitEnd();
+	}
+
+	public void addLocal(LocalVariable local) {
+	    locals.put(local.id, local);
+	}
+	
+	public LocalVariable getLocal(int id){
+	    return locals.get(id);
 	}
 
     }
@@ -222,10 +257,21 @@ public abstract class GenNode {
     }
     
     public static class GenNodeVar extends GenNode {
+	
+	public LocalVariable local;
+	public Label start = new Label();
+
+	public GenNodeVar(String name, String type, int id) {
+	    System.out.println("new var: " + id);
+	    local = new GenNodeFunction.LocalVariable(name, type, id);
+	    getCurrentFunction().addLocal(local);
+	}
 
 	@Override
 	public void generate(Object visitor) {
-	    //currentFunction.locals++;
+	    MethodVisitor mv = ((MethodVisitor)visitor);
+	    mv.visitLabel(start);
+	    mv.visitLocalVariable(local.name, local.type, null, start, local.end.label, local.id);
 	}
 	
     }
@@ -315,6 +361,7 @@ public abstract class GenNode {
 	    this.operand = instructionType;
 	    this.varID = localID;
 	    addToStackRequirement(-operand.size);
+	    getCurrentFunction().getLocal(localID).updateUse();
 	}
 
 	@Override
@@ -355,6 +402,7 @@ public abstract class GenNode {
 	    this.operand = operand;
 	    this.varID = varID;
 	    addToStackRequirement(operand.size);
+	    getCurrentFunction().getLocal(varID).updateUse();
 	}
 
 	@Override
@@ -645,8 +693,8 @@ public abstract class GenNode {
 			case BYTE:
 			case SHORT:
 			case BOOL:
-			     node.expr1.generate();
 			     node.expr2.generate();
+			     node.expr1.generate();
 
 			    // Integer type operands are handled by one single
 			    // opcode

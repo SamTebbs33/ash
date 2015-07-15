@@ -836,6 +836,10 @@ public abstract class Node {
 	    //TODO: Generate constructor calls if this function is a constructor
 	    genNodeFunc.params = func.parameters;
 	    GenNode.addGenNodeFunction(genNodeFunc);
+	    int argID = 0;
+	    for(TypeI arg : func.parameters){
+		GenNode.addFuncStmt(new GenNodeVar("arg"+argID, arg.toBytecodeName(), argID + (func.isStatic() ? 0 : 1)));
+	    }
 	    block.generate();
 	    GenNode.exitGenNodeFunction();
 	}
@@ -942,7 +946,7 @@ public abstract class Node {
 	    if(!var.isLocal){
 		GenNode.addGenNodeField(new GenNodeField(var));
 	    }
-	    else GenNode.getCurrentFunction().locals++;
+	    else GenNode.addFuncStmt(new GenNodeVar(var.id, var.type.toBytecodeName(), var.localID));
 	    // Variable initialisation is handled by the class block
 	    super.generate();
 	}
@@ -989,7 +993,7 @@ public abstract class Node {
 		GenNode.addGenNodeField(new GenNodeField(var));
 		// Field initialisation is handled by the class block, so there's no need to do it here
 	    }else{
-		GenNode.getCurrentFunction().locals++;
+		GenNode.addFuncStmt(new GenNodeVar(var.id, var.type.toBytecodeName(), var.localID));
 		expr.generate();
 		addFuncStmt(new GenNodeVarStore(var.type.getInstructionType(), var.localID));
 	    }

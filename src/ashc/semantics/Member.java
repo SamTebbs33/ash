@@ -246,6 +246,7 @@ public class Member {
 	    super(new QualifiedName(id), 0, type, false, false);
 	    this.id = id;
 	    this.localID = (Scope.inFuncScope() ? Scope.getFuncScope().locals++ : 0) + 1; // Local variables start with 1 since 0 is "this"
+	    if(Scope.getFuncScope().isStatic) this.localID--; // Static funcs don't have a "this" instance, so decrease the varID by one
 	    isLocal = Scope.inFuncScope();
 	}
 
