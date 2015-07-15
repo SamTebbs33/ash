@@ -7,3 +7,7 @@
 operator overloads:
   path: OperatorOverloads
   pass: yes
+
+properties:
+  path: Properties
+  pass: yes
