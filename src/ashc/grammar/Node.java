@@ -1191,6 +1191,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    args.analyse();
+	    prefix.analyse();
 	    // If it's a "this" call, change the id to the name of the current type
 	    // If it's a "super" call, change the id to the name of the super type
 	    if(this.isThisCall) this.id = Semantics.currentType().qualifiedName.shortName;
@@ -1248,44 +1249,17 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    TypeI result;
-	    if (prefix == null) {
-		final Optional<Type> type = Semantics.getType(id);
-		// Check if it is a type name rather than a variable
-		if (type.isPresent()) result = new TypeI(type.get().qualifiedName.shortName, 0, false);
-		else {
-		    var = Semantics.getVar(id);
-		    if (var == null) {
-			semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
-			return null;
-		    }
-		    if (!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
-		    result = var.type;
-		}
-	    } else {
-		// "new" is used to refer to the new value in a property's setter block
-		if(id.equals("new") || id.equals("self")){
-		    if(Scope.inPropertyScope()){
-			return Scope.getPropertyScope().returnType;
-		    }
-		}
-		prefixType = prefix.getExprType();
-		final Optional<Type> typeOpt = Semantics.getType(prefixType.shortName);
-		final Type enclosingType = typeOpt.isPresent() ? typeOpt.get() : null;
-		var = Semantics.getVar(id, prefixType);
-		if (var == null) {
-		    semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
-		    return null;
-		}
-		if (!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
-		int i = 0;
-		if(enclosingType != null){
-		    for (final String generic : enclosingType.generics)
-			if (generic.equals(var.type.shortName)) return prefixType.genericTypes.get(i);
+	    if (isTypeName) return new TypeI(id, 0, false);
+	    TypeI result = var.type;
+	    int i = 0;
+		if(var.enclosingType != null){
+		    for (final String generic : var.enclosingType.generics)
+			if (generic.equals(var.type.shortName)){
+			    result = prefixType.genericTypes.get(i);
+			    break;
+			}
 			else i++;
 		}
-		result = var.type;
-	    }
 	    if (unwrapped) return Semantics.checkUnwrappedOptional(result, this, this);
 	    return result;
 	}
@@ -1293,8 +1267,8 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    if(id.equals("self") && Scope.inPropertyScope()){
-		    PropertyScope scope = Scope.getPropertyScope();
-		    var = scope.field;
+		PropertyScope scope = Scope.getPropertyScope();
+		var = scope.field;
 	    }else if(id.equals("new") && Scope.inPropertyScope()){
 		var = Scope.getPropertyScope().vars.get(0);
 	    }else if (prefix == null){
@@ -1305,10 +1279,10 @@ public abstract class Node {
 		    return;
 		}
 		var = Semantics.getVar(id);
-	    }
-	    else {
-		final TypeI type = prefix.getExprType();
-		var = Semantics.getVar(id, type);
+	    }else {
+		prefix.analyse();
+		prefixType = prefix.getExprType();
+		var = Semantics.getVar(id, prefixType);
 	    }
 	    if (var == null) semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
 	    else if (!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
@@ -1334,7 +1308,6 @@ public abstract class Node {
 		else generateGetFuncCall(var);
 	    }else{
 		if(var.isLocal){
-		    System.out.println("nodeVar: #" + var.localID);
 		    addFuncStmt(new GenNodeVarLoad(var.type.getInstructionType(), var.localID));
 		}
 		else{
