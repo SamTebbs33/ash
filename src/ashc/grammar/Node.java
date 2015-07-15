@@ -2109,7 +2109,7 @@ public abstract class Node {
 	    GenNode.addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 	    exprs.generate();
 	    StringBuilder signature = new StringBuilder("(");
-	    for(TypeI t : type.tupleTypes) signature.append(t.toBytecodeName());
+	    for(int i = 0; i < type.tupleTypes.size(); i++) signature.append("Ljava/lang/Object;");
 	    signature.append(")V");
 	    GenNode.addFuncStmt(new GenNodeFuncCall("Tuple"+exprs.exprs.size(), "<init>", signature.toString(), false, false, false, true));
 	}

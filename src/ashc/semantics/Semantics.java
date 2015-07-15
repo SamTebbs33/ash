@@ -246,7 +246,7 @@ public class Semantics {
 		if (!GenNode.generatedTupleClasses.contains(tupleClassName)) {
 		    final GenNodeType tupleClass = new GenNodeType(tupleClassName, tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC);
 		    GenNode.addGenNodeType(tupleClass);
-		    final GenNodeFunction tupleConstructor = new GenNodeFunction(tupleClassName + ".<init>", Opcodes.ACC_PUBLIC, "V");
+		    final GenNodeFunction tupleConstructor = new GenNodeFunction("<init>", Opcodes.ACC_PUBLIC, "V");
 		    GenNode.addGenNodeFunction(tupleConstructor);
 		    int tupleTypeNum = 1;
 		    char tupleFieldName = 'a', tupleFieldType = 'A';
