@@ -11,6 +11,7 @@ import ashc.codegen.*;
 import ashc.codegen.GenNode.EnumInstructionOperand;
 import ashc.codegen.GenNode.GenNodeField;
 import ashc.codegen.GenNode.GenNodeFieldStore;
+import ashc.codegen.GenNode.GenNodeFuncCall;
 import ashc.codegen.GenNode.GenNodeFunction;
 import ashc.codegen.GenNode.GenNodeReturn;
 import ashc.codegen.GenNode.GenNodeThis;
@@ -250,13 +251,15 @@ public class Semantics {
 		    GenNode.addGenNodeFunction(tupleConstructor);
 		    int tupleTypeNum = 1;
 		    char tupleFieldName = 'a', tupleFieldType = 'A';
+		    tupleConstructor.stmts.add(new GenNodeThis());
+		    tupleConstructor.stmts.add(new GenNodeFuncCall("java/lang/Object", "<init>", "()V", false, false, false, true));
 		    for (final TypeI tupleType : tupleTypes) {
 			String tupleFieldNameStr = String.valueOf(tupleFieldName), tupleFieldTypeStr = String.valueOf(tupleFieldType);
 			tupleClass.generics.add(tupleFieldTypeStr);
 			tupleClass.addField(new GenNodeField(Opcodes.ACC_PUBLIC, tupleFieldNameStr, "Ljava/lang/Object;", tupleFieldTypeStr));
 			tupleConstructor.params.add(TypeI.getObjectType());
-			tupleConstructor.stmts.add(new GenNodeVar(tupleFieldName+"Arg", "Ljava/lang/Object;", tupleTypeNum));
 			tupleConstructor.stmts.add(new GenNodeThis());
+			tupleConstructor.stmts.add(new GenNodeVar(tupleFieldName+"Arg", "Ljava/lang/Object;", tupleTypeNum));
 			tupleConstructor.stmts.add(new GenNodeVarLoad(EnumInstructionOperand.REFERENCE, tupleTypeNum));
 			tupleConstructor.stmts.add(new GenNodeFieldStore(tupleFieldNameStr, tupleClassName, "Ljava/lang/Object;"));
 			tupleTypeNum++;
