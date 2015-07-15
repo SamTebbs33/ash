@@ -111,7 +111,7 @@ public abstract class GenNode {
 
 	@Override
 	public void generate(final Object visitor) {
-	    final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+	    final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 	    StringBuffer genericsSignature = null;
 	    if(generics.size() > 0){
 		genericsSignature = new StringBuffer();
@@ -119,7 +119,6 @@ public abstract class GenNode {
 		for(String g : generics) genericsSignature.append(g+":"+"Ljava/lang/Object;");
 		genericsSignature.append(">Ljava/lang/Object;");
 	    }
-	    System.out.println("Super: " + superclass);
 	    cw.visit(52, modifiers | Opcodes.ACC_SUPER, name, genericsSignature != null ? genericsSignature.toString() : null, superclass, interfaces);
 	    final String[] folders = name.split("\\.");
 	    int i = 0;
@@ -141,7 +140,6 @@ public abstract class GenNode {
 	    final File classFile = new File(dirSb.toString() + shortName + ".class");
 	    if (classFile.exists()) classFile.delete();
 	    try {
-		System.out.println("Generating: " + classFile.getAbsolutePath());
 		classFile.createNewFile();
 		final FileOutputStream fos = new FileOutputStream(classFile);
 		fos.write(cw.toByteArray());
@@ -165,12 +163,13 @@ public abstract class GenNode {
 		this.name = name;
 		this.type = type;
 		this.id = id;
+		addFuncStmt(end);
 	    }
 	    
 	    public void updateUse() {
-		/*endLabelGenerated = true;
-		getCurrentFunction().stmts.remove(end);
-		addFuncStmt(end);*/
+		System.out.println("Updated use of local: " + name);
+		endLabelGenerated = true;
+		addFuncStmt(end);
 	    }
 	
 	}
@@ -203,9 +202,12 @@ public abstract class GenNode {
 		stmts.get(i).generate(mv);
 	    }
 	    for(LocalVariable local : locals.values()){
-		System.out.println("visitLabel: " + local.name);
-		mv.visitLabel(local.end.label);
+		if(!local.endLabelGenerated){
+		    System.out.println("Generating end label for local: " + local.name);
+		    mv.visitLabel(local.end.label);
+		}
 	    }
+	    System.out.printf("Generated function: stack = %d, locals = %d%n", maxStack, locals.size());
 	    mv.visitMaxs(maxStack, locals.size());
 	    mv.visitEnd();
 	}
@@ -262,7 +264,6 @@ public abstract class GenNode {
 	public Label start = new Label();
 
 	public GenNodeVar(String name, String type, int id) {
-	    System.out.println("new var: " + id);
 	    local = new GenNodeFunction.LocalVariable(name, type, id);
 	    getCurrentFunction().addLocal(local);
 	}
@@ -274,44 +275,6 @@ public abstract class GenNode {
 	    mv.visitLocalVariable(local.name, local.type, null, start, local.end.label, local.id);
 	}
 	
-    }
-
-    public static class GenNodeFieldAssign extends GenNode implements IGenNodeStmt {
-
-	public String varName;
-	public String enclosingType;
-	public String type;
-	public IGenNodeExpr expr;
-
-	public GenNodeFieldAssign(final String varName, final String enclosingType, final String type, final IGenNodeExpr expr) {
-	    this.varName = varName;
-	    this.enclosingType = enclosingType;
-	    this.type = type;
-	    this.expr = expr;
-	}
-
-	@Override
-	public void generate(final Object visitor) {
-	    final MethodVisitor mv = (MethodVisitor) visitor;
-	    ((GenNode) expr).generate(mv);
-	    mv.visitFieldInsn(PUTFIELD, enclosingType, varName, type);
-	}
-
-	@Override
-	public String toString() {
-	    final StringBuilder builder = new StringBuilder();
-	    builder.append("GenNodeFieldAssign [varName=");
-	    builder.append(varName);
-	    builder.append(", enclosingType=");
-	    builder.append(enclosingType);
-	    builder.append(", type=");
-	    builder.append(type);
-	    builder.append(", expr=");
-	    builder.append(expr);
-	    builder.append("]");
-	    return builder.toString();
-	}
-
     }
 
     public static class GenNodeFieldLoad extends GenNode implements IGenNodeExpr {

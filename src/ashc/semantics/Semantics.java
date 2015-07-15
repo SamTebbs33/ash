@@ -10,10 +10,12 @@ import org.objectweb.asm.*;
 import ashc.codegen.*;
 import ashc.codegen.GenNode.EnumInstructionOperand;
 import ashc.codegen.GenNode.GenNodeField;
-import ashc.codegen.GenNode.GenNodeFieldAssign;
+import ashc.codegen.GenNode.GenNodeFieldStore;
 import ashc.codegen.GenNode.GenNodeFunction;
 import ashc.codegen.GenNode.GenNodeReturn;
+import ashc.codegen.GenNode.GenNodeThis;
 import ashc.codegen.GenNode.GenNodeType;
+import ashc.codegen.GenNode.GenNodeVar;
 import ashc.codegen.GenNode.GenNodeVarLoad;
 import ashc.grammar.*;
 import ashc.grammar.Node.IExpression;
@@ -33,7 +35,6 @@ import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
-import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash
@@ -254,7 +255,10 @@ public class Semantics {
 			tupleClass.generics.add(tupleFieldTypeStr);
 			tupleClass.addField(new GenNodeField(Opcodes.ACC_PUBLIC, tupleFieldNameStr, "Ljava/lang/Object;", tupleFieldTypeStr));
 			tupleConstructor.params.add(TypeI.getObjectType());
-			tupleConstructor.stmts.add(new GenNodeFieldAssign(tupleFieldNameStr, tupleClassName, "Ljava/lang/Object;", new GenNodeVarLoad(tupleType.getInstructionType(), tupleTypeNum)));
+			tupleConstructor.stmts.add(new GenNodeVar(tupleFieldName+"Arg", "Ljava/lang/Object;", tupleTypeNum));
+			tupleConstructor.stmts.add(new GenNodeThis());
+			tupleConstructor.stmts.add(new GenNodeVarLoad(EnumInstructionOperand.REFERENCE, tupleTypeNum));
+			tupleConstructor.stmts.add(new GenNodeFieldStore(tupleFieldNameStr, tupleClassName, "Ljava/lang/Object;"));
 			tupleTypeNum++;
 			tupleFieldName++;
 			tupleFieldType++;
@@ -264,7 +268,7 @@ public class Semantics {
 		    GenNode.exitGenNodeType();
 		    GenNode.generatedTupleClasses.add(tupleClassName);
 		}
-		name = new StringBuffer("L" + tupleClassName + "; ");
+		name = new StringBuffer("L" + tupleClassName + ";");
 	    } else if (isVoid()) name.append("V");
 	    else if (isPrimitive()) name.append(EnumPrimitive.getPrimitive(shortName).bytecodeName);
 	    else name.append("L" + Semantics.getType(shortName).get().qualifiedName.toString().replace('.', '/') + ";");

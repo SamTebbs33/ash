@@ -6,6 +6,7 @@ import java.util.*;
 import ashc.grammar.*;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeExprs;
+import ashc.semantics.Scope.FuncScope;
 import ashc.semantics.Semantics.TypeI;
 import ashc.util.*;
 
@@ -245,9 +246,11 @@ public class Member {
 	public Variable(final String id, final TypeI type) {
 	    super(new QualifiedName(id), 0, type, false, false);
 	    this.id = id;
-	    this.localID = (Scope.inFuncScope() ? Scope.getFuncScope().locals++ : 0) + 1; // Local variables start with 1 since 0 is "this"
-	    if(Scope.getFuncScope().isStatic) this.localID--; // Static funcs don't have a "this" instance, so decrease the varID by one
-	    isLocal = Scope.inFuncScope();
+	    if(Scope.inFuncScope()){
+		isLocal = true;
+		this.localID = ++Scope.getFuncScope().locals;
+		if(Scope.getFuncScope().isStatic) this.localID--; // Static funcs don't have a "this" instance, so decrease the varID by one
+	    }else isLocal = false;
 	}
 
 	@Override
