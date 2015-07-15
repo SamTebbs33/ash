@@ -1305,9 +1305,12 @@ public abstract class Node {
 	    if(prefix != null){
 		prefix.generate();
 		if(!var.isGetProperty){
-		    String enclosingType = var.enclosingType.qualifiedName.toBytecodeName();
-		    if(prefixType.isTuple()) enclosingType = "Tuple" + prefixType.tupleTypes.size();
-		    addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, enclosingType, var.type.toBytecodeName(), BitOp.and(var.modifiers, EnumModifier.STATIC.intVal)));
+		    String enclosingType = var.enclosingType.qualifiedName.toBytecodeName(), varType = var.type.toBytecodeName();
+		    if(prefixType.isTuple()){
+			enclosingType = "Tuple" + prefixType.tupleTypes.size();
+			varType = "Ljava/lang/Object;";
+		    }
+		    addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, enclosingType, varType, BitOp.and(var.modifiers, EnumModifier.STATIC.intVal)));
 		}
 		else generateGetFuncCall(var);
 	    }else{
