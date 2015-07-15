@@ -6,6 +6,7 @@ import static ashc.error.AshError.EnumError.*;
 import java.util.*;
 
 import org.objectweb.asm.*;
+import org.objectweb.asm.signature.*;
 
 import ashc.codegen.*;
 import ashc.codegen.GenNode.EnumInstructionOperand;
@@ -259,7 +260,7 @@ public class Semantics {
 			tupleClass.addField(new GenNodeField(Opcodes.ACC_PUBLIC, tupleFieldNameStr, "Ljava/lang/Object;", tupleFieldTypeStr));
 			tupleConstructor.params.add(TypeI.getObjectType());
 			tupleConstructor.stmts.add(new GenNodeThis());
-			tupleConstructor.stmts.add(new GenNodeVar(tupleFieldName+"Arg", "Ljava/lang/Object;", tupleTypeNum));
+			tupleConstructor.stmts.add(new GenNodeVar(tupleFieldName+"Arg", "Ljava/lang/Object;", tupleTypeNum, "T" + tupleType.toBytecodeName() + ";"));
 			tupleConstructor.stmts.add(new GenNodeVarLoad(EnumInstructionOperand.REFERENCE, tupleTypeNum));
 			tupleConstructor.stmts.add(new GenNodeFieldStore(tupleFieldNameStr, tupleClassName, "Ljava/lang/Object;"));
 			tupleTypeNum++;

@@ -262,9 +262,11 @@ public abstract class GenNode {
 	
 	public LocalVariable local;
 	public Label start = new Label();
+	public String generics;
 
-	public GenNodeVar(String name, String type, int id) {
+	public GenNodeVar(String name, String type, int id, String generics) {
 	    local = new GenNodeFunction.LocalVariable(name, type, id);
+	    this.generics = generics;
 	    getCurrentFunction().addLocal(local);
 	}
 
@@ -272,7 +274,7 @@ public abstract class GenNode {
 	public void generate(Object visitor) {
 	    MethodVisitor mv = ((MethodVisitor)visitor);
 	    mv.visitLabel(start);
-	    mv.visitLocalVariable(local.name, local.type, null, start, local.end.label, local.id);
+	    mv.visitLocalVariable(local.name, local.type, generics, start, local.end.label, local.id);
 	}
 	
     }

@@ -838,7 +838,7 @@ public abstract class Node {
 	    GenNode.addGenNodeFunction(genNodeFunc);
 	    int argID = 0;
 	    for(TypeI arg : func.parameters){
-		GenNode.addFuncStmt(new GenNodeVar("arg"+argID, arg.toBytecodeName(), argID + (func.isStatic() ? 0 : 1)));
+		GenNode.addFuncStmt(new GenNodeVar("arg"+argID, arg.toBytecodeName(), argID + (func.isStatic() ? 0 : 1), null)); //TODO: generics
 	    }
 	    block.generate();
 	    GenNode.exitGenNodeFunction();
@@ -946,7 +946,7 @@ public abstract class Node {
 	    if(!var.isLocal){
 		GenNode.addGenNodeField(new GenNodeField(var));
 	    }
-	    else GenNode.addFuncStmt(new GenNodeVar(var.id, var.type.toBytecodeName(), var.localID));
+	    else GenNode.addFuncStmt(new GenNodeVar(var.id, var.type.toBytecodeName(), var.localID, null)); //TODO: generics
 	    // Variable initialisation is handled by the class block
 	    super.generate();
 	}
@@ -994,7 +994,7 @@ public abstract class Node {
 		// Field initialisation is handled by the class block, so there's no need to do it here
 	    }else{
 		String type = var.type.toBytecodeName();
-		GenNode.addFuncStmt(new GenNodeVar(var.id, type, var.localID));
+		GenNode.addFuncStmt(new GenNodeVar(var.id, type, var.localID, null)); //TODO: generics
 		expr.generate();
 		addFuncStmt(new GenNodeVarStore(var.type.getInstructionType(), var.localID));
 	    }
@@ -1311,6 +1311,9 @@ public abstract class Node {
 			varType = "Ljava/lang/Object;";
 		    }
 		    addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, enclosingType, varType, BitOp.and(var.modifiers, EnumModifier.STATIC.intVal)));
+		    if(prefixType.isTuple()){
+			addFuncStmt(new GenNodeTypeOpcode(Opcodes.CHECKCAST, var.type.toBytecodeName()));
+		    }
 		}
 		else generateGetFuncCall(var);
 	    }else{
