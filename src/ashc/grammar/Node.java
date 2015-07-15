@@ -871,6 +871,9 @@ public abstract class Node {
 	    }
 	    if (setBlock != null) {
 		Scope.push(new PropertyScope(var));
+		Variable newVar = new Variable("new", var.type);
+		newVar.localID = var.isStatic() ? 0 : 1;
+		Scope.getScope().addVar(newVar);
 		setBlock.analyse();
 		Scope.pop();
 	    }
@@ -886,16 +889,18 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    if (getBlock != null) {
-		System.out.println("property gen mods: " + var.modifiers);
 		final GenNodeFunction getFunc = new GenNodeFunction("$get" + id, var.modifiers, var.type.toBytecodeName());
 		GenNode.addGenNodeFunction(getFunc);
 		getBlock.generate();
+		GenNode.exitGenNodeFunction();
 	    }
 	    if (setBlock != null) {
 		final GenNodeFunction setFunc = new GenNodeFunction("$set" + id, var.modifiers, var.type.toBytecodeName());
 		setFunc.params.add(var.type);
 		GenNode.addGenNodeFunction(setFunc);
+		addFuncStmt(new GenNodeVar("new", var.type.toBytecodeName(), var.isStatic() ? 0 : 1, null));
 		setBlock.generate();
+		GenNode.exitGenNodeFunction();
 	    }
 	}
 
@@ -1258,6 +1263,12 @@ public abstract class Node {
 		    result = var.type;
 		}
 	    } else {
+		// "new" is used to refer to the new value in a property's setter block
+		if(id.equals("new") || id.equals("self")){
+		    if(Scope.inPropertyScope()){
+			return Scope.getPropertyScope().returnType;
+		    }
+		}
 		prefixType = prefix.getExprType();
 		final Optional<Type> typeOpt = Semantics.getType(prefixType.shortName);
 		final Type enclosingType = typeOpt.isPresent() ? typeOpt.get() : null;
@@ -1281,11 +1292,11 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    if(id.equals("self")){
-		if(Scope.inPropertyScope()){
+	    if(id.equals("self") && Scope.inPropertyScope()){
 		    PropertyScope scope = Scope.getPropertyScope();
 		    var = scope.field;
-		}else semanticError(this, line, column, CANNOT_USE_SELF);
+	    }else if(id.equals("new") && Scope.inPropertyScope()){
+		var = Scope.getPropertyScope().vars.get(0);
 	    }else if (prefix == null){
 		// Check if this is a type name rather than a variable
 		Optional<Type> typeOpt = Semantics.getType(id);
@@ -1323,6 +1334,7 @@ public abstract class Node {
 		else generateGetFuncCall(var);
 	    }else{
 		if(var.isLocal){
+		    System.out.println("nodeVar: #" + var.localID);
 		    addFuncStmt(new GenNodeVarLoad(var.type.getInstructionType(), var.localID));
 		}
 		else{

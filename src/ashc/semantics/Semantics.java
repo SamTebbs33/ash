@@ -85,7 +85,7 @@ public class Semantics {
 	}
 
 	public TypeI(final EnumPrimitive primitive) {
-	    this(primitive, 0);
+	    this(primitive.ashName, 0, false);
 	}
 
 	public TypeI(final EnumPrimitive primitive, final int arrDims) {
@@ -102,6 +102,7 @@ public class Semantics {
 
 	public static TypeI fromClass(final Class cls) {
 	    String clsName = cls.getName();
+	    if(EnumPrimitive.isJavaPrimitive(clsName)) return new TypeI(EnumPrimitive.getFromJavaPrimitive(clsName));
 	    int arrDims = clsName.length();
 	    clsName = clsName.replace("[", "");
 	    arrDims = arrDims - clsName.length();
@@ -292,9 +293,9 @@ public class Semantics {
 		case LONG:
 		    return new NodeLong(0, 0, 0);
 		case DOUBLE:
-		    return new NodeDouble(0, 0, 0.0);
+		    return new NodeDouble(0, 0, 0d);
 		case FLOAT:
-		    return new NodeFloat(0, 0, 0.0f);
+		    return new NodeFloat(0, 0, 0f);
 		default:
 		    return new NodeInteger(0, 0, 0);
 	    }

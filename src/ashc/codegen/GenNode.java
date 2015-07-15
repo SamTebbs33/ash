@@ -111,7 +111,7 @@ public abstract class GenNode {
 
 	@Override
 	public void generate(final Object visitor) {
-	    final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+	    final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 	    StringBuffer genericsSignature = null;
 	    if(generics.size() > 0){
 		genericsSignature = new StringBuffer();
@@ -167,7 +167,6 @@ public abstract class GenNode {
 	    }
 	    
 	    public void updateUse() {
-		System.out.println("Updated use of local: " + name);
 		endLabelGenerated = true;
 		addFuncStmt(end);
 	    }
@@ -203,11 +202,9 @@ public abstract class GenNode {
 	    }
 	    for(LocalVariable local : locals.values()){
 		if(!local.endLabelGenerated){
-		    System.out.println("Generating end label for local: " + local.name);
 		    mv.visitLabel(local.end.label);
 		}
 	    }
-	    System.out.printf("Generated function: stack = %d, locals = %d%n", maxStack, locals.size());
 	    mv.visitMaxs(maxStack, locals.size());
 	    mv.visitEnd();
 	}
@@ -265,6 +262,7 @@ public abstract class GenNode {
 	public String generics;
 
 	public GenNodeVar(String name, String type, int id, String generics) {
+	    System.out.println("genNodeVar: " + name + ", " + type + ", #" + id);
 	    local = new GenNodeFunction.LocalVariable(name, type, id);
 	    this.generics = generics;
 	    getCurrentFunction().addLocal(local);
