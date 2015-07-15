@@ -303,16 +303,18 @@ public abstract class GenNode {
     public static class GenNodeFieldStore extends GenNode implements IGenNodeStmt {
 
 	public String varName, enclosingType, type;
+	public boolean isStatic;
 
-	public GenNodeFieldStore(final String varName, final String enclosingType, final String type) {
+	public GenNodeFieldStore(final String varName, final String enclosingType, final String type, boolean isStatic) {
 	    this.varName = varName;
 	    this.enclosingType = enclosingType;
 	    this.type = type;
+	    this.isStatic = isStatic;
 	}
 
 	@Override
 	public void generate(final Object visitor) {
-	    ((MethodVisitor) visitor).visitFieldInsn(PUTFIELD, enclosingType, varName, type);
+	    ((MethodVisitor) visitor).visitFieldInsn(isStatic ? PUTSTATIC : PUTFIELD, enclosingType, varName, type);
 	}
 
     }

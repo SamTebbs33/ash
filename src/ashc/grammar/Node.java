@@ -332,7 +332,7 @@ public abstract class Node {
 		    genNodeType.addField(new GenNodeField(field));
 		    GenNode.addFuncStmt(new GenNodeThis());
 		    GenNode.addFuncStmt(new GenNodeVarLoad(field.type.getInstructionType(), argID));
-		    GenNode.addFuncStmt(new GenNodeFieldStore(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName()));
+		    GenNode.addFuncStmt(new GenNodeFieldStore(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName(), field.isStatic()));
 		    argID++;
 		}
 		GenNode.addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
@@ -823,7 +823,7 @@ public abstract class Node {
 		if (expr == null) expr = dec.var.type.getDefaultValue();
 
 		((Node) expr).generate();
-		genNodeFunc.stmts.add(new GenNodeFieldStore(dec.var.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName()));
+		genNodeFunc.stmts.add(new GenNodeFieldStore(dec.var.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName(), dec.var.isStatic()));
 	    }
 	    GenNode.addFuncStmt(new GenNodeReturn());
 	    GenNode.exitGenNodeFunction();
@@ -1372,20 +1372,20 @@ public abstract class Node {
 		if(var.var.isSetProperty){
 		    generateSetFuncCall(var.var);
 		}
-		addFuncStmt(new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName()));
+		addFuncStmt(new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName(), var.var.isStatic()));
 	    }else{
 		GenNode node = null;
 		if(var.var.isLocal){
 		    expr.generate();
 		    node = new GenNodeVarStore(var.var.type.getInstructionType(), var.var.localID);
 		}else{
-		    addFuncStmt(new GenNodeThis());
+		    if(!var.var.isStatic()) addFuncStmt(new GenNodeThis());
 		    expr.generate();
 		    // If the variable is a property with a set block, we have to call the set function and assign the variable to the result
 		    if(var.var.isSetProperty){
 			generateSetFuncCall(var.var);
 		    }
-		    node = new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName());
+		    node = new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName(), var.var.isStatic());
 		}
 		addFuncStmt(node);
 	    }
@@ -1397,7 +1397,7 @@ public abstract class Node {
 	    String enclosingType = var.enclosingType.qualifiedName.toBytecodeName();
 	    String varType = var.type.toBytecodeName();
 	    String signature = "(" + varType + ")" + varType;
-	    addFuncStmt(new GenNodeFuncCall(enclosingType, setFuncName, signature, false, false, false, false));
+	    addFuncStmt(new GenNodeFuncCall(enclosingType, setFuncName, signature, false, var.isPrivate(), var.isStatic(), false));
 	}
 
 	@Override

@@ -262,7 +262,7 @@ public class Semantics {
 			tupleConstructor.stmts.add(new GenNodeThis());
 			tupleConstructor.stmts.add(new GenNodeVar(tupleFieldName+"Arg", "Ljava/lang/Object;", tupleTypeNum, "T" + tupleType.toBytecodeName() + ";"));
 			tupleConstructor.stmts.add(new GenNodeVarLoad(EnumInstructionOperand.REFERENCE, tupleTypeNum));
-			tupleConstructor.stmts.add(new GenNodeFieldStore(tupleFieldNameStr, tupleClassName, "Ljava/lang/Object;"));
+			tupleConstructor.stmts.add(new GenNodeFieldStore(tupleFieldNameStr, tupleClassName, "Ljava/lang/Object;", false));
 			tupleTypeNum++;
 			tupleFieldName++;
 			tupleFieldType++;
