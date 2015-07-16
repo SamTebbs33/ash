@@ -1,4 +1,4 @@
-public class Peroprties {
+public class Properties {
 	public static var name : String? -> {
 		set -> new.isEmpty() ? "unnamed" : new
 	}

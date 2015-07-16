@@ -205,7 +205,8 @@ public abstract class GenNode {
 		    mv.visitLabel(local.end.label);
 		}
 	    }
-	    mv.visitMaxs(maxStack, locals.size());
+	    System.out.printf("Func: stack=%d, locals=%d%n", maxStack, locals.size());
+	    //mv.visitMaxs(maxStack, locals.size());
 	    mv.visitEnd();
 	}
 
@@ -366,6 +367,7 @@ public abstract class GenNode {
 	public GenNodeVarLoad(final EnumInstructionOperand operand, final int varID) {
 	    this.operand = operand;
 	    this.varID = varID;
+	    System.out.println(varID);
 	    addToStackRequirement(operand.size);
 	    getCurrentFunction().getLocal(varID).updateUse();
 	}

@@ -331,6 +331,7 @@ public abstract class Node {
 		for (final Field field : argFields) {
 		    genNodeType.addField(new GenNodeField(field));
 		    GenNode.addFuncStmt(new GenNodeThis());
+		    addFuncStmt(new GenNodeVar(field.id, field.type.toBytecodeName(), argID, null));
 		    GenNode.addFuncStmt(new GenNodeVarLoad(field.type.getInstructionType(), argID));
 		    GenNode.addFuncStmt(new GenNodeFieldStore(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName(), field.isStatic()));
 		    argID++;
@@ -1191,7 +1192,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    args.analyse();
-	    prefix.analyse();
+	    if(prefix != null) prefix.analyse();
 	    // If it's a "this" call, change the id to the name of the current type
 	    // If it's a "super" call, change the id to the name of the super type
 	    if(this.isThisCall) this.id = Semantics.currentType().qualifiedName.shortName;
@@ -1208,7 +1209,8 @@ public abstract class Node {
 		if (enclosingType == null) semanticError(this, line, column, CONSTRUCTOR_DOES_NOT_EXIST, id);
 		else semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, enclosingType);
 	    } else{
-		if(prefix == null) if(Scope.getFuncScope().isStatic && !func.isStatic()) semanticError(line, column, NON_STATIC_FUNC_USED_IN_STATIC_CONTEXT, func.qualifiedName.shortName);
+		if(prefix == null) if(Scope.inFuncScope() && Scope.getFuncScope().isStatic && !func.isStatic())
+		    semanticError(line, column, NON_STATIC_FUNC_USED_IN_STATIC_CONTEXT, func.qualifiedName.shortName);
 		if (!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
 	    }
 	}
@@ -1286,7 +1288,7 @@ public abstract class Node {
 	    }
 	    if (var == null) semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
 	    else if (!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
-	    else if(!var.isLocal && Scope.getFuncScope().isStatic && !var.isStatic() && prefix == null) semanticError(this, line, column, NON_STATIC_VAR_USED_IN_STATIC_CONTEXT, var.qualifiedName.shortName);
+	    else if(!var.isLocal && Scope.inFuncScope() && Scope.getFuncScope().isStatic && !var.isStatic() && prefix == null) semanticError(this, line, column, NON_STATIC_VAR_USED_IN_STATIC_CONTEXT, var.qualifiedName.shortName);
 	}
 
 	@Override
