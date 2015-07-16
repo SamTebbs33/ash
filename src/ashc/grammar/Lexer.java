@@ -121,7 +121,7 @@ public class Lexer {
 
 	TokenType(final String str, final String typeName) {
 	    regex = str;
-	    this.typeName = typeName;
+	    this.typeName = typeName.trim();
 	}
     }
 

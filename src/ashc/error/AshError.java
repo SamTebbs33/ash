@@ -82,7 +82,7 @@ public class AshError {
     }
 
     public static void semanticError(final int line, final int column, final EnumError error, final Object... args) {
-	System.err.printf("Error[%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
+	System.err.printf("Error[%s:%d -> %d] ", AshCompiler.get().relFilePath, line, column);
 	System.err.printf(error.format + "%n", args);
 	numErrors++;
     }
@@ -93,7 +93,7 @@ public class AshError {
     }
 
     public static void warning(final int line, final int column, final EnumError error, final Object... args) {
-	System.err.printf("Warning[%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
+	System.err.printf("Warning[%s:%d -> %d] ", AshCompiler.get().relFilePath, line, column);
 	System.err.printf(error.format + "%n", args);
     }
 

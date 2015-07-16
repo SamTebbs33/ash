@@ -111,7 +111,7 @@ public class Parser {
 
     public void handleException(final UnexpectedTokenException e) {
 	final int line = e.token.line + lineOffset, colStart = e.token.columnStart + columnOffset, colEnd = e.token.columnEnd + columnOffset;
-	System.err.printf("Error:%d:%d-%d %s%n", line, colStart, colEnd, e.msg);
+	System.err.printf("Error:[%d:%d -> %d] %s%n", line, colStart, colEnd, e.msg);
 	AshError.numErrors++;
 
 	// Print out the line and location of the error
