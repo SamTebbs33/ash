@@ -5,6 +5,7 @@ import java.util.*;
 import ashc.error.*;
 import ashc.grammar.Lexer.InvalidTokenException;
 import ashc.grammar.Lexer.Token;
+import ashc.grammar.Lexer.TokenMatcher;
 import ashc.grammar.Lexer.TokenType;
 import ashc.grammar.Lexer.TokenTypeGroup;
 import ashc.grammar.Lexer.UnexpectedTokenException;
@@ -55,7 +56,6 @@ import ashc.grammar.Node.NodeTernary;
 import ashc.grammar.Node.NodeThis;
 import ashc.grammar.Node.NodeTupleExpr;
 import ashc.grammar.Node.NodeTupleExprArg;
-import ashc.grammar.Node.NodeTupleType;
 import ashc.grammar.Node.NodeType;
 import ashc.grammar.Node.NodeTypeDec;
 import ashc.grammar.Node.NodeTypes;
@@ -180,10 +180,10 @@ public class Parser {
 	return token;
     }
     
-    private Token expect(TokenTypeGroup group) throws UnexpectedTokenException{
+    private Token expect(TokenMatcher... matchers) throws UnexpectedTokenException{
 	Token token = getNext();
-	for(TokenType type : group.tokenTypes) if(type == token.type) return token;
-	throw new UnexpectedTokenException(token, group);
+	for(TokenMatcher matcher : matchers) if(matcher.matches(token)) return token;
+	throw new UnexpectedTokenException(token, matchers);
     }
 
     private Token expect(final String tokenData) throws UnexpectedTokenException {
@@ -421,7 +421,7 @@ public class Parser {
     }
 
     private IFuncStmt parseFuncStmt() throws UnexpectedTokenException {
-	final Token token = expect(TokenType.ID, TokenType.SELF, TokenType.THIS, TokenType.SUPER, TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.MATCH, TokenType.VAR, TokenType.CONST, TokenType.RETURN);
+	final Token token = expect(TokenTypeGroup.FUNC_CALL, TokenTypeGroup.VAR_DEC, TokenTypeGroup.CONTROL_STMT, TokenType.RETURN);
 	switch (token.type) {
 	    case RETURN:
 		// rewind();
