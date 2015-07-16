@@ -6,6 +6,7 @@ import ashc.error.*;
 import ashc.grammar.Lexer.InvalidTokenException;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.TokenType;
+import ashc.grammar.Lexer.TokenTypeGroup;
 import ashc.grammar.Lexer.UnexpectedTokenException;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.IFuncStmt;
@@ -177,6 +178,12 @@ public class Parser {
 	final Token token = getNext();
 	if ((token.type != t) && !silenceErrors) throw new UnexpectedTokenException(token, t);
 	return token;
+    }
+    
+    private Token expect(TokenTypeGroup group) throws UnexpectedTokenException{
+	Token token = getNext();
+	for(TokenType type : group.tokenTypes) if(type == token.type) return token;
+	throw new UnexpectedTokenException(token, group);
     }
 
     private Token expect(final String tokenData) throws UnexpectedTokenException {
@@ -591,7 +598,7 @@ public class Parser {
     }
 
     private IExpression parsePrimaryExpression() throws UnexpectedTokenException {
-	Token next = expect(TokenType.NULL, TokenType.BRACEL, TokenType.ID, TokenType.THIS, TokenType.SELF, TokenType.UNARYOP, TokenType.BRACKETL, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.LONG, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
+	Token next = expect(Lexer.TokenTypeGroup.EXPRESSION_STARTER);
 	IExpression expr = null;
 	switch (next.type) {
 	    case NULL:

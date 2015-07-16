@@ -4,6 +4,9 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
+import ashc.grammar.Lexer.Token;
+import ashc.grammar.Lexer.TokenTypeGroup;
+
 /**
  * Ash
  *
@@ -15,6 +18,19 @@ public class Lexer {
     public LinkedList<String> lines = new LinkedList<String>();
     public int line = 1, column = 1, numLines = 0;
     public static final int TAB_SIZE = 4;
+    
+    public static enum TokenTypeGroup {
+	EXPRESSION_STARTER("expression", TokenType.NULL, TokenType.BRACEL, TokenType.ID, TokenType.THIS, TokenType.SELF, TokenType.UNARYOP, TokenType.BRACKETL, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.LONG, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL);
+	
+	public TokenType[] tokenTypes;
+	public String name;
+	
+	private TokenTypeGroup(String name, TokenType...tokenTypes){
+	    this.name = name;
+	    this.tokenTypes = tokenTypes;
+	}
+	
+    }
 
     public static enum TokenType {
 	// The ERROR token type must be the last one, as it matches anything
@@ -168,6 +184,11 @@ public class Lexer {
 	public UnexpectedTokenException(final Token next, final String tokenData) {
 	    token = next;
 	    msg = String.format("Unexpected %s, expected %s", next.type.typeName, tokenData);
+	}
+
+	public UnexpectedTokenException(Token token2, TokenTypeGroup group) {
+	    token = token2;
+	    msg = String.format("Unexpected %s, expected %s", token.type.typeName, group.name);
 	}
 
     }
