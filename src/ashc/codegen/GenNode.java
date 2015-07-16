@@ -206,7 +206,7 @@ public abstract class GenNode {
 		    mv.visitLabel(local.end.label);
 		}
 	    }
-	    mv.visitMaxs(20, 100);
+	    mv.visitMaxs(-1, -1);
 	    mv.visitEnd();
 	}
 
