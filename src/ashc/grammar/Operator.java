@@ -14,40 +14,42 @@ public class Operator {
     }
 
     public static enum EnumOperation {
-	INCREMENT,
-	DECREMENT,
-	ADD,
-	SUBTRACT,
-	MULTIPLY,
-	DIVIDE(EnumPrimitive.DOUBLE),
-	MOD,
-	POW(EnumPrimitive.DOUBLE),
-	AND(EnumPrimitive.BOOL),
-	OR(EnumPrimitive.BOOL),
-	XOR(EnumPrimitive.BOOL),
-	NOT(EnumPrimitive.BOOL),
-	BIT_AND,
-	BIT_OR,
-	BIT_XOR,
-	BIT_NOT,
-	LESS(EnumPrimitive.BOOL),
-	GREATER(EnumPrimitive.BOOL),
-	EQUAL(EnumPrimitive.BOOL),
-	NOT_EQUAL(EnumPrimitive.BOOL),
-	LESS_EQUAL(EnumPrimitive.BOOL),
-	GREATER_EQUAL(EnumPrimitive.BOOL),
-	L_SHIFT,
-	R_SHIFT,
-	R_SHIFT_LOGICAL;
+	INCREMENT("increment"),
+	DECREMENT("decrement"),
+	ADD("add"),
+	SUBTRACT("subtract"),
+	MULTIPLY("multiply"),
+	DIVIDE(EnumPrimitive.DOUBLE, "divide"),
+	MOD("mod"),
+	POW(EnumPrimitive.DOUBLE, "pow"),
+	AND(EnumPrimitive.BOOL, "and"),
+	OR(EnumPrimitive.BOOL, "or"),
+	XOR(EnumPrimitive.BOOL, "xor"),
+	NOT(EnumPrimitive.BOOL, "not"),
+	BIT_AND("bit_and"),
+	BIT_OR("bit_or"),
+	BIT_XOR("bit_xor"),
+	BIT_NOT("bit_not"),
+	LESS(EnumPrimitive.BOOL, "less"),
+	GREATER(EnumPrimitive.BOOL, "greater"),
+	EQUAL(EnumPrimitive.BOOL, "equal"),
+	NOT_EQUAL(EnumPrimitive.BOOL, "not_equal"),
+	LESS_EQUAL(EnumPrimitive.BOOL, "less_equal"),
+	GREATER_EQUAL(EnumPrimitive.BOOL, "greater_equal"),
+	L_SHIFT("l_shift"),
+	R_SHIFT("r_shift"),
+	R_SHIFT_LOGICAL("r_shift_logical");
 
 	public EnumPrimitive primitive;
+	public String bytecodeName;
 
-	private EnumOperation() {
-	    this(null);
+	private EnumOperation(String bytecodeName) {
+	    this(null, bytecodeName);
 	}
 
-	private EnumOperation(final EnumPrimitive p) {
+	private EnumOperation(final EnumPrimitive p, String bytecodeName) {
 	    primitive = p;
+	    this.bytecodeName = bytecodeName;
 	}
 
     }
@@ -65,7 +67,7 @@ public class Operator {
 	operation = getOperation(opStr);
     }
 
-    private EnumOperation getOperation(final String opStr) {
+    public static EnumOperation getOperation(final String opStr) {
 	switch (opStr) {
 	    case "-":
 		return EnumOperation.SUBTRACT;
@@ -139,6 +141,16 @@ public class Operator {
 	    default:
 		return null;
 	}
+    }
+
+    public static boolean isOperator(String name) {
+	return getOperation(name) != null;
+    }
+
+    public static String filterOperators(String shortName) {
+	EnumOperation op = getOperation(shortName);
+	if(op == null) return shortName;
+	else return "$" + op.bytecodeName;
     }
 
 }

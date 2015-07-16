@@ -1,6 +1,10 @@
-class Person(age : int, name : String) {
-	func +(toAdd : int) -> Person(age + toAdd, name)
-	
-	var person = Person(0, "sam")
-	var person2 = person + 1
+public class OperatorOverloads {
+	public static func main(args : String[]){
+		var person = Person(19)
+		var person2 = person + 1
+	}
+}
+
+class Person(age : int) {
+	public func +(operand : int) : Person -> Person(age + operand)
 }

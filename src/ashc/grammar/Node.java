@@ -832,7 +832,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    String name = id, type = returnType.toBytecodeName();
+	    String name = Operator.filterOperators(id), type = returnType.toBytecodeName();
 	    genNodeFunc = new GenNodeFunction(name, func.modifiers, type);
 	    //TODO: Generate constructor calls if this function is a constructor
 	    genNodeFunc.params = func.parameters;
@@ -1209,7 +1209,7 @@ public abstract class Node {
 		if (enclosingType == null) semanticError(this, line, column, CONSTRUCTOR_DOES_NOT_EXIST, id);
 		else semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, enclosingType);
 	    } else{
-		if(prefix == null) if(Scope.inFuncScope() && Scope.getFuncScope().isStatic && !func.isStatic())
+		if(prefix == null) if(Scope.inFuncScope() && Scope.getFuncScope().isStatic && !func.isStatic() && !func.isConstructor())
 		    semanticError(line, column, NON_STATIC_FUNC_USED_IN_STATIC_CONTEXT, func.qualifiedName.shortName);
 		if (!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
 	    }
@@ -1229,7 +1229,8 @@ public abstract class Node {
 	    }else if(prefix == null && !func.isStatic()) addFuncStmt(new GenNodeThis());
 	    else if(prefix != null) prefix.generate();
 	    for(IExpression expr : args.exprs) expr.generate();
-	    addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), func.qualifiedName.shortName, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
+	    String name = Operator.filterOperators(func.qualifiedName.shortName);
+	    addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), name, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
 	}
 
     }
@@ -1826,18 +1827,22 @@ public abstract class Node {
 		// Operator-overloaded binary expression
 		String enclosingType = operatorOverloadFunc.enclosingType.qualifiedName.toBytecodeName();
 		boolean interfaceFunc = operatorOverloadFunc.enclosingType.type == EnumType.INTERFACE, privateFunc = BitOp.and(operatorOverloadFunc.modifiers, EnumModifier.PRIVATE.intVal);
+		String parameterType = null;
 		if(operatorOverloadFunc.enclosingType.qualifiedName.shortName.equals(exprType1.shortName)){
 		    // expression 1 is the reference from which the method should be called
 		    expr1.generate();
 		    // expr2 is the parameter to the method
 		    expr2.generate();
+		    parameterType = exprType2.toBytecodeName();
 		}else{
 		    // expression 2 is the reference from which the method should be called
 		    expr2.generate();
 		    // expr1 is the parameter to the method
 		    expr1.generate();
+		    parameterType = exprType1.toBytecodeName();
 		}
-		addFuncStmt(new GenNodeFuncCall(enclosingType, operator.opStr, operatorOverloadFunc.returnType.toBytecodeName(), interfaceFunc, privateFunc, false, false));
+		String name = Operator.filterOperators(operator.opStr);
+		addFuncStmt(new GenNodeFuncCall(enclosingType, name, "("+parameterType+")"+operatorOverloadFunc.returnType.toBytecodeName(), interfaceFunc, privateFunc, false, false));
 	    }
 	}
     }
@@ -1892,7 +1897,8 @@ public abstract class Node {
 		expr.generate();
 		String enclosingType = overloadFunc.enclosingType.qualifiedName.toBytecodeName(), returnType = overloadFunc.returnType.toBytecodeName();
 		boolean privateFunc = BitOp.and(overloadFunc.modifiers, EnumModifier.PRIVATE.intVal), interfaceFunc = overloadFunc.enclosingType.type == EnumType.INTERFACE;
-		addFuncStmt(new GenNodeFuncCall(enclosingType, operator.opStr, "()" + returnType, interfaceFunc, privateFunc, false, false));
+		String name = Operator.filterOperators(operator.opStr);
+		addFuncStmt(new GenNodeFuncCall(enclosingType, name, "()" + returnType, interfaceFunc, privateFunc, false, false));
 	    }
 	}
 

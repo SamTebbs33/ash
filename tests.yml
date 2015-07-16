@@ -1,13 +1,11 @@
 # Syntax
 # test_file_name:
 #   pass: [yes|no]
+#   run: [yes|no] # # If the running of the test file should be tested, implies it should also be compiled
 #   path: file_path
 #   args: {args}
 
 operator overloads:
   path: OperatorOverloads
   pass: yes
-
-properties:
-  path: Properties
-  pass: yes
+  run: yes

@@ -6,9 +6,13 @@ result_list = []
 failed_tests = 0
 num_tests = 0
 
-def do_test(name, path):
-	print "\n\t\x1B[34m Running test: " + name
-	return subprocess.call(["java", "-cp", "../build:../lib/asm-5.0.4.jar", "ashc/main/AshMain", path+".ash"])
+def do_test(name, path, run):
+	print "\n\t\x1B[34m Compiling: " + name + "\x1B[00m"
+	status = subprocess.call(["java", "-cp", "build:lib/asm-5.0.4.jar", "ashc/main/AshMain", "tests/"+path+".ash"])
+	if run and status == 0:
+		print "\n\t\x1B[34m Running: " + name + "\x1B[00m"
+		status = subprocess.call(["java", "-cp", "classes", path])
+	return status
 
 def get_symbol(test_pass):
 	if test_pass == 0:
@@ -38,7 +42,8 @@ if yml is not None:
 		test_name = test
 		test_pass = 0 if yml[test]["pass"] else 1
 		test_path = yml[test]["path"]
-		status_code = do_test(test_name, test_path)
+		test_run = yml[test]["run"]
+		status_code = do_test(test_name, test_path, test_run)
 		if status_code != test_pass:
 			failed_tests += 1
 		num_tests += 1

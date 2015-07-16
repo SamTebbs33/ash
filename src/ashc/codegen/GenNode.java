@@ -139,6 +139,7 @@ public abstract class GenNode {
 
 	    final File classFile = new File(dirSb.toString() + shortName + ".class");
 	    if (classFile.exists()) classFile.delete();
+	    System.out.println("Generating class: " + classFile.getAbsolutePath());
 	    try {
 		classFile.createNewFile();
 		final FileOutputStream fos = new FileOutputStream(classFile);
@@ -205,8 +206,7 @@ public abstract class GenNode {
 		    mv.visitLabel(local.end.label);
 		}
 	    }
-	    System.out.printf("Func: stack=%d, locals=%d%n", maxStack, locals.size());
-	    //mv.visitMaxs(maxStack, locals.size());
+	    mv.visitMaxs(20, 100);
 	    mv.visitEnd();
 	}
 
@@ -263,7 +263,6 @@ public abstract class GenNode {
 	public String generics;
 
 	public GenNodeVar(String name, String type, int id, String generics) {
-	    System.out.println("genNodeVar: " + name + ", " + type + ", #" + id);
 	    local = new GenNodeFunction.LocalVariable(name, type, id);
 	    this.generics = generics;
 	    getCurrentFunction().addLocal(local);
@@ -367,7 +366,6 @@ public abstract class GenNode {
 	public GenNodeVarLoad(final EnumInstructionOperand operand, final int varID) {
 	    this.operand = operand;
 	    this.varID = varID;
-	    System.out.println(varID);
 	    addToStackRequirement(operand.size);
 	    getCurrentFunction().getLocal(varID).updateUse();
 	}

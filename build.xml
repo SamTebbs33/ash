@@ -2,6 +2,7 @@
 	
 	<target name="clean">
 		<delete dir="build"/>
+		<delete dir="classes"/>
 	</target>
 	
 	<path id="build-classpath">
@@ -12,13 +13,14 @@
 	
 	<target name="compile">
 		<mkdir dir="build"/>
+		<mkdir dir="classes"/>
 		<javac srcdir="src" destdir="build">
 			<classpath refid="build-classpath"/>
 		</javac>
 	</target>
 	
 	<target name="test">
-		<exec dir="tests" executable="python" failonerror="true">
+		<exec executable="python" failonerror="true">
 			<arg value="test.py"/>
 		</exec>
 	</target>
