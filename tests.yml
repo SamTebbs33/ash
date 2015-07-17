@@ -9,3 +9,8 @@ operator overloads:
   path: OperatorOverloads
   pass: yes
   run: yes
+  
+properties:
+  path: Properties
+  pass: yes
+  run: yes
