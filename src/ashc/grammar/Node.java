@@ -1221,7 +1221,7 @@ public abstract class Node {
 	    final StringBuffer sb = new StringBuffer("(");
 	    for (final TypeI type : func.parameters)
 		sb.append(type.toBytecodeName());
-	    sb.append(")" + func.returnType.toBytecodeName());
+	    sb.append(")" + (func.isConstructor() ? "V" : func.returnType.toBytecodeName()));
 	    // Create a new object for cosntructor calls
 	    // However, don't do this if we're calling "this" or "super"
 	    if(func.isConstructor() && !isThisCall && !isSuperCall){
