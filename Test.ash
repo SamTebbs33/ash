@@ -1,9 +1,8 @@
 public class Test {
-	public static func main(args : String[]){
-		var person = foo()
+	public static func main(args : String[]?){
+		var person = Person()
 	}
-	public static func foo() -> 
 }
 
-class Person {
+class Person(){
 }

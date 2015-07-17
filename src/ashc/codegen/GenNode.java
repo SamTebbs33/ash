@@ -56,6 +56,7 @@ public abstract class GenNode {
     }
     
     public static void addFuncStmt(GenNode node){
+	//System.out.printf("Adding: %s to func %s%n", node, getCurrentFunction());
 	functionStack.peek().stmts.add(node);
     }
 
@@ -168,8 +169,8 @@ public abstract class GenNode {
 	    }
 	    
 	    public void updateUse() {
-		endLabelGenerated = true;
-		addFuncStmt(end);
+		//endLabelGenerated = true;
+		//addFuncStmt(end);
 	    }
 	
 	}
@@ -206,6 +207,7 @@ public abstract class GenNode {
 		    mv.visitLabel(local.end.label);
 		}
 	    }
+	    //System.out.printf("Function: name=%s, stack=%d, locals=%d%n", name, maxStack, locals.size());
 	    mv.visitMaxs(-1, -1);
 	    mv.visitEnd();
 	}
@@ -271,7 +273,7 @@ public abstract class GenNode {
 	@Override
 	public void generate(Object visitor) {
 	    MethodVisitor mv = ((MethodVisitor)visitor);
-	    mv.visitLabel(start);
+	    //mv.visitLabel(start);
 	    mv.visitLocalVariable(local.name, local.type, generics, start, local.end.label, local.id);
 	}
 	
@@ -414,7 +416,7 @@ public abstract class GenNode {
 	    this.privateFunc = privateFunc;
 	    this.staticFunc = staticFunc;
 	    this.constructor = constructor;
-	    addToStackRequirement(signature.endsWith("V") ? 0 : 2);
+	    addToStackRequirement(signature.endsWith("V") ? 0 : EnumInstructionOperand.REFERENCE.size);
 	}
 
 	@Override

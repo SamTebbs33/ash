@@ -327,7 +327,7 @@ public abstract class Node {
 		// Call the super class' constructor
 		// TODO: Change so it calls the right constructor for classes that don't extend Object
 		GenNode.addFuncStmt(new GenNodeThis());
-		GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", "()V", false, true, false, true));
+		GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", "()V", false, false, false, true));
 		for (final Field field : argFields) {
 		    genNodeType.addField(new GenNodeField(field));
 		    GenNode.addFuncStmt(new GenNodeThis());
@@ -752,6 +752,7 @@ public abstract class Node {
 	    for (final NodeType generic : generics.types)
 		func.generics.add(generic.id);
 
+	    this.isConstructor = id.equals(Semantics.currentType().qualifiedName.shortName);
 	    args.preAnalyse();
 	    if (args.hasDefExpr) func.hasDefExpr = true;
 
@@ -1229,7 +1230,7 @@ public abstract class Node {
 	    }else if(prefix == null && !func.isStatic()) addFuncStmt(new GenNodeThis());
 	    else if(prefix != null) prefix.generate();
 	    for(IExpression expr : args.exprs) expr.generate();
-	    String name = Operator.filterOperators(func.qualifiedName.shortName);
+	    String name = func.isConstructor() ? "<init>" : Operator.filterOperators(func.qualifiedName.shortName);
 	    addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), name, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
 	}
 
