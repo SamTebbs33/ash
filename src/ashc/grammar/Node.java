@@ -891,14 +891,12 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    if (getBlock != null) {
-		System.out.println("Gen getBlock: " + var.modifiers);
 		final GenNodeFunction getFunc = new GenNodeFunction("$get" + id, var.modifiers, var.type.toBytecodeName());
 		GenNode.addGenNodeFunction(getFunc);
 		getBlock.generate();
 		GenNode.exitGenNodeFunction();
 	    }
 	    if (setBlock != null) {
-		System.out.println("Gen setBlock: " + var.modifiers);
 		final GenNodeFunction setFunc = new GenNodeFunction("$set" + id, var.modifiers, var.type.toBytecodeName());
 		setFunc.params.add(var.type);
 		GenNode.addGenNodeFunction(setFunc);
@@ -948,9 +946,7 @@ public abstract class Node {
 		final TypeI exprType = expr.getExprType();
 		if (exprType != null) if (!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType, typeI.toString());
 	    }
-	    System.out.println();
 	    if(var == null){ 
-		System.out.println("-> varDecE");
 		var = new Variable(id, typeI);
 		for (final NodeModifier mod : mods) var.modifiers |= mod.asInt();
 	    	Semantics.addVar((Variable) var);
@@ -999,7 +995,6 @@ public abstract class Node {
 		if (!((Node) expr).errored) {
 		    final TypeI type = Semantics.filterNullType(expr.getExprType());
 		    if(var == null){
-			System.out.println("-> varDecI");
 			var = new Variable(id, type);
 			Semantics.addVar((Variable) var);
 		    }

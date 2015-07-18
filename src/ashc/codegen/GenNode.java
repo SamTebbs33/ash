@@ -239,9 +239,7 @@ public abstract class GenNode {
 	}
 
 	public GenNodeField(final Field field) {
-	    modifiers = field.modifiers;
-	    name = field.qualifiedName.toString();
-	    type = field.type.toBytecodeName();
+	    this(field.modifiers, field.id, field.type.toBytecodeName());
 	}
 
 	@Override
