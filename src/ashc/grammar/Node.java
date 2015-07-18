@@ -569,7 +569,7 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {
-	    /*boolean hasConstructor = false;
+	    boolean hasConstructor = false;
 	    for (final NodeFuncDec funcDec : funcDecs) {
 		funcDec.preAnalyse();
 		if (funcDec.isConstructor) hasConstructor = true;
@@ -579,11 +579,10 @@ public abstract class Node {
 		// already declared
 		final LinkedList<NodeModifier> mods = new LinkedList<NodeModifier>();
 		mods.add(new NodeModifier(0, 0, "public"));
-		funcDecs.add(new NodeFuncDec(0, 0, mods, Semantics.currentType().qualifiedName.shortName, new NodeArgs(), null, new NodeFuncBlock(), new NodeTypes(), false));
-		funcDecs.getLast().preAnalyse();
-	    }*/
-	    for (final NodeFuncDec funcDec : funcDecs)
-		funcDec.preAnalyse();
+		NodeFuncDec dec = new NodeFuncDec(0, 0, mods, Semantics.currentType().qualifiedName.shortName, new NodeArgs(), null, new NodeFuncBlock(), new NodeTypes(), false);
+		funcDecs.add(dec);
+		dec.preAnalyse();
+	    }
 	    for (final NodeVarDec varDec : varDecs)
 		varDec.preAnalyse();
 	}
@@ -810,29 +809,24 @@ public abstract class Node {
 	    //TODO: Generate constructor calls if this function is a constructor
 	    genNodeFunc.params = func.parameters;
 	    GenNode.addGenNodeFunction(genNodeFunc);
-	    block.generate();
-	    for(IFuncStmt stmt : block.stmts){
-		if(stmt instanceof NodeFuncCall){
-		    // If this constructor calls another class constructor, we don't need to initialise the class' fields here
-		    if(((NodeFuncCall)stmt).isThisCall){
-			GenNode.addFuncStmt(new GenNodeReturn());
-			GenNode.exitGenNodeFunction();
-			return;
-		    }
+	    // We have to initlialse the class' fields to their default values
+	    // in the constructor if another constructor hasn't already been called
+	    if(!block.hasThisCall){
+		addFuncStmt(new GenNodeThis());
+		addFuncStmt(new GenNodeFuncCall("java/lang/Object", "<init>", "()V", false, false, false, true));
+		for (final NodeVarDec dec : varDecs) {
+		    IExpression expr = null;
+		    if (dec instanceof NodeVarDecImplicit) expr = ((NodeVarDecImplicit) dec).expr;
+		    else expr = ((NodeVarDecExplicit) dec).expr;
+
+		    if (expr == null) expr = dec.var.type.getDefaultValue();
+
+		    addFuncStmt(new GenNodeThis());
+		    ((Node) expr).generate();
+		    genNodeFunc.stmts.add(new GenNodeFieldStore(dec.var.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName(), dec.var.isStatic()));
 		}
 	    }
-	    // We have to initlialse the class' fields to their default values
-	    // in the constructor
-	    for (final NodeVarDec dec : varDecs) {
-		IExpression expr = null;
-		if (dec instanceof NodeVarDecImplicit) expr = ((NodeVarDecImplicit) dec).expr;
-		else expr = ((NodeVarDecExplicit) dec).expr;
-
-		if (expr == null) expr = dec.var.type.getDefaultValue();
-
-		((Node) expr).generate();
-		genNodeFunc.stmts.add(new GenNodeFieldStore(dec.var.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName(), dec.var.isStatic()));
-	    }
+	    block.generate();
 	    GenNode.addFuncStmt(new GenNodeReturn());
 	    GenNode.exitGenNodeFunction();
 	}
@@ -1034,7 +1028,7 @@ public abstract class Node {
 	public TypeI funcReturnType;
 	LinkedList<IFuncStmt> stmts = new LinkedList<IFuncStmt>();
 	public IFuncStmt singleLineStmt;
-	public boolean inFunction = false;
+	public boolean inFunction = false, hasThisCall;
 
 	public void add(final IFuncStmt funcStmt) {
 	    stmts.add(funcStmt);
@@ -1058,8 +1052,12 @@ public abstract class Node {
 		if (scope.returnType.isVoid()) semanticError(this, ((Node) singleLineExpr).line, ((Node) singleLineExpr).column, RETURN_EXPR_IN_VOID_FUNC);
 		else if (!scope.returnType.canBeAssignedTo(singleLineExprType)) semanticError(this, ((Node) singleLineExpr).line, ((Node) singleLineExpr).column, CANNOT_ASSIGN, scope.returnType.toString(), singleLineExprType.toString());
 	    } else if (singleLineStmt != null) ((Node) singleLineStmt).analyse();
-	    else for (final IFuncStmt stmt : stmts)
+	    else for (final IFuncStmt stmt : stmts){
 		((Node) stmt).analyse();
+		if(stmt instanceof NodeFuncCall){
+		    if(((NodeFuncCall)stmt).isThisCall) hasThisCall = true;
+		}
+	    }
 	}
 
 	@Override
