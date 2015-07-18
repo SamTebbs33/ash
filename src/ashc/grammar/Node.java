@@ -2191,21 +2191,15 @@ public abstract class Node {
 	    // Create a label that corresponds to this else-statement
 	    if (thisLabel != null) addFuncStmt(new GenNodeLabel(thisLabel));
 
-	    // Create a new label to jump to in case the condition fails, this
-	    // represents the next else-statement
+	    // Create a new label to jump to in case the condition fails, this represents the next else-statement
 	    thisLabel = new Label();
 	    if (expr != null) addFuncStmt(new GenNodeConditionalJump(expr, thisLabel));
 	    block.generate();
-	    // Jump to the end of the if-else block if the last statement was
-	    // not a return statement
+	    // Jump to the end of the if-else block if the last statement was not a return statement
 	    if ((expr != null) && !block.lastIsReturn()) addFuncStmt(new GenNodeJump(endLabel));
 
-	    if (elseStmt == null) // If this is the end of the block, place the
-		// label
-	    addFuncStmt(new GenNodeLabel(endLabel));
-	    else // If we're not at the end of the block, then generate the next
-		// block
-	    elseStmt.generate(endLabel, thisLabel);
+	    if (elseStmt == null) addFuncStmt(new GenNodeLabel(endLabel)); // If this is the end of the block, place the label
+	    else elseStmt.generate(endLabel, thisLabel); // If we're not at the end of the block, then generate the next block
 
 	}
 

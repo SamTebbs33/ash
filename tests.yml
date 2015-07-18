@@ -42,3 +42,8 @@ constructors:
   path: Constructors
   pass: yes
   run: yes
+
+if statements:
+  path: IfStatements
+  pass: yes
+  run: yes
