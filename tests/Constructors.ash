@@ -4,6 +4,8 @@ class Constructors(name : String) {
 		this(name)
 	}
 	public static func main(args : String[]?) {
-		Constructors("Sam", true)
+		var obj = Constructors("Sam", true)
+		var name2 = obj.name.trim()
+		System.out.println(name2)
 	}
 }
