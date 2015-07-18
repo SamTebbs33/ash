@@ -1,9 +1,11 @@
-# Syntax
+# The test definitions in this file are used to ensure that a change to the project doesn't break any of the core elements of the language.
+# The testing itself is done by the test.py script in the tests folder, which uses these definitions.
 
+# Test definition syntax
 # test name:
 #   path: file_path # The path to the test file (excluding the ".ash" extension) from the tests directory
 #   pass: [yes|no] # If the compilation of the test file is supposed to pass or not
-#   run: [yes|no] # # If the running of the test file should be tested
+#   run: [yes|no] # # If the execution of the resulting class file should be tested
 #   args: {args} # Not yet used
 
 operator overloads:
