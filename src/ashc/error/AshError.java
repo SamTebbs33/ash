@@ -84,7 +84,7 @@ public class AshError {
     }
 
     public static void semanticError(final int line, final int column, final EnumError error, final Object... args) {
-	if(line >= 0 && column >= 0) System.err.printf("Error[%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
+	if ((line >= 0) && (column >= 0)) System.err.printf("Error[%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
 	else System.err.printf("Error[%s] ", AshCompiler.get().relFilePath, line, column);
 	System.err.printf(error.format + "%n", args);
 	numErrors++;
@@ -96,23 +96,23 @@ public class AshError {
     }
 
     public static void semanticWarning(final int line, final int column, final EnumError error, final Object... args) {
-	if(AshMain.warningsEnabled){
+	if (AshMain.warningsEnabled) {
 	    System.err.printf("Warning[%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
 	    System.err.printf(error.format + "%n", args);
 	}
     }
 
-    public static void compilerError(String string) {
+    public static void compilerError(final String string) {
 	System.err.printf("Error: %s%n", string);
 	numErrors++;
     }
 
-    public static void compilerWarning(String string) {
+    public static void compilerWarning(final String string) {
 	System.err.printf("Warning: %s%n", string);
     }
-    
-    public static void verboseMsg(String msg){
-	if(AshMain.verboseMsgEnabled) System.out.println(msg);
+
+    public static void verboseMsg(final String msg) {
+	if (AshMain.verboseMsgEnabled) System.out.println(msg);
     }
 
 }

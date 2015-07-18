@@ -43,11 +43,11 @@ public class Operator {
 	public EnumPrimitive primitive;
 	public String bytecodeName;
 
-	private EnumOperation(String bytecodeName) {
+	private EnumOperation(final String bytecodeName) {
 	    this(null, bytecodeName);
 	}
 
-	private EnumOperation(final EnumPrimitive p, String bytecodeName) {
+	private EnumOperation(final EnumPrimitive p, final String bytecodeName) {
 	    primitive = p;
 	    this.bytecodeName = bytecodeName;
 	}
@@ -60,7 +60,7 @@ public class Operator {
 
     public Operator(String opStr) {
 	this.opStr = opStr;
-	if (opStr.charAt(opStr.length() - 1) == '=' && !opStr.equals("==")) {
+	if ((opStr.charAt(opStr.length() - 1) == '=') && !opStr.equals("==")) {
 	    type = EnumOperatorType.ASSIGNMENT;
 	    opStr = opStr.substring(0, opStr.length() - 1);
 	} else type = EnumOperatorType.ARITHMETIC;
@@ -131,10 +131,10 @@ public class Operator {
 
 	    case "!":
 		return EnumOperation.NOT;
-		
+
 	    case "==":
 		return EnumOperation.EQUAL;
-		
+
 	    case "!=":
 		return EnumOperation.NOT_EQUAL;
 
@@ -143,13 +143,13 @@ public class Operator {
 	}
     }
 
-    public static boolean isOperator(String name) {
+    public static boolean isOperator(final String name) {
 	return getOperation(name) != null;
     }
 
-    public static String filterOperators(String shortName) {
-	EnumOperation op = getOperation(shortName);
-	if(op == null) return shortName;
+    public static String filterOperators(final String shortName) {
+	final EnumOperation op = getOperation(shortName);
+	if (op == null) return shortName;
 	else return "$" + op.bytecodeName;
     }
 

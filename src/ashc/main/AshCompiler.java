@@ -4,7 +4,6 @@ import java.io.*;
 import java.util.*;
 
 import ashc.codegen.*;
-import ashc.codegen.GenNode.GenNodeType;
 import ashc.grammar.*;
 import ashc.grammar.Node.NodeFile;
 
@@ -23,8 +22,8 @@ public class AshCompiler {
     public static Stack<AshCompiler> compilers = new Stack<AshCompiler>();
 
     public AshCompiler(final String relFilePath) throws FileNotFoundException, IOException {
-	File file = new File(relFilePath);
-	this.parentPath = file.getParentFile() != null ? file.getParentFile().getPath() : "";
+	final File file = new File(relFilePath);
+	parentPath = file.getParentFile() != null ? file.getParentFile().getPath() : "";
 	this.relFilePath = relFilePath;
 	lexer = new Lexer(new BufferedReader(new FileReader(file)));
 	parser = new Parser(lexer);

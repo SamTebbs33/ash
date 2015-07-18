@@ -38,6 +38,7 @@ import ashc.codegen.GenNode.GenNodeThis;
 import ashc.codegen.GenNode.GenNodeType;
 import ashc.codegen.GenNode.GenNodeTypeOpcode;
 import ashc.codegen.GenNode.GenNodeUnary;
+import ashc.codegen.GenNode.GenNodeVar;
 import ashc.codegen.GenNode.GenNodeVarLoad;
 import ashc.codegen.GenNode.GenNodeVarStore;
 import ashc.codegen.GenNode.IGenNodeStmt;
@@ -139,7 +140,7 @@ public abstract class Node {
 		    name.add(section);
 		packagePath = name.toString().replace('.', File.separatorChar);
 	    }
-	    if(!AshCompiler.get().parentPath.equals(packagePath)) semanticError(this, -1, -1, PATH_DOES_NOT_MATCH_PACKAGE, packagePath);
+	    if (!AshCompiler.get().parentPath.equals(packagePath)) semanticError(this, -1, -1, PATH_DOES_NOT_MATCH_PACKAGE, packagePath);
 	    Scope.setNamespace(name);
 	    if (imports != null) for (final NodeImport i : imports)
 		i.preAnalyse();
@@ -200,9 +201,9 @@ public abstract class Node {
 	public void generate() {}
 
     }
-    
+
     public static abstract class NodeBlock extends Node {
-	
+
     }
 
     public static abstract class NodeTypeDec extends Node {
@@ -334,7 +335,8 @@ public abstract class Node {
 		func.params = defConstructor.parameters;
 		int argID = 1;
 		// Call the super class' constructor
-		// TODO: Change so it calls the right constructor for classes that don't extend Object
+		// TODO: Change so it calls the right constructor for classes
+		// that don't extend Object
 		GenNode.addFuncStmt(new GenNodeThis());
 		GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", "()V", false, false, false, true));
 		for (final Field field : argFields) {
@@ -345,7 +347,7 @@ public abstract class Node {
 		    GenNode.addFuncStmt(new GenNodeFieldStore(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName(), field.isStatic()));
 		    argID++;
 		}
-		if(block instanceof NodeClassBlock) NodeFuncDec.initialiseVarDecs(((NodeClassBlock)block).varDecs);
+		if (block instanceof NodeClassBlock) NodeFuncDec.initialiseVarDecs(((NodeClassBlock) block).varDecs);
 		GenNode.addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
 		GenNode.exitGenNodeFunction();
 	    }
@@ -583,7 +585,7 @@ public abstract class Node {
 		// already declared
 		final LinkedList<NodeModifier> mods = new LinkedList<NodeModifier>();
 		mods.add(new NodeModifier(0, 0, "public"));
-		NodeFuncDec dec = new NodeFuncDec(0, 0, mods, Semantics.currentType().qualifiedName.shortName, new NodeArgs(), null, new NodeFuncBlock(), new NodeTypes(), false);
+		final NodeFuncDec dec = new NodeFuncDec(0, 0, mods, Semantics.currentType().qualifiedName.shortName, new NodeArgs(), null, new NodeFuncBlock(), new NodeTypes(), false);
 		funcDecs.add(dec);
 		dec.preAnalyse();
 	    }
@@ -601,11 +603,29 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    for (final NodeFuncDec funcDec : funcDecs) {
+	    for (final NodeFuncDec funcDec : funcDecs)
 		if (!funcDec.isConstructor) funcDec.generate();
 		else funcDec.generateConstructor(varDecs);
+	    final LinkedList<NodeVarDec> staticVars = new LinkedList<>();
+	    for (final NodeVarDec dec : varDecs) {
+		dec.generate();
+		if (dec.isStatic) staticVars.add(dec);
 	    }
-	    for (final NodeVarDec dec : varDecs) dec.generate();
+	    if (staticVars.size() > 0) {
+		final GenNodeFunction staticFunc = new GenNodeFunction("<clinit>", EnumModifier.STATIC.intVal, "V");
+		addGenNodeFunction(staticFunc);
+		for (final NodeVarDec dec : staticVars) {
+		    if (dec instanceof NodeVarDecImplicit) ((NodeVarDecImplicit) dec).expr.generate();
+		    else {
+			final NodeVarDecExplicit decE = (NodeVarDecExplicit) dec;
+			if (decE.expr != null) decE.expr.generate();
+			else decE.typeI.getDefaultValue().generate();
+		    }
+		    addFuncStmt(new GenNodeFieldStore(dec.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName(), true));
+		}
+		addFuncStmt(new GenNodeReturn());
+		exitGenNodeFunction();
+	    }
 	}
 
     }
@@ -671,9 +691,10 @@ public abstract class Node {
 			semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
 		    } else if (!EnumPrimitive.isPrimitive(id)) if (generics.types.size() > typeOpt.get().generics.size()) semanticError(this, line, column, TOO_MANY_GENERICS);
 		}
-		if (EnumPrimitive.isPrimitive(id) && optional && arrDims == 0) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
-	    } else for (int i = 0; i < tupleTypes.size(); i++) tupleTypes.get(i).analyse();
-	    
+		if (EnumPrimitive.isPrimitive(id) && optional && (arrDims == 0)) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
+	    } else for (int i = 0; i < tupleTypes.size(); i++)
+		tupleTypes.get(i).analyse();
+
 	}
 
 	@Override
@@ -753,15 +774,14 @@ public abstract class Node {
 	    final QualifiedName name = Scope.getNamespace().copy();
 	    name.add(id);
 	    int modifiers = 0;
-	    for (final NodeModifier mod : mods){
-		if(mod.asInt() == EnumModifier.STATIC.intVal && isMutFunc) semanticError(this, line, column, MUT_FUNC_IS_STATIC, id);
+	    for (final NodeModifier mod : mods)
+		if ((mod.asInt() == EnumModifier.STATIC.intVal) && isMutFunc) semanticError(this, line, column, MUT_FUNC_IS_STATIC, id);
 		else modifiers |= mod.asInt();
-	    }
 	    func = new Function(name, modifiers);
 	    for (final NodeType generic : generics.types)
 		func.generics.add(generic.id);
 
-	    this.isConstructor = id.equals(Semantics.currentType().qualifiedName.shortName);
+	    isConstructor = id.equals(Semantics.currentType().qualifiedName.shortName);
 	    args.preAnalyse();
 	    if (args.hasDefExpr) func.hasDefExpr = true;
 
@@ -808,19 +828,22 @@ public abstract class Node {
 	}
 
 	public void generateConstructor(final LinkedList<NodeVarDec> varDecs) {
-	    String name = "<init>", type = "V";
+	    final String name = "<init>", type = "V";
 	    genNodeFunc = new GenNodeFunction(name, func.modifiers, type);
-	    //TODO: Generate constructor calls if this function is a constructor
+	    // TODO: Generate constructor calls if this function is a
+	    // constructor
 	    genNodeFunc.params = func.parameters;
 	    GenNode.addGenNodeFunction(genNodeFunc);
 	    int argID = 0;
-	    for(TypeI arg : func.parameters){
-		GenNode.addFuncStmt(new GenNodeVar("arg"+argID, arg.toBytecodeName(), argID + 1, null)); //TODO: generics
+	    for (final TypeI arg : func.parameters) {
+		GenNode.addFuncStmt(new GenNodeVar("arg" + argID, arg.toBytecodeName(), argID + 1, null)); // TODO:
+													   // generics
 		argID++;
 	    }
 	    // We have to initlialse the class' fields to their default values
-	    // in the constructor if another constructor hasn't already been called
-	    if(!block.hasThisCall){
+	    // in the constructor if another constructor hasn't already been
+	    // called
+	    if (!block.hasThisCall) {
 		addFuncStmt(new GenNodeThis());
 		addFuncStmt(new GenNodeFuncCall("java/lang/Object", "<init>", "()V", false, false, false, true));
 		initialiseVarDecs(varDecs);
@@ -830,33 +853,36 @@ public abstract class Node {
 	    GenNode.exitGenNodeFunction();
 	}
 
-	public static void initialiseVarDecs(LinkedList<NodeVarDec> varDecs) {
+	public static void initialiseVarDecs(final LinkedList<NodeVarDec> varDecs) {
 	    for (final NodeVarDec dec : varDecs) {
-		    IExpression expr = null;
-		    if (dec instanceof NodeVarDecImplicit) expr = ((NodeVarDecImplicit) dec).expr;
-		    else expr = ((NodeVarDecExplicit) dec).expr;
+		if (dec.isStatic) continue; // Static vars are initialised in
+					    // the static init block
+		IExpression expr = null;
+		if (dec instanceof NodeVarDecImplicit) expr = ((NodeVarDecImplicit) dec).expr;
+		else expr = ((NodeVarDecExplicit) dec).expr;
 
-		    if (expr == null) expr = dec.var.type.getDefaultValue();
+		if (expr == null) expr = dec.var.type.getDefaultValue();
 
-		    addFuncStmt(new GenNodeThis());
-		    ((Node) expr).generate();
-		    addFuncStmt(new GenNodeFieldStore(dec.var.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName(), dec.var.isStatic()));
-		}
+		addFuncStmt(new GenNodeThis());
+		((Node) expr).generate();
+		addFuncStmt(new GenNodeFieldStore(dec.var.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName(), dec.var.isStatic()));
+	    }
 	}
 
 	@Override
 	public void generate() {
-	    String name = Operator.filterOperators(id), type = returnType.toBytecodeName();
+	    final String name = Operator.filterOperators(id), type = returnType.toBytecodeName();
 	    genNodeFunc = new GenNodeFunction(name, func.modifiers, type);
-	    //TODO: Generate constructor calls if this function is a constructor
+	    // TODO: Generate constructor calls if this function is a
+	    // constructor
 	    genNodeFunc.params = func.parameters;
 	    GenNode.addGenNodeFunction(genNodeFunc);
-	    int argID = 0;
-	    for(TypeI arg : func.parameters){
-		GenNode.addFuncStmt(new GenNodeVar("arg"+argID, arg.toBytecodeName(), argID + (func.isStatic() ? 0 : 1), null)); //TODO: generics
-	    }
+	    final int argID = 0;
+	    for (final TypeI arg : func.parameters)
+		GenNode.addFuncStmt(new GenNodeVar("arg" + argID, arg.toBytecodeName(), argID + (func.isStatic() ? 0 : 1), null)); // TODO:
+																   // generics
 	    block.generate();
-	    if(isMutFunc) {
+	    if (isMutFunc) {
 		addFuncStmt(new GenNodeThis());
 		addFuncStmt(new GenNodeReturn(EnumInstructionOperand.REFERENCE));
 	    }
@@ -871,13 +897,14 @@ public abstract class Node {
 	public String id;
 	public NodeFuncBlock getBlock, setBlock;
 	public Field var;
+	public boolean isStatic;
 
 	public NodeVarDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id) {
 	    super(line, column);
 	    this.mods = mods;
 	    this.keyword = keyword;
 	    this.id = id;
-	    
+
 	}
 
 	protected void analyseProperty(final TypeI type) {
@@ -890,7 +917,7 @@ public abstract class Node {
 	    }
 	    if (setBlock != null) {
 		Scope.push(new PropertyScope(var));
-		Variable newVar = new Variable("new", var.type);
+		final Variable newVar = new Variable("new", var.type);
 		newVar.localID = var.isStatic() ? 0 : 1;
 		Scope.getScope().addVar(newVar);
 		setBlock.analyse();
@@ -941,7 +968,8 @@ public abstract class Node {
 	    final QualifiedName name = Semantics.typeStack.peek().qualifiedName.copy();
 	    name.add(id);
 	    int modifiers = 0;
-	    for (final NodeModifier mod : mods){
+	    for (final NodeModifier mod : mods) {
+		if (mod.asInt() == EnumModifier.STATIC.intVal) isStatic = true;
 		modifiers |= mod.asInt();
 	    }
 	    var = new Field(name, modifiers, new TypeI(type), setBlock != null, getBlock != null);
@@ -955,7 +983,6 @@ public abstract class Node {
 	    type.analyse();
 	    if (expr != null) ((Node) expr).analyse();
 	    typeI = new TypeI(type);
-	    //if (!errored) Semantics.addVar(new Variable(id, typeI));
 
 	    if (expr == null) {
 		if (!type.optional && !(EnumPrimitive.isPrimitive(type.id) && (type.arrDims == 0))) semanticError(this, line, column, MISSING_ASSIGNMENT);
@@ -963,20 +990,20 @@ public abstract class Node {
 		final TypeI exprType = expr.getExprType();
 		if (exprType != null) if (!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType, typeI.toString());
 	    }
-	    if(var == null){ 
+	    if (var == null) {
 		var = new Variable(id, typeI);
-		for (final NodeModifier mod : mods) var.modifiers |= mod.asInt();
-	    	Semantics.addVar((Variable) var);
+		for (final NodeModifier mod : mods)
+		    var.modifiers |= mod.asInt();
+		Semantics.addVar((Variable) var);
 	    }
 	    analyseProperty(typeI);
 	}
 
 	@Override
 	public void generate() {
-	    if(!var.isLocal){
-		GenNode.addGenNodeField(new GenNodeField(var));
-	    }
-	    else GenNode.addFuncStmt(new GenNodeVar(var.id, var.type.toBytecodeName(), var.localID, null)); //TODO: generics
+	    if (!var.isLocal) GenNode.addGenNodeField(new GenNodeField(var));
+	    else GenNode.addFuncStmt(new GenNodeVar(var.id, var.type.toBytecodeName(), var.localID, null)); // TODO:
+													    // generics
 	    // Variable initialisation is handled by the class block
 	    super.generate();
 	}
@@ -996,8 +1023,10 @@ public abstract class Node {
 	    final QualifiedName name = Semantics.typeStack.peek().qualifiedName.copy();
 	    name.add(id);
 	    int modifiers = 0;
-	    for (final NodeModifier mod : mods)
+	    for (final NodeModifier mod : mods) {
+		if (mod.asInt() == EnumModifier.STATIC.intVal) isStatic = true;
 		modifiers |= mod.asInt();
+	    }
 	    expr.analyse();
 	    final TypeI exprType = expr.getExprType();
 	    var = new Field(name, modifiers, exprType, setBlock != null, getBlock != null);
@@ -1009,24 +1038,25 @@ public abstract class Node {
 	public void analyse() {
 	    super.analyse();
 	    expr.analyse();
-		if (!((Node) expr).errored) {
-		    final TypeI type = Semantics.filterNullType(expr.getExprType());
-		    if(var == null){
-			var = new Variable(id, type);
-			Semantics.addVar((Variable) var);
-		    }
-		    analyseProperty(type);
+	    if (!((Node) expr).errored) {
+		final TypeI type = Semantics.filterNullType(expr.getExprType());
+		if (var == null) {
+		    var = new Variable(id, type);
+		    Semantics.addVar((Variable) var);
 		}
+		analyseProperty(type);
+	    }
 	}
 
 	@Override
 	public void generate() {
-	    if(!var.isLocal){
-		GenNode.addGenNodeField(new GenNodeField(var));
-		// Field initialisation is handled by the class block, so there's no need to do it here
-	    }else{
-		String type = var.type.toBytecodeName();
-		GenNode.addFuncStmt(new GenNodeVar(var.id, type, var.localID, null)); //TODO: generics
+	    if (!var.isLocal) GenNode.addGenNodeField(new GenNodeField(var));
+	    // Field initialisation is handled by the class block, so there's no
+	    // need to do it here
+	    else {
+		final String type = var.type.toBytecodeName();
+		GenNode.addFuncStmt(new GenNodeVar(var.id, type, var.localID, null)); // TODO:
+										      // generics
 		expr.generate();
 		addFuncStmt(new GenNodeVarStore(var.type.getInstructionType(), var.localID));
 	    }
@@ -1065,11 +1095,9 @@ public abstract class Node {
 		if (scope.returnType.isVoid()) semanticError(this, ((Node) singleLineExpr).line, ((Node) singleLineExpr).column, RETURN_EXPR_IN_VOID_FUNC);
 		else if (!scope.returnType.canBeAssignedTo(singleLineExprType)) semanticError(this, ((Node) singleLineExpr).line, ((Node) singleLineExpr).column, CANNOT_ASSIGN, scope.returnType.toString(), singleLineExprType.toString());
 	    } else if (singleLineStmt != null) ((Node) singleLineStmt).analyse();
-	    else for (final IFuncStmt stmt : stmts){
+	    else for (final IFuncStmt stmt : stmts) {
 		((Node) stmt).analyse();
-		if(stmt instanceof NodeFuncCall){
-		    if(((NodeFuncCall)stmt).isThisCall) hasThisCall = true;
-		}
+		if (stmt instanceof NodeFuncCall) if (((NodeFuncCall) stmt).isThisCall) hasThisCall = true;
 	    }
 	}
 
@@ -1077,15 +1105,15 @@ public abstract class Node {
 	public void generate() {
 	    if (singleLineExpr != null) {
 		((Node) singleLineExpr).generate();
-		if(inFunction) addFuncStmt(new GenNodeReturn(funcReturnType.getInstructionType()));
+		if (inFunction) addFuncStmt(new GenNodeReturn(funcReturnType.getInstructionType()));
 	    } else if (singleLineStmt != null) {
 		((Node) singleLineStmt).generate();
-		if(inFunction) addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
+		if (inFunction) addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
 	    } else {
 		for (final IFuncStmt stmt : stmts)
 		    ((Node) stmt).generate();
 		// Add a return statement if the func is void
-		if (inFunction && funcReturnType != null && funcReturnType.isVoid()) addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
+		if (inFunction && (funcReturnType != null) && funcReturnType.isVoid()) addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
 	    }
 	}
 
@@ -1097,7 +1125,7 @@ public abstract class Node {
     }
 
     public static class NodePrefix extends Node implements IFuncStmt, IExpression {
-	
+
 	public boolean isTypeName = false;
 
 	public NodePrefix(final int line, final int column) {
@@ -1132,7 +1160,8 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    for(IExpression expr : exprs) expr.generate();
+	    for (final IExpression expr : exprs)
+		expr.generate();
 	}
 
     }
@@ -1147,7 +1176,7 @@ public abstract class Node {
 	public Function func;
 	public TypeI prefixType;
 
-	public NodeFuncCall(final int line, final int column, final String id, final NodeExprs args, final NodePrefix prefix, final boolean unwrapped, boolean isThisCall, boolean isSuperCall) {
+	public NodeFuncCall(final int line, final int column, final String id, final NodeExprs args, final NodePrefix prefix, final boolean unwrapped, final boolean isThisCall, final boolean isSuperCall) {
 	    super(line, column);
 	    this.args = args;
 	    this.prefix = prefix;
@@ -1169,13 +1198,11 @@ public abstract class Node {
 		final TypeI funcType = func.returnType.copy();
 		// Fill in the function's generics based on the arguments
 		int i = 0;
-		for(String g : func.generics){
-		    boolean foundGeneric = false;
+		for (final String g : func.generics) {
 		    int paramIndex = 0;
-		    for(TypeI t : func.parameters){
-			if(t.shortName.equals(g)){
+		    for (final TypeI t : func.parameters) {
+			if (t.shortName.equals(g)) {
 			    funcType.genericTypes.set(i, args.exprs.get(paramIndex).getExprType());
-			    foundGeneric = true;
 			    break;
 			}
 			paramIndex++;
@@ -1204,11 +1231,13 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    args.analyse();
-	    if(prefix != null) prefix.analyse();
-	    // If it's a "this" call, change the id to the name of the current type
-	    // If it's a "super" call, change the id to the name of the super type
-	    if(this.isThisCall) this.id = Semantics.currentType().qualifiedName.shortName;
-	    else if(this.isSuperCall) this.id = Semantics.currentType().getSuperClass().qualifiedName.shortName;
+	    if (prefix != null) prefix.analyse();
+	    // If it's a "this" call, change the id to the name of the current
+	    // type
+	    // If it's a "super" call, change the id to the name of the super
+	    // type
+	    if (isThisCall) id = Semantics.currentType().qualifiedName.shortName;
+	    else if (isSuperCall) id = Semantics.currentType().getSuperClass().qualifiedName.shortName;
 	    if (prefix == null) func = Semantics.getFunc(id, args);
 	    else {
 		prefixType = prefix.getExprType();
@@ -1219,9 +1248,8 @@ public abstract class Node {
 	    if (func == null) {
 		if (prefixType == null) semanticError(this, line, column, CONSTRUCTOR_DOES_NOT_EXIST, id);
 		else semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, prefixType);
-	    } else{
-		if(prefix == null) if(Scope.inFuncScope() && Scope.getFuncScope().isStatic && !func.isStatic() && !func.isConstructor())
-		    semanticError(line, column, NON_STATIC_FUNC_USED_IN_STATIC_CONTEXT, func.qualifiedName.shortName);
+	    } else {
+		if (prefix == null) if (Scope.inFuncScope() && Scope.getFuncScope().isStatic && !func.isStatic() && !func.isConstructor()) semanticError(line, column, NON_STATIC_FUNC_USED_IN_STATIC_CONTEXT, func.qualifiedName.shortName);
 		if (!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
 	    }
 	}
@@ -1234,13 +1262,14 @@ public abstract class Node {
 	    sb.append(")" + (func.isConstructor() ? "V" : func.returnType.toBytecodeName()));
 	    // Create a new object for cosntructor calls
 	    // However, don't do this if we're calling "this" or "super"
-	    if(func.isConstructor() && !isThisCall && !isSuperCall){
+	    if (func.isConstructor() && !isThisCall && !isSuperCall) {
 		addFuncStmt(new GenNodeNew(func.enclosingType.qualifiedName.toBytecodeName()));
 		addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
-	    }else if(prefix == null && !func.isStatic()) addFuncStmt(new GenNodeThis());
-	    else if(prefix != null) prefix.generate();
-	    for(IExpression expr : args.exprs) expr.generate();
-	    String name = func.isConstructor() ? "<init>" : Operator.filterOperators(func.qualifiedName.shortName);
+	    } else if ((prefix == null) && !func.isStatic()) addFuncStmt(new GenNodeThis());
+	    else if (prefix != null) prefix.generate();
+	    for (final IExpression expr : args.exprs)
+		expr.generate();
+	    final String name = func.isConstructor() ? "<init>" : Operator.filterOperators(func.qualifiedName.shortName);
 	    addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), name, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
 	}
 
@@ -1267,77 +1296,66 @@ public abstract class Node {
 	    if (isTypeName) return new TypeI(id, 0, false);
 	    TypeI result = var.type;
 	    int i = 0;
-		if(var.enclosingType != null){
-		    for (final String generic : var.enclosingType.generics)
-			if (generic.equals(var.type.shortName)){
-			    result = prefixType.genericTypes.get(i);
-			    break;
-			}
-			else i++;
-		}
+	    if (var.enclosingType != null) for (final String generic : var.enclosingType.generics)
+		if (generic.equals(var.type.shortName)) {
+		    result = prefixType.genericTypes.get(i);
+		    break;
+		} else i++;
 	    if (unwrapped) return Semantics.checkUnwrappedOptional(result, this, this);
 	    return result;
 	}
 
 	@Override
 	public void analyse() {
-	    if(id.equals("self") && Scope.inPropertyScope()){
+	    if (id.equals("self") && Scope.inPropertyScope()) {
 		isSelf = true;
-		PropertyScope scope = Scope.getPropertyScope();
+		final PropertyScope scope = Scope.getPropertyScope();
 		var = scope.field;
-	    }else if(id.equals("new") && Scope.inPropertyScope()){
-		var = Scope.getPropertyScope().vars.get(0);
-	    }else if (prefix == null){
+	    } else if (id.equals("new") && Scope.inPropertyScope()) var = Scope.getPropertyScope().vars.get(0);
+	    else if (prefix == null) {
 		// Check if this is a type name rather than a variable
-		Optional<Type> typeOpt = Semantics.getType(id);
-		if(typeOpt.isPresent()){
+		final Optional<Type> typeOpt = Semantics.getType(id);
+		if (typeOpt.isPresent()) {
 		    isTypeName = true;
 		    return;
 		}
 		var = Semantics.getVar(id);
-	    }else {
+	    } else {
 		prefix.analyse();
 		prefixType = prefix.getExprType();
 		var = Semantics.getVar(id, prefixType);
 	    }
 	    if (var == null) semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
 	    else if (!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
-	    else if(!var.isLocal && Scope.inFuncScope() && Scope.getFuncScope().isStatic && !var.isStatic() && prefix == null) semanticError(this, line, column, NON_STATIC_VAR_USED_IN_STATIC_CONTEXT, var.qualifiedName.shortName);
+	    else if (!var.isLocal && Scope.inFuncScope() && Scope.getFuncScope().isStatic && !var.isStatic() && (prefix == null)) semanticError(this, line, column, NON_STATIC_VAR_USED_IN_STATIC_CONTEXT, var.qualifiedName.shortName);
 	}
 
 	@Override
 	public void generate() {
-	    if(var == null || isTypeName) return;
-	    if(prefix != null){
+	    if ((var == null) || isTypeName) return;
+	    if (prefix != null) {
 		prefix.generate();
-		if(!var.isGetProperty || isSelf){
+		if (!var.isGetProperty || isSelf) {
 		    String enclosingType = var.enclosingType.qualifiedName.toBytecodeName(), varType = var.type.toBytecodeName();
-		    if(prefixType.isTuple()){
+		    if (prefixType.isTuple()) {
 			enclosingType = "Tuple" + prefixType.tupleTypes.size();
 			varType = "Ljava/lang/Object;";
 		    }
 		    addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, enclosingType, varType, BitOp.and(var.modifiers, EnumModifier.STATIC.intVal)));
-		    if(prefixType.isTuple()){
-			addFuncStmt(new GenNodeTypeOpcode(Opcodes.CHECKCAST, var.type.toBytecodeName()));
-		    }
-		}
+		    if (prefixType.isTuple()) addFuncStmt(new GenNodeTypeOpcode(Opcodes.CHECKCAST, var.type.toBytecodeName()));
+		} else generateGetFuncCall(var);
+	    } else if (var.isLocal) addFuncStmt(new GenNodeVarLoad(var.type.getInstructionType(), var.localID));
+	    else {
+		if (!var.isStatic()) addFuncStmt(new GenNodeThis());
+		if (!var.isGetProperty || isSelf) addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName(), BitOp.and(var.modifiers, EnumModifier.STATIC.intVal)));
 		else generateGetFuncCall(var);
-	    }else{
-		if(var.isLocal){
-		    addFuncStmt(new GenNodeVarLoad(var.type.getInstructionType(), var.localID));
-		}
-		else{
-		    if(!var.isStatic()) addFuncStmt(new GenNodeThis());
-		    if(!var.isGetProperty || isSelf) addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName(), BitOp.and(var.modifiers, EnumModifier.STATIC.intVal)));
-		    else generateGetFuncCall(var);
-		}
 	    }
 	}
 
-	private void generateGetFuncCall(Field var) {
-	    String enclosingType = var.enclosingType.qualifiedName.toBytecodeName();
-	    String getFuncName = "$get" + var.qualifiedName.shortName;
-	    String signature = "()" + var.type.toBytecodeName();
+	private void generateGetFuncCall(final Field var) {
+	    final String enclosingType = var.enclosingType.qualifiedName.toBytecodeName();
+	    final String getFuncName = "$get" + var.qualifiedName.shortName;
+	    final String signature = "()" + var.type.toBytecodeName();
 	    GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, getFuncName, signature, false, var.isPrivate(), var.isStatic(), false));
 	}
 
@@ -1360,50 +1378,49 @@ public abstract class Node {
 	    expr.analyse();
 	    final TypeI exprType = expr.getExprType();
 	    var.analyse();
-	    if(var.errored) errored = true;
+	    if (var.errored) errored = true;
 	    if (var.var != null) if (!var.var.type.canBeAssignedTo(expr.getExprType())) semanticError(this, line, column, CANNOT_ASSIGN, var.var.type, exprType);
 	}
 
 	@Override
 	public void generate() {
-	    if(var.prefix != null){
+	    if (var.prefix != null) {
 		var.prefix.generate();
 		expr.generate();
-		// If the variable is a property with a set block, we have to call the set function and assign the variable to the result
-		if(var.var.isSetProperty){
-		    generateSetFuncCall(var.var);
-		}
+		// If the variable is a property with a set block, we have to
+		// call the set function and assign the variable to the result
+		if (var.var.isSetProperty) generateSetFuncCall(var.var);
 		addFuncStmt(new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName(), var.var.isStatic()));
-	    }else{
+	    } else {
 		GenNode node = null;
-		if(var.var.isLocal){
+		if (var.var.isLocal) {
 		    expr.generate();
 		    node = new GenNodeVarStore(var.var.type.getInstructionType(), var.var.localID);
-		}else{
-		    if(!var.var.isStatic()) addFuncStmt(new GenNodeThis());
+		} else {
+		    if (!var.var.isStatic()) addFuncStmt(new GenNodeThis());
 		    expr.generate();
-		    // If the variable is a property with a set block, we have to call the set function and assign the variable to the result
-		    if(var.var.isSetProperty){
-			generateSetFuncCall(var.var);
-		    }
+		    // If the variable is a property with a set block, we have
+		    // to call the set function and assign the variable to the
+		    // result
+		    if (var.var.isSetProperty) generateSetFuncCall(var.var);
 		    node = new GenNodeFieldStore(var.var.qualifiedName.shortName, var.var.enclosingType.qualifiedName.toBytecodeName(), var.var.type.toBytecodeName(), var.var.isStatic());
 		}
 		addFuncStmt(node);
 	    }
-	    
+
 	}
 
-	private void generateSetFuncCall(Field var) {
-	    String setFuncName = "$set" + var.qualifiedName.shortName;
-	    String enclosingType = var.enclosingType.qualifiedName.toBytecodeName();
-	    String varType = var.type.toBytecodeName();
-	    String signature = "(" + varType + ")" + varType;
+	private void generateSetFuncCall(final Field var) {
+	    final String setFuncName = "$set" + var.qualifiedName.shortName;
+	    final String enclosingType = var.enclosingType.qualifiedName.toBytecodeName();
+	    final String varType = var.type.toBytecodeName();
+	    final String signature = "(" + varType + ")" + varType;
 	    addFuncStmt(new GenNodeFuncCall(enclosingType, setFuncName, signature, false, var.isPrivate(), var.isStatic(), false));
 	}
 
 	@Override
 	public String toString() {
-	    StringBuilder builder = new StringBuilder();
+	    final StringBuilder builder = new StringBuilder();
 	    builder.append("NodeVarAssign [var=");
 	    builder.append(var);
 	    builder.append(", assignOp=");
@@ -1822,40 +1839,38 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    if(operatorOverloadFunc == null){
+	    if (operatorOverloadFunc == null) {
 		// Simple binary expression on primitive types
-		EnumInstructionOperand precedentType = Semantics.getPrecedentType(exprType1, exprType2).getInstructionType();
-		
+		final EnumInstructionOperand precedentType = Semantics.getPrecedentType(exprType1, exprType2).getInstructionType();
+
 		// Generate the expressions and add the necessary casts
 		expr1.generate();
-		if(exprType1.getInstructionType() != precedentType){
-		    addFuncStmt(new GenNodePrimitiveCast(exprType1.getInstructionType(), precedentType));
-		}
+		if (exprType1.getInstructionType() != precedentType) addFuncStmt(new GenNodePrimitiveCast(exprType1.getInstructionType(), precedentType));
 		expr2.generate();
-		if(exprType2.getInstructionType() != precedentType){
-		    addFuncStmt(new GenNodePrimitiveCast(exprType2.getInstructionType(), precedentType));
-		}
+		if (exprType2.getInstructionType() != precedentType) addFuncStmt(new GenNodePrimitiveCast(exprType2.getInstructionType(), precedentType));
 		addFuncStmt(new GenNodeBinary(operator, precedentType));
-	    }else{
+	    } else {
 		// Operator-overloaded binary expression
-		String enclosingType = operatorOverloadFunc.enclosingType.qualifiedName.toBytecodeName();
-		boolean interfaceFunc = operatorOverloadFunc.enclosingType.type == EnumType.INTERFACE, privateFunc = BitOp.and(operatorOverloadFunc.modifiers, EnumModifier.PRIVATE.intVal);
+		final String enclosingType = operatorOverloadFunc.enclosingType.qualifiedName.toBytecodeName();
+		final boolean interfaceFunc = operatorOverloadFunc.enclosingType.type == EnumType.INTERFACE, privateFunc = BitOp.and(operatorOverloadFunc.modifiers, EnumModifier.PRIVATE.intVal);
 		String parameterType = null;
-		if(operatorOverloadFunc.enclosingType.qualifiedName.shortName.equals(exprType1.shortName)){
-		    // expression 1 is the reference from which the method should be called
+		if (operatorOverloadFunc.enclosingType.qualifiedName.shortName.equals(exprType1.shortName)) {
+		    // expression 1 is the reference from which the method
+		    // should be called
 		    expr1.generate();
 		    // expr2 is the parameter to the method
 		    expr2.generate();
 		    parameterType = exprType2.toBytecodeName();
-		}else{
-		    // expression 2 is the reference from which the method should be called
+		} else {
+		    // expression 2 is the reference from which the method
+		    // should be called
 		    expr2.generate();
 		    // expr1 is the parameter to the method
 		    expr1.generate();
 		    parameterType = exprType1.toBytecodeName();
 		}
-		String name = Operator.filterOperators(operator.opStr);
-		addFuncStmt(new GenNodeFuncCall(enclosingType, name, "("+parameterType+")"+operatorOverloadFunc.returnType.toBytecodeName(), interfaceFunc, privateFunc, false, false));
+		final String name = Operator.filterOperators(operator.opStr);
+		addFuncStmt(new GenNodeFuncCall(enclosingType, name, "(" + parameterType + ")" + operatorOverloadFunc.returnType.toBytecodeName(), interfaceFunc, privateFunc, false, false));
 	    }
 	}
     }
@@ -1888,9 +1903,9 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    if (!((NodeVariable) expr).errored) {
 		final TypeI exprType = expr.getExprType();
-		Operation op = Semantics.getOperationType(exprType, operator);
+		final Operation op = Semantics.getOperationType(exprType, operator);
 		if (op == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPE, operator.opStr, exprType);
-		else{
+		else {
 		    overloadFunc = op.overloadFunc;
 		    type = op.type;
 		}
@@ -1903,14 +1918,14 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    if(overloadFunc == null){
+	    if (overloadFunc == null) {
 		expr.generate();
 		addFuncStmt(new GenNodeUnary(type.getInstructionType(), operator, prefix));
-	    }else{
+	    } else {
 		expr.generate();
-		String enclosingType = overloadFunc.enclosingType.qualifiedName.toBytecodeName(), returnType = overloadFunc.returnType.toBytecodeName();
-		boolean privateFunc = BitOp.and(overloadFunc.modifiers, EnumModifier.PRIVATE.intVal), interfaceFunc = overloadFunc.enclosingType.type == EnumType.INTERFACE;
-		String name = Operator.filterOperators(operator.opStr);
+		final String enclosingType = overloadFunc.enclosingType.qualifiedName.toBytecodeName(), returnType = overloadFunc.returnType.toBytecodeName();
+		final boolean privateFunc = BitOp.and(overloadFunc.modifiers, EnumModifier.PRIVATE.intVal), interfaceFunc = overloadFunc.enclosingType.type == EnumType.INTERFACE;
+		final String name = Operator.filterOperators(operator.opStr);
 		addFuncStmt(new GenNodeFuncCall(enclosingType, name, "()" + returnType, interfaceFunc, privateFunc, false, false));
 	    }
 	}
@@ -1937,7 +1952,7 @@ public abstract class Node {
     }
 
     public static class NodeSelf extends Node implements IExpression {
-	
+
 	public Field field;
 
 	public NodeSelf(final int line, final int columnStart) {
@@ -1946,12 +1961,11 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    if (Scope.getPropertyScope() != null){
-		PropertyScope scope = Scope.getPropertyScope();
+	    if (Scope.getPropertyScope() != null) {
+		final PropertyScope scope = Scope.getPropertyScope();
 		field = scope.field;
 		return scope.returnType;
-	    }
-	    else semanticError(this, line, column, CANNOT_USE_SELF);
+	    } else semanticError(this, line, column, CANNOT_USE_SELF);
 	    return null;
 	}
 
@@ -1988,9 +2002,9 @@ public abstract class Node {
 	public NodeExprs exprs = new NodeExprs();
 	public TypeI arrayType, elementType;
 
-	public NodeArray(final int line, final int column, NodeExprs nodeExprs) {
+	public NodeArray(final int line, final int column, final NodeExprs nodeExprs) {
 	    super(line, column);
-	    this.exprs = nodeExprs;
+	    exprs = nodeExprs;
 	}
 
 	public void add(final IExpression expr) {
@@ -2016,7 +2030,7 @@ public abstract class Node {
 	    elementType = exprList.getFirst().getExprType();
 	    for (int i = 1; i < exprList.size(); i++)
 		elementType = Semantics.getPrecedentType(elementType, exprList.get(i).getExprType());
-	    arrayType = elementType.copy().setArrDims(elementType.arrDims+1);
+	    arrayType = elementType.copy().setArrDims(elementType.arrDims + 1);
 	    // expression
 	    return arrayType;
 	}
@@ -2026,11 +2040,11 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    int len = exprs.exprs.size();
+	    final int len = exprs.exprs.size();
 	    int arrayStoreOpcode = Opcodes.AASTORE;
-	    EnumInstructionOperand type = elementType.getInstructionType();
+	    final EnumInstructionOperand type = elementType.getInstructionType();
 	    GenNode arrayCreateNode = null;
-	    switch(type){
+	    switch (type) {
 		case ARRAY:
 		    arrayCreateNode = new GenNodeTypeOpcode(Opcodes.ANEWARRAY, elementType.toBytecodeName());
 		    arrayStoreOpcode = Opcodes.AASTORE;
@@ -2071,12 +2085,12 @@ public abstract class Node {
 		    arrayCreateNode = new GenNodeTypeOpcode(Opcodes.ANEWARRAY, Semantics.getType(elementType.shortName).get().qualifiedName.toBytecodeName());
 		    arrayStoreOpcode = Opcodes.AASTORE;
 		    break;
-		    
+
 	    }
 	    addFuncStmt(new GenNodeInt(len));
 	    addFuncStmt(arrayCreateNode);
 	    int index = 0;
-	    for(IExpression expr : exprs.exprs){
+	    for (final IExpression expr : exprs.exprs) {
 		addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 		addFuncStmt(new GenNodeInt(index++));
 		expr.generate();
@@ -2111,9 +2125,8 @@ public abstract class Node {
 	    if (exprs.exprs.size() == 0) return TypeI.getObjectType();
 	    type = new TypeI("", 0, false);
 	    char name = 'a';
-	    for (final IExpression expr : exprs.exprs){
+	    for (final IExpression expr : exprs.exprs)
 		type.tupleTypes.add(expr.getExprType().copy().setTupleName(String.valueOf(name++)));
-	    }
 	    return type;
 	}
 
@@ -2122,13 +2135,14 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    GenNode.addFuncStmt(new GenNodeNew("Tuple"+exprs.exprs.size()));
+	    GenNode.addFuncStmt(new GenNodeNew("Tuple" + exprs.exprs.size()));
 	    GenNode.addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 	    exprs.generate();
-	    StringBuilder signature = new StringBuilder("(");
-	    for(int i = 0; i < type.tupleTypes.size(); i++) signature.append("Ljava/lang/Object;");
+	    final StringBuilder signature = new StringBuilder("(");
+	    for (int i = 0; i < type.tupleTypes.size(); i++)
+		signature.append("Ljava/lang/Object;");
 	    signature.append(")V");
-	    GenNode.addFuncStmt(new GenNodeFuncCall("Tuple"+exprs.exprs.size(), "<init>", signature.toString(), false, false, false, true));
+	    GenNode.addFuncStmt(new GenNodeFuncCall("Tuple" + exprs.exprs.size(), "<init>", signature.toString(), false, false, false, true));
 	}
 
     }
@@ -2187,11 +2201,11 @@ public abstract class Node {
 	    if ((expr != null) && !block.lastIsReturn()) addFuncStmt(new GenNodeJump(endLabel));
 
 	    if (elseStmt == null) // If this is the end of the block, place the
-				  // label
-		addFuncStmt(new GenNodeLabel(endLabel));
+		// label
+	    addFuncStmt(new GenNodeLabel(endLabel));
 	    else // If we're not at the end of the block, then generate the next
-		 // block
-		elseStmt.generate(endLabel, thisLabel);
+		// block
+	    elseStmt.generate(endLabel, thisLabel);
 
 	}
 
@@ -2212,7 +2226,7 @@ public abstract class Node {
 	    ((Node) expr).analyse();
 	    if (!((Node) expr).errored) {
 		final TypeI exprType = expr.getExprType();
-		if (EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL && !exprType.isArray());
+		if ((EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL) && !exprType.isArray()) ;
 		else semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
 	    }
 	    block.analyse();
@@ -2225,7 +2239,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    Label lbl0 = new Label(), lbl1 = new Label();
+	    final Label lbl0 = new Label(), lbl1 = new Label();
 	    addFuncStmt(new GenNodeLabel(lbl1));
 	    addFuncStmt(new GenNodeConditionalJump(expr, lbl0));
 	    block.generate();
@@ -2238,7 +2252,7 @@ public abstract class Node {
     public static abstract class NodeFor extends Node implements IFuncStmt, IConstruct {
 	public IExpression expr;
 	public NodeFuncBlock block;
-	
+
 	public TypeI exprType;
 
 	public NodeFor(final int line, final int column, final IExpression expr, final NodeFuncBlock block) {
@@ -2278,17 +2292,13 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    if (initStmt != null){
+	    if (initStmt != null) {
 		initStmt.analyse();
-		if(((Node)initStmt).errored){
-		    errored = true;
-		}
+		if (((Node) initStmt).errored) errored = true;
 	    }
-	    if (endStmt != null){
+	    if (endStmt != null) {
 		endStmt.analyse();
-		if(((Node)endStmt).errored){
-		    errored = true;
-		}
+		if (((Node) endStmt).errored) errored = true;
 	    }
 	    block.analyse();
 	    super.analyse();
@@ -2296,12 +2306,12 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    if(initStmt != null) initStmt.generate();
-	    Label lbl0 = new Label(), lbl1 = new Label();
+	    if (initStmt != null) initStmt.generate();
+	    final Label lbl0 = new Label(), lbl1 = new Label();
 	    addFuncStmt(new GenNodeLabel(lbl0));
 	    addFuncStmt(new GenNodeConditionalJump(expr, lbl1));
 	    block.generate();
-	    if(endStmt != null) endStmt.generate();
+	    if (endStmt != null) endStmt.generate();
 	    addFuncStmt(new GenNodeJump(lbl0));
 	    addFuncStmt(new GenNodeLabel(lbl1));
 	}
@@ -2342,7 +2352,17 @@ public abstract class Node {
 	    }
 	    Scope.push(new Scope());
 	    var = new Variable(varId, varType);
-	    Scope.getFuncScope().locals += exprType.isArray() ? 3 : 1; // We have to reserve some local variables for the iterator instance
+	    Scope.getFuncScope().locals += exprType.isArray() ? 3 : 1; // We
+								       // have
+								       // to
+								       // reserve
+								       // some
+								       // local
+								       // variables
+								       // for
+								       // the
+								       // iterator
+								       // instance
 	    Semantics.addVar(var);
 	    block.analyse();
 	    Scope.pop();
@@ -2351,29 +2371,33 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    expr.generate();
-	    int iteratorVarID = var.localID + 1; // Get the varID that we reserved in the analyse() method
-	    if(!exprType.isArray()){
-		String enclosingType = Semantics.getType(exprType.shortName).get().qualifiedName.toBytecodeName();
+	    final int iteratorVarID = var.localID + 1; // Get the varID that we
+						       // reserved in the
+						       // analyse() method
+	    if (!exprType.isArray()) {
+		final String enclosingType = Semantics.getType(exprType.shortName).get().qualifiedName.toBytecodeName();
 		GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, "iterator", "()Ljava/util/Iterator;", false, false, false, false));
 		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.REFERENCE, iteratorVarID));
-		
+
 		// Check if the iterator has a next value
-		Label lbl0 = new Label(), lbl1 = new Label();
+		final Label lbl0 = new Label(), lbl1 = new Label();
 		GenNode.addFuncStmt(new GenNodeLabel(lbl0));
 		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.REFERENCE, iteratorVarID));
 		GenNode.addFuncStmt(new GenNodeFuncCall("java/util/Iterator", "hasNext", "()Z", true, false, false, false));
 		GenNode.addFuncStmt(new GenNodeJump(Opcodes.IFEQ, lbl1));
-		
-		// Get the iterator's next value and jump to the conditional branch
+
+		// Get the iterator's next value and jump to the conditional
+		// branch
 		GenNode.addFuncStmt(new GenNodeFuncCall("java/util/Iterator", "next", "()Ljava/lang/Object;", true, false, false, false));
 		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.REFERENCE, var.localID));
 		block.generate();
 		GenNode.addFuncStmt(new GenNodeJump(lbl0));
 		GenNode.addFuncStmt(new GenNodeLabel(lbl1));
-	    }else{
-		EnumInstructionOperand elementType = exprType.copy().setArrDims(exprType.arrDims-1).getInstructionType();
-		int indexVarID = iteratorVarID + 1, lengthVarID = indexVarID + 1;
-		// Cache the array reference to a local variable so we don't have to re-generate the expression when accessing an index
+	    } else {
+		final EnumInstructionOperand elementType = exprType.copy().setArrDims(exprType.arrDims - 1).getInstructionType();
+		final int indexVarID = iteratorVarID + 1, lengthVarID = indexVarID + 1;
+		// Cache the array reference to a local variable so we don't
+		// have to re-generate the expression when accessing an index
 		GenNode.addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.ARRAY, iteratorVarID));
 		// Save the array length to a local variable
@@ -2382,16 +2406,19 @@ public abstract class Node {
 		// Save the first index (0) to a local variable
 		GenNode.addFuncStmt(new GenNodeInt(0));
 		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.INT, indexVarID));
-		
-		Label lbl0 = new Label(), lbl1 = new Label();
-		// This is the label to which we will jump when the iteration is finished
+
+		final Label lbl0 = new Label(), lbl1 = new Label();
+		// This is the label to which we will jump when the iteration is
+		// finished
 		GenNode.addFuncStmt(new GenNodeLabel(lbl0));
-		// Load the current index, the array length and then compare them. Jump if the index is no less than the array length
+		// Load the current index, the array length and then compare
+		// them. Jump if the index is no less than the array length
 		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.INT, indexVarID));
 		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.INT, lengthVarID));
 		GenNode.addFuncStmt(new GenNodeConditionalJump(Opcodes.IF_ICMPLT, lbl1));
-		
-		// Load the element at the index of the array into the variable specified in the source code
+
+		// Load the element at the index of the array into the variable
+		// specified in the source code
 		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.ARRAY, iteratorVarID));
 		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.INT, indexVarID));
 		GenNode.addFuncStmt(new GenNodeArrayIndexLoad(elementType));
@@ -2716,10 +2743,10 @@ public abstract class Node {
 		accessType = accessExpr.getExprType();
 		exprType = expr.getExprType();
 		if (exprType.isPrimitive() || exprType.isTuple() || exprType.isVoid()) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, "[]", exprType, accessType);
-		else if (exprType.isArray()){
-		    if(accessType.isValidArrayAccessor()) return exprType.copy().setArrDims(exprType.arrDims - 1);
+		else if (exprType.isArray()) {
+		    if (accessType.isValidArrayAccessor()) return exprType.copy().setArrDims(exprType.arrDims - 1);
 		    else semanticError(this, line, column, ARRAY_INDEX_NOT_NUMERIC, accessType);
-		}else {
+		} else {
 		    // Find an operator overload
 		    final LinkedList<TypeI> params = new LinkedList<TypeI>();
 		    params.add(accessExpr.getExprType());
@@ -2739,11 +2766,11 @@ public abstract class Node {
 	public void generate() {
 	    expr.generate();
 	    accessExpr.generate();
-	    if(overloadFunc == null){
-		GenNode.addFuncStmt(new GenNodeArrayIndexLoad(exprType.getInstructionType()));
-	    }else{
-		String enclosingType = overloadFunc.enclosingType.qualifiedName.toBytecodeName(), signature = "("+accessType.toBytecodeName()+")"+overloadFunc.returnType.toBytecodeName();
-		boolean interfaceFunc = overloadFunc.enclosingType.type == EnumType.INTERFACE, privateFunc = BitOp.and(overloadFunc.modifiers, EnumModifier.PRIVATE.intVal);
+	    if (overloadFunc == null) GenNode.addFuncStmt(new GenNodeArrayIndexLoad(accessType.getInstructionType()));
+	    else {
+		final String enclosingType = overloadFunc.enclosingType.qualifiedName.toBytecodeName(), signature = "(" + accessType.toBytecodeName() + ")"
+			+ overloadFunc.returnType.toBytecodeName();
+		final boolean interfaceFunc = overloadFunc.enclosingType.type == EnumType.INTERFACE, privateFunc = BitOp.and(overloadFunc.modifiers, EnumModifier.PRIVATE.intVal);
 		GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, "[]", signature, interfaceFunc, privateFunc, false, false));
 	    }
 	}

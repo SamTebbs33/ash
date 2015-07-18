@@ -179,10 +179,11 @@ public class Parser {
 	if ((token.type != t) && !silenceErrors) throw new UnexpectedTokenException(token, t);
 	return token;
     }
-    
-    private Token expect(TokenMatcher... matchers) throws UnexpectedTokenException{
-	Token token = getNext();
-	for(TokenMatcher matcher : matchers) if(matcher.matches(token)) return token;
+
+    private Token expect(final TokenMatcher... matchers) throws UnexpectedTokenException {
+	final Token token = getNext();
+	for (final TokenMatcher matcher : matchers)
+	    if (matcher.matches(token)) return token;
 	throw new UnexpectedTokenException(token, matchers);
     }
 
@@ -558,7 +559,7 @@ public class Parser {
 	NodePrefix prefix = null;
 	do {
 	    final Token id = expect(TokenType.ID, TokenType.SELF, TokenType.SUPER, TokenType.THIS);
-	    //final NodeTypes generics = parseGenerics(false);
+	    // final NodeTypes generics = parseGenerics(false);
 	    if (getNext().type == TokenType.PARENL) {
 		rewind();
 		final NodeExprs exprs = parseCallArgs(TokenType.PARENL, TokenType.PARENR);
@@ -744,7 +745,8 @@ public class Parser {
 	Token next = expect(TokenType.COLON, TokenType.ASSIGNOP);
 	NodeVarDec varDec;
 	final TokenType type = next.type;
-	// If a type is given, parse it as an explicit var declaration, otherwise parse it as an implicit var declaration
+	// If a type is given, parse it as an explicit var declaration,
+	// otherwise parse it as an implicit var declaration
 	if (type == TokenType.COLON) {
 	    final NodeType nodeType = parseType();
 	    varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, null);
@@ -759,7 +761,8 @@ public class Parser {
 	    // A right brace ends the property block
 	    while (getNext().type != TokenType.BRACER) {
 		rewind();
-		// If neither a set block or get block have been defined yet, parse either
+		// If neither a set block or get block have been defined yet,
+		// parse either
 		if ((setBlock == null) && (getBlock == null)) {
 		    next = expect(TokenType.GET, TokenType.SET);
 		    if (next.type == TokenType.SET) setBlock = parseFuncBlock(true, true);
@@ -769,14 +772,16 @@ public class Parser {
 		if (next.type == TokenType.GET) {
 		    // If a get block has already been defined, throw errors
 		    if (getBlock != null) {
-			// If a set block has not been defined, then say we expected a set block instead of another get block
+			// If a set block has not been defined, then say we
+			// expected a set block instead of another get block
 			if (setBlock == null) throw new UnexpectedTokenException(next, TokenType.SET, TokenType.BRACER);
 			else throw new UnexpectedTokenException(next, TokenType.BRACER);
 		    } else getBlock = parseFuncBlock(true, true);
 		} else if (next.type == TokenType.SET) {
 		    // If a set block has already been defined, throw errors
 		    if (setBlock != null) {
-			// If a get block has not been defined, then say we expected a get block instead of another set block
+			// If a get block has not been defined, then say we
+			// expected a get block instead of another set block
 			if (getBlock == null) throw new UnexpectedTokenException(next, TokenType.GET, TokenType.BRACER);
 			else throw new UnexpectedTokenException(next, TokenType.BRACER);
 		    } else setBlock = parseFuncBlock(true, true);
@@ -784,10 +789,11 @@ public class Parser {
 	    }
 	    varDec.getBlock = getBlock;
 	    varDec.setBlock = setBlock;
-	    
-	    // The get and set block will become functions in the bytecode, so tell the blocks that they are indeed in functions
-	    if(varDec.getBlock != null) varDec.getBlock.inFunction = true;
-	    if(varDec.setBlock != null) varDec.setBlock.inFunction = true;
+
+	    // The get and set block will become functions in the bytecode, so
+	    // tell the blocks that they are indeed in functions
+	    if (varDec.getBlock != null) varDec.getBlock.inFunction = true;
+	    if (varDec.setBlock != null) varDec.setBlock.inFunction = true;
 	} else rewind();
 	return varDec;
     }
@@ -854,11 +860,10 @@ public class Parser {
     private NodeType parseType(final boolean necessary) throws UnexpectedTokenException {
 	final NodeType type = new NodeType();
 	// Parse tuple types
-	if (getNext().type == TokenType.BRACKETL) {
-	    do {
-		type.tupleTypes.add(parseType());
-	    } while (expect(TokenType.COMMA, TokenType.BRACKETR).type == TokenType.COMMA);
-	} else {
+	if (getNext().type == TokenType.BRACKETL) do
+	    type.tupleTypes.add(parseType());
+	while (expect(TokenType.COMMA, TokenType.BRACKETR).type == TokenType.COMMA);
+	else {
 	    rewind();
 	    try {
 		type.id = expect(TokenType.ID, TokenType.PRIMITIVE).data;

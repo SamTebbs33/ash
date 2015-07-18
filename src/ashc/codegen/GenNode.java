@@ -32,13 +32,14 @@ public abstract class GenNode {
     private static Stack<GenNodeFunction> functionStack = new Stack<GenNodeFunction>();
 
     public abstract void generate(Object visitor);
-    
+
     public static void generate() {
-	for(GenNodeType type : types) type.generate(null);
+	for (final GenNodeType type : types)
+	    type.generate(null);
     }
-    
-    public static void addToStackRequirement(int toAdd){
-	if(getCurrentFunction().stack + toAdd > getCurrentFunction().maxStack) getCurrentFunction().maxStack = getCurrentFunction().stack + toAdd;
+
+    public static void addToStackRequirement(final int toAdd) {
+	if ((getCurrentFunction().stack + toAdd) > getCurrentFunction().maxStack) getCurrentFunction().maxStack = getCurrentFunction().stack + toAdd;
 	getCurrentFunction().stack += toAdd;
 
     }
@@ -47,29 +48,30 @@ public abstract class GenNode {
 	types.add(node);
 	typeStack.push(node);
     }
-    
-    public static void addGenNodeFunction(GenNodeFunction genNodeFunc) {
+
+    public static void addGenNodeFunction(final GenNodeFunction genNodeFunc) {
 	typeStack.peek().functions.add(genNodeFunc);
 	functionStack.push(genNodeFunc);
     }
-    
-    public static void addGenNodeField(GenNodeField field){
+
+    public static void addGenNodeField(final GenNodeField field) {
 	typeStack.peek().fields.add(field);
     }
-    
-    public static void addFuncStmt(GenNode node){
-	//System.out.printf("Adding: %s to func %s%n", node, getCurrentFunction());
+
+    public static void addFuncStmt(final GenNode node) {
+	// System.out.printf("Adding: %s to func %s%n", node,
+	// getCurrentFunction());
 	functionStack.peek().stmts.add(node);
     }
 
     public static void exitGenNodeType() {
 	typeStack.pop();
     }
-    
-    public static void exitGenNodeFunction(){
+
+    public static void exitGenNodeFunction() {
 	functionStack.pop();
     }
-    
+
     public static GenNodeFunction getCurrentFunction() {
 	return functionStack.peek();
     }
@@ -84,10 +86,10 @@ public abstract class GenNode {
 
     public static enum EnumInstructionOperand {
 	REFERENCE(1), BOOL(1), BYTE(1), CHAR(1), INT(1), LONG(2), FLOAT(1), DOUBLE(2), ARRAY(1), SHORT(1), VOID(0);
-	
+
 	public int size;
 
-	private EnumInstructionOperand(int size) {
+	private EnumInstructionOperand(final int size) {
 	    this.size = size;
 	}
     }
@@ -97,18 +99,18 @@ public abstract class GenNode {
 	public String name, superclass, shortName;
 	public String[] interfaces;
 	public int modifiers;
-	private LinkedList<GenNodeField> fields = new LinkedList<GenNodeField>();
+	private final LinkedList<GenNodeField> fields = new LinkedList<GenNodeField>();
 	private final LinkedList<GenNodeFunction> functions = new LinkedList<GenNodeFunction>();
 	public final LinkedList<String> generics = new LinkedList<String>();
 
-	public GenNodeType(final String name, String shortName, final String superclass, final String[] interfaces, final int modifiers) {
+	public GenNodeType(final String name, final String shortName, final String superclass, final String[] interfaces, final int modifiers) {
 	    this.name = name;
 	    this.superclass = superclass;
 	    this.interfaces = interfaces;
 	    this.modifiers = modifiers;
 	}
-	
-	public void addField(GenNodeField field){
+
+	public void addField(final GenNodeField field) {
 	    fields.add(field);
 	}
 
@@ -116,10 +118,11 @@ public abstract class GenNode {
 	public void generate(final Object visitor) {
 	    final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 	    StringBuffer genericsSignature = null;
-	    if(generics.size() > 0){
+	    if (generics.size() > 0) {
 		genericsSignature = new StringBuffer();
 		genericsSignature.append("<");
-		for(String g : generics) genericsSignature.append(g+":"+"Ljava/lang/Object;");
+		for (final String g : generics)
+		    genericsSignature.append(g + ":" + "Ljava/lang/Object;");
 		genericsSignature.append(">Ljava/lang/Object;");
 	    }
 	    cw.visit(52, modifiers | Opcodes.ACC_SUPER, name, genericsSignature != null ? genericsSignature.toString() : null, superclass, interfaces);
@@ -156,25 +159,25 @@ public abstract class GenNode {
     }
 
     public static class GenNodeFunction extends GenNode {
-	
+
 	public static class LocalVariable {
 	    public String name, type;
 	    public int id;
 	    public boolean endLabelGenerated = true;
 	    public GenNodeLabel end = new GenNodeLabel(new Label());
-	    
-	    public LocalVariable(String name, String type, int id) {
+
+	    public LocalVariable(final String name, final String type, final int id) {
 		this.name = name;
 		this.type = type;
 		this.id = id;
 		addFuncStmt(end);
 	    }
-	    
+
 	    public void updateUse() {
-		//endLabelGenerated = true;
-		//addFuncStmt(end);
+		// endLabelGenerated = true;
+		// addFuncStmt(end);
 	    }
-	
+
 	}
 
 	public String name, enclosingTypeName;
@@ -183,13 +186,13 @@ public abstract class GenNode {
 	public LinkedList<TypeI> params = new LinkedList<TypeI>();
 	public LinkedList<GenNode> stmts = new LinkedList<GenNode>();
 	public int stack, maxStack;
-	private HashMap<Integer, LocalVariable> locals = new HashMap<Integer, LocalVariable>();
+	private final HashMap<Integer, LocalVariable> locals = new HashMap<Integer, LocalVariable>();
 
 	public GenNodeFunction(final String name, final int modifiers, final String type) {
 	    this.name = name;
 	    this.modifiers = modifiers;
 	    this.type = type;
-	    this.enclosingTypeName = typeStack.peek().name;
+	    enclosingTypeName = typeStack.peek().name;
 	}
 
 	@Override
@@ -201,24 +204,21 @@ public abstract class GenNode {
 	    signature.append(")" + type);
 	    final MethodVisitor mv = cw.visitMethod(modifiers, name, signature.toString(), null, null);
 	    mv.visitCode();
-	    for (int i = 0; i < stmts.size(); i++){
+	    for (int i = 0; i < stmts.size(); i++)
 		stmts.get(i).generate(mv);
-	    }
-	    for(LocalVariable local : locals.values()){
-		if(!local.endLabelGenerated){
-		    mv.visitLabel(local.end.label);
-		}
-	    }
-	    //System.out.printf("Function: name=%s, stack=%d, locals=%d%n", name, maxStack, locals.size());
+	    for (final LocalVariable local : locals.values())
+		if (!local.endLabelGenerated) mv.visitLabel(local.end.label);
+	    // System.out.printf("Function: name=%s, stack=%d, locals=%d%n",
+	    // name, maxStack, locals.size());
 	    mv.visitMaxs(-1, -1);
 	    mv.visitEnd();
 	}
 
-	public void addLocal(LocalVariable local) {
+	public void addLocal(final LocalVariable local) {
 	    locals.put(local.id, local);
 	}
-	
-	public LocalVariable getLocal(int id){
+
+	public LocalVariable getLocal(final int id) {
 	    return locals.get(id);
 	}
 
@@ -234,10 +234,10 @@ public abstract class GenNode {
 	    this.name = name;
 	    this.type = type;
 	}
-	
-	public GenNodeField(final int modifiers, final String name, final String type, String genericType) {
+
+	public GenNodeField(final int modifiers, final String name, final String type, final String genericType) {
 	    this(modifiers, name, type);
-	    this.genericType = "T"+genericType+";";
+	    this.genericType = "T" + genericType + ";";
 	}
 
 	public GenNodeField(final Field field) {
@@ -257,26 +257,26 @@ public abstract class GenNode {
 	}
 
     }
-    
+
     public static class GenNodeVar extends GenNode {
-	
+
 	public LocalVariable local;
 	public Label start = new Label();
 	public String generics;
 
-	public GenNodeVar(String name, String type, int id, String generics) {
+	public GenNodeVar(final String name, final String type, final int id, final String generics) {
 	    local = new GenNodeFunction.LocalVariable(name, type, id);
 	    this.generics = generics;
 	    getCurrentFunction().addLocal(local);
 	}
 
 	@Override
-	public void generate(Object visitor) {
-	    MethodVisitor mv = ((MethodVisitor)visitor);
-	    //mv.visitLabel(start);
+	public void generate(final Object visitor) {
+	    final MethodVisitor mv = ((MethodVisitor) visitor);
+	    // mv.visitLabel(start);
 	    mv.visitLocalVariable(local.name, local.type, generics, start, local.end.label, local.id);
 	}
-	
+
     }
 
     public static class GenNodeFieldLoad extends GenNode implements IGenNodeExpr {
@@ -284,7 +284,7 @@ public abstract class GenNode {
 	public String varName, enclosingType, type;
 	boolean isStatic;
 
-	public GenNodeFieldLoad(String varName, String enclosingType, String type, boolean isStatic) {
+	public GenNodeFieldLoad(final String varName, final String enclosingType, final String type, final boolean isStatic) {
 	    this.varName = varName;
 	    this.enclosingType = enclosingType;
 	    this.type = type;
@@ -305,7 +305,7 @@ public abstract class GenNode {
 	public String varName, enclosingType, type;
 	public boolean isStatic;
 
-	public GenNodeFieldStore(final String varName, final String enclosingType, final String type, boolean isStatic) {
+	public GenNodeFieldStore(final String varName, final String enclosingType, final String type, final boolean isStatic) {
 	    this.varName = varName;
 	    this.enclosingType = enclosingType;
 	    this.type = type;
@@ -318,21 +318,21 @@ public abstract class GenNode {
 	}
 
     }
-    
+
     public static class GenNodeVarStore extends GenNode {
-	
+
 	public EnumInstructionOperand operand;
 	public int varID;
 
-	public GenNodeVarStore(EnumInstructionOperand instructionType, int localID) {
-	    this.operand = instructionType;
-	    this.varID = localID;
+	public GenNodeVarStore(final EnumInstructionOperand instructionType, final int localID) {
+	    operand = instructionType;
+	    varID = localID;
 	    addToStackRequirement(-operand.size);
 	    getCurrentFunction().getLocal(localID).updateUse();
 	}
 
 	@Override
-	public void generate(Object visitor) {
+	public void generate(final Object visitor) {
 	    int opcode = 0;
 	    switch (operand) {
 		case BYTE:
@@ -355,9 +355,9 @@ public abstract class GenNode {
 		case REFERENCE:
 		    opcode = ASTORE;
 	    }
-	    ((MethodVisitor)visitor).visitVarInsn(opcode, varID);
+	    ((MethodVisitor) visitor).visitVarInsn(opcode, varID);
 	}
-	
+
     }
 
     public static class GenNodeVarLoad extends GenNode implements IGenNodeExpr {
@@ -408,7 +408,7 @@ public abstract class GenNode {
 	public String enclosingType, name, signature;
 	public boolean interfaceFunc, privateFunc, staticFunc, constructor;
 
-	public GenNodeFuncCall(final String enclosingType, final String name, final String signature, final boolean interfaceFunc, final boolean privateFunc, final boolean staticFunc, boolean constructor) {
+	public GenNodeFuncCall(final String enclosingType, final String name, final String signature, final boolean interfaceFunc, final boolean privateFunc, final boolean staticFunc, final boolean constructor) {
 	    this.enclosingType = enclosingType;
 	    this.name = name;
 	    this.signature = signature;
@@ -627,7 +627,7 @@ public abstract class GenNode {
 	public IExpression expr;
 	public Label label;
 	public int opcode;
-	
+
 	LinkedList<Integer> extraOpcodes = new LinkedList<Integer>();
 
 	public GenNodeConditionalJump(final IExpression expr, final Label label) {
@@ -660,8 +660,8 @@ public abstract class GenNode {
 			case BYTE:
 			case SHORT:
 			case BOOL:
-			     node.expr2.generate();
-			     node.expr1.generate();
+			    node.expr2.generate();
+			    node.expr1.generate();
 
 			    // Integer type operands are handled by one single
 			    // opcode
@@ -735,14 +735,14 @@ public abstract class GenNode {
 					break;
 				}
 			    } else // Compare the references
-			    switch (node.operator.operation) {
-				case NOT_EQUAL:
-				    opcode = IF_ACMPNE;
-				    break;
-				case EQUAL:
-				    opcode = IF_ACMPEQ;
-				    break;
-			    }
+				switch (node.operator.operation) {
+				    case NOT_EQUAL:
+					opcode = IF_ACMPNE;
+					break;
+				    case EQUAL:
+					opcode = IF_ACMPEQ;
+					break;
+				}
 
 		    }
 		} else {
@@ -761,9 +761,10 @@ public abstract class GenNode {
 	}
 
 	@Override
-	public void generate(Object visitor) {
-	    MethodVisitor mv = (MethodVisitor)visitor;
-	    for(Integer i : extraOpcodes) mv.visitInsn(i);
+	public void generate(final Object visitor) {
+	    final MethodVisitor mv = (MethodVisitor) visitor;
+	    for (final Integer i : extraOpcodes)
+		mv.visitInsn(i);
 	    mv.visitJumpInsn(opcode, label);
 	}
 
@@ -793,9 +794,9 @@ public abstract class GenNode {
 	    this(GOTO, label);
 	}
 
-	public GenNodeJump(int opcode, Label lbl0) {
+	public GenNodeJump(final int opcode, final Label lbl0) {
 	    this.opcode = opcode;
-	    this.label = lbl0;
+	    label = lbl0;
 	}
 
 	@Override
@@ -817,29 +818,29 @@ public abstract class GenNode {
 	    ((MethodVisitor) visitor).visitLabel(label);
 	}
     }
-    
+
     public static class GenNodeBinary extends GenNode {
 	public Operator operator;
 	public EnumInstructionOperand type;
-	
-	public GenNodeBinary(Operator operator, EnumInstructionOperand type) {
+
+	public GenNodeBinary(final Operator operator, final EnumInstructionOperand type) {
 	    this.operator = operator;
 	    this.type = type;
 	    addToStackRequirement(type.size);
 	}
 
 	@Override
-	public void generate(Object visitor) {
-	    MethodVisitor mv = (MethodVisitor)visitor;
+	public void generate(final Object visitor) {
+	    final MethodVisitor mv = (MethodVisitor) visitor;
 	    int opcode = 0;
-	    EnumOperation operation = operator.operation;
-	    switch(type){
+	    final EnumOperation operation = operator.operation;
+	    switch (type) {
 		case BYTE:
 		case CHAR:
 		case INT:
 		case SHORT:
 		case BOOL:
-		    switch(operation){		    
+		    switch (operation) {
 			case ADD:
 			    opcode = IADD;
 			    break;
@@ -870,25 +871,31 @@ public abstract class GenNode {
 			case MULTIPLY:
 			    opcode = IMUL;
 			    break;
-			//case POW: Pow is not defined for integers
+			    // case POW: Pow is not defined for integers
 			case SUBTRACT:
 			    opcode = ISUB;
 			    break;
 			default:
-			    // I curse Java for not having an opcode that simply checks integer equality... 
-			    Label l0 = new Label(), l1 = new Label();
-			    if(operation == EnumOperation.EQUAL) opcode = IF_ICMPNE;
-			    else if(operation == EnumOperation.GREATER) opcode = IF_ICMPLE;
-			    else if(operation == EnumOperation.LESS) opcode = IF_ICMPGE;
-			    else if(operation == EnumOperation.NOT_EQUAL) opcode = IF_ICMPEQ;
-			    else if(operation == EnumOperation.GREATER_EQUAL) opcode = IF_ICMPLT;
-			    else if(operation == EnumOperation.LESS_EQUAL) opcode = IF_ICMPGT;
-			    else if(operation == EnumOperation.AND){
-				// Checks if either of the two pushed expressions are 0, and if so, jumps to label 0
+			    // I curse Java for not having an opcode that simply
+			    // checks integer equality...
+			    final Label l0 = new Label(),
+			    l1 = new Label();
+			    if (operation == EnumOperation.EQUAL) opcode = IF_ICMPNE;
+			    else if (operation == EnumOperation.GREATER) opcode = IF_ICMPLE;
+			    else if (operation == EnumOperation.LESS) opcode = IF_ICMPGE;
+			    else if (operation == EnumOperation.NOT_EQUAL) opcode = IF_ICMPEQ;
+			    else if (operation == EnumOperation.GREATER_EQUAL) opcode = IF_ICMPLT;
+			    else if (operation == EnumOperation.LESS_EQUAL) opcode = IF_ICMPGT;
+			    else if (operation == EnumOperation.AND) {
+				// Checks if either of the two pushed
+				// expressions are 0, and if so, jumps to label
+				// 0
 				mv.visitJumpInsn(IFEQ, l0);
 				mv.visitJumpInsn(IFEQ, l0);
-			    }else if(operation == EnumOperation.OR){
-				// Checks if either of the two pushed expressions are 0, and if so, jumps to label 0
+			    } else if (operation == EnumOperation.OR) {
+				// Checks if either of the two pushed
+				// expressions are 0, and if so, jumps to label
+				// 0
 				mv.visitJumpInsn(IFNE, l0);
 				mv.visitJumpInsn(IFNE, l0);
 			    }
@@ -902,35 +909,35 @@ public abstract class GenNode {
 		    }
 		    break;
 		default:
-		    switch(operation){
+		    switch (operation) {
 			case ADD:
-			    if(type == EnumInstructionOperand.DOUBLE) opcode = DADD;
-			    else if(type == EnumInstructionOperand.FLOAT) opcode = FADD;
-			    else if(type == EnumInstructionOperand.LONG) opcode = LADD;
+			    if (type == EnumInstructionOperand.DOUBLE) opcode = DADD;
+			    else if (type == EnumInstructionOperand.FLOAT) opcode = FADD;
+			    else if (type == EnumInstructionOperand.LONG) opcode = LADD;
 			    break;
 			case SUBTRACT:
-			    if(type == EnumInstructionOperand.DOUBLE) opcode = DSUB;
-			    else if(type == EnumInstructionOperand.FLOAT) opcode = FSUB;
-			    else if(type == EnumInstructionOperand.LONG) opcode = LSUB;
+			    if (type == EnumInstructionOperand.DOUBLE) opcode = DSUB;
+			    else if (type == EnumInstructionOperand.FLOAT) opcode = FSUB;
+			    else if (type == EnumInstructionOperand.LONG) opcode = LSUB;
 			    break;
 			case DIVIDE:
-			    if(type == EnumInstructionOperand.DOUBLE) opcode = DDIV;
-			    else if(type == EnumInstructionOperand.FLOAT) opcode = FDIV;
-			    else if(type == EnumInstructionOperand.LONG) opcode = LDIV;
+			    if (type == EnumInstructionOperand.DOUBLE) opcode = DDIV;
+			    else if (type == EnumInstructionOperand.FLOAT) opcode = FDIV;
+			    else if (type == EnumInstructionOperand.LONG) opcode = LDIV;
 			    break;
 			case MOD:
-			    if(type == EnumInstructionOperand.DOUBLE) opcode = DREM;
-			    else if(type == EnumInstructionOperand.FLOAT) opcode = FREM;
-			    else if(type == EnumInstructionOperand.LONG) opcode = LREM;
+			    if (type == EnumInstructionOperand.DOUBLE) opcode = DREM;
+			    else if (type == EnumInstructionOperand.FLOAT) opcode = FREM;
+			    else if (type == EnumInstructionOperand.LONG) opcode = LREM;
 			    break;
 			case MULTIPLY:
-			    if(type == EnumInstructionOperand.DOUBLE) opcode = DMUL;
-			    else if(type == EnumInstructionOperand.FLOAT) opcode = FMUL;
-			    else if(type == EnumInstructionOperand.LONG) opcode = LMUL;
+			    if (type == EnumInstructionOperand.DOUBLE) opcode = DMUL;
+			    else if (type == EnumInstructionOperand.FLOAT) opcode = FMUL;
+			    else if (type == EnumInstructionOperand.LONG) opcode = LMUL;
 			    break;
 			case POW:
 			    // Only doubles should be using this
-			    GenNodeFuncCall powCall = new GenNodeFuncCall("java/lang/Math", "pow", "(DD)D", false, false, true, false);
+			    final GenNodeFuncCall powCall = new GenNodeFuncCall("java/lang/Math", "pow", "(DD)D", false, false, true, false);
 			    powCall.generate(mv);
 			    return; // No more to do here
 			case EQUAL:
@@ -940,17 +947,18 @@ public abstract class GenNode {
 			case LESS_EQUAL:
 			case GREATER_EQUAL:
 			    int compOpcode = DCMPL;
-			    if(type == EnumInstructionOperand.FLOAT) compOpcode = FCMPL;
-			    else if(type == EnumInstructionOperand.LONG) compOpcode = LCMP;
+			    if (type == EnumInstructionOperand.FLOAT) compOpcode = FCMPL;
+			    else if (type == EnumInstructionOperand.LONG) compOpcode = LCMP;
 			    mv.visitInsn(compOpcode);
-			    
-			    if(operation == EnumOperation.EQUAL) opcode = IFNE;
-			    else if(operation == EnumOperation.NOT_EQUAL) opcode = IFEQ;
-			    else if(operation == EnumOperation.LESS) opcode = IFGE;
-			    else if(operation == EnumOperation.GREATER) opcode = IFLE;
-			    else if(operation == EnumOperation.LESS_EQUAL) opcode = IFGT;
-			    else if(operation == EnumOperation.GREATER_EQUAL) opcode = IFLT;
-			    Label l0 = new Label(), l1 = new Label();
+
+			    if (operation == EnumOperation.EQUAL) opcode = IFNE;
+			    else if (operation == EnumOperation.NOT_EQUAL) opcode = IFEQ;
+			    else if (operation == EnumOperation.LESS) opcode = IFGE;
+			    else if (operation == EnumOperation.GREATER) opcode = IFLE;
+			    else if (operation == EnumOperation.LESS_EQUAL) opcode = IFGT;
+			    else if (operation == EnumOperation.GREATER_EQUAL) opcode = IFLT;
+			    final Label l0 = new Label(),
+			    l1 = new Label();
 			    mv.visitJumpInsn(opcode, l0);
 			    mv.visitInsn(ICONST_1);
 			    mv.visitJumpInsn(GOTO, l1);
@@ -963,97 +971,101 @@ public abstract class GenNode {
 	    }
 	    mv.visitInsn(opcode);
 	}
-	
+
     }
-    
+
     public static class GenNodeUnary extends GenNode {
 	public EnumInstructionOperand type;
 	public Operator operator;
 	boolean prefix;
-	
-	public GenNodeUnary(EnumInstructionOperand type, Operator operator, boolean prefix) {
+
+	public GenNodeUnary(final EnumInstructionOperand type, final Operator operator, final boolean prefix) {
 	    this.type = type;
 	    this.operator = operator;
 	    this.prefix = prefix;
 	}
-	
+
 	@Override
-	public void generate(Object visitor) {
-	    int opcode = 0;
-	    MethodVisitor mv = (MethodVisitor)visitor;
-	    if(!prefix) mv.visitInsn(DUP);
-	    //TODO: 
+	public void generate(final Object visitor) {
+	    final MethodVisitor mv = (MethodVisitor) visitor;
+	    if (!prefix) mv.visitInsn(DUP);
+	    // TODO:
 	}
-	
+
     }
-    
+
     public static class GenNodeOpcode extends GenNode {
 	public int opcode;
 
-	public GenNodeOpcode(int opcode) {
+	public GenNodeOpcode(final int opcode) {
 	    this.opcode = opcode;
-	    if(opcode == DUP) addToStackRequirement(1);
+	    if (opcode == DUP) addToStackRequirement(1);
 	}
 
 	@Override
-	public void generate(Object visitor) {
-	    ((MethodVisitor)visitor).visitInsn(opcode);
+	public void generate(final Object visitor) {
+	    ((MethodVisitor) visitor).visitInsn(opcode);
 	}
     }
-    
+
     public static class GenNodeNew extends GenNode {
 	public String type;
 
-	public GenNodeNew(String type) {
+	public GenNodeNew(final String type) {
 	    this.type = type;
 	    addToStackRequirement(1);
 	}
 
 	@Override
-	public void generate(Object visitor) {
-	    ((MethodVisitor)visitor).visitTypeInsn(NEW, type);
+	public void generate(final Object visitor) {
+	    ((MethodVisitor) visitor).visitTypeInsn(NEW, type);
 	}
     }
-    
+
     public static class GenNodeTypeOpcode extends GenNode {
 	int opcode;
 	String type;
-	public GenNodeTypeOpcode(int opcode, String type) {
+
+	public GenNodeTypeOpcode(final int opcode, final String type) {
 	    this.opcode = opcode;
 	    this.type = type;
 	    addToStackRequirement(1);
 	}
+
 	@Override
-	public void generate(Object visitor) {
-	    ((MethodVisitor)visitor).visitTypeInsn(opcode, type);
+	public void generate(final Object visitor) {
+	    ((MethodVisitor) visitor).visitTypeInsn(opcode, type);
 	}
     }
-    
+
     public static class GenNodeIntOpcode extends GenNode {
 	public int opcode;
 	public int operand;
-	public GenNodeIntOpcode(int opcode, int operand) {
+
+	public GenNodeIntOpcode(final int opcode, final int operand) {
 	    this.opcode = opcode;
 	    this.operand = operand;
 	}
+
 	@Override
-	public void generate(Object visitor) {
-	    ((MethodVisitor)visitor).visitIntInsn(opcode, operand);
+	public void generate(final Object visitor) {
+	    ((MethodVisitor) visitor).visitIntInsn(opcode, operand);
 	}
     }
-    
+
     public static class GenNodeArrayIndexLoad extends GenNode {
 	public EnumInstructionOperand type;
 
-	public GenNodeArrayIndexLoad(EnumInstructionOperand type) {
+	public GenNodeArrayIndexLoad(final EnumInstructionOperand type) {
 	    this.type = type;
 	    addToStackRequirement(type.size - 1);
 	}
 
 	@Override
-	public void generate(Object visitor) {
+	public void generate(final Object visitor) {
 	    int opcode = 0;
-	    switch(type){
+	    System.out.println(type.name());
+	    switch (type) {
 		case ARRAY:
 		case REFERENCE:
 		    opcode = AALOAD;
@@ -1081,24 +1093,24 @@ public abstract class GenNode {
 		    opcode = DALOAD;
 		    break;
 	    }
-	    ((MethodVisitor)visitor).visitInsn(opcode);
+	    ((MethodVisitor) visitor).visitInsn(opcode);
 	}
     }
-    
+
     public static class GenNodeIncrement extends GenNode {
-	
+
 	public int varID, amount;
 
-	public GenNodeIncrement(int varID, int amount) {
+	public GenNodeIncrement(final int varID, final int amount) {
 	    this.varID = varID;
 	    this.amount = amount;
 	}
 
 	@Override
-	public void generate(Object visitor) {
-	    ((MethodVisitor)visitor).visitIincInsn(varID, amount);
+	public void generate(final Object visitor) {
+	    ((MethodVisitor) visitor).visitIincInsn(varID, amount);
 	}
-	
+
     }
 
 }

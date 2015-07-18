@@ -6,7 +6,6 @@ import static ashc.error.AshError.EnumError.*;
 import java.util.*;
 
 import org.objectweb.asm.*;
-import org.objectweb.asm.signature.*;
 
 import ashc.codegen.*;
 import ashc.codegen.GenNode.EnumInstructionOperand;
@@ -49,11 +48,12 @@ public class Semantics {
     public static HashMap<String, QualifiedName> typeNameMap = new HashMap<String, QualifiedName>();
     public static HashMap<String, Type> aliases = new HashMap<String, Type>();
     public static Stack<Type> typeStack = new Stack<Type>();
-    
+
     public static class Operation {
 	public Function overloadFunc;
 	public TypeI type;
-	public Operation(Function overloadFunc, TypeI type) {
+
+	public Operation(final Function overloadFunc, final TypeI type) {
 	    this.overloadFunc = overloadFunc;
 	    this.type = type;
 	}
@@ -102,7 +102,7 @@ public class Semantics {
 
 	public static TypeI fromClass(final Class cls) {
 	    String clsName = cls.getName();
-	    if(EnumPrimitive.isJavaPrimitive(clsName)) return new TypeI(EnumPrimitive.getFromJavaPrimitive(clsName));
+	    if (EnumPrimitive.isJavaPrimitive(clsName)) return new TypeI(EnumPrimitive.getFromJavaPrimitive(clsName));
 	    int arrDims = clsName.length();
 	    clsName = clsName.replace("[", "");
 	    arrDims = arrDims - clsName.length();
@@ -166,7 +166,7 @@ public class Semantics {
 	    if (equals(exprType)) return true;
 	    // If the expr is null, and this is optional, and it has more than 0
 	    // array dimensions
-	    if (exprType.isNull() && optional && (!EnumPrimitive.isPrimitive(shortName) || arrDims > 0)) return true;
+	    if (exprType.isNull() && optional && (!EnumPrimitive.isPrimitive(shortName) || (arrDims > 0))) return true;
 	    // If this is a tuple and the expression is a tuple expression
 	    if (tupleTypes.size() > 0) {
 		if (tupleTypes.size() == exprType.tupleTypes.size()) {
@@ -244,7 +244,8 @@ public class Semantics {
 	    if (isArray()) for (int i = 0; i < arrDims; i++)
 		name.append("[");
 	    if (isTuple()) {
-		// The tuple class name is "Tuple" followed by the number of fields
+		// The tuple class name is "Tuple" followed by the number of
+		// fields
 		final String tupleClassName = "Tuple" + tupleTypes.size();
 		if (!GenNode.generatedTupleClasses.contains(tupleClassName)) {
 		    final GenNodeType tupleClass = new GenNodeType(tupleClassName, tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC);
@@ -256,12 +257,13 @@ public class Semantics {
 		    tupleConstructor.stmts.add(new GenNodeThis());
 		    tupleConstructor.stmts.add(new GenNodeFuncCall("java/lang/Object", "<init>", "()V", false, false, false, true));
 		    for (final TypeI tupleType : tupleTypes) {
-			String tupleFieldNameStr = String.valueOf(tupleFieldName), tupleFieldTypeStr = String.valueOf(tupleFieldType);
+			final String tupleFieldNameStr = String.valueOf(tupleFieldName), tupleFieldTypeStr = String.valueOf(tupleFieldType);
 			tupleClass.generics.add(tupleFieldTypeStr);
 			tupleClass.addField(new GenNodeField(Opcodes.ACC_PUBLIC, tupleFieldNameStr, "Ljava/lang/Object;", tupleFieldTypeStr));
 			tupleConstructor.params.add(TypeI.getObjectType());
 			tupleConstructor.stmts.add(new GenNodeThis());
-			tupleConstructor.stmts.add(new GenNodeVar(tupleFieldName+"Arg", "Ljava/lang/Object;", tupleTypeNum, "T" + tupleType.toBytecodeName() + ";"));
+			tupleConstructor.stmts.add(new GenNodeVar(tupleFieldName + "Arg", "Ljava/lang/Object;", tupleTypeNum, "T" + tupleType.toBytecodeName()
+				+ ";"));
 			tupleConstructor.stmts.add(new GenNodeVarLoad(EnumInstructionOperand.REFERENCE, tupleTypeNum));
 			tupleConstructor.stmts.add(new GenNodeFieldStore(tupleFieldNameStr, tupleClassName, "Ljava/lang/Object;", false));
 			tupleTypeNum++;
@@ -275,7 +277,7 @@ public class Semantics {
 		}
 		name = new StringBuffer("L" + tupleClassName + ";");
 	    } else if (isVoid()) name.append("V");
-	    else if (isPrimitive()) name.append(EnumPrimitive.getPrimitive(shortName).bytecodeName);
+	    else if (EnumPrimitive.isPrimitive(shortName)) name.append(EnumPrimitive.getPrimitive(shortName).bytecodeName);
 	    else name.append("L" + Semantics.getType(shortName).get().qualifiedName.toString().replace('.', '/') + ";");
 	    return name.toString();
 	}
@@ -306,7 +308,7 @@ public class Semantics {
 	    return isNumeric() && EnumPrimitive.getPrimitive(shortName).validForArrayIndex;
 	}
 
-	public TypeI setTupleName(String valueOf) {
+	public TypeI setTupleName(final String valueOf) {
 	    tupleName = valueOf;
 	    return this;
 	}
@@ -503,11 +505,10 @@ public class Semantics {
     // Returning an array here is a messy hack, but the best way I can think of
     // returning both a TypeI and Function, rather than using a new class
     public static Object[] getOperationType(final TypeI type1, final TypeI type2, final Operator operator) {
-	if (type1.isNumeric() && type2.isNumeric()){
-	    EnumPrimitive result = operator.operation.primitive;
-	    return result == null ? new Object[]{getPrecedentType(type1, type2), null} : new Object[]{new TypeI(result), null};
-	}
-	else if (type1.equals(TypeI.getStringType()) && (operator.operation == EnumOperation.ADD)) return new Object[] { TypeI.getStringType(), null };
+	if (type1.isNumeric() && type2.isNumeric()) {
+	    final EnumPrimitive result = operator.operation.primitive;
+	    return result == null ? new Object[] { getPrecedentType(type1, type2), null } : new Object[] { new TypeI(result), null };
+	} else if (type1.equals(TypeI.getStringType()) && (operator.operation == EnumOperation.ADD)) return new Object[] { TypeI.getStringType(), null };
 
 	if (type1.isArray() || type1.isTuple() || type1.isVoid() || type1.isNull()) return null;
 	else if (type2.isArray() || type2.isTuple() || type2.isVoid() || type2.isNull()) return null;

@@ -4,9 +4,6 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
-import ashc.grammar.Lexer.Token;
-import ashc.grammar.Lexer.TokenTypeGroup;
-
 /**
  * Ash
  *
@@ -18,31 +15,50 @@ public class Lexer {
     public LinkedList<String> lines = new LinkedList<String>();
     public int line = 1, column = 1, numLines = 0;
     public static final int TAB_SIZE = 4;
-    
+
     public static interface TokenMatcher {
 	public String getName();
+
 	public boolean matches(Token token);
     }
-    
+
     public static enum TokenTypeGroup implements TokenMatcher {
-	EXPRESSION_STARTER("expression", TokenType.NULL, TokenType.BRACEL, TokenType.ID, TokenType.THIS, TokenType.SELF, TokenType.UNARYOP, TokenType.BRACKETL, TokenType.PARENL, TokenType.OCTINT, TokenType.HEXINT, TokenType.BININT, TokenType.INT, TokenType.LONG, TokenType.FLOAT, TokenType.DOUBLE, TokenType.STRING, TokenType.CHAR, TokenType.BOOL),
-	FUNC_CALL("function call", TokenType.THIS, TokenType.ID, TokenType.SELF, TokenType.SUPER),
-	VAR_DEC("variable/constant declaration", TokenType.VAR, TokenType.CONST),
-	CONTROL_STMT("control statement", TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.MATCH);
-	
+	EXPRESSION_STARTER(
+		"expression",
+		TokenType.NULL,
+		TokenType.BRACEL,
+		TokenType.ID,
+		TokenType.THIS,
+		TokenType.SELF,
+		TokenType.UNARYOP,
+		TokenType.BRACKETL,
+		TokenType.PARENL,
+		TokenType.OCTINT,
+		TokenType.HEXINT,
+		TokenType.BININT,
+		TokenType.INT,
+		TokenType.LONG,
+		TokenType.FLOAT,
+		TokenType.DOUBLE,
+		TokenType.STRING,
+		TokenType.CHAR,
+		TokenType.BOOL), FUNC_CALL("function call", TokenType.THIS, TokenType.ID, TokenType.SELF, TokenType.SUPER), VAR_DEC(
+		"variable/constant declaration",
+		TokenType.VAR,
+		TokenType.CONST), CONTROL_STMT("control statement", TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.MATCH);
+
 	public TokenType[] tokenTypes;
 	public String name;
-	
-	private TokenTypeGroup(String name, TokenType...tokenTypes){
+
+	private TokenTypeGroup(final String name, final TokenType... tokenTypes) {
 	    this.name = name;
 	    this.tokenTypes = tokenTypes;
 	}
 
 	@Override
-	public boolean matches(Token token) {
-	    for(TokenType type : tokenTypes){
-		if(type == token.type) return true;
-	    }
+	public boolean matches(final Token token) {
+	    for (final TokenType type : tokenTypes)
+		if (type == token.type) return true;
 	    return false;
 	}
 
@@ -50,7 +66,7 @@ public class Lexer {
 	public String getName() {
 	    return name;
 	}
-	
+
     }
 
     public static enum TokenType implements TokenMatcher {
@@ -146,7 +162,7 @@ public class Lexer {
 	}
 
 	@Override
-	public boolean matches(Token token) {
+	public boolean matches(final Token token) {
 	    return token.type == this;
 	}
 

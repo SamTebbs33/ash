@@ -63,9 +63,10 @@ public enum EnumPrimitive {
 	    if (p.javaName.equals(typeName)) return true;
 	return false;
     }
-    
-    public static EnumPrimitive getFromJavaPrimitive(String clsName) {
-	for(final EnumPrimitive p : EnumPrimitive.values()) if(p.javaName.equals(clsName)) return p;
+
+    public static EnumPrimitive getFromJavaPrimitive(final String clsName) {
+	for (final EnumPrimitive p : EnumPrimitive.values())
+	    if (p.javaName.equals(clsName)) return p;
 	return null;
     }
 

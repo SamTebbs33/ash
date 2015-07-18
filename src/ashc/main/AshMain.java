@@ -12,7 +12,7 @@ import ashc.load.*;
  * @author samtebbs, 19:52:26 - 20 May 2015
  */
 public class AshMain {
-    
+
     public static String outputDir, inputFile = null;
     public static boolean warningsEnabled = true, verboseMsgEnabled = false;;
 
@@ -21,8 +21,8 @@ public class AshMain {
 	TypeImporter.loadClass("java.lang.Object");
 	TypeImporter.loadClass("java.lang.System");
 	parseArgs(args);
-	if(outputDir == null) outputDir = "classes/";
-	else if(!outputDir.endsWith(File.separator)) outputDir += File.separatorChar;
+	if (outputDir == null) outputDir = "./";
+	else if (!outputDir.endsWith(File.separator)) outputDir += File.separatorChar;
 	final AshCompiler compiler = new AshCompiler(inputFile);
 	compiler.parse();
 	compiler.preAnalyse();
@@ -30,13 +30,13 @@ public class AshMain {
 	if (AshError.numErrors == 0) compiler.generate();
 	System.exit(AshError.numErrors == 0 ? 0 : 1);
     }
-    
-    static void parseArgs(String[] args){
-	for(int i = 0; i < args.length; i++){
-	    String arg = args[i];
-	    switch(arg){
+
+    static void parseArgs(final String[] args) {
+	for (int i = 0; i < args.length; i++) {
+	    final String arg = args[i];
+	    switch (arg) {
 		case "-o":
-		    if(i < args.length - 1) outputDir = Paths.get(args[++i]).toString();
+		    if (i < (args.length - 1)) outputDir = Paths.get(args[++i]).toString();
 		    else AshError.compilerError("Expected output directory path for option \"-o\"");
 		    break;
 		case "-w":
@@ -46,7 +46,7 @@ public class AshMain {
 		    verboseMsgEnabled = true;
 		    break;
 		default:
-		    if(inputFile != null) AshError.compilerWarning("Stray argument \"" + arg + "\"");
+		    if (inputFile != null) AshError.compilerWarning("Stray argument \"" + arg + "\"");
 		    inputFile = arg;
 	    }
 	}

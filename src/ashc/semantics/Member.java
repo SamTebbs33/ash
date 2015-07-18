@@ -6,7 +6,6 @@ import java.util.*;
 import ashc.grammar.*;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeExprs;
-import ashc.semantics.Scope.FuncScope;
 import ashc.semantics.Semantics.TypeI;
 import ashc.util.*;
 
@@ -42,11 +41,11 @@ public class Member {
 	if (Semantics.currentType().hasSuper(enclosingType.qualifiedName)) return true;
 	return false;
     }
-    
+
     public boolean isStatic() {
 	return BitOp.and(modifiers, EnumModifier.STATIC.intVal);
     }
-    
+
     public boolean isPrivate() {
 	return BitOp.and(modifiers, EnumModifier.PRIVATE.intVal);
     }
@@ -77,8 +76,9 @@ public class Member {
 		final Type superType = new Type(cls.getSuperclass(), cls.getSuperclass().getName());
 		supers.add(superType);
 	    }
-	    for(Class i : cls.getInterfaces()) supers.add(new Type(i, i.getName()));
-	    
+	    for (final Class i : cls.getInterfaces())
+		supers.add(new Type(i, i.getName()));
+
 	    Semantics.addType(this);
 	    for (final Method method : cls.getMethods())
 		addFunction(Function.fromExecutable(method));
@@ -135,10 +135,9 @@ public class Member {
 	}
 
 	public boolean hasSuper(final QualifiedName name) {
-	    for (final Type type : supers){
+	    for (final Type type : supers)
 		if (type.qualifiedName.equals(name)) return true;
 		else if (type.hasSuper(name)) return true;
-	    }
 	    return false;
 	}
 
@@ -205,9 +204,7 @@ public class Member {
 		func.parameters.add(TypeI.fromClass(param.getType()));
 	    // If it's a method, get the return type, otherwise it's a
 	    // constructor
-	    if (method instanceof Method){
-		func.returnType = TypeI.fromClass(((Method) method).getReturnType());
-	    }
+	    if (method instanceof Method) func.returnType = TypeI.fromClass(((Method) method).getReturnType());
 	    else func.returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
 	    return func;
 	}
@@ -249,11 +246,16 @@ public class Member {
 
 	public Variable(final String id, final TypeI type) {
 	    super(new QualifiedName(id), 0, type, false, false);
-	    if(Scope.inFuncScope()){
+	    if (Scope.inFuncScope()) {
 		isLocal = true;
-		this.localID = ++Scope.getFuncScope().locals;
-		if(Scope.getFuncScope().isStatic) this.localID--; // Static funcs don't have a "this" instance, so decrease the varID by one
-	    }else isLocal = false;
+		localID = ++Scope.getFuncScope().locals;
+		if (Scope.getFuncScope().isStatic) localID--; // Static funcs
+							      // don't have a
+							      // "this"
+							      // instance, so
+							      // decrease the
+							      // varID by one
+	    } else isLocal = false;
 	}
 
 	@Override
@@ -269,9 +271,9 @@ public class Member {
 	public int localID;
 	public boolean isSetProperty, isGetProperty;
 
-	public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type, boolean isSetProperty, boolean isGetProperty) {
+	public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type, final boolean isSetProperty, final boolean isGetProperty) {
 	    super(qualifiedName, modifiers);
-	    this.id = qualifiedName.shortName;
+	    id = qualifiedName.shortName;
 	    this.type = type;
 	    enclosingType = Semantics.currentType();
 	    this.isGetProperty = isGetProperty;
