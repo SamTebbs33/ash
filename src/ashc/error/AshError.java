@@ -20,6 +20,7 @@ public class AshError {
 	TYPE_DOES_NOT_EXTEND("Type (%s) does not extend %s"),
 
 	EXPECTED_STRING_INTERP_TERMINATOR("Expected terminating } for string interpolated expression"),
+	PATH_DOES_NOT_MATCH_PACKAGE("The relative path to this file does not match the package structure (%s)"),
 
 	FUNC_ALREADY_EXISTS("The function \'%s\' already exists"),
 	FUNC_DOES_NOT_EXIST("The function \'%s\' with the given arguments doesn't exist in type %s"),
@@ -83,7 +84,8 @@ public class AshError {
     }
 
     public static void semanticError(final int line, final int column, final EnumError error, final Object... args) {
-	System.err.printf("Error[%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
+	if(line >= 0 && column >= 0) System.err.printf("Error[%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
+	else System.err.printf("Error[%s] ", AshCompiler.get().relFilePath, line, column);
 	System.err.printf(error.format + "%n", args);
 	numErrors++;
     }

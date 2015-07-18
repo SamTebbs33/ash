@@ -44,6 +44,7 @@ import ashc.codegen.GenNode.IGenNodeStmt;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
 import ashc.load.*;
+import ashc.main.*;
 import ashc.semantics.*;
 import ashc.semantics.Member.EnumType;
 import ashc.semantics.Member.Field;
@@ -130,12 +131,15 @@ public abstract class Node {
 	@Override
 	public void preAnalyse() {
 	    final QualifiedName name = new QualifiedName("");
+	    String packagePath = "";
 	    if (pkg != null) {
 		pkg.preAnalyse();
 		final NodeQualifiedName pkgName = pkg.qualifiedName;
 		for (final String section : pkgName.paths)
 		    name.add(section);
+		packagePath = name.toString().replace('.', File.separatorChar);
 	    }
+	    if(!AshCompiler.get().parentPath.equals(packagePath)) semanticError(this, -1, -1, PATH_DOES_NOT_MATCH_PACKAGE, packagePath);
 	    Scope.setNamespace(name);
 	    if (imports != null) for (final NodeImport i : imports)
 		i.preAnalyse();

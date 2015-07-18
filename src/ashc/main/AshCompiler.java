@@ -18,13 +18,15 @@ public class AshCompiler {
     private final Parser parser;
     private final Lexer lexer;
     private NodeFile fileNode;
-    public String relFilePath;
+    public String relFilePath, parentPath;
 
     public static Stack<AshCompiler> compilers = new Stack<AshCompiler>();
 
     public AshCompiler(final String relFilePath) throws FileNotFoundException, IOException {
+	File file = new File(relFilePath);
+	this.parentPath = file.getParentFile() != null ? file.getParentFile().getPath() : "";
 	this.relFilePath = relFilePath;
-	lexer = new Lexer(new BufferedReader(new FileReader(new File(relFilePath))));
+	lexer = new Lexer(new BufferedReader(new FileReader(file)));
 	parser = new Parser(lexer);
 	compilers.push(this);
     }

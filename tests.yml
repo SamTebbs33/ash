@@ -1,9 +1,10 @@
 # Syntax
-# test_file_name:
-#   pass: [yes|no]
-#   run: [yes|no] # # If the running of the test file should be tested, implies it should also be compiled
-#   path: file_path
-#   args: {args}
+
+# test name:
+#   path: file_path # The path to the test file (excluding the ".ash" extension) from the tests directory
+#   pass: [yes|no] # If the compilation of the test file is supposed to pass or not
+#   run: [yes|no] # # If the running of the test file should be tested
+#   args: {args} # Not yet used
 
 operator overloads:
   path: OperatorOverloads
@@ -19,3 +20,13 @@ data clases:
   path: DataClasses
   pass: yes
   run: yes
+
+incorrect package:
+  path: IncorrectPackage
+  pass: no
+  run: no
+
+correct package:
+  path: testpkg/CorrectPackage
+  pass: yes
+  run: no

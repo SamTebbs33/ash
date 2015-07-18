@@ -1,8 +1,5 @@
-class DataClasses {
-	public static func main(args : String[]?){
-		var person = Person("Sam")
-		System.out.println(person.name)
-	}
-}
+package ash.tests
 
-class Person(name : String)
+public class WrongPackageTest {
+
+}

@@ -8,10 +8,10 @@ num_tests = 0
 
 def do_test(name, path, run):
 	print "\n\t\x1B[34m Compiling: " + name + "\x1B[00m"
-	status = subprocess.call(["java", "-cp", "build:lib/asm-5.0.4.jar", "ashc/main/AshMain", "tests/"+path+".ash"])
+	status = subprocess.call(["java", "-cp", "../build:../lib/asm-5.0.4.jar", "ashc/main/AshMain", path+".ash"])
 	if run and status == 0:
 		print "\n\t\x1B[34m Running: " + name + "\x1B[00m"
-		status = subprocess.call(["java", "-cp", "classes", path])
+		status = subprocess.call(["java", "-cp", "../classes", path])
 	return status
 
 def get_symbol(test_pass):
@@ -34,7 +34,7 @@ def print_tests():
 				colour = "\x1B[32m"
 			print colour+"\t\t["+get_symbol(test_pass)+"]\t["+get_symbol(test_status_code)+"]\t" + test_name + "\x1B[00m"		
 
-file = open("tests.yml", "r")
+file = open("../tests.yml", "r")
 yml = yaml.load(file)
 
 if yml is not None:
