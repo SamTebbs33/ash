@@ -14,7 +14,7 @@ import ashc.load.*;
 public class AshMain {
     
     public static String outputDir, inputFile = null;
-    public static boolean warningsEnabled = true;
+    public static boolean warningsEnabled = true, verboseMsgEnabled = false;;
 
     public static void main(final String[] args) throws FileNotFoundException, IOException {
 	TypeImporter.loadClass("java.lang.String");
@@ -41,6 +41,9 @@ public class AshMain {
 		    break;
 		case "-w":
 		    warningsEnabled = false;
+		    break;
+		case "-v":
+		    verboseMsgEnabled = true;
 		    break;
 		default:
 		    if(inputFile != null) AshError.compilerWarning("Stray argument \"" + arg + "\"");

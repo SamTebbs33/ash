@@ -8,6 +8,7 @@ import java.util.*;
 import org.objectweb.asm.*;
 
 import ashc.codegen.GenNode.GenNodeFunction.LocalVariable;
+import ashc.error.*;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeBinary;
 import ashc.grammar.Node.NodeNull;
@@ -141,7 +142,7 @@ public abstract class GenNode {
 
 	    final File classFile = new File(dirSb.toString() + shortName + ".class");
 	    if (classFile.exists()) classFile.delete();
-	    System.out.println("Generating class: " + classFile.getAbsolutePath());
+	    AshError.verboseMsg("Generating class: " + classFile.getAbsolutePath());
 	    try {
 		classFile.createNewFile();
 		final FileOutputStream fos = new FileOutputStream(classFile);

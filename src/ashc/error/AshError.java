@@ -110,5 +110,9 @@ public class AshError {
     public static void compilerWarning(String string) {
 	System.err.printf("Warning: %s%n", string);
     }
+    
+    public static void verboseMsg(String msg){
+	if(AshMain.verboseMsgEnabled) System.out.println(msg);
+    }
 
 }
