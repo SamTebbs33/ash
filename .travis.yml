@@ -8,7 +8,7 @@ install: "sudo pip install PyYAML"
 script: 
   - ant compile
   - cd tests
-  - python ../test.py
+  - python test.py
   - cd ..
   - ant clean
 
