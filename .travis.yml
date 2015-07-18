@@ -6,7 +6,9 @@ jdk:
 install: "sudo pip install PyYAML"
 
 script: 
-  - ant build
+  - ant compile
+  - python test.py
+  - ant clean
   
 notifications:
   email:
