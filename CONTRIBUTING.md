@@ -7,5 +7,5 @@ There are several ways in which you can contribute, here are a few:
     2. Create a new file within the **tests** folder and enter in the source code that needs testing.
     3. Add your test to the **tests.yml** file by following the syntax guide at the top of the file.
     4. Submit a pull request! If the source code is semantically and syntactically valid, and the test name doesn't conflict with a pre-exisitng test, then we will merge the request.
-    5. The test will then be run the next time a Travis build runs (normally whenever a pull request is merged or a commit is pushed), click on the image in the readme after about 5-10 minutes to see how the test went.
+    5. The test will then be run the next time a Travis build runs (normally whenever a pull request is merged or a commit is pushed), click on the image in the readme (or [here](https://travis-ci.org/ash-lang/ash)) after about 5 minutes to see how the test went.
 * **Issues/proposals**: All feedback regarding the project is welcomed, you can provide such feedback by commenting on pre-exising issues or creating new issues in the [Issues](https://github.com/ash-lang/ash/issues) section of the repo. When creating an issue, please ensure that it isn't a duplicate, it is relevant and that you provide as much information as possible.
