@@ -200,6 +200,10 @@ public abstract class Node {
 	public void generate() {}
 
     }
+    
+    public static abstract class NodeBlock extends Node {
+	
+    }
 
     public static abstract class NodeTypeDec extends Node {
 
@@ -208,6 +212,7 @@ public abstract class Node {
 	public NodeArgs args;
 	public Token id;
 	public NodeTypes generics;
+	public NodeBlock block;
 
 	public Type type;
 	public LinkedList<Field> argFields = new LinkedList<Field>();
@@ -219,7 +224,7 @@ public abstract class Node {
 	}
 
 	public NodeTypeDec(final int line, final int column, final LinkedList<NodeModifier> mods) {
-	    super(line, column);
+	    this(line, column);
 	    this.mods = mods;
 	}
 
@@ -340,6 +345,7 @@ public abstract class Node {
 		    GenNode.addFuncStmt(new GenNodeFieldStore(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName(), field.isStatic()));
 		    argID++;
 		}
+		if(block instanceof NodeClassBlock) NodeFuncDec.initialiseVarDecs(((NodeClassBlock)block).varDecs);
 		GenNode.addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
 		GenNode.exitGenNodeFunction();
 	    }
@@ -367,8 +373,6 @@ public abstract class Node {
     }
 
     public static class NodeClassDec extends NodeTypeDec {
-
-	public NodeClassBlock block;
 
 	public NodeClassDec(final int line, final int column) {
 	    super(line, column);
@@ -555,7 +559,7 @@ public abstract class Node {
 
     }
 
-    public static class NodeClassBlock extends Node {
+    public static class NodeClassBlock extends NodeBlock {
 	public LinkedList<NodeFuncDec> funcDecs = new LinkedList<NodeFuncDec>();
 	public LinkedList<NodeVarDec> varDecs = new LinkedList<NodeVarDec>();
 
@@ -809,12 +813,24 @@ public abstract class Node {
 	    //TODO: Generate constructor calls if this function is a constructor
 	    genNodeFunc.params = func.parameters;
 	    GenNode.addGenNodeFunction(genNodeFunc);
+	    int argID = 0;
+	    for(TypeI arg : func.parameters){
+		GenNode.addFuncStmt(new GenNodeVar("arg"+argID, arg.toBytecodeName(), argID + 1, null)); //TODO: generics
+	    }
 	    // We have to initlialse the class' fields to their default values
 	    // in the constructor if another constructor hasn't already been called
 	    if(!block.hasThisCall){
 		addFuncStmt(new GenNodeThis());
 		addFuncStmt(new GenNodeFuncCall("java/lang/Object", "<init>", "()V", false, false, false, true));
-		for (final NodeVarDec dec : varDecs) {
+		initialiseVarDecs(varDecs);
+	    }
+	    block.generate();
+	    GenNode.addFuncStmt(new GenNodeReturn());
+	    GenNode.exitGenNodeFunction();
+	}
+
+	public static void initialiseVarDecs(LinkedList<NodeVarDec> varDecs) {
+	    for (final NodeVarDec dec : varDecs) {
 		    IExpression expr = null;
 		    if (dec instanceof NodeVarDecImplicit) expr = ((NodeVarDecImplicit) dec).expr;
 		    else expr = ((NodeVarDecExplicit) dec).expr;
@@ -823,12 +839,8 @@ public abstract class Node {
 
 		    addFuncStmt(new GenNodeThis());
 		    ((Node) expr).generate();
-		    genNodeFunc.stmts.add(new GenNodeFieldStore(dec.var.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName(), dec.var.isStatic()));
+		    addFuncStmt(new GenNodeFieldStore(dec.var.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName(), dec.var.isStatic()));
 		}
-	    }
-	    block.generate();
-	    GenNode.addFuncStmt(new GenNodeReturn());
-	    GenNode.exitGenNodeFunction();
 	}
 
 	@Override
