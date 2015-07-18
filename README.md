@@ -10,6 +10,8 @@ Ash is a programming language that will compile down to Java bytecode, and will 
 * Examples: https://github.com/ash-lang/ash/tree/master/examples
 * Syntax, semantics, type compatibility and the differences between the Java language and Ash: https://github.com/ash-lang/ash/wiki
 
+If you'd like to contribute (such as adding test files or proposing ideas), please take a look at the [Contirbuting](CONTRIBUTING.md) page.
+
 This repo includes the Java ASM library (found within the "lib" folder) it's license can be found here: http://asm.ow2.org/license.html
 
 Date of repo creation: 23/05/15
