@@ -9,7 +9,7 @@ script:
   - ant compile
   - python test.py
   - ant clean
-  
+
 notifications:
   email:
     on_success: change # [always|never|change]

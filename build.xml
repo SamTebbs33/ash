@@ -24,17 +24,5 @@
 			<arg value="test.py"/>
 		</exec>
 	</target>
-	
-	<!-- <target name="run">
-		<exec executable="python" failonerror="true">
-			<arg value="test.py"/>
-		</exec>
-		<java classname="ashc.main.AshMain">
-			<classpath>
-				<pathelement location="build"/>
-			</classpath>
-			<arg value="Test.ash"/>
-		</java>
-	</target> -->
 
 </project>
