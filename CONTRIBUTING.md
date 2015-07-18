@@ -1,6 +1,6 @@
 It's fantastic that you'd like (or are at leat considering) to contribute to Ash!
 
-There are several ways in which you cna contribute, here are a few:
+There are several ways in which you can contribute, here are a few:
 
 * **Test files**: You can add files that test any certain element of the laguage, be it compilation or execution.
     1. Fork the repository using the "Fork" button to the top right. All changes will be made to your forked copy of the repo (before merging them to this one).
