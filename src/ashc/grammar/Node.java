@@ -746,8 +746,10 @@ public abstract class Node {
 	    final QualifiedName name = Scope.getNamespace().copy();
 	    name.add(id);
 	    int modifiers = 0;
-	    for (final NodeModifier mod : mods)
-		modifiers |= mod.asInt();
+	    for (final NodeModifier mod : mods){
+		if(mod.asInt() == EnumModifier.STATIC.intVal && isMutFunc) semanticError(this, line, column, MUT_FUNC_IS_STATIC, id);
+		else modifiers |= mod.asInt();
+	    }
 	    func = new Function(name, modifiers);
 	    for (final NodeType generic : generics.types)
 		func.generics.add(generic.id);
@@ -843,6 +845,10 @@ public abstract class Node {
 		GenNode.addFuncStmt(new GenNodeVar("arg"+argID, arg.toBytecodeName(), argID + (func.isStatic() ? 0 : 1), null)); //TODO: generics
 	    }
 	    block.generate();
+	    if(isMutFunc) {
+		addFuncStmt(new GenNodeThis());
+		addFuncStmt(new GenNodeReturn(EnumInstructionOperand.REFERENCE));
+	    }
 	    GenNode.exitGenNodeFunction();
 	}
 
