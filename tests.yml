@@ -6,10 +6,10 @@
 #   run: [yes|no] # # If the running of the test file should be tested
 #   args: {args} # Not yet used
 
-#operator overloads:
-#  path: OperatorOverloads
-#  pass: yes
-#  run: yes
+operator overloads:
+  path: OperatorOverloads
+  pass: yes
+  run: yes
   
 properties:
   path: Properties
