@@ -249,6 +249,7 @@ public class Member {
 
 	public Variable(final String id, final TypeI type) {
 	    super(new QualifiedName(id), 0, type, false, false);
+	    System.out.println("new var: " + id);
 	    if(Scope.inFuncScope()){
 		isLocal = true;
 		this.localID = ++Scope.getFuncScope().locals;
@@ -276,6 +277,7 @@ public class Member {
 	    enclosingType = Semantics.currentType();
 	    this.isGetProperty = isGetProperty;
 	    this.isSetProperty = isSetProperty;
+	    System.out.println("Made field: " + id + ", " + modifiers);
 	}
 
 	public static Field from(final java.lang.reflect.Field field) {

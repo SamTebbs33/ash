@@ -891,12 +891,14 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    if (getBlock != null) {
+		System.out.println("Gen getBlock: " + var.modifiers);
 		final GenNodeFunction getFunc = new GenNodeFunction("$get" + id, var.modifiers, var.type.toBytecodeName());
 		GenNode.addGenNodeFunction(getFunc);
 		getBlock.generate();
 		GenNode.exitGenNodeFunction();
 	    }
 	    if (setBlock != null) {
+		System.out.println("Gen setBlock: " + var.modifiers);
 		final GenNodeFunction setFunc = new GenNodeFunction("$set" + id, var.modifiers, var.type.toBytecodeName());
 		setFunc.params.add(var.type);
 		GenNode.addGenNodeFunction(setFunc);
@@ -938,7 +940,7 @@ public abstract class Node {
 	    type.analyse();
 	    if (expr != null) ((Node) expr).analyse();
 	    typeI = new TypeI(type);
-	    if (!errored) Semantics.addVar(new Variable(id, typeI));
+	    //if (!errored) Semantics.addVar(new Variable(id, typeI));
 
 	    if (expr == null) {
 		if (!type.optional && !(EnumPrimitive.isPrimitive(type.id) && (type.arrDims == 0))) semanticError(this, line, column, MISSING_ASSIGNMENT);
@@ -946,10 +948,13 @@ public abstract class Node {
 		final TypeI exprType = expr.getExprType();
 		if (exprType != null) if (!typeI.canBeAssignedTo(exprType)) semanticError(this, line, column, CANNOT_ASSIGN, exprType, typeI.toString());
 	    }
-	    var = new Variable(id, typeI);
-	    for (final NodeModifier mod : mods)
-		var.modifiers |= mod.asInt();
-	    Semantics.addVar((Variable) var);
+	    System.out.println();
+	    if(var == null){ 
+		System.out.println("-> varDecE");
+		var = new Variable(id, typeI);
+		for (final NodeModifier mod : mods) var.modifiers |= mod.asInt();
+	    	Semantics.addVar((Variable) var);
+	    }
 	    analyseProperty(typeI);
 	}
 
@@ -982,8 +987,8 @@ public abstract class Node {
 		modifiers |= mod.asInt();
 	    expr.analyse();
 	    final TypeI exprType = expr.getExprType();
-	    final Field field = new Field(name, modifiers, exprType, setBlock != null, getBlock != null);
-	    if (!Semantics.fieldExists(field)) Semantics.addField(field);
+	    var = new Field(name, modifiers, exprType, setBlock != null, getBlock != null);
+	    if (!Semantics.fieldExists(var)) Semantics.addField(var);
 	    else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
 	}
 
@@ -993,8 +998,11 @@ public abstract class Node {
 	    expr.analyse();
 		if (!((Node) expr).errored) {
 		    final TypeI type = Semantics.filterNullType(expr.getExprType());
-		    var = new Variable(id, type);
-		    Semantics.addVar((Variable) var);
+		    if(var == null){
+			System.out.println("-> varDecI");
+			var = new Variable(id, type);
+			Semantics.addVar((Variable) var);
+		    }
 		    analyseProperty(type);
 		}
 	}
@@ -1243,6 +1251,7 @@ public abstract class Node {
 	public boolean unwrapped;
 	public Field var;
 	public TypeI prefixType;
+	public boolean isSelf;
 
 	public NodeVariable(final int line, final int column, final String id, final NodePrefix prefix, final boolean unwrapped) {
 	    super(line, column);
@@ -1271,6 +1280,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    if(id.equals("self") && Scope.inPropertyScope()){
+		isSelf = true;
 		PropertyScope scope = Scope.getPropertyScope();
 		var = scope.field;
 	    }else if(id.equals("new") && Scope.inPropertyScope()){
@@ -1298,7 +1308,7 @@ public abstract class Node {
 	    if(var == null || isTypeName) return;
 	    if(prefix != null){
 		prefix.generate();
-		if(!var.isGetProperty){
+		if(!var.isGetProperty || isSelf){
 		    String enclosingType = var.enclosingType.qualifiedName.toBytecodeName(), varType = var.type.toBytecodeName();
 		    if(prefixType.isTuple()){
 			enclosingType = "Tuple" + prefixType.tupleTypes.size();
@@ -1316,7 +1326,7 @@ public abstract class Node {
 		}
 		else{
 		    if(!var.isStatic()) addFuncStmt(new GenNodeThis());
-		    if(!var.isGetProperty) addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName(), BitOp.and(var.modifiers, EnumModifier.STATIC.intVal)));
+		    if(!var.isGetProperty || isSelf) addFuncStmt(new GenNodeFieldLoad(var.qualifiedName.shortName, var.enclosingType.qualifiedName.toBytecodeName(), var.type.toBytecodeName(), BitOp.and(var.modifiers, EnumModifier.STATIC.intVal)));
 		    else generateGetFuncCall(var);
 		}
 	    }
