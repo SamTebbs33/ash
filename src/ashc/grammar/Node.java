@@ -816,6 +816,7 @@ public abstract class Node {
 	    int argID = 0;
 	    for(TypeI arg : func.parameters){
 		GenNode.addFuncStmt(new GenNodeVar("arg"+argID, arg.toBytecodeName(), argID + 1, null)); //TODO: generics
+		argID++;
 	    }
 	    // We have to initlialse the class' fields to their default values
 	    // in the constructor if another constructor hasn't already been called
