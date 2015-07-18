@@ -30,3 +30,8 @@ correct package:
   path: testpkg/CorrectPackage
   pass: yes
   run: no
+  
+mutators:
+  path: Mutators
+  pass: yes
+  run: yes

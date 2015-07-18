@@ -768,7 +768,7 @@ public abstract class Node {
 	    for (final NodeArg arg : args.args)
 		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
 
-	    if (!isMutFunc) {
+	    if (!isMutFunc && !isConstructor) {
 		if (!type.id.equals("void")) returnType = new TypeI(type);
 		else returnType = TypeI.getVoidType();
 		returnType = Semantics.filterNullType(returnType);
@@ -800,7 +800,7 @@ public abstract class Node {
 	    block.analyse();
 	    // If the return type is not "void", all code paths must have a
 	    // return statement
-	    if (!returnType.isVoid() && !isMutFunc) if (!block.hasReturnStmt()) semanticError(this, line, column, NOT_ALL_PATHS_HAVE_RETURN);
+	    if (!returnType.isVoid() && !isMutFunc && !isConstructor) if (!block.hasReturnStmt()) semanticError(this, line, column, NOT_ALL_PATHS_HAVE_RETURN);
 	    Scope.pop();
 	}
 
@@ -1134,6 +1134,7 @@ public abstract class Node {
 	public boolean unwrapped;
 
 	public Function func;
+	public TypeI prefixType;
 
 	public NodeFuncCall(final int line, final int column, final String id, final NodeExprs args, final NodePrefix prefix, final boolean unwrapped, boolean isThisCall, boolean isSuperCall) {
 	    super(line, column);
@@ -1154,50 +1155,36 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    TypeI result;
 	    if (prefix == null) {
-		func = Semantics.getFunc(id, args);
-		if (func == null) {
-		    semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, Semantics.currentType().qualifiedName.shortName);
-		    return null;
-		} else {
-		    if (!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
-		    final TypeI funcType = func.returnType.copy();
-		    // Fill in the function's generics based on the arguments
-		    int i = 0;
-		    for(String g : func.generics){
-			boolean foundGeneric = false;
-			int paramIndex = 0;
-			for(TypeI t : func.parameters){
-			    if(t.shortName.equals(g)){
-				funcType.genericTypes.set(i, args.exprs.get(paramIndex).getExprType());
-				foundGeneric = true;
-				break;
-			    }
-			    paramIndex++;
+		final TypeI funcType = func.returnType.copy();
+		// Fill in the function's generics based on the arguments
+		int i = 0;
+		for(String g : func.generics){
+		    boolean foundGeneric = false;
+		    int paramIndex = 0;
+		    for(TypeI t : func.parameters){
+			if(t.shortName.equals(g)){
+			    funcType.genericTypes.set(i, args.exprs.get(paramIndex).getExprType());
+			    foundGeneric = true;
+			    break;
 			}
-			i++;
+			paramIndex++;
 		    }
-		    result = funcType;
+		    i++;
 		}
+		result = funcType;
 	    } else {
-		final TypeI type = prefix.getExprType();
-		func = Semantics.getFunc(id, type, args);
-		if (func == null) {
-		    semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, type);
-		    return null;
-		} else {
-		    if (!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
-		    final TypeI funcType = func.returnType.copy();
-		    // Transfer generics for non-tuple types
-		    if (!funcType.isTuple() && !funcType.isPrimitive()) {
-			final Optional<Type> typeOpt = Semantics.getType(funcType.shortName);
-			if (!typeOpt.isPresent()) {
-			    final TypeI genericType = Semantics.getGenericType(funcType.shortName, type);
-			    if (genericType == null) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, funcType.shortName);
-			    else return genericType;
-			}
+		prefixType = prefix.getExprType();
+		final TypeI funcType = func.returnType.copy();
+		// Transfer generics for non-tuple types
+		if (!funcType.isTuple() && !funcType.isPrimitive()) {
+		    final Optional<Type> typeOpt = Semantics.getType(funcType.shortName);
+		    if (!typeOpt.isPresent()) {
+			final TypeI genericType = Semantics.getGenericType(funcType.shortName, prefixType);
+			if (genericType == null) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, funcType.shortName);
+			else return genericType;
 		    }
-		    result = funcType;
 		}
+		result = funcType;
 	    }
 	    if (unwrapped) return Semantics.checkUnwrappedOptional(result, this, this);
 	    return result;
@@ -1211,17 +1198,16 @@ public abstract class Node {
 	    // If it's a "super" call, change the id to the name of the super type
 	    if(this.isThisCall) this.id = Semantics.currentType().qualifiedName.shortName;
 	    else if(this.isSuperCall) this.id = Semantics.currentType().getSuperClass().qualifiedName.shortName;
-	    TypeI enclosingType = null;
 	    if (prefix == null) func = Semantics.getFunc(id, args);
 	    else {
-		enclosingType = prefix.getExprType();
-		func = Semantics.getFunc(id, enclosingType, args);
+		prefixType = prefix.getExprType();
+		func = Semantics.getFunc(id, prefixType, args);
 		if ((func != null) && !func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
 	    }
 
 	    if (func == null) {
-		if (enclosingType == null) semanticError(this, line, column, CONSTRUCTOR_DOES_NOT_EXIST, id);
-		else semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, enclosingType);
+		if (prefixType == null) semanticError(this, line, column, CONSTRUCTOR_DOES_NOT_EXIST, id);
+		else semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, prefixType);
 	    } else{
 		if(prefix == null) if(Scope.inFuncScope() && Scope.getFuncScope().isStatic && !func.isStatic() && !func.isConstructor())
 		    semanticError(line, column, NON_STATIC_FUNC_USED_IN_STATIC_CONTEXT, func.qualifiedName.shortName);
