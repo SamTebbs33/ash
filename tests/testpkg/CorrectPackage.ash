@@ -1,0 +1,4 @@
+package testpkg
+
+class CorrectPackage {
+}

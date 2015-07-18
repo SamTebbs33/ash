@@ -486,7 +486,7 @@ public class Semantics {
     public static TypeI checkUnwrappedOptional(TypeI exprType, final Node node, final IExpression expr) {
 	if (expr instanceof NodeVariable) {
 	    final Field field = ((NodeVariable) expr).var;
-	    if (field != null) if (!Scope.getScope().hasNullCheck(field)) warning(node.line, node.column, UNCHECKED_UNWRAP, field.qualifiedName.shortName);
+	    if (field != null) if (!Scope.getScope().hasNullCheck(field)) semanticWarning(node.line, node.column, UNCHECKED_UNWRAP, field.qualifiedName.shortName);
 	}
 	if (exprType != null) {
 	    exprType = exprType.copy();

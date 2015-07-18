@@ -2540,7 +2540,7 @@ public abstract class Node {
 	    nodeType.analyse();
 	    if ((expr instanceof NodeVariable) && !((NodeVariable) expr).errored) {
 		final Field field = ((NodeVariable) expr).var;
-		if (field != null) if (!Scope.getScope().hasCastCheck(field, Semantics.getType(nodeType.id).get())) warning(line, column, UNCHECKED_CAST, field.qualifiedName.shortName, nodeType.id);
+		if (field != null) if (!Scope.getScope().hasCastCheck(field, Semantics.getType(nodeType.id).get())) semanticWarning(line, column, UNCHECKED_CAST, field.qualifiedName.shortName, nodeType.id);
 	    }
 	}
 

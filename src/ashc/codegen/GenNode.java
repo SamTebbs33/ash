@@ -13,6 +13,7 @@ import ashc.grammar.Node.NodeBinary;
 import ashc.grammar.Node.NodeNull;
 import ashc.grammar.*;
 import ashc.grammar.Operator.EnumOperation;
+import ashc.main.*;
 import ashc.semantics.Member.Field;
 import ashc.semantics.*;
 import ashc.semantics.Semantics.TypeI;
@@ -123,7 +124,7 @@ public abstract class GenNode {
 	    cw.visit(52, modifiers | Opcodes.ACC_SUPER, name, genericsSignature != null ? genericsSignature.toString() : null, superclass, interfaces);
 	    final String[] folders = name.split("\\.");
 	    int i = 0;
-	    final StringBuffer dirSb = new StringBuffer("classes/");
+	    final StringBuffer dirSb = new StringBuffer(AshMain.outputDir);
 	    for (; i < (folders.length - 1); i++)
 		dirSb.append(folders[i] + "/");
 	    final String shortName = folders[i];

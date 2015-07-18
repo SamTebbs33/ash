@@ -95,9 +95,20 @@ public class AshError {
 	semanticError(line, column, error, args);
     }
 
-    public static void warning(final int line, final int column, final EnumError error, final Object... args) {
-	System.err.printf("Warning[%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
-	System.err.printf(error.format + "%n", args);
+    public static void semanticWarning(final int line, final int column, final EnumError error, final Object... args) {
+	if(AshMain.warningsEnabled){
+	    System.err.printf("Warning[%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
+	    System.err.printf(error.format + "%n", args);
+	}
+    }
+
+    public static void compilerError(String string) {
+	System.err.printf("Error: %s%n", string);
+	numErrors++;
+    }
+
+    public static void compilerWarning(String string) {
+	System.err.printf("Warning: %s%n", string);
     }
 
 }
