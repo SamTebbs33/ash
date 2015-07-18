@@ -14,3 +14,8 @@ properties:
   path: Properties
   pass: yes
   run: yes
+  
+data clases:
+  path: DataClasses
+  pass: yes
+  run: yes
