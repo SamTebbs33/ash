@@ -1283,7 +1283,7 @@ public abstract class Node {
 	public boolean unwrapped;
 	public Field var;
 	public TypeI prefixType;
-	public boolean isSelf;
+	public boolean isSelf, isArrayLength;
 
 	public NodeVariable(final int line, final int column, final String id, final NodePrefix prefix, final boolean unwrapped) {
 	    super(line, column);
@@ -1295,6 +1295,7 @@ public abstract class Node {
 	@Override
 	public TypeI getExprType() {
 	    if (isTypeName) return new TypeI(id, 0, false);
+	    if(isArrayLength) return new TypeI(EnumPrimitive.INT);
 	    TypeI result = var.type;
 	    int i = 0;
 	    if (var.enclosingType != null) for (final String generic : var.enclosingType.generics)
@@ -1324,7 +1325,11 @@ public abstract class Node {
 	    } else {
 		prefix.analyse();
 		prefixType = prefix.getExprType();
-		var = Semantics.getVar(id, prefixType);
+		if(prefixType.isArray() && id.equals("length")){
+		    isArrayLength = true;
+		    return;
+		}
+		else var = Semantics.getVar(id, prefixType);
 	    }
 	    if (var == null) semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
 	    else if (!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
@@ -1333,10 +1338,11 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    if ((var == null) || isTypeName) return;
+	    if (isTypeName) return;
 	    if (prefix != null) {
 		prefix.generate();
-		if (!var.isGetProperty || isSelf) {
+		if(isArrayLength) addFuncStmt(new GenNodeOpcode(Opcodes.ARRAYLENGTH));
+		else if (!var.isGetProperty || isSelf) {
 		    String enclosingType = var.enclosingType.qualifiedName.toBytecodeName(), varType = var.type.toBytecodeName();
 		    if (prefixType.isTuple()) {
 			enclosingType = "Tuple" + prefixType.tupleTypes.size();

@@ -1,3 +1,4 @@
 class Test {
-	static var a = 0, b = 1, c = "Hello"
+	static var a = [int, 10, 20]
+	static var len = a.length
 }

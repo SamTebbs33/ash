@@ -395,7 +395,6 @@ public class Semantics {
     }
 
     public static Field getVar(final String id, final TypeI type) {
-	if (type.isArray() && id.equals("length")) return new Variable("length", new TypeI(EnumPrimitive.INT));
 	if (type.isTuple()) {
 	    for (final TypeI tupleType : type.tupleTypes)
 		if ((tupleType.tupleName != null) && tupleType.tupleName.equals(id)) return new Variable(id, tupleType);
