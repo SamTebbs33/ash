@@ -2770,5 +2770,44 @@ public abstract class Node {
 	}
 
     }
+    
+    public static class NodeArraySize extends Node implements IExpression {
+	
+	public NodeType type;
+	public LinkedList<IExpression> arrDims = new LinkedList<IExpression>();
+
+	public NodeArraySize(int line, int column, NodeType type) {
+	    super(line, column);
+	    this.type = type;
+	}
+
+	@Override
+	public void analyse() {
+	    type.analyse();
+	    TypeI t = new TypeI(type);
+	    boolean isNumeric = t.isNumeric();
+	    // Types that aren't primitives must be optional, as the arry with be filled with null references
+	    if(!type.optional && !isNumeric) semanticError(this, line, column, ARRAY_INIT_TYPE_NOT_OPTIONAL, t);
+	    for(IExpression expr : arrDims){
+		expr.analyse();
+		if(!((Node)expr).errored){
+		    TypeI exprType = expr.getExprType();
+		    if(!exprType.isNumeric()) semanticError(this, line, column, ARRAY_INIT_SIZE_NOT_NUMERIC, exprType);
+		}
+	    }
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    return new TypeI(type).setArrDims(arrDims.size());
+	}
+
+	@Override
+	public void registerScopedChecks() {}
+
+	@Override
+	public void generate() {}
+	
+    }
 
 }

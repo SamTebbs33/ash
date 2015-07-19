@@ -16,6 +16,7 @@ import ashc.grammar.Node.NodeArg;
 import ashc.grammar.Node.NodeArgs;
 import ashc.grammar.Node.NodeArray;
 import ashc.grammar.Node.NodeArrayAccess;
+import ashc.grammar.Node.NodeArraySize;
 import ashc.grammar.Node.NodeAs;
 import ashc.grammar.Node.NodeBinary;
 import ashc.grammar.Node.NodeBool;
@@ -601,7 +602,7 @@ public class Parser {
     private IExpression parsePrimaryExpression() throws UnexpectedTokenException {
 	Token next = expect(Lexer.TokenTypeGroup.EXPRESSION_STARTER);
 	IExpression expr = null;
-	switch (next.type) {
+	switch (next.type) {		
 	    case NULL:
 		expr = new NodeNull();
 		break;
@@ -623,13 +624,23 @@ public class Parser {
 		expr = new NodeArray(next.line, next.columnStart, parseCallArgs(TokenType.BRACEL, TokenType.BRACER));
 		break;
 	    case BRACKETL:
-		expr = new NodeTupleExpr(next.line, next.columnStart);
-		rewind();
-		((NodeTupleExpr) expr).exprs = parseCallArgs(TokenType.BRACKETL, TokenType.BRACKETR);
+		NodeArraySize arraySize = new NodeArraySize(next.line, next.columnStart, parseType());
+		expect(TokenType.COMMA);
+		do{
+		    arraySize.arrDims.add(parseExpression());
+		} while(expect(TokenType.BRACKETR, TokenType.COMMA).type == TokenType.COMMA);
+		expr = arraySize;
 		break;
 	    case PARENL:
 		expr = parseExpression();
-		expect(TokenType.PARENR);
+		if(expect(TokenType.PARENR, TokenType.COMMA).type == TokenType.COMMA){
+		    NodeTupleExpr tuple = new NodeTupleExpr(next.line, next.columnStart);
+		    tuple.exprs.add(expr);
+		    do {
+			tuple.exprs.add(parseExpression());
+		    } while(expect(TokenType.PARENR, TokenType.COMMA).type == TokenType.COMMA);
+		    expr = tuple;
+		}
 		break;
 	    case OCTINT:
 		expr = new NodeInteger(next.line, next.columnStart, Integer.parseInt(next.data, 8));
@@ -860,10 +871,14 @@ public class Parser {
     private NodeType parseType(final boolean necessary) throws UnexpectedTokenException {
 	final NodeType type = new NodeType();
 	// Parse tuple types
-	if (getNext().type == TokenType.BRACKETL) do
+	if (getNext().type == TokenType.PARENL) {
+	    // Tuple types must have more then one type to avoid clashes between tuple expressions and bracketed expressions
 	    type.tupleTypes.add(parseType());
-	while (expect(TokenType.COMMA, TokenType.BRACKETR).type == TokenType.COMMA);
-	else {
+	    expect(TokenType.COMMA);
+	    do
+		type.tupleTypes.add(parseType());
+	    while (expect(TokenType.COMMA, TokenType.PARENR).type == TokenType.COMMA);
+	} else {
 	    rewind();
 	    try {
 		type.id = expect(TokenType.ID, TokenType.PRIMITIVE).data;

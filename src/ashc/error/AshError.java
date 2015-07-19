@@ -46,6 +46,8 @@ public class AshError {
 	TOO_MANY_ARRAY_ACCESSES("Attempted to access %s array dimension(s) on a variable with %s dimension(s) (%s)"),
 	TOO_MANY_GENERICS("Too many generics declared"),
 	ARRAY_INDEX_NOT_NUMERIC("Array index must be numeric (%s)"),
+	ARRAY_INIT_TYPE_NOT_OPTIONAL("An array size initialiser's type must be optional or primitive (%s)"),
+	ARRAY_INIT_SIZE_NOT_NUMERIC("An array size initialiser's length must be numeric (%s)"),
 	CANNOT_USE_SELF("Cannot use the self keyword in the current context"),
 	EXPECTED_BOOL_EXPR("Expected a boolean expression, found %s"),
 	EXPECTED_PRIMITIVE_TYPE("Expected a primitive type, but found %s"),

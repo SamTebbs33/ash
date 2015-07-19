@@ -224,7 +224,7 @@ public class Semantics {
 	}
 
 	public boolean isNumeric() {
-	    return EnumPrimitive.isNumeric(shortName);
+	    return EnumPrimitive.isNumeric(shortName) && arrDims == 0;
 	}
 
 	public static TypeI getStringType() {

@@ -1,9 +1,5 @@
-public class IfStatements {
-	public static func main(args : String[]) {
-		const name = "Sam"
-		if name.equals("Sam") {
-			print("Yay :D")
-		} else print("Damn it :/")
-	}
-	public static func print(msg : String) -> System.out.println(msg)
+public class Arrays {
+	static var fib = {1, 1, 2, 3, 5, 8}
+	static var buffer = [int, 10] // 1-D array
+	static var graph = [int, 10, 20] // 2-D array
 }
