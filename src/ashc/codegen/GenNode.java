@@ -781,7 +781,85 @@ public abstract class GenNode {
 	}
 
 	@Override
-	public void generate(final Object visitor) {}
+	public void generate(final Object visitor) {
+	    int opcode = 0;
+	    switch(fromType){
+		case INT:
+		case SHORT:
+		case CHAR:
+		case BYTE:
+		    switch(toType){
+			case BYTE:
+			    opcode = I2B;
+			    break;
+			case CHAR:
+			    opcode = I2C;
+			    break;
+			case SHORT:
+			    opcode = I2S;
+			    break;
+			case LONG:
+			    opcode = I2L;
+			    break;
+			case FLOAT:
+			    opcode = I2F;
+			    break;
+			case DOUBLE:
+			    opcode = I2D;
+			    break;
+		    }
+		    break;
+		case LONG:
+		    switch(toType){
+			case INT:
+			case SHORT:
+			case CHAR:
+			case BYTE:
+			    opcode = L2I;
+			    break;
+			case FLOAT:
+			    opcode = L2F;
+			    break;
+			case DOUBLE:
+			    opcode = L2D;
+			    break; 
+		    }
+		    break;
+		case FLOAT:
+		    switch(toType){
+			case INT:
+			case SHORT:
+			case CHAR:
+			case BYTE:
+			    opcode = F2I;
+			    break;
+			case LONG:
+			    opcode = F2L;
+			    break;
+			case DOUBLE:
+			    opcode = F2D;
+			    break; 
+		    }
+		    break;
+		case DOUBLE:
+		    switch(toType){
+			case INT:
+			case SHORT:
+			case CHAR:
+			case BYTE:
+			    opcode = D2I;
+			    break;
+			case LONG:
+			    opcode = D2L;
+			    break;
+			case FLOAT:
+			    opcode = D2F;
+			    break; 
+		    }
+		    break;
+	    }
+	    ((MethodVisitor)visitor).visitInsn(opcode);
+	}
 
     }
 
