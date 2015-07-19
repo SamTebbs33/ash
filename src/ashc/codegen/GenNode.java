@@ -1141,9 +1141,9 @@ public abstract class GenNode {
 	@Override
 	public void generate(final Object visitor) {
 	    int opcode = 0;
-	    System.out.println(type.name());
 	    switch (type) {
 		case ARRAY:
+		    
 		case REFERENCE:
 		    opcode = AALOAD;
 		    break;

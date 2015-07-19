@@ -1,6 +1,12 @@
 public class Arrays {
-	static var fib = {1, 2, 3, 5}
-	static var buffer = [int, 10] // 1-D array
-	static var graph = [int, 10, 20] // 2-D array
-	public static func main(args : String[]){}
+	
+	public static func main(args : String[]) {
+		var graph = [int, 10, 20] // 2-D array
+		var i = 0
+		while i < graph.length {
+			var a = graph[i][0]
+			i = i + 1
+		}
+	}
+	
 }

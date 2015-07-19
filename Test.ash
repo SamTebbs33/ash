@@ -1,11 +1,16 @@
-class Test {
+public class Arrays {
+	
 	public static func main(args : String[]) {
-		const array = [int, 2] // New int array of length 2
-		var i = 1
-		var len = 0
-		while i > len {
-			System.out.println("yay")
-			i = i - 1
+		var graph = [int, 10, 20] // 2-D array
+		var i = 0
+		while i < graph.length {
+			var a = graph[i]
+			var j = 0
+			while j < a.length {
+				var b = a[j]
+				j = j + 1
+			}
 		}
 	}
+	
 }

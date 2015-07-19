@@ -2229,7 +2229,9 @@ public abstract class Node {
 		if ((EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL) && !exprType.isArray()) ;
 		else semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
 	    }
+	    Scope.push(new Scope());
 	    block.analyse();
+	    Scope.pop();
 	}
 
 	@Override
@@ -2415,7 +2417,7 @@ public abstract class Node {
 		// them. Jump if the index is no less than the array length
 		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.INT, indexVarID));
 		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.INT, lengthVarID));
-		GenNode.addFuncStmt(new GenNodeConditionalJump(Opcodes.IF_ICMPLT, lbl1));
+		GenNode.addFuncStmt(new GenNodeConditionalJump(Opcodes.IF_ICMPGE, lbl1));
 
 		// Load the element at the index of the array into the variable
 		// specified in the source code
@@ -2732,7 +2734,6 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    ((Node) expr).analyse();
-
 	    ((Node) accessExpr).analyse();
 	    if (((Node) accessExpr).errored || ((Node) expr).errored) errored = true;
 	}
@@ -2766,7 +2767,7 @@ public abstract class Node {
 	public void generate() {
 	    expr.generate();
 	    accessExpr.generate();
-	    if (overloadFunc == null) GenNode.addFuncStmt(new GenNodeArrayIndexLoad(accessType.getInstructionType()));
+	    if (overloadFunc == null) GenNode.addFuncStmt(new GenNodeArrayIndexLoad(exprType.copy().setArrDims(exprType.arrDims-1).getInstructionType()));
 	    else {
 		final String enclosingType = overloadFunc.enclosingType.qualifiedName.toBytecodeName(), signature = "(" + accessType.toBytecodeName() + ")"
 			+ overloadFunc.returnType.toBytecodeName();
@@ -2793,7 +2794,7 @@ public abstract class Node {
 	    elementType.analyse();
 	    elementTypeI = new TypeI(elementType);
 	    final boolean isNumeric = elementTypeI.isNumeric();
-	    // Types that aren't primitives must be optional, as the arry with be filled with null references
+	    // Types that aren't primitives must be optional, as the array with be filled with null references
 	    if (!elementType.optional && !isNumeric) semanticError(this, line, column, ARRAY_INIT_TYPE_NOT_OPTIONAL, elementTypeI);
 	    if (!elementTypeI.isValidArrayAccessor()) semanticError(this, line, column, ARRAY_INDEX_NOT_NUMERIC, elementTypeI);
 	    for (final IExpression expr : arrDims) {
