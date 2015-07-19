@@ -660,29 +660,29 @@ public abstract class GenNode {
 			case BYTE:
 			case SHORT:
 			case BOOL:
-			    node.expr2.generate();
 			    node.expr1.generate();
+			    node.expr2.generate();
 
 			    // Integer type operands are handled by one single
 			    // opcode
 			    switch (node.operator.operation) {
 				case LESS:
-				    opcode = IF_ICMPLT;
+				    opcode = IF_ICMPGE;
 				    break;
 				case GREATER:
-				    opcode = IF_ICMPGT;
-				    break;
-				case EQUAL:
-				    opcode = IF_ICMPEQ;
-				    break;
-				case NOT_EQUAL:
-				    opcode = IF_ICMPNE;
-				    break;
-				case LESS_EQUAL:
 				    opcode = IF_ICMPLE;
 				    break;
+				case EQUAL:
+				    opcode = IF_ICMPNE;
+				    break;
+				case NOT_EQUAL:
+				    opcode = IF_ICMPEQ;
+				    break;
+				case LESS_EQUAL:
+				    opcode = IF_ICMPGT;
+				    break;
 				case GREATER_EQUAL:
-				    opcode = IF_ICMPGE;
+				    opcode = IF_ICMPLT;
 				    break;
 			    }
 			    break;
@@ -697,22 +697,22 @@ public abstract class GenNode {
 			    else if (type == EnumInstructionOperand.FLOAT) extraOpcodes.add(FCMPG);
 			    switch (node.operator.operation) {
 				case LESS:
-				    opcode = IFLT;
+				    opcode = IFGE;
 				    break;
 				case GREATER:
-				    opcode = IFGT;
-				    break;
-				case EQUAL:
-				    opcode = IFEQ;
-				    break;
-				case NOT_EQUAL:
-				    opcode = IFNE;
-				    break;
-				case LESS_EQUAL:
 				    opcode = IFLE;
 				    break;
+				case EQUAL:
+				    opcode = IFNE;
+				    break;
+				case NOT_EQUAL:
+				    opcode = IFEQ;
+				    break;
+				case LESS_EQUAL:
+				    opcode = IFGT;
+				    break;
 				case GREATER_EQUAL:
-				    opcode = IFGE;
+				    opcode = IFLT;
 				    break;
 			    }
 			    break;
@@ -728,19 +728,19 @@ public abstract class GenNode {
 				else node.expr2.generate();
 				switch (node.operator.operation) {
 				    case NOT_EQUAL:
-					opcode = IFNONNULL;
+					opcode = IFNULL;
 					break;
 				    case EQUAL:
-					opcode = IFNULL;
+					opcode = IFNONNULL;
 					break;
 				}
 			    } else // Compare the references
 				switch (node.operator.operation) {
 				    case NOT_EQUAL:
-					opcode = IF_ACMPNE;
+					opcode = IF_ACMPEQ;
 					break;
 				    case EQUAL:
-					opcode = IF_ACMPEQ;
+					opcode = IF_ACMPNE;
 					break;
 				}
 

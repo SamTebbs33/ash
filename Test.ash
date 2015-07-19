@@ -1,4 +1,10 @@
 class Test {
-	static var a = [int, 10, 20]
-	static var len = a.length
+	public static func main(args : String[]) {
+		const array = [int, 2] // New int array of length 2
+		var i = 0L
+		var len = 5L
+		while i <  len {
+			System.out.println("yay")
+		}
+	}
 }

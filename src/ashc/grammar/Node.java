@@ -2855,7 +2855,6 @@ public abstract class Node {
 			    break;
 
 		    }
-		    arrDims.getFirst().generate();
 		    addFuncStmt(arrayCreateNode);
 	    }
 	}
