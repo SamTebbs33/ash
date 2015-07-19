@@ -1112,5 +1112,22 @@ public abstract class GenNode {
 	}
 
     }
+    
+    public static class GenNodeMultiDimArray extends GenNode {
+	
+	public String type;
+	public int dims;
+
+	public GenNodeMultiDimArray(String type, int dims) {
+	    this.type = type;
+	    this.dims = dims;
+	}
+
+	@Override
+	public void generate(Object visitor) {
+	    ((MethodVisitor)visitor).visitMultiANewArrayInsn(type, dims);
+	}
+	
+    }
 
 }

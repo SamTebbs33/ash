@@ -143,10 +143,10 @@ public class Semantics {
 	    String id = shortName;
 	    if (tupleName != null) id = tupleName + " : " + id;
 	    if (isTuple()) {
-		id = "[";
+		id = "(";
 		for (int i = 0; i < tupleTypes.size(); i++)
 		    id += tupleTypes.get(i).toString() + (i < (tupleTypes.size() - 1) ? ", " : "");
-		id += "]";
+		id += ")";
 	    }
 	    if (genericTypes.size() > 0) {
 		id += "<";

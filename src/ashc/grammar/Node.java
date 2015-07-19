@@ -2773,21 +2773,22 @@ public abstract class Node {
     
     public static class NodeArraySize extends Node implements IExpression {
 	
-	public NodeType type;
+	public NodeType elementType;
+	public TypeI type;
 	public LinkedList<IExpression> arrDims = new LinkedList<IExpression>();
 
 	public NodeArraySize(int line, int column, NodeType type) {
 	    super(line, column);
-	    this.type = type;
+	    this.elementType = type;
 	}
 
 	@Override
 	public void analyse() {
-	    type.analyse();
-	    TypeI t = new TypeI(type);
+	    elementType.analyse();
+	    TypeI t = new TypeI(elementType);
 	    boolean isNumeric = t.isNumeric();
 	    // Types that aren't primitives must be optional, as the arry with be filled with null references
-	    if(!type.optional && !isNumeric) semanticError(this, line, column, ARRAY_INIT_TYPE_NOT_OPTIONAL, t);
+	    if(!elementType.optional && !isNumeric) semanticError(this, line, column, ARRAY_INIT_TYPE_NOT_OPTIONAL, t);
 	    for(IExpression expr : arrDims){
 		expr.analyse();
 		if(!((Node)expr).errored){
@@ -2799,14 +2800,20 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return new TypeI(type).setArrDims(arrDims.size());
+	    type = new TypeI(elementType).setArrDims(arrDims.size());
+	    return type;
 	}
 
 	@Override
 	public void registerScopedChecks() {}
 
 	@Override
-	public void generate() {}
+	public void generate() {
+	    for(IExpression expr : arrDims) expr.generate();
+	    if(arrDims.size() > 1){
+		addFuncStmt(new GenNodeMultiDimArray(type.toBytecodeName(), arrDims.size()));
+	    }
+	}
 	
     }
 
