@@ -47,3 +47,8 @@ if statements:
   path: IfStatements
   pass: yes
   run: yes
+  
+arrays:
+  path: Arrays
+  pass: yes
+  run: yes
