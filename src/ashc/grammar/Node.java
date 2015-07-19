@@ -2774,7 +2774,7 @@ public abstract class Node {
     public static class NodeArraySize extends Node implements IExpression {
 	
 	public NodeType elementType;
-	public TypeI type;
+	public TypeI type, elementTypeI;
 	public LinkedList<IExpression> arrDims = new LinkedList<IExpression>();
 
 	public NodeArraySize(int line, int column, NodeType type) {
@@ -2785,10 +2785,11 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    elementType.analyse();
-	    TypeI t = new TypeI(elementType);
-	    boolean isNumeric = t.isNumeric();
+	    elementTypeI = new TypeI(elementType);
+	    boolean isNumeric = elementTypeI.isNumeric();
 	    // Types that aren't primitives must be optional, as the arry with be filled with null references
-	    if(!elementType.optional && !isNumeric) semanticError(this, line, column, ARRAY_INIT_TYPE_NOT_OPTIONAL, t);
+	    if(!elementType.optional && !isNumeric) semanticError(this, line, column, ARRAY_INIT_TYPE_NOT_OPTIONAL, elementTypeI);
+	    if(!elementTypeI.isValidArrayAccessor()) semanticError(this, line, column, ARRAY_INDEX_NOT_NUMERIC, elementTypeI);
 	    for(IExpression expr : arrDims){
 		expr.analyse();
 		if(!((Node)expr).errored){
@@ -2812,6 +2813,43 @@ public abstract class Node {
 	    for(IExpression expr : arrDims) expr.generate();
 	    if(arrDims.size() > 1){
 		addFuncStmt(new GenNodeMultiDimArray(type.toBytecodeName(), arrDims.size()));
+	    } else {
+		    GenNode arrayCreateNode = null;
+		    switch (elementTypeI.getInstructionType()) {
+			case ARRAY:
+			    arrayCreateNode = new GenNodeTypeOpcode(Opcodes.ANEWARRAY, elementTypeI.toBytecodeName());
+			    break;
+			case BOOL:
+			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN);
+			    break;
+			case BYTE:
+			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_BYTE);
+			    break;
+			case CHAR:
+			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_CHAR);
+			    break;
+			case SHORT:
+			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_SHORT);
+			    break;
+			case INT:
+			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_INT);
+			    break;
+			case DOUBLE:
+			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_DOUBLE);
+			    break;
+			case FLOAT:
+			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_FLOAT);
+			    break;
+			case LONG:
+			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_LONG);
+			    break;
+			case REFERENCE:
+			    arrayCreateNode = new GenNodeTypeOpcode(Opcodes.ANEWARRAY, Semantics.getType(elementTypeI.shortName).get().qualifiedName.toBytecodeName());
+			    break;
+
+		    }
+		    arrDims.getFirst().generate();
+		    addFuncStmt(arrayCreateNode);
 	    }
 	}
 	
