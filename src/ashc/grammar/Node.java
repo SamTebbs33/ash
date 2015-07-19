@@ -837,7 +837,7 @@ public abstract class Node {
 	    int argID = 0;
 	    for (final TypeI arg : func.parameters) {
 		GenNode.addFuncStmt(new GenNodeVar("arg" + argID, arg.toBytecodeName(), argID + 1, null)); // TODO:
-													   // generics
+		// generics
 		argID++;
 	    }
 	    // We have to initlialse the class' fields to their default values
@@ -856,7 +856,7 @@ public abstract class Node {
 	public static void initialiseVarDecs(final LinkedList<NodeVarDec> varDecs) {
 	    for (final NodeVarDec dec : varDecs) {
 		if (dec.isStatic) continue; // Static vars are initialised in
-					    // the static init block
+		// the static init block
 		IExpression expr = null;
 		if (dec instanceof NodeVarDecImplicit) expr = ((NodeVarDecImplicit) dec).expr;
 		else expr = ((NodeVarDecExplicit) dec).expr;
@@ -880,7 +880,7 @@ public abstract class Node {
 	    final int argID = 0;
 	    for (final TypeI arg : func.parameters)
 		GenNode.addFuncStmt(new GenNodeVar("arg" + argID, arg.toBytecodeName(), argID + (func.isStatic() ? 0 : 1), null)); // TODO:
-																   // generics
+	    // generics
 	    block.generate();
 	    if (isMutFunc) {
 		addFuncStmt(new GenNodeThis());
@@ -1004,7 +1004,7 @@ public abstract class Node {
 	public void generate() {
 	    if (!var.isLocal) GenNode.addGenNodeField(new GenNodeField(var));
 	    else GenNode.addFuncStmt(new GenNodeVar(var.id, var.type.toBytecodeName(), var.localID, null)); // TODO:
-													    // generics
+	    // generics
 	    // Variable initialisation is handled by the class block
 	    super.generate();
 	}
@@ -1057,7 +1057,7 @@ public abstract class Node {
 	    else {
 		final String type = var.type.toBytecodeName();
 		GenNode.addFuncStmt(new GenNodeVar(var.id, type, var.localID, null)); // TODO:
-										      // generics
+		// generics
 		expr.generate();
 		addFuncStmt(new GenNodeVarStore(var.type.getInstructionType(), var.localID));
 	    }
@@ -1295,7 +1295,7 @@ public abstract class Node {
 	@Override
 	public TypeI getExprType() {
 	    if (isTypeName) return new TypeI(id, 0, false);
-	    if(isArrayLength) return new TypeI(EnumPrimitive.INT);
+	    if (isArrayLength) return new TypeI(EnumPrimitive.INT);
 	    TypeI result = var.type;
 	    int i = 0;
 	    if (var.enclosingType != null) for (final String generic : var.enclosingType.generics)
@@ -1325,11 +1325,10 @@ public abstract class Node {
 	    } else {
 		prefix.analyse();
 		prefixType = prefix.getExprType();
-		if(prefixType.isArray() && id.equals("length")){
+		if (prefixType.isArray() && id.equals("length")) {
 		    isArrayLength = true;
 		    return;
-		}
-		else var = Semantics.getVar(id, prefixType);
+		} else var = Semantics.getVar(id, prefixType);
 	    }
 	    if (var == null) semanticError(this, line, column, VAR_DOES_NOT_EXIST, id);
 	    else if (!var.isVisible()) semanticError(this, line, column, VAR_IS_NOT_VISIBLE, var.qualifiedName.shortName);
@@ -1341,7 +1340,7 @@ public abstract class Node {
 	    if (isTypeName) return;
 	    if (prefix != null) {
 		prefix.generate();
-		if(isArrayLength) addFuncStmt(new GenNodeOpcode(Opcodes.ARRAYLENGTH));
+		if (isArrayLength) addFuncStmt(new GenNodeOpcode(Opcodes.ARRAYLENGTH));
 		else if (!var.isGetProperty || isSelf) {
 		    String enclosingType = var.enclosingType.qualifiedName.toBytecodeName(), varType = var.type.toBytecodeName();
 		    if (prefixType.isTuple()) {
@@ -2354,16 +2353,16 @@ public abstract class Node {
 	    Scope.push(new Scope());
 	    var = new Variable(varId, varType);
 	    Scope.getFuncScope().locals += exprType.isArray() ? 3 : 1; // We
-								       // have
-								       // to
-								       // reserve
-								       // some
-								       // local
-								       // variables
-								       // for
-								       // the
-								       // iterator
-								       // instance
+	    // have
+	    // to
+	    // reserve
+	    // some
+	    // local
+	    // variables
+	    // for
+	    // the
+	    // iterator
+	    // instance
 	    Semantics.addVar(var);
 	    block.analyse();
 	    Scope.pop();
@@ -2373,8 +2372,8 @@ public abstract class Node {
 	public void generate() {
 	    expr.generate();
 	    final int iteratorVarID = var.localID + 1; // Get the varID that we
-						       // reserved in the
-						       // analyse() method
+	    // reserved in the
+	    // analyse() method
 	    if (!exprType.isArray()) {
 		final String enclosingType = Semantics.getType(exprType.shortName).get().qualifiedName.toBytecodeName();
 		GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, "iterator", "()Ljava/util/Iterator;", false, false, false, false));
@@ -2777,31 +2776,31 @@ public abstract class Node {
 	}
 
     }
-    
+
     public static class NodeArraySize extends Node implements IExpression {
-	
+
 	public NodeType elementType;
 	public TypeI type, elementTypeI;
 	public LinkedList<IExpression> arrDims = new LinkedList<IExpression>();
 
-	public NodeArraySize(int line, int column, NodeType type) {
+	public NodeArraySize(final int line, final int column, final NodeType type) {
 	    super(line, column);
-	    this.elementType = type;
+	    elementType = type;
 	}
 
 	@Override
 	public void analyse() {
 	    elementType.analyse();
 	    elementTypeI = new TypeI(elementType);
-	    boolean isNumeric = elementTypeI.isNumeric();
+	    final boolean isNumeric = elementTypeI.isNumeric();
 	    // Types that aren't primitives must be optional, as the arry with be filled with null references
-	    if(!elementType.optional && !isNumeric) semanticError(this, line, column, ARRAY_INIT_TYPE_NOT_OPTIONAL, elementTypeI);
-	    if(!elementTypeI.isValidArrayAccessor()) semanticError(this, line, column, ARRAY_INDEX_NOT_NUMERIC, elementTypeI);
-	    for(IExpression expr : arrDims){
+	    if (!elementType.optional && !isNumeric) semanticError(this, line, column, ARRAY_INIT_TYPE_NOT_OPTIONAL, elementTypeI);
+	    if (!elementTypeI.isValidArrayAccessor()) semanticError(this, line, column, ARRAY_INDEX_NOT_NUMERIC, elementTypeI);
+	    for (final IExpression expr : arrDims) {
 		expr.analyse();
-		if(!((Node)expr).errored){
-		    TypeI exprType = expr.getExprType();
-		    if(!exprType.isNumeric()) semanticError(this, line, column, ARRAY_INIT_SIZE_NOT_NUMERIC, exprType);
+		if (!((Node) expr).errored) {
+		    final TypeI exprType = expr.getExprType();
+		    if (!exprType.isNumeric()) semanticError(this, line, column, ARRAY_INIT_SIZE_NOT_NUMERIC, exprType);
 		}
 	    }
 	}
@@ -2817,48 +2816,48 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    for(IExpression expr : arrDims) expr.generate();
-	    if(arrDims.size() > 1){
-		addFuncStmt(new GenNodeMultiDimArray(type.toBytecodeName(), arrDims.size()));
-	    } else {
-		    GenNode arrayCreateNode = null;
-		    switch (elementTypeI.getInstructionType()) {
-			case ARRAY:
-			    arrayCreateNode = new GenNodeTypeOpcode(Opcodes.ANEWARRAY, elementTypeI.toBytecodeName());
-			    break;
-			case BOOL:
-			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN);
-			    break;
-			case BYTE:
-			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_BYTE);
-			    break;
-			case CHAR:
-			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_CHAR);
-			    break;
-			case SHORT:
-			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_SHORT);
-			    break;
-			case INT:
-			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_INT);
-			    break;
-			case DOUBLE:
-			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_DOUBLE);
-			    break;
-			case FLOAT:
-			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_FLOAT);
-			    break;
-			case LONG:
-			    arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_LONG);
-			    break;
-			case REFERENCE:
-			    arrayCreateNode = new GenNodeTypeOpcode(Opcodes.ANEWARRAY, Semantics.getType(elementTypeI.shortName).get().qualifiedName.toBytecodeName());
-			    break;
+	    for (final IExpression expr : arrDims)
+		expr.generate();
+	    if (arrDims.size() > 1) addFuncStmt(new GenNodeMultiDimArray(type.toBytecodeName(), arrDims.size()));
+	    else {
+		GenNode arrayCreateNode = null;
+		switch (elementTypeI.getInstructionType()) {
+		    case ARRAY:
+			arrayCreateNode = new GenNodeTypeOpcode(Opcodes.ANEWARRAY, elementTypeI.toBytecodeName());
+			break;
+		    case BOOL:
+			arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN);
+			break;
+		    case BYTE:
+			arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_BYTE);
+			break;
+		    case CHAR:
+			arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_CHAR);
+			break;
+		    case SHORT:
+			arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_SHORT);
+			break;
+		    case INT:
+			arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_INT);
+			break;
+		    case DOUBLE:
+			arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_DOUBLE);
+			break;
+		    case FLOAT:
+			arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_FLOAT);
+			break;
+		    case LONG:
+			arrayCreateNode = new GenNodeIntOpcode(Opcodes.NEWARRAY, Opcodes.T_LONG);
+			break;
+		    case REFERENCE:
+			arrayCreateNode = new GenNodeTypeOpcode(Opcodes.ANEWARRAY, Semantics.getType(elementTypeI.shortName).get().qualifiedName.toBytecodeName());
+			break;
 
-		    }
-		    addFuncStmt(arrayCreateNode);
+		}
+		addFuncStmt(arrayCreateNode);
 	    }
 	}
-	
+
     }
 
 }

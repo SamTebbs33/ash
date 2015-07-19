@@ -249,11 +249,11 @@ public class Member {
 		isLocal = true;
 		localID = ++Scope.getFuncScope().locals;
 		if (Scope.getFuncScope().isStatic) localID--; // Static funcs
-							      // don't have a
-							      // "this"
-							      // instance, so
-							      // decrease the
-							      // varID by one
+		// don't have a
+		// "this"
+		// instance, so
+		// decrease the
+		// varID by one
 	    } else isLocal = false;
 	}
 

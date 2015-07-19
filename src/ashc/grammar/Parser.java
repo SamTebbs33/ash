@@ -166,8 +166,7 @@ public class Parser {
     }
 
     /**
-     * Expect the next token to have the same type as the argument and return
-     * it, else throw an error
+     * Expect the next token to have the same type as the argument and return it, else throw an error
      *
      * @param t
      *            - The token type expected
@@ -195,8 +194,7 @@ public class Parser {
     }
 
     /**
-     * Expect the next token to have the same type as any one of the arguments
-     * and return it, else throw an error
+     * Expect the next token to have the same type as any one of the arguments and return it, else throw an error
      *
      * @param t
      *            - The token types expected
@@ -338,7 +336,7 @@ public class Parser {
 		case CONST:
 		    NodeVarDec dec = parseVarDec(mods, token, true);
 		    block.add(dec);
-		    while(dec.subDec != null){
+		    while (dec.subDec != null) {
 			block.add(dec.subDec);
 			dec = dec.subDec;
 		    }
@@ -447,9 +445,7 @@ public class Parser {
 		final IFuncStmt stmt = parsePrefix();
 		if (stmt instanceof NodeVariable) {
 		    /*
-		     * while(getNext().type == TokenType.BRACKETL){
-		     * ((NodeVariable)stmt).exprs.add(parseExpression());
-		     * expect(TokenType.BRACKETR); } rewind();
+		     * while(getNext().type == TokenType.BRACKETL){ ((NodeVariable)stmt).exprs.add(parseExpression()); expect(TokenType.BRACKETR); } rewind();
 		     */
 		    final Token op = expect(TokenType.ASSIGNOP, TokenType.COMPOUNDASSIGNOP, TokenType.UNARYOP);
 		    if (op.type == TokenType.UNARYOP) return new NodeUnary(op.line, op.columnStart, (NodeVariable) stmt, op.data, false);
@@ -607,7 +603,7 @@ public class Parser {
     private IExpression parsePrimaryExpression() throws UnexpectedTokenException {
 	Token next = expect(Lexer.TokenTypeGroup.EXPRESSION_STARTER);
 	IExpression expr = null;
-	switch (next.type) {		
+	switch (next.type) {
 	    case NULL:
 		expr = new NodeNull();
 		break;
@@ -629,21 +625,21 @@ public class Parser {
 		expr = new NodeArray(next.line, next.columnStart, parseCallArgs(TokenType.BRACEL, TokenType.BRACER));
 		break;
 	    case BRACKETL:
-		NodeArraySize arraySize = new NodeArraySize(next.line, next.columnStart, parseType());
+		final NodeArraySize arraySize = new NodeArraySize(next.line, next.columnStart, parseType());
 		expect(TokenType.COMMA);
-		do{
+		do
 		    arraySize.arrDims.add(parseExpression());
-		} while(expect(TokenType.BRACKETR, TokenType.COMMA).type == TokenType.COMMA);
+		while (expect(TokenType.BRACKETR, TokenType.COMMA).type == TokenType.COMMA);
 		expr = arraySize;
 		break;
 	    case PARENL:
 		expr = parseExpression();
-		if(expect(TokenType.PARENR, TokenType.COMMA).type == TokenType.COMMA){
-		    NodeTupleExpr tuple = new NodeTupleExpr(next.line, next.columnStart);
+		if (expect(TokenType.PARENR, TokenType.COMMA).type == TokenType.COMMA) {
+		    final NodeTupleExpr tuple = new NodeTupleExpr(next.line, next.columnStart);
 		    tuple.exprs.add(expr);
-		    do {
+		    do
 			tuple.exprs.add(parseExpression());
-		    } while(expect(TokenType.PARENR, TokenType.COMMA).type == TokenType.COMMA);
+		    while (expect(TokenType.PARENR, TokenType.COMMA).type == TokenType.COMMA);
 		    expr = tuple;
 		}
 		break;
@@ -755,7 +751,7 @@ public class Parser {
 	return expr;
     }
 
-    private NodeVarDec parseVarDec(final LinkedList<NodeModifier> mods, Token keyword, boolean allowMultipleDecs) throws UnexpectedTokenException {
+    private NodeVarDec parseVarDec(final LinkedList<NodeModifier> mods, final Token keyword, final boolean allowMultipleDecs) throws UnexpectedTokenException {
 	final Token id = expect(TokenType.ID);
 	Token next = expect(TokenType.COLON, TokenType.ASSIGNOP);
 	NodeVarDec varDec;
@@ -810,13 +806,11 @@ public class Parser {
 	    if (varDec.getBlock != null) varDec.getBlock.inFunction = true;
 	    if (varDec.setBlock != null) varDec.setBlock.inFunction = true;
 	} else rewind();
-	
-	if(allowMultipleDecs){
-	    // Var decs can be chained using commas, and they share the same keyword and modifiers
-	    if(getNext().type == TokenType.COMMA) varDec.subDec = parseVarDec(mods, keyword, true);
+
+	if (allowMultipleDecs) // Var decs can be chained using commas, and they share the same keyword and modifiers
+	    if (getNext().type == TokenType.COMMA) varDec.subDec = parseVarDec(mods, keyword, true);
 	    else rewind();
-	}
-	
+
 	return varDec;
     }
 
