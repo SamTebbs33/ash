@@ -898,6 +898,7 @@ public abstract class Node {
 	public NodeFuncBlock getBlock, setBlock;
 	public Field var;
 	public boolean isStatic;
+	public NodeVarDec subDec;
 
 	public NodeVarDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id) {
 	    super(line, column);

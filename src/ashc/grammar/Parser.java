@@ -333,16 +333,22 @@ public class Parser {
 	    rewind();
 	    final LinkedList<NodeModifier> mods = parseMods();
 	    final Token token = expect(TokenType.FUNC, TokenType.MUT, TokenType.CONST, TokenType.VAR, TokenType.BRACER);
-	    rewind();
 	    switch (token.type) {
 		case VAR:
 		case CONST:
-		    block.add(parseVarDec(mods));
+		    NodeVarDec dec = parseVarDec(mods, token, true);
+		    block.add(dec);
+		    while(dec.subDec != null){
+			block.add(dec.subDec);
+			dec = dec.subDec;
+		    }
 		    continue;
 		case FUNC:
+		    rewind();
 		    block.add(parseFuncDec(true, mods));
 		    continue;
 		case MUT:
+		    rewind();
 		    block.add(parseMutFuncDec(true, mods));
 		    continue;
 	    }
@@ -459,8 +465,7 @@ public class Parser {
 		return parseMatchStmt();
 	    case VAR:
 	    case CONST:
-		rewind();
-		return parseVarDec(null);
+		return parseVarDec(null, token, false);
 	}
 	return null;
     }
@@ -750,8 +755,7 @@ public class Parser {
 	return expr;
     }
 
-    private NodeVarDec parseVarDec(final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
-	final Token keyword = expect(TokenType.CONST, TokenType.VAR);
+    private NodeVarDec parseVarDec(final LinkedList<NodeModifier> mods, Token keyword, boolean allowMultipleDecs) throws UnexpectedTokenException {
 	final Token id = expect(TokenType.ID);
 	Token next = expect(TokenType.COLON, TokenType.ASSIGNOP);
 	NodeVarDec varDec;
@@ -806,6 +810,13 @@ public class Parser {
 	    if (varDec.getBlock != null) varDec.getBlock.inFunction = true;
 	    if (varDec.setBlock != null) varDec.setBlock.inFunction = true;
 	} else rewind();
+	
+	if(allowMultipleDecs){
+	    // Var decs can be chained using commas, and they share the same keyword and modifiers
+	    if(getNext().type == TokenType.COMMA) varDec.subDec = parseVarDec(mods, keyword, true);
+	    else rewind();
+	}
+	
 	return varDec;
     }
 
