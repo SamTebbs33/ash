@@ -5,7 +5,6 @@ import java.util.*;
 import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
-import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash

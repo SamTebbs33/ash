@@ -6,7 +6,6 @@ import java.util.*;
 import ashc.grammar.*;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeExprs;
-import ashc.semantics.Semantics.TypeI;
 import ashc.util.*;
 
 /**

@@ -1,7 +1,6 @@
 package ashc.semantics;
 
 import ashc.codegen.GenNode.EnumInstructionOperand;
-import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash

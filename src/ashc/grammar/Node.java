@@ -28,6 +28,7 @@ import ashc.codegen.GenNode.GenNodeIntOpcode;
 import ashc.codegen.GenNode.GenNodeJump;
 import ashc.codegen.GenNode.GenNodeLabel;
 import ashc.codegen.GenNode.GenNodeLong;
+import ashc.codegen.GenNode.GenNodeMultiDimArray;
 import ashc.codegen.GenNode.GenNodeNew;
 import ashc.codegen.GenNode.GenNodeNull;
 import ashc.codegen.GenNode.GenNodeOpcode;
@@ -55,7 +56,6 @@ import ashc.semantics.Member.Variable;
 import ashc.semantics.Scope.FuncScope;
 import ashc.semantics.Scope.PropertyScope;
 import ashc.semantics.Semantics.Operation;
-import ashc.semantics.Semantics.TypeI;
 import ashc.semantics.Member.Type;
 import ashc.util.*;
 

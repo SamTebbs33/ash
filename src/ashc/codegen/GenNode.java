@@ -17,7 +17,6 @@ import ashc.grammar.Operator.EnumOperation;
 import ashc.main.*;
 import ashc.semantics.Member.Field;
 import ashc.semantics.*;
-import ashc.semantics.Semantics.TypeI;
 
 /**
  * Ash

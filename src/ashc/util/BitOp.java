@@ -10,5 +10,13 @@ public class BitOp {
     public static boolean and(final int a, final int b) {
 	return (a & b) != 0;
     }
+    
+    public static boolean or(final int a, final int b) {
+	return (a | b) != 0;
+    }
+    
+    public static boolean xor(final int a, final int b) {
+	return (a ^ b) != 0;
+    }
 
 }
