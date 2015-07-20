@@ -1,16 +1,14 @@
-public class Arrays {
+public class MatchStatement {
 	
 	public static func main(args : String[]) {
-		var graph = [int, 10, 20] // 2-D array
-		var i = 0
-		while i < graph.length {
-			var a = graph[i]
-			var j = 0
-			while j < a.length {
-				var b = a[j]
-				j = j + 1
-			}
+		var a = 1
+		match a {
+			2 -> System.out.println("0")
+			0 -> System.out.println("1")
+			1 -> System.out.println("2")
+			_ -> System.out.println("other")
 		}
+		if(true) System.out.println("Done")
 	}
 	
 }

@@ -23,7 +23,8 @@ public class AshError {
 	PATH_DOES_NOT_MATCH_PACKAGE("The relative path to this file does not match the package structure (%s)"),
 
 	FUNC_ALREADY_EXISTS("The function \'%s\' already exists"),
-	FUNC_DOES_NOT_EXIST("The function \'%s\' with the given arguments doesn't exist in type %s"),
+	FUNC_DOES_NOT_EXIST_IN_TYPE("The function \'%s\' with the given arguments doesn't exist in type %s"),
+	FUNC_DOES_NOT_EXIST("The function \'%s\' with the given arguments doesn't exist"),
 	FUNC_IS_NOT_VISIBLE("The function \'%s\' is not visible from the current context"),
 	CONSTRUCTOR_DOES_NOT_EXIST("The constructor with given arguments does not exist in type %s"),
 	RETURN_EXPR_IN_VOID_FUNC("Cannot return an expression in a void function"),

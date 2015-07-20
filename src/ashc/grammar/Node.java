@@ -10,6 +10,8 @@ import java.util.*;
 
 import org.objectweb.asm.*;
 
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
+
 import ashc.codegen.*;
 import ashc.codegen.GenNode.EnumInstructionOperand;
 import ashc.codegen.GenNode.GenNodeArrayIndexLoad;
@@ -1247,8 +1249,8 @@ public abstract class Node {
 	    }
 
 	    if (func == null) {
-		if (prefixType == null) semanticError(this, line, column, CONSTRUCTOR_DOES_NOT_EXIST, id);
-		else semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id, prefixType);
+		if (prefixType == null) semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id);
+		else semanticError(this, line, column, FUNC_DOES_NOT_EXIST_IN_TYPE, id, prefixType);
 	    } else {
 		if (prefix == null) if (Scope.inFuncScope() && Scope.getFuncScope().isStatic && !func.isStatic() && !func.isConstructor()) semanticError(line, column, NON_STATIC_FUNC_USED_IN_STATIC_CONTEXT, func.qualifiedName.shortName);
 		if (!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
@@ -2324,6 +2326,7 @@ public abstract class Node {
 
 	public String varId;
 	public Variable var;
+	public TypeI varType;
 
 	public NodeForIn(final int line, final int column, final String data, final IExpression parseExpression, final NodeFuncBlock block) {
 	    super(line, column, parseExpression, block);
@@ -2333,14 +2336,14 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
+	    expr.analyse();
 	    // The only types that can be iterated over are arrays and those
 	    // that implement java.lang.Iterable
 	    exprType = expr.getExprType();
-	    TypeI varType = TypeI.getObjectType();
+	    varType = TypeI.getObjectType();
 	    if (exprType.isTuple()) semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
 	    if (exprType.isArray()) {
-		exprType.copy().arrDims--;
-		varType = exprType;
+		varType = exprType.copy().setArrDims(exprType.arrDims-1);
 	    } else if (exprType.isRange()) varType = Semantics.getGeneric(exprType.genericTypes, 0);
 	    else {
 		final Optional<Type> type = Semantics.getType(exprType.shortName);
@@ -2354,17 +2357,7 @@ public abstract class Node {
 	    }
 	    Scope.push(new Scope());
 	    var = new Variable(varId, varType);
-	    Scope.getFuncScope().locals += exprType.isArray() ? 3 : 1; // We
-	    // have
-	    // to
-	    // reserve
-	    // some
-	    // local
-	    // variables
-	    // for
-	    // the
-	    // iterator
-	    // instance
+	    Scope.getFuncScope().locals += exprType.isArray() ? 3 : 1; // Some local vars are reserved for use in the bytecode
 	    Semantics.addVar(var);
 	    block.analyse();
 	    Scope.pop();
@@ -2372,11 +2365,11 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
+	    addFuncStmt(new GenNodeVar(var.id, var.type.toBytecodeName(), var.localID, null)); // TODO: generics
 	    expr.generate();
-	    final int iteratorVarID = var.localID + 1; // Get the varID that we
-	    // reserved in the
-	    // analyse() method
+	    final int iteratorVarID = var.localID + 1; // Get the varID that we reserved in analyse()
 	    if (!exprType.isArray()) {
+		addFuncStmt(new GenNodeVar("iterator", "Ljava/util/Iterator;", iteratorVarID, null));
 		final String enclosingType = Semantics.getType(exprType.shortName).get().qualifiedName.toBytecodeName();
 		GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, "iterator", "()Ljava/util/Iterator;", false, false, false, false));
 		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.REFERENCE, iteratorVarID));
@@ -2396,8 +2389,11 @@ public abstract class Node {
 		GenNode.addFuncStmt(new GenNodeJump(lbl0));
 		GenNode.addFuncStmt(new GenNodeLabel(lbl1));
 	    } else {
-		final EnumInstructionOperand elementType = exprType.copy().setArrDims(exprType.arrDims - 1).getInstructionType();
+		final EnumInstructionOperand elementType = varType.getInstructionType();
 		final int indexVarID = iteratorVarID + 1, lengthVarID = indexVarID + 1;
+		addFuncStmt(new GenNodeVar("array", exprType.toBytecodeName(), iteratorVarID, null));
+		addFuncStmt(new GenNodeVar("index", "I", indexVarID, null));
+		addFuncStmt(new GenNodeVar("length", "I", lengthVarID, null));
 		// Cache the array reference to a local variable so we don't
 		// have to re-generate the expression when accessing an index
 		GenNode.addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
@@ -2656,6 +2652,8 @@ public abstract class Node {
     public static class NodeMatch extends Node implements IFuncStmt {
 	public IExpression expr;
 	public LinkedList<NodeMatchCase> matchCases = new LinkedList<NodeMatchCase>();
+	
+	public TypeI exprType;
 
 	public NodeMatch(final int line, final int column, final IExpression expr) {
 	    super(line, column);
@@ -2666,10 +2664,10 @@ public abstract class Node {
 	public void analyse() {
 	    ((Node) expr).analyse();
 	    if (!((Node) expr).errored) {
-		final TypeI exprType = expr.getExprType();
+		exprType = expr.getExprType();
 		for (final NodeMatchCase matchCase : matchCases) {
 		    matchCase.analyse();
-		    if (!matchCase.isTerminatingCase && !matchCase.errored) for (final IExpression expr : matchCase.exprs) {
+		    if (!matchCase.isDefaultCase && !matchCase.errored) for (final IExpression expr : matchCase.exprs) {
 			TypeI caseType = expr.getExprType();
 			// The generic used for ranges must be extracted
 			if (caseType.isRange()) caseType = Semantics.getGeneric(caseType.genericTypes, 0);
@@ -2685,26 +2683,48 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    // TODO
+	    expr.generate();
+	    Label nextCase = null, endLabel = new Label();
+	    matchCases.getLast().isLastCase = true;
+	    EnumInstructionOperand type = exprType.getInstructionType();
+	    int dupOpcode = type.size == 1 ? Opcodes.DUP : Opcodes.DUP2;
+	    for(NodeMatchCase matchCase : matchCases){
+		System.out.printf("-> %s%n", matchCase);
+		if(!matchCase.isLastCase){
+		    System.out.println("Not last case");
+		    nextCase = new Label();
+		    // Duplicate the expression so it doesn't have to be re-generated
+		    addFuncStmt(new GenNodeOpcode(dupOpcode));
+		    matchCase.generate(type, nextCase);
+		    // If this is not the last match case, then we have to jump to generate the label for the next one
+		    addFuncStmt(new GenNodeJump(endLabel));
+		    addFuncStmt(new GenNodeLabel(nextCase));
+		}else matchCase.generate(type, endLabel);
+	    }
+	    addFuncStmt(new GenNodeLabel(endLabel));
 	}
 
     }
 
     public static class NodeMatchCase extends Node {
+	
 	public LinkedList<IExpression> exprs = new LinkedList<IExpression>();
 	public NodeFuncBlock block;
-	public boolean isTerminatingCase;
+	public boolean isDefaultCase, isLastCase;
 
 	public NodeMatchCase(final int line, final int column, final IExpression expr, final NodeFuncBlock block) {
 	    super(line, column);
 	    exprs.add(expr);
 	    this.block = block;
-	    if (expr == null) isTerminatingCase = true;
+	    if (expr == null){
+		isDefaultCase = true;
+		isLastCase = true;
+	    }
 	}
 
 	@Override
 	public void analyse() {
-	    if (!isTerminatingCase) for (final IExpression expr : exprs) {
+	    if (!isDefaultCase) for (final IExpression expr : exprs) {
 		((Node) expr).analyse();
 		if (((Node) expr).errored) errored = true;
 	    }
@@ -2712,9 +2732,57 @@ public abstract class Node {
 	    if (block.errored) errored = true;
 	}
 
+	public void generate(EnumInstructionOperand type, Label nextLabel) {
+	    if(isDefaultCase){
+		// if this is the default case then just generate the block and flee
+		block.generate();
+		return;
+	    }
+	    
+	    exprs.getFirst().generate();
+	    // If the values are equal, then execute the block, otherwise jump to the next match case
+	    boolean is32BitPrimitive = false;
+	    switch(type){
+		case ARRAY:
+		    addFuncStmt(new GenNodeFuncCall("java/util/Arrays", "equals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z", false, false, true, false));
+		    break;
+		case REFERENCE:
+		    addFuncStmt(new GenNodeFuncCall("java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false, false, false, false));
+		    break;
+		case DOUBLE:
+		    addFuncStmt(new GenNodeOpcode(Opcodes.DCMPL));
+		    break;
+		case FLOAT:
+		    addFuncStmt(new GenNodeOpcode(Opcodes.FCMPL));
+		    break;
+		case LONG:
+		    addFuncStmt(new GenNodeOpcode(Opcodes.LCMP));
+		    break;
+		default:
+		    is32BitPrimitive = true;
+		    addFuncStmt(new GenNodeJump(Opcodes.IF_ICMPNE, nextLabel));
+		    
+	    }
+	    if(!is32BitPrimitive) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
+	    block.generate();
+	}
+
 	@Override
-	public void generate() {
-	    // TODO
+	public void generate() {}
+
+	@Override
+	public String toString() {
+	    StringBuilder builder = new StringBuilder();
+	    builder.append("NodeMatchCase [exprs=");
+	    builder.append(exprs);
+	    builder.append(", block=");
+	    builder.append(block);
+	    builder.append(", isDefaultCase=");
+	    builder.append(isDefaultCase);
+	    builder.append(", isLastCase=");
+	    builder.append(isLastCase);
+	    builder.append("]");
+	    return builder.toString();
 	}
 
     }

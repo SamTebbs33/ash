@@ -474,7 +474,7 @@ public class Parser {
 	    rewind();
 	    final NodeMatchCase matchCase = parseMatchCase();
 	    match.add(matchCase);
-	    if (matchCase.isTerminatingCase) {
+	    if (matchCase.isDefaultCase) {
 		expect(TokenType.BRACER);
 		break;
 	    }
@@ -492,6 +492,7 @@ public class Parser {
 	    matchCase.exprs.add(parseExpression());
 	rewind();
 	matchCase.block = parseFuncBlock(true, false);
+	matchCase.block.inFunction = false;
 	return matchCase;
     }
 
