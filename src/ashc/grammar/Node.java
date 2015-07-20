@@ -10,8 +10,6 @@ import java.util.*;
 
 import org.objectweb.asm.*;
 
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
-
 import ashc.codegen.*;
 import ashc.codegen.GenNode.EnumInstructionOperand;
 import ashc.codegen.GenNode.GenNodeArrayIndexLoad;
@@ -2342,9 +2340,8 @@ public abstract class Node {
 	    exprType = expr.getExprType();
 	    varType = TypeI.getObjectType();
 	    if (exprType.isTuple()) semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
-	    if (exprType.isArray()) {
-		varType = exprType.copy().setArrDims(exprType.arrDims-1);
-	    } else if (exprType.isRange()) varType = Semantics.getGeneric(exprType.genericTypes, 0);
+	    if (exprType.isArray()) varType = exprType.copy().setArrDims(exprType.arrDims - 1);
+	    else if (exprType.isRange()) varType = Semantics.getGeneric(exprType.genericTypes, 0);
 	    else {
 		final Optional<Type> type = Semantics.getType(exprType.shortName);
 		if (type.isPresent()) if (type.get().hasSuper(new QualifiedName("java").add("lang").add("Iterable"))) {
@@ -2652,7 +2649,7 @@ public abstract class Node {
     public static class NodeMatch extends Node implements IFuncStmt {
 	public IExpression expr;
 	public LinkedList<NodeMatchCase> matchCases = new LinkedList<NodeMatchCase>();
-	
+
 	public TypeI exprType;
 
 	public NodeMatch(final int line, final int column, final IExpression expr) {
@@ -2684,13 +2681,14 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    expr.generate();
-	    Label nextCase = null, endLabel = new Label();
+	    Label nextCase = null;
+	    final Label endLabel = new Label();
 	    matchCases.getLast().isLastCase = true;
-	    EnumInstructionOperand type = exprType.getInstructionType();
-	    int dupOpcode = type.size == 1 ? Opcodes.DUP : Opcodes.DUP2;
-	    for(NodeMatchCase matchCase : matchCases){
+	    final EnumInstructionOperand type = exprType.getInstructionType();
+	    final int dupOpcode = type.size == 1 ? Opcodes.DUP : Opcodes.DUP2;
+	    for (final NodeMatchCase matchCase : matchCases) {
 		System.out.printf("-> %s%n", matchCase);
-		if(!matchCase.isLastCase){
+		if (!matchCase.isLastCase) {
 		    System.out.println("Not last case");
 		    nextCase = new Label();
 		    // Duplicate the expression so it doesn't have to be re-generated
@@ -2699,7 +2697,7 @@ public abstract class Node {
 		    // If this is not the last match case, then we have to jump to generate the label for the next one
 		    addFuncStmt(new GenNodeJump(endLabel));
 		    addFuncStmt(new GenNodeLabel(nextCase));
-		}else matchCase.generate(type, endLabel);
+		} else matchCase.generate(type, endLabel);
 	    }
 	    addFuncStmt(new GenNodeLabel(endLabel));
 	}
@@ -2707,7 +2705,7 @@ public abstract class Node {
     }
 
     public static class NodeMatchCase extends Node {
-	
+
 	public LinkedList<IExpression> exprs = new LinkedList<IExpression>();
 	public NodeFuncBlock block;
 	public boolean isDefaultCase, isLastCase;
@@ -2716,7 +2714,7 @@ public abstract class Node {
 	    super(line, column);
 	    exprs.add(expr);
 	    this.block = block;
-	    if (expr == null){
+	    if (expr == null) {
 		isDefaultCase = true;
 		isLastCase = true;
 	    }
@@ -2732,17 +2730,17 @@ public abstract class Node {
 	    if (block.errored) errored = true;
 	}
 
-	public void generate(EnumInstructionOperand type, Label nextLabel) {
-	    if(isDefaultCase){
+	public void generate(final EnumInstructionOperand type, final Label nextLabel) {
+	    if (isDefaultCase) {
 		// if this is the default case then just generate the block and flee
 		block.generate();
 		return;
 	    }
-	    
+
 	    exprs.getFirst().generate();
 	    // If the values are equal, then execute the block, otherwise jump to the next match case
 	    boolean is32BitPrimitive = false;
-	    switch(type){
+	    switch (type) {
 		case ARRAY:
 		    addFuncStmt(new GenNodeFuncCall("java/util/Arrays", "equals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z", false, false, true, false));
 		    break;
@@ -2761,9 +2759,9 @@ public abstract class Node {
 		default:
 		    is32BitPrimitive = true;
 		    addFuncStmt(new GenNodeJump(Opcodes.IF_ICMPNE, nextLabel));
-		    
+
 	    }
-	    if(!is32BitPrimitive) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
+	    if (!is32BitPrimitive) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
 	    block.generate();
 	}
 
@@ -2772,7 +2770,7 @@ public abstract class Node {
 
 	@Override
 	public String toString() {
-	    StringBuilder builder = new StringBuilder();
+	    final StringBuilder builder = new StringBuilder();
 	    builder.append("NodeMatchCase [exprs=");
 	    builder.append(exprs);
 	    builder.append(", block=");
@@ -2835,7 +2833,7 @@ public abstract class Node {
 	public void generate() {
 	    expr.generate();
 	    accessExpr.generate();
-	    if (overloadFunc == null) GenNode.addFuncStmt(new GenNodeArrayIndexLoad(exprType.copy().setArrDims(exprType.arrDims-1).getInstructionType()));
+	    if (overloadFunc == null) GenNode.addFuncStmt(new GenNodeArrayIndexLoad(exprType.copy().setArrDims(exprType.arrDims - 1).getInstructionType()));
 	    else {
 		final String enclosingType = overloadFunc.enclosingType.qualifiedName.toBytecodeName(), signature = "(" + accessType.toBytecodeName() + ")"
 			+ overloadFunc.returnType.toBytecodeName();
