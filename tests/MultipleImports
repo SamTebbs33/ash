@@ -1,5 +1,5 @@
 import java.util.LinkedList, ArrayList
 
-public class Test {
+public class MultipleImports {
 	var list : LinkedList?, list2 : ArrayList?
 }

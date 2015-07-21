@@ -57,3 +57,8 @@ import alias:
   path: ImportAlias
   pass: yes
   run: no
+
+multiple imports:
+  path: MutlipleImports
+  pass: yes
+  run: no

@@ -45,6 +45,7 @@ import ashc.codegen.GenNode.GenNodeVarStore;
 import ashc.codegen.GenNode.IGenNodeStmt;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
+import ashc.grammar.Node.NodeQualifiedName;
 import ashc.load.*;
 import ashc.main.*;
 import ashc.semantics.*;
@@ -730,13 +731,26 @@ public abstract class Node {
 	    return sb.toString();
 	}
 
-	public void add(final String data) {
+	public NodeQualifiedName add(final String data) {
 	    paths.add(data);
 	    shortName = data;
+	    return this;
+	}
+	
+	public NodeQualifiedName remove(){
+	    paths.removeLast();
+	    shortName = paths.isEmpty() ? "" : paths.getLast();
+	    return this;
 	}
 
 	@Override
 	public void generate() {}
+
+	public NodeQualifiedName copy() {
+	    NodeQualifiedName name = new NodeQualifiedName(line, column);
+	    for(String section : paths) name.add(section);
+	    return name;
+	}
 
     }
 
