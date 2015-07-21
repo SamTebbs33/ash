@@ -131,7 +131,7 @@ public class TypeI {
 	// array dimensions
 	if (exprType.isNull() && optional && (!EnumPrimitive.isPrimitive(shortName) || (arrDims > 0))) return true;
 	// If this is a tuple and the expression is a tuple expression
-	if (tupleTypes.size() > 0) {
+	if (isTuple()) {
 	    if (tupleTypes.size() == exprType.tupleTypes.size()) {
 		for (int i = 0; i < exprType.tupleTypes.size(); i++) {
 		    final TypeI tupleType1 = tupleTypes.get(i), tupleType2 = exprType.tupleTypes.get(i);
@@ -141,21 +141,15 @@ public class TypeI {
 	    }
 	    return false;
 	}
-
+	if(isVoid() || exprType.isVoid()) return false;
+	
 	// Optionals can be assigned to non-optionals, but not the other way
 	// around
 	if (!optional && exprType.optional) return false;
 	// If they are both numeric and the array dimensions are 0
 	if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && (arrDims == exprType.arrDims)) return true;
-
 	return (exprType.arrDims == arrDims)
-		&& (getUnderlyingType().equals(exprType.getUnderlyingType()) || (exprType.isNull() && !EnumPrimitive.isNumeric(shortName)) || Semantics.typeHasSuper(exprType.shortName, shortName));
-    }
-
-    private QualifiedName getUnderlyingType() {
-	if(Semantics.typeNameMap.containsKey(shortName)) return Semantics.typeNameMap.get(shortName);
-	else for(QualifiedName name : Semantics.types.keySet()) if(name.shortName.equals(shortName)) return name;
-	return null;
+		&& (shortName.equals(exprType.shortName) || (exprType.isNull() && !EnumPrimitive.isNumeric(shortName)) || Semantics.typeHasSuper(exprType.shortName, shortName));
     }
 
     public boolean isNull() {

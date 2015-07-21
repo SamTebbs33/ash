@@ -204,7 +204,7 @@ public class Member {
 	    // If it's a method, get the return type, otherwise it's a
 	    // constructor
 	    if (method instanceof Method) func.returnType = TypeI.fromClass(((Method) method).getReturnType());
-	    else func.returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
+	    else func.returnType = TypeI.fromClass(method.getDeclaringClass()).setOptional(false);
 	    return func;
 	}
 

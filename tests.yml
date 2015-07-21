@@ -52,11 +52,6 @@ arrays:
   path: Arrays
   pass: yes
   run: yes
-  
-import alias:
-  path: ImportAlias
-  pass: yes
-  run: no
 
 multiple imports:
   path: MutlipleImports

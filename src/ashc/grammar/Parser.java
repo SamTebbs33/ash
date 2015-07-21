@@ -237,16 +237,7 @@ public class Parser {
 	    String alias = null;
 	    if(getNext().type == TokenType.AS) alias = expect(TokenType.ID).data;
 	    else rewind();
-	    imports.add(new NodeImport(line, column, name, alias));
-	    
-	    while(getNext().type == TokenType.COMMA){
-		String cls = expect(TokenType.ID).data;
-		alias = null;
-		if(getNext().type == TokenType.AS) alias = expect(TokenType.ID).data;
-		else rewind();
-		imports.add(new NodeImport(line, column, parent.copy().add(cls), alias));
-	    }
-	    rewind();
+	    imports.add(new NodeImport(line, column, name));
 	}
 	rewind();
 	return imports;
