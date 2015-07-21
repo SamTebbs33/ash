@@ -50,14 +50,10 @@ public class Semantics {
 	return false;
     }
 
-    public static void addType(final Type type) {
-	addType(type, type.qualifiedName.shortName);
-    }
-    
-    public static void addType(final Type type, String alias) {
+    public static void addType(final Type type, boolean enterType) {
 	types.put(type.qualifiedName, type);
-	enterType(type);
-	bindName(alias, type.qualifiedName);
+	if(enterType) enterType(type);
+	bindName(type.qualifiedName);
     }
 
     public static void exitType() {

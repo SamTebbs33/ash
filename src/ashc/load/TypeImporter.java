@@ -19,7 +19,7 @@ public class TypeImporter {
 	try {
 	    final Class<?> cls = loader.loadClass(path);
 	    Type type = new Type(cls, path);
-	    Semantics.addType(type, alias);
+	    Semantics.addType(type, false);
 	} catch (final ClassNotFoundException e) {
 	    e.printStackTrace();
 	}

@@ -263,7 +263,7 @@ public abstract class Node {
 	    for (final NodeType generic : generics.types)
 		type.generics.add(generic.id);
 
-	    Semantics.addType(type);
+	    Semantics.addType(type, true);
 
 	    // Create the default constructor and add fields supplied by the
 	    // arguments
@@ -2716,9 +2716,7 @@ public abstract class Node {
 	    final EnumInstructionOperand type = exprType.getInstructionType();
 	    final int dupOpcode = type.size == 1 ? Opcodes.DUP : Opcodes.DUP2;
 	    for (final NodeMatchCase matchCase : matchCases) {
-		System.out.printf("-> %s%n", matchCase);
 		if (!matchCase.isLastCase) {
-		    System.out.println("Not last case");
 		    nextCase = new Label();
 		    // Duplicate the expression so it doesn't have to be re-generated
 		    addFuncStmt(new GenNodeOpcode(dupOpcode));
