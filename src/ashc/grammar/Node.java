@@ -315,7 +315,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    final String name = type.qualifiedName.toString();
+	    final String name = type.qualifiedName.toBytecodeName();
 	    final String superClass = type.supers.getFirst().qualifiedName.toBytecodeName();
 
 	    // Build the interfaces array
