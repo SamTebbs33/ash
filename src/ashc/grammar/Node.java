@@ -45,6 +45,7 @@ import ashc.codegen.GenNode.GenNodeVarStore;
 import ashc.codegen.GenNode.IGenNodeStmt;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
+import ashc.grammar.Node.NodeFuncBlock;
 import ashc.grammar.Node.NodeQualifiedName;
 import ashc.load.*;
 import ashc.main.*;
@@ -567,6 +568,7 @@ public abstract class Node {
     public static class NodeClassBlock extends NodeBlock {
 	public LinkedList<NodeFuncDec> funcDecs = new LinkedList<NodeFuncDec>();
 	public LinkedList<NodeVarDec> varDecs = new LinkedList<NodeVarDec>();
+	public LinkedList<NodeFuncBlock> initBlocks = new LinkedList<NodeFuncBlock>();
 
 	public void add(final NodeVarDec parseVarDec) {
 	    varDecs.add(parseVarDec);
@@ -594,6 +596,7 @@ public abstract class Node {
 	    }
 	    for (final NodeVarDec varDec : varDecs)
 		varDec.preAnalyse();
+	    for(NodeFuncBlock block : initBlocks) block.preAnalyse();
 	}
 
 	@Override
@@ -602,6 +605,14 @@ public abstract class Node {
 		varDec.analyse();
 	    for (final NodeFuncDec funcDec : funcDecs)
 		funcDec.analyse();
+	    if(initBlocks.size() > 0){
+		Scope.push(new FuncScope(TypeI.getVoidType(), false, true));
+		for(NodeFuncBlock block : initBlocks){
+		    block.analyse();
+		    Scope.getScope().vars.clear();
+		}
+		Scope.pop();
+	    }
 	}
 
 	@Override
@@ -629,6 +640,10 @@ public abstract class Node {
 		addFuncStmt(new GenNodeReturn());
 		exitGenNodeFunction();
 	    }
+	}
+
+	public void add(NodeFuncBlock block) {
+	    initBlocks.add(block);
 	}
 
     }

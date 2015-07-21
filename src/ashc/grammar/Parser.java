@@ -340,11 +340,15 @@ public class Parser {
 
     private NodeClassBlock parseClassBlock() throws UnexpectedTokenException {
 	final NodeClassBlock block = new NodeClassBlock();
-	if (getNext().type == TokenType.BRACEL) while (getNext().type != TokenType.BRACER) {
+	if (getNext().type == TokenType.BRACEL) {
+	    while (getNext().type != TokenType.BRACER) {
 	    rewind();
 	    final LinkedList<NodeModifier> mods = parseMods();
-	    final Token token = expect(TokenType.FUNC, TokenType.MUT, TokenType.CONST, TokenType.VAR, TokenType.BRACER);
+	    final Token token = expect(TokenType.INIT, TokenType.FUNC, TokenType.MUT, TokenType.CONST, TokenType.VAR, TokenType.BRACER);
 	    switch (token.type) {
+		case INIT:
+		    block.add(parseFuncBlock(true, false));
+		    break;
 		case VAR:
 		case CONST:
 		    NodeVarDec dec = parseVarDec(mods, token, true);
@@ -362,6 +366,7 @@ public class Parser {
 		    rewind();
 		    block.add(parseMutFuncDec(true, mods));
 		    continue;
+	    }
 	    }
 	}
 	else rewind();

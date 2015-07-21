@@ -1,5 +1,7 @@
-import java.util.LinkedList, ArrayList
-
 public class Test {
-	var list : LinkedList?, list2 : ArrayList?
+	init {
+		var b = a
+	}
+	init -> var c = a
+	static var a = "hello"
 }

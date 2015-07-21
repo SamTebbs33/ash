@@ -112,6 +112,7 @@ public class Lexer {
 	VAR("var "),
 	CONST("const "),
 	FUNC("func "),
+	INIT("init"),
 	MUT("mut "),
 	ALIAS("alias "),
 	CLASS("class "),
