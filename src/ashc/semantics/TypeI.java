@@ -149,7 +149,13 @@ public class TypeI {
 	if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && (arrDims == exprType.arrDims)) return true;
 
 	return (exprType.arrDims == arrDims)
-		&& (shortName.equals(exprType.shortName) || (exprType.isNull() && !EnumPrimitive.isNumeric(shortName)) || Semantics.typeHasSuper(exprType.shortName, shortName));
+		&& (getUnderlyingType().equals(exprType.getUnderlyingType()) || (exprType.isNull() && !EnumPrimitive.isNumeric(shortName)) || Semantics.typeHasSuper(exprType.shortName, shortName));
+    }
+
+    private QualifiedName getUnderlyingType() {
+	if(Semantics.typeNameMap.containsKey(shortName)) return Semantics.typeNameMap.get(shortName);
+	else for(QualifiedName name : Semantics.types.keySet()) if(name.shortName.equals(shortName)) return name;
+	return null;
     }
 
     public boolean isNull() {

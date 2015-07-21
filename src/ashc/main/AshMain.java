@@ -17,9 +17,9 @@ public class AshMain {
     public static boolean warningsEnabled = true, verboseMsgEnabled = false;;
 
     public static void main(final String[] args) throws FileNotFoundException, IOException {
-	TypeImporter.loadClass("java.lang.String");
-	TypeImporter.loadClass("java.lang.Object");
-	TypeImporter.loadClass("java.lang.System");
+	TypeImporter.loadClass("java.lang.String", "String");
+	TypeImporter.loadClass("java.lang.Object", "Object");
+	TypeImporter.loadClass("java.lang.System", "System");
 	parseArgs(args);
 	if (outputDir == null) outputDir = "./";
 	else if (!outputDir.endsWith(File.separator)) outputDir += File.separatorChar;

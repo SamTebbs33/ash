@@ -78,7 +78,7 @@ public class Member {
 	    for (final Class i : cls.getInterfaces())
 		supers.add(new Type(i, i.getName()));
 
-	    Semantics.addType(this);
+	    Semantics.enterType(this);
 	    for (final Method method : cls.getMethods())
 		addFunction(Function.fromExecutable(method));
 	    for (final Constructor constructor : cls.getConstructors())

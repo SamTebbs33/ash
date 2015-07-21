@@ -184,17 +184,19 @@ public abstract class Node {
     public static class NodeImport extends Node {
 
 	NodeQualifiedName qualifiedName;
+	String alias;
 
-	public NodeImport(final int line, final int column, final NodeQualifiedName qualifiedName) {
+	public NodeImport(final int line, final int column, final NodeQualifiedName qualifiedName, String alias) {
 	    super(line, column);
 	    this.qualifiedName = qualifiedName;
+	    this.alias = alias != null ? alias : qualifiedName.shortName;
 	}
 
 	@Override
 	public void preAnalyse() {
 	    // Test if the type has already been imported
-	    if (Semantics.typeExists(qualifiedName.shortName)) semanticError(line, column, TYPE_ALREADY_IMPORTED, qualifiedName.shortName);
-	    else TypeImporter.loadClass(qualifiedName.toString());
+	    if (Semantics.typeExists(alias)) semanticError(line, column, TYPE_ALREADY_IMPORTED, alias);
+	    else TypeImporter.loadClass(qualifiedName.toString(), alias);
 	}
 
 	@Override

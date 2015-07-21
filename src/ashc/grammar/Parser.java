@@ -233,7 +233,10 @@ public class Parser {
 	final LinkedList<NodeImport> imports = new LinkedList<Node.NodeImport>();
 	while (getNext().type == TokenType.IMPORT) {
 	    final NodeQualifiedName name = parseQualifiedName();
-	    imports.add(new NodeImport(line, column, name));
+	    String alias = null;
+	    if(getNext().type == TokenType.AS) alias = expect(TokenType.ID).data;
+	    else rewind();
+	    imports.add(new NodeImport(line, column, name, alias));
 	}
 	rewind();
 	return imports;

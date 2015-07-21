@@ -51,9 +51,13 @@ public class Semantics {
     }
 
     public static void addType(final Type type) {
+	addType(type, type.qualifiedName.shortName);
+    }
+    
+    public static void addType(final Type type, String alias) {
 	types.put(type.qualifiedName, type);
 	enterType(type);
-	bindName(type.qualifiedName);
+	bindName(alias, type.qualifiedName);
     }
 
     public static void exitType() {
@@ -76,7 +80,7 @@ public class Semantics {
     public static Optional<Type> getType(final String id, final QualifiedName name) {
 	final Optional<Type> type = getType(id);
 	if (type.isPresent()) return type;
-	if (name != null) TypeImporter.loadClass(name.toString());
+	if (name != null) TypeImporter.loadClass(name.toString(), name.shortName);
 	return getType(id);
     }
 
@@ -166,10 +170,13 @@ public class Semantics {
 	return null;
     }
 
-    public static Function getFunc(final String id, final NodeExprs args) {
+    public static Function getFunc(String id, final NodeExprs args) {
 	final Optional<Type> type = getType(id);
 	// Check if it is a constructor for an existing type
-	if (type.isPresent()) return type.get().getFunc(id, args);
+	if (type.isPresent()){
+	    id = type.get().qualifiedName.shortName;
+	    return type.get().getFunc(id, args);
+	}
 	return getFunc(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args);
     }
 
