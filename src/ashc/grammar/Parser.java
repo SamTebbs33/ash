@@ -234,10 +234,14 @@ public class Parser {
 	while (getNext().type == TokenType.IMPORT) {
 	    final NodeQualifiedName name = parseQualifiedName();
 	    NodeQualifiedName parent = name.copy().remove();
-	    String alias = null;
-	    if(getNext().type == TokenType.AS) alias = expect(TokenType.ID).data;
-	    else rewind();
 	    imports.add(new NodeImport(line, column, name));
+	    
+	    while(getNext().type == TokenType.COMMA){
+		String cls = expect(TokenType.ID).data;
+		imports.add(new NodeImport(line, column, parent.copy().add(cls)));
+	    }
+	    rewind();
+	    
 	}
 	rewind();
 	return imports;
