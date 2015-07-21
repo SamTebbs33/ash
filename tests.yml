@@ -54,6 +54,6 @@ arrays:
   run: yes
 
 multiple imports:
-  path: MutlipleImports
+  path: MultipleImports
   pass: yes
   run: no
