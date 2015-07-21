@@ -186,6 +186,7 @@ public class Member {
 	public boolean hasDefExpr = false;
 	public TypeI returnType;
 	public LinkedList<String> generics = new LinkedList<String>();
+	public IExpression defExpr;
 
 	public Function(final QualifiedName qualifiedName, final int modifiers) {
 	    super(qualifiedName, modifiers);

@@ -57,3 +57,8 @@ multiple imports:
   path: MultipleImports
   pass: yes
   run: no
+  
+default parameter value:
+  path: DefaultParameterValue
+  pass: yes
+  run: yes

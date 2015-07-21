@@ -502,6 +502,7 @@ public abstract class Node {
     public static class NodeArgs extends Node {
 	public LinkedList<NodeArg> args = new LinkedList<NodeArg>();
 	public boolean hasDefExpr;
+	public IExpression defExpr;
 
 	public void add(final NodeArg arg) {
 	    args.add(arg);
@@ -512,6 +513,7 @@ public abstract class Node {
 	    for (final NodeArg arg : args)
 		if (arg.defExpr != null) {
 		    hasDefExpr = true;
+		    defExpr = arg.defExpr;
 		    break;
 		}
 	}
@@ -812,7 +814,10 @@ public abstract class Node {
 
 	    isConstructor = id.equals(Semantics.currentType().qualifiedName.shortName);
 	    args.preAnalyse();
-	    if (args.hasDefExpr) func.hasDefExpr = true;
+	    if (args.hasDefExpr){
+		func.hasDefExpr = true;
+		func.defExpr = args.defExpr;
+	    }
 
 	    // We need to push a new scope and add the parameters as variables
 	    // so that return type inference works
@@ -906,9 +911,11 @@ public abstract class Node {
 	    // constructor
 	    genNodeFunc.params = func.parameters;
 	    GenNode.addGenNodeFunction(genNodeFunc);
-	    final int argID = 0;
-	    for (final TypeI arg : func.parameters)
+	    int argID = 0;
+	    for (final TypeI arg : func.parameters){
 		GenNode.addFuncStmt(new GenNodeVar("arg" + argID, arg.toBytecodeName(), argID + (func.isStatic() ? 0 : 1), null)); // TODO:
+		argID++;
+	    }
 	    // generics
 	    block.generate();
 	    if (isMutFunc) {
@@ -1299,6 +1306,7 @@ public abstract class Node {
 	    else if (prefix != null) prefix.generate();
 	    for (final IExpression expr : args.exprs)
 		expr.generate();
+	    if(func.hasDefExpr && args.exprs.size() < func.parameters.size()) func.defExpr.generate();
 	    final String name = func.isConstructor() ? "<init>" : Operator.filterOperators(func.qualifiedName.shortName);
 	    addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), name, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
 	}
