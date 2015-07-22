@@ -1,9 +1,10 @@
 public class MatchStatement {
 	public static func main(args : String[]) {
-		const name : String? = "yo"
+		const name : String? = "sam"
 		match name {
-			null -> print("Is null")
-			_ -> print("Is else")
+			"Sammy", null, "Tebbs" -> print("0..2")
+			"sam" -> print("3")
+			_ -> print("else")
 		}
 		
 	}

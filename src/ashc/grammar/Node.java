@@ -2740,7 +2740,8 @@ public abstract class Node {
 		NodeMatchCase matchCase = matchCases.get(i);
 		// If this is not the last case, dupe the expression so the next case can use it
 		if(!isLast) addFuncStmt(new GenNodeOpcode(dupOpcode));
-		matchCase.generate(type, endLabel, isLast, nextLabel);
+		if(matchCase.exprs.size() == 1) matchCase.generate(type, endLabel, isLast, nextLabel);
+		else matchCase.generateMultipleExprs(type, endLabel, isLast, nextLabel, expr);
 		// If this is not the last case, we have to generate the label for the next one
 		if(!isLast) addFuncStmt(new GenNodeLabel(nextLabel));
 	    }
@@ -2784,35 +2785,37 @@ public abstract class Node {
 	    IExpression expr = exprs.getFirst();
 	    boolean isNullExpr = expr instanceof NodeNull;
 	    if(!isNullExpr) expr.generate();
-	    System.out.println("isNull = " + isNullExpr);
 	    // If the values are equal, then execute the block, otherwise jump to the next match case
 	    boolean is32BitPrimitive = false;
+	    GenNode equalityNode = null;
 	    switch (type) {
 		case ARRAY:
-		    addFuncStmt(new GenNodeFuncCall("java/util/Arrays", "equals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z", false, false, true, false));
+		    equalityNode = new GenNodeFuncCall("java/util/Arrays", "equals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z", false, false, true, false);
 		    break;
 		case REFERENCE:
-		    if(!isNullExpr) addFuncStmt(new GenNodeFuncCall("java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false, false, false, false));
+		    if(!isNullExpr) equalityNode = new GenNodeFuncCall("java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false, false, false, false);
 		    else {
-			if(!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFNONNULL, nextLabel));
-			else addFuncStmt(new GenNodeJump(Opcodes.IFNONNULL, endLabel));
+			if(!isLast) equalityNode = new GenNodeJump(Opcodes.IFNONNULL, nextLabel);
+			else equalityNode = new GenNodeJump(Opcodes.IFNONNULL, endLabel);
 		    }
 		    break;
 		case DOUBLE:
-		    addFuncStmt(new GenNodeOpcode(Opcodes.DCMPL));
+		    equalityNode = new GenNodeOpcode(Opcodes.DCMPL);
 		    break;
 		case FLOAT:
-		    addFuncStmt(new GenNodeOpcode(Opcodes.FCMPL));
+		    equalityNode = new GenNodeOpcode(Opcodes.FCMPL);
 		    break;
 		case LONG:
-		    addFuncStmt(new GenNodeOpcode(Opcodes.LCMP));
+		    equalityNode = new GenNodeOpcode(Opcodes.LCMP);
 		    break;
 		default:
 		    is32BitPrimitive = true;
-		    if(!isLast) addFuncStmt(new GenNodeJump(Opcodes.IF_ICMPNE, nextLabel));
-		    else addFuncStmt(new GenNodeJump(Opcodes.IF_ICMPNE, endLabel));
+		    if(!isLast) equalityNode = new GenNodeJump(Opcodes.IF_ICMPNE, nextLabel);
+		    else equalityNode = new GenNodeJump(Opcodes.IF_ICMPNE, endLabel);
 
 	    }
+	    
+	    addFuncStmt(equalityNode);
 	    if (!is32BitPrimitive && !isNullExpr){
 		if(!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
 		else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, endLabel));
@@ -2820,6 +2823,72 @@ public abstract class Node {
 	    block.generate();
 	    // If this is not the last, then we have to jump to the end of the match statement
 	    if(!isLast) addFuncStmt(new GenNodeJump(endLabel));
+	}
+
+	private void generateMultipleExprs(EnumInstructionOperand type, Label endLabel, boolean isLast, Label nextLabel, IExpression matchExpr) {
+	    int size = exprs.size();
+	    int dupeOpcode = type.size == 1 ? Opcodes.DUP : Opcodes.DUP2;
+	    int popOpcode = type.size == 1 ? Opcodes.POP : Opcodes.POP2;
+	    Label blockLabel = new Label(), popLabel = new Label();
+	    for(int i = 0; i < size; i++) {
+		boolean isLastExpr = i == (size - 1);
+		if(!isLastExpr){
+		    // Dupe the match statement's expression so that each other expression in this match case can be tested
+		    addFuncStmt(new GenNodeOpcode(dupeOpcode));
+		}
+		IExpression expr = exprs.get(i);
+		boolean isNullExpr = expr instanceof NodeNull, is32BitPrimitive = false;
+		GenNode equalityNode = null;
+		expr.generate();
+		
+		switch (type) {
+			case ARRAY:
+			    equalityNode = new GenNodeFuncCall("java/util/Arrays", "equals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z", false, false, true, false);
+			    break;
+			case REFERENCE:
+			    if(!isNullExpr) equalityNode = new GenNodeFuncCall("java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false, false, false, false);
+			    else {
+				if(!isLastExpr) equalityNode = new GenNodeJump(Opcodes.IFNONNULL, popLabel);
+				else equalityNode = new GenNodeJump(Opcodes.IFNULL, isLast ? endLabel : nextLabel);
+			    }
+			    break;
+			case DOUBLE:
+			    equalityNode = new GenNodeOpcode(Opcodes.DCMPL);
+			    break;
+			case FLOAT:
+			    equalityNode = new GenNodeOpcode(Opcodes.FCMPL);
+			    break;
+			case LONG:
+			    equalityNode = new GenNodeOpcode(Opcodes.LCMP);
+			    break;
+			default:
+			    is32BitPrimitive = true;
+			    if(!isLastExpr) equalityNode = new GenNodeJump(Opcodes.IF_ICMPEQ, popLabel);
+			    else equalityNode = new GenNodeJump(Opcodes.IF_ICMPNE, isLast ? endLabel : nextLabel);
+		    }
+		addFuncStmt(equalityNode);
+		if (!is32BitPrimitive && !isNullExpr){
+		    if(!isLastExpr) addFuncStmt(new GenNodeJump(Opcodes.IFNE, blockLabel));
+		    else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, isLast ? endLabel : nextLabel));
+		}
+		if(isLastExpr) addFuncStmt(new GenNodeJump(blockLabel));
+	    }
+	    // Each expression that isn't the last one has to jump here instead so that we can pop off the top stack value
+	    addFuncStmt(new GenNodeLabel(popLabel));
+	    addFuncStmt(new GenNodeOpcode(popOpcode));
+	    // The last expression jumps here instead
+	    addFuncStmt(new GenNodeLabel(blockLabel));
+	    block.generate();
+	    // if we are not the last match case, then we have to jump to the end of the match statement so that we don't go through any other match cases
+	    if(!isLast) addFuncStmt(new GenNodeJump(endLabel));
+	    
+	    /* Generating the match case for multiple expressions is quite complex...
+	     * First we iterate through each expression and generate the equality checking for each.
+	     * If the expression being generated is not the last one, we have to jump to a special label called "popLabel", 
+	     * which is where we pop off the top value of the stack as it won't bee needed for any more equality checks.
+	     * If the expression being generated is the last expression, then we jump to the block label instead and bypass the pop opcode, 
+	     * as we have already consumed the top value of the stack.
+	     */
 	}
 
 	@Override
