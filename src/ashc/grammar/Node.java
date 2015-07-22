@@ -45,8 +45,6 @@ import ashc.codegen.GenNode.GenNodeVarStore;
 import ashc.codegen.GenNode.IGenNodeStmt;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
-import ashc.grammar.Node.NodeFuncBlock;
-import ashc.grammar.Node.NodeQualifiedName;
 import ashc.load.*;
 import ashc.main.*;
 import ashc.semantics.*;
@@ -2195,12 +2193,20 @@ public abstract class Node {
 	public IExpression expr;
 	public NodeFuncBlock block;
 	public NodeIf elseStmt;
-	public boolean isElse;
+	public EnumIfType type;
+	
+	public static enum EnumIfType {
+	    IF, ELSE, ELSEIF
+	}
 
-	public NodeIf(final int line, final int column, final IExpression expr, final NodeFuncBlock block) {
+	public NodeIf(final int line, final int column, final IExpression expr, final NodeFuncBlock block, boolean isElse, boolean isElseIf) {
 	    super(line, column);
 	    this.expr = expr;
 	    this.block = block;
+	    this.block.inFunction = false;
+	    if(isElse) type = EnumIfType.ELSE;
+	    else if(isElseIf) type = EnumIfType.ELSEIF;
+	    else type = EnumIfType.IF;
 	}
 
 	@Override
@@ -2221,30 +2227,47 @@ public abstract class Node {
 
 	@Override
 	public boolean hasReturnStmt() {
-	    if (block.hasReturnStmt()) if (isElse) return true;
+	    if (block.hasReturnStmt()) if (type == EnumIfType.ELSE) return true;
 	    else if (elseStmt.hasReturnStmt()) return true;
 	    return false;
 	}
 
 	@Override
 	public void generate() {
-	    generate(new Label(), new Label());
+	    if(type == EnumIfType.IF){
+		if(elseStmt == null){
+		    Label lblEnd = new Label();
+		    addFuncStmt(new GenNodeConditionalJump(expr, lblEnd));
+		    block.generate();
+		    addFuncStmt(new GenNodeLabel(lblEnd));
+		}else{
+		    Label lblEnd = new Label(), lblNext = new Label();
+		    addFuncStmt(new GenNodeConditionalJump(expr, lblNext));
+		    block.generate();
+		    addFuncStmt(new GenNodeJump(lblEnd));
+		    addFuncStmt(new GenNodeLabel(lblNext));
+		    elseStmt.generate(lblEnd);
+		    addFuncStmt(new GenNodeLabel(lblEnd));
+		}
+	    }
 	}
 
-	public void generate(final Label endLabel, Label thisLabel) {
-	    // Create a label that corresponds to this else-statement
-	    if (thisLabel != null) addFuncStmt(new GenNodeLabel(thisLabel));
-
-	    // Create a new label to jump to in case the condition fails, this represents the next else-statement
-	    thisLabel = new Label();
-	    if (expr != null) addFuncStmt(new GenNodeConditionalJump(expr, thisLabel));
-	    block.generate();
-	    // Jump to the end of the if-else block if the last statement was not a return statement
-	    if ((expr != null) && !block.lastIsReturn()) addFuncStmt(new GenNodeJump(endLabel));
-
-	    if (elseStmt == null) addFuncStmt(new GenNodeLabel(endLabel)); // If this is the end of the block, place the label
-	    else elseStmt.generate(endLabel, thisLabel); // If we're not at the end of the block, then generate the next block
-
+	public void generate(final Label endLabel) {
+	    if(type == EnumIfType.ELSEIF){
+		Label lblNext = null;
+		if(elseStmt != null){
+		    lblNext = new Label();
+		    addFuncStmt(new GenNodeConditionalJump(expr, lblNext));
+		}else addFuncStmt(new GenNodeConditionalJump(expr, endLabel));
+		block.generate();
+		if(elseStmt != null){
+		    addFuncStmt(new GenNodeJump(endLabel));
+		    addFuncStmt(new GenNodeLabel(lblNext));
+		    elseStmt.generate(endLabel);
+		}
+	    }else{
+		block.generate();
+	    }
 	}
 
     }

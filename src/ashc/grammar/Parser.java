@@ -465,7 +465,7 @@ public class Parser {
 		    return new NodeVarAssign(op.line, op.columnStart, (NodeVariable) stmt, op.data, parseExpression());
 		} else return stmt;
 	    case IF:
-		return parseIfStmt();
+		return parseIfStmt(false);
 	    case WHILE:
 		return parseWhileStmt();
 	    case FOR:
@@ -545,14 +545,13 @@ public class Parser {
 	return new NodeWhile(line, column, parseExpression(), parseConstructBlock());
     }
 
-    private NodeIf parseIfStmt() throws UnexpectedTokenException {
-	final NodeIf ifStmt = new NodeIf(line, column, parseExpression(), parseConstructBlock());
+    private NodeIf parseIfStmt(boolean isElseIf) throws UnexpectedTokenException {
+	final NodeIf ifStmt = new NodeIf(line, column, parseExpression(), parseConstructBlock(), false, isElseIf);
 	if (getNext().type == TokenType.ELSE) {
-	    if (getNext().type == TokenType.IF) ifStmt.elseStmt = parseIfStmt();
+	    if (getNext().type == TokenType.IF) ifStmt.elseStmt = parseIfStmt(true);
 	    else {
 		rewind();
-		ifStmt.elseStmt = new NodeIf(line, column, null, parseConstructBlock());
-		ifStmt.isElse = true;
+		ifStmt.elseStmt = new NodeIf(line, column, null, parseConstructBlock(), true, false);
 	    }
 	} else rewind();
 	return ifStmt;

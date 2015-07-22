@@ -1,13 +1,12 @@
-public class InitBlock {
-	init {
-		System.out.println("block")
-	}
-	static var a = foo()
-	static func foo() : int {
-		System.out.println("Variable")
-		return 0
-	}
+public class IfStatements {
 	public static func main(args : String[]) {
+		const name = "yo"
+		if name.equals("Sam") {
+			print("Yay :D")
+		} else if name.equals("Tebbs") {
+			print("Damn it :/")
+		}else print("Hmmm...")
 		
 	}
+	public static func print(msg : String) -> System.out.println(msg)
 }
