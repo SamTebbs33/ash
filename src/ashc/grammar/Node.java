@@ -934,12 +934,14 @@ public abstract class Node {
 	public Field var;
 	public boolean isStatic;
 	public NodeVarDec subDec;
+	public IExpression expr;
 
-	public NodeVarDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id) {
+	public NodeVarDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, IExpression expr) {
 	    super(line, column);
 	    this.mods = mods;
 	    this.keyword = keyword;
 	    this.id = id;
+	    this.expr = expr;
 
 	}
 
@@ -967,9 +969,22 @@ public abstract class Node {
 	    // declarations in types are already handled
 	    if ((Scope.getScope() != null) && Semantics.varExists(id)) semanticError(this, line, column, VAR_ALREADY_EXISTS, id);
 	}
-
+	
 	@Override
 	public void generate() {
+	    if (!var.isLocal) GenNode.addGenNodeField(new GenNodeField(var));
+	    // Field initialisation is handled by the class block, so there's no
+	    // need to do it here
+	    else {
+		final String type = var.type.toBytecodeName();
+		System.out.println("no local: " + type);
+		GenNode.addFuncStmt(new GenNodeVar(var.id, type, var.localID, null)); // TODO:
+		// generics
+		if(expr != null){
+		    expr.generate();
+		    addFuncStmt(new GenNodeVarStore(var.type.getInstructionType(), var.localID));
+		}
+	    }
 	    if (getBlock != null) {
 		final GenNodeFunction getFunc = new GenNodeFunction("$get" + id, var.modifiers, var.type.toBytecodeName());
 		GenNode.addGenNodeFunction(getFunc);
@@ -990,13 +1005,11 @@ public abstract class Node {
 
     public static class NodeVarDecExplicit extends NodeVarDec {
 	public NodeType type;
-	public IExpression expr;
 	public TypeI typeI;
 
 	public NodeVarDecExplicit(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, final NodeType type, final IExpression expr) {
-	    super(line, column, mods, keyword, id);
+	    super(line, column, mods, keyword, id, expr);
 	    this.type = type;
-	    this.expr = expr;
 	}
 
 	@Override
@@ -1028,30 +1041,17 @@ public abstract class Node {
 	    }
 	    if (var == null) {
 		var = new Variable(id, typeI);
-		for (final NodeModifier mod : mods)
-		    var.modifiers |= mod.asInt();
 		Semantics.addVar((Variable) var);
 	    }
 	    analyseProperty(typeI);
 	}
 
-	@Override
-	public void generate() {
-	    if (!var.isLocal) GenNode.addGenNodeField(new GenNodeField(var));
-	    else GenNode.addFuncStmt(new GenNodeVar(var.id, var.type.toBytecodeName(), var.localID, null)); // TODO:
-	    // generics
-	    // Variable initialisation is handled by the class block
-	    super.generate();
-	}
-
     }
 
     public static class NodeVarDecImplicit extends NodeVarDec {
-	public IExpression expr;
 
 	public NodeVarDecImplicit(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, final IExpression expr) {
-	    super(line, column, mods, keyword, id);
-	    this.expr = expr;
+	    super(line, column, mods, keyword, id, expr);
 	}
 
 	@Override
@@ -1082,21 +1082,6 @@ public abstract class Node {
 		}
 		analyseProperty(type);
 	    }
-	}
-
-	@Override
-	public void generate() {
-	    if (!var.isLocal) GenNode.addGenNodeField(new GenNodeField(var));
-	    // Field initialisation is handled by the class block, so there's no
-	    // need to do it here
-	    else {
-		final String type = var.type.toBytecodeName();
-		GenNode.addFuncStmt(new GenNodeVar(var.id, type, var.localID, null)); // TODO:
-		// generics
-		expr.generate();
-		addFuncStmt(new GenNodeVarStore(var.type.getInstructionType(), var.localID));
-	    }
-	    super.generate();
 	}
 
     }
@@ -2796,7 +2781,10 @@ public abstract class Node {
 		return;
 	    }
 
-	    exprs.getFirst().generate();
+	    IExpression expr = exprs.getFirst();
+	    boolean isNullExpr = expr instanceof NodeNull;
+	    if(!isNullExpr) expr.generate();
+	    System.out.println("isNull = " + isNullExpr);
 	    // If the values are equal, then execute the block, otherwise jump to the next match case
 	    boolean is32BitPrimitive = false;
 	    switch (type) {
@@ -2804,7 +2792,11 @@ public abstract class Node {
 		    addFuncStmt(new GenNodeFuncCall("java/util/Arrays", "equals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z", false, false, true, false));
 		    break;
 		case REFERENCE:
-		    addFuncStmt(new GenNodeFuncCall("java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false, false, false, false));
+		    if(!isNullExpr) addFuncStmt(new GenNodeFuncCall("java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false, false, false, false));
+		    else {
+			if(!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFNONNULL, nextLabel));
+			else addFuncStmt(new GenNodeJump(Opcodes.IFNONNULL, endLabel));
+		    }
 		    break;
 		case DOUBLE:
 		    addFuncStmt(new GenNodeOpcode(Opcodes.DCMPL));
@@ -2821,7 +2813,7 @@ public abstract class Node {
 		    else addFuncStmt(new GenNodeJump(Opcodes.IF_ICMPNE, endLabel));
 
 	    }
-	    if (!is32BitPrimitive){
+	    if (!is32BitPrimitive && !isNullExpr){
 		if(!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
 		else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, endLabel));
 	    }
