@@ -1,11 +1,12 @@
-public class IfStatements {
+public class MatchStatement {
 	public static func main(args : String[]) {
-		const name = "yo"
-		if name.equals("Sam") {
-			print("Yay :D")
-		} else if name.equals("Tebbs") {
-			print("Damn it :/")
-		}else print("Hmmm...")
+		const age = 3
+		match age {
+			0 -> print("Is 0")
+			1 -> print("Is 1")
+			2 -> print("Is 2")
+			_ -> print("Is else")
+		}
 		
 	}
 	public static func print(msg : String) -> System.out.println(msg)

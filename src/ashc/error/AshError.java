@@ -75,6 +75,8 @@ public class AshError {
 	ELVIS_EXPR_IS_PRIMITIVE("The first expression in an elvis expression cannot be a primitive (%s)"),
 	OPERATOR_CANNOT_BE_APPLIED_TO_TYPES("Operator %s cannot be applied to types %s and %s"),
 	OPERATOR_CANNOT_BE_APPLIED_TO_TYPE("Operator %s cannot be applied to type %s"),
+	
+	MATCH_DOES_NOT_HAVE_DEFAULT("A match statement must have a default case"),
 
 	PRIMTIVE_CANNOT_BE_OPTIONAL("A primitive type cannot be optional (%s)"),
 	CANNOT_ASSIGN("Cannot assign %s to %s");

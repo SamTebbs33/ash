@@ -2712,6 +2712,7 @@ public abstract class Node {
 	public LinkedList<NodeMatchCase> matchCases = new LinkedList<NodeMatchCase>();
 
 	public TypeI exprType;
+	public boolean hasDefaultCase;
 
 	public NodeMatch(final int line, final int column, final IExpression expr) {
 	    super(line, column);
@@ -2720,6 +2721,7 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
+	    if(!hasDefaultCase) semanticError(this, line, column, MATCH_DOES_NOT_HAVE_DEFAULT);
 	    ((Node) expr).analyse();
 	    if (!((Node) expr).errored) {
 		exprType = expr.getExprType();
@@ -2736,27 +2738,26 @@ public abstract class Node {
 	}
 
 	public void add(final NodeMatchCase matchCase) {
+	    if(matchCase.isDefaultCase) this.hasDefaultCase = true;
 	    matchCases.add(matchCase);
 	}
 
 	@Override
 	public void generate() {
 	    expr.generate();
-	    Label nextCase = null;
-	    final Label endLabel = new Label();
-	    matchCases.getLast().isLastCase = true;
+	    final int size = matchCases.size();
 	    final EnumInstructionOperand type = exprType.getInstructionType();
 	    final int dupOpcode = type.size == 1 ? Opcodes.DUP : Opcodes.DUP2;
-	    for (final NodeMatchCase matchCase : matchCases) {
-		if (!matchCase.isLastCase) {
-		    nextCase = new Label();
-		    // Duplicate the expression so it doesn't have to be re-generated
-		    addFuncStmt(new GenNodeOpcode(dupOpcode));
-		    matchCase.generate(type, nextCase);
-		    // If this is not the last match case, then we have to jump to generate the label for the next one
-		    addFuncStmt(new GenNodeJump(endLabel));
-		    addFuncStmt(new GenNodeLabel(nextCase));
-		} else matchCase.generate(type, endLabel);
+	    Label endLabel = new Label();
+	    for(int i = 0; i < size; i++){
+		boolean isLast = i == (size - 1);
+		Label nextLabel = isLast ? null : new Label();
+		NodeMatchCase matchCase = matchCases.get(i);
+		// If this is not the last case, dupe the expression so the next case can use it
+		if(!isLast) addFuncStmt(new GenNodeOpcode(dupOpcode));
+		matchCase.generate(type, endLabel, isLast, nextLabel);
+		// If this is not the last case, we have to generate the label for the next one
+		if(!isLast) addFuncStmt(new GenNodeLabel(nextLabel));
 	    }
 	    addFuncStmt(new GenNodeLabel(endLabel));
 	}
@@ -2767,7 +2768,7 @@ public abstract class Node {
 
 	public LinkedList<IExpression> exprs = new LinkedList<IExpression>();
 	public NodeFuncBlock block;
-	public boolean isDefaultCase, isLastCase;
+	public boolean isDefaultCase;
 
 	public NodeMatchCase(final int line, final int column, final IExpression expr, final NodeFuncBlock block) {
 	    super(line, column);
@@ -2775,7 +2776,6 @@ public abstract class Node {
 	    this.block = block;
 	    if (expr == null) {
 		isDefaultCase = true;
-		isLastCase = true;
 	    }
 	}
 
@@ -2789,7 +2789,7 @@ public abstract class Node {
 	    if (block.errored) errored = true;
 	}
 
-	public void generate(final EnumInstructionOperand type, final Label nextLabel) {
+	public void generate(final EnumInstructionOperand type, final Label endLabel, boolean isLast, Label nextLabel) {
 	    if (isDefaultCase) {
 		// if this is the default case then just generate the block and flee
 		block.generate();
@@ -2817,11 +2817,17 @@ public abstract class Node {
 		    break;
 		default:
 		    is32BitPrimitive = true;
-		    addFuncStmt(new GenNodeJump(Opcodes.IF_ICMPNE, nextLabel));
+		    if(!isLast) addFuncStmt(new GenNodeJump(Opcodes.IF_ICMPNE, nextLabel));
+		    else addFuncStmt(new GenNodeJump(Opcodes.IF_ICMPNE, endLabel));
 
 	    }
-	    if (!is32BitPrimitive) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
+	    if (!is32BitPrimitive){
+		if(!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
+		else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, endLabel));
+	    }
 	    block.generate();
+	    // If this is not the last, then we have to jump to the end of the match statement
+	    if(!isLast) addFuncStmt(new GenNodeJump(endLabel));
 	}
 
 	@Override
@@ -2836,8 +2842,6 @@ public abstract class Node {
 	    builder.append(block);
 	    builder.append(", isDefaultCase=");
 	    builder.append(isDefaultCase);
-	    builder.append(", isLastCase=");
-	    builder.append(isLastCase);
 	    builder.append("]");
 	    return builder.toString();
 	}
