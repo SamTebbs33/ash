@@ -625,7 +625,7 @@ public abstract class Node {
 		dec.generate();
 		if (dec.isStatic) staticVars.add(dec);
 	    }
-	    if (staticVars.size() > 0) {
+	    if (staticVars.size() > 0 || initBlocks.size() > 0) {
 		final GenNodeFunction staticFunc = new GenNodeFunction("<clinit>", EnumModifier.STATIC.intVal, "V");
 		addGenNodeFunction(staticFunc);
 		for (final NodeVarDec dec : staticVars) {
@@ -637,6 +637,7 @@ public abstract class Node {
 		    }
 		    addFuncStmt(new GenNodeFieldStore(dec.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName(), true));
 		}
+		for(NodeFuncBlock initBlock : initBlocks) initBlock.generate();
 		addFuncStmt(new GenNodeReturn());
 		exitGenNodeFunction();
 	    }
