@@ -8,9 +8,13 @@ import ashc.main.*;
  *
  * @author samtebbs, 15:44:44 - 23 May 2015
  */
-public class AshError {
+public class AshError extends Exception {
 
     public static int numErrors = 0;
+
+    public AshError(final String msg) {
+	super(msg);
+    }
 
     public static enum EnumError {
 	TYPE_ALREADY_EXISTS("Type already exists (%s)"),
@@ -75,7 +79,7 @@ public class AshError {
 	ELVIS_EXPR_IS_PRIMITIVE("The first expression in an elvis expression cannot be a primitive (%s)"),
 	OPERATOR_CANNOT_BE_APPLIED_TO_TYPES("Operator %s cannot be applied to types %s and %s"),
 	OPERATOR_CANNOT_BE_APPLIED_TO_TYPE("Operator %s cannot be applied to type %s"),
-	
+
 	MATCH_DOES_NOT_HAVE_DEFAULT("A match statement must have a default case"),
 
 	PRIMTIVE_CANNOT_BE_OPTIONAL("A primitive type cannot be optional (%s)"),

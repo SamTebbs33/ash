@@ -9,27 +9,28 @@ import ashc.codegen.GenNode.EnumInstructionOperand;
  */
 public enum EnumPrimitive {
 
-    BOOL("bool", "boolean", "Z", false, EnumInstructionOperand.BOOL, false),
-    DOUBLE("double", "double", "D", true, EnumInstructionOperand.DOUBLE, false),
-    FLOAT("float", "float", "F", true, EnumInstructionOperand.FLOAT, false),
-    LONG("long", "long", "J", true, EnumInstructionOperand.LONG, false),
-    INT("int", "int", "I", true, EnumInstructionOperand.INT, true),
-    SHORT("short", "short", "S", true, EnumInstructionOperand.SHORT, true),
-    BYTE("byte", "byte", "B", true, EnumInstructionOperand.BYTE, true),
-    UBYTE("ubyte", "byte", "B", true, EnumInstructionOperand.BYTE, false),
-    USHORT("ushort", "short", "S", true, EnumInstructionOperand.SHORT, false),
-    ULONG("ulong", "long", "J", true, EnumInstructionOperand.LONG, false),
-    UINT("uint", "int", "I", true, EnumInstructionOperand.INT, false),
-    CHAR("char", "char", "C", false, EnumInstructionOperand.CHAR, false);
+    BOOL("bool", "boolean", 'Z', false, EnumInstructionOperand.BOOL, false),
+    DOUBLE("double", "double", 'D', true, EnumInstructionOperand.DOUBLE, false),
+    FLOAT("float", "float", 'F', true, EnumInstructionOperand.FLOAT, false),
+    LONG("long", "long", 'J', true, EnumInstructionOperand.LONG, false),
+    INT("int", "int", 'I', true, EnumInstructionOperand.INT, true),
+    SHORT("short", "short", 'S', true, EnumInstructionOperand.SHORT, true),
+    BYTE("byte", "byte", 'B', true, EnumInstructionOperand.BYTE, true),
+    UBYTE("ubyte", "byte", 'B', true, EnumInstructionOperand.BYTE, false),
+    USHORT("ushort", "short", 'S', true, EnumInstructionOperand.SHORT, false),
+    ULONG("ulong", "long", 'J', true, EnumInstructionOperand.LONG, false),
+    UINT("uint", "int", 'I', true, EnumInstructionOperand.INT, false),
+    CHAR("char", "char", 'C', false, EnumInstructionOperand.CHAR, false);
 
-    public String ashName, javaName, bytecodeName;
+    public String ashName, javaName;
+    public char bytecodeChar;
     public boolean validForArrayIndex, isNumeric;
     public EnumInstructionOperand instructionType;
 
-    private EnumPrimitive(final String ashName, final String javaName, final String bytecodeName, final boolean isNumeric, final EnumInstructionOperand type, final boolean wholeNumber) {
+    private EnumPrimitive(final String ashName, final String javaName, final char bytecodeChar, final boolean isNumeric, final EnumInstructionOperand type, final boolean wholeNumber) {
 	this.ashName = ashName;
 	this.javaName = javaName;
-	this.bytecodeName = bytecodeName;
+	this.bytecodeChar = bytecodeChar;
 	this.isNumeric = isNumeric;
 	instructionType = type;
 	validForArrayIndex = wholeNumber;
@@ -66,6 +67,12 @@ public enum EnumPrimitive {
     public static EnumPrimitive getFromJavaPrimitive(final String clsName) {
 	for (final EnumPrimitive p : EnumPrimitive.values())
 	    if (p.javaName.equals(clsName)) return p;
+	return null;
+    }
+
+    public static EnumPrimitive getFromBytecodePrimitive(final char ch) {
+	for (final EnumPrimitive p : EnumPrimitive.values())
+	    if (p.bytecodeChar == ch) return p;
 	return null;
     }
 

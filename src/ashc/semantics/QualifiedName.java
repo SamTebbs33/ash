@@ -12,8 +12,10 @@ public class QualifiedName {
     public String shortName = null, enclosingType = "";
     public LinkedList<String> sections = new LinkedList<String>();
 
-    public QualifiedName(final String section) {
-	add(section);
+    public QualifiedName(final String name) {
+	final String[] sections = name.split("\\.");
+	for (final String section : sections)
+	    add(section);
     }
 
     public QualifiedName add(final String section) {

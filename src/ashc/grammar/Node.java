@@ -266,7 +266,7 @@ public abstract class Node {
 	    // Create the default constructor and add fields supplied by the
 	    // arguments
 	    if (args != null) {
-		defConstructor = new Function(Scope.getNamespace().copy().add(id.data), EnumModifier.PUBLIC.intVal);
+		defConstructor = new Function(Scope.getNamespace().copy().add(id.data), EnumModifier.PUBLIC.intVal, type);
 		defConstructor.returnType = new TypeI(name.shortName, 0, false);
 		for (final NodeType generic : generics.types)
 		    defConstructor.generics.add(generic.id);
@@ -274,7 +274,7 @@ public abstract class Node {
 		    arg.preAnalyse();
 		    if (!arg.errored) {
 			final TypeI argType = new TypeI(arg.type);
-			final Field field = new Field(Scope.getNamespace().copy().add(arg.id), EnumModifier.PUBLIC.intVal, argType, false, false);
+			final Field field = new Field(Scope.getNamespace().copy().add(arg.id), EnumModifier.PUBLIC.intVal, argType, false, false, type);
 			type.fields.add(field);
 			argFields.add(field);
 			defConstructor.parameters.add(argType);
@@ -594,7 +594,8 @@ public abstract class Node {
 	    }
 	    for (final NodeVarDec varDec : varDecs)
 		varDec.preAnalyse();
-	    for(NodeFuncBlock block : initBlocks) block.preAnalyse();
+	    for (final NodeFuncBlock block : initBlocks)
+		block.preAnalyse();
 	}
 
 	@Override
@@ -603,9 +604,9 @@ public abstract class Node {
 		varDec.analyse();
 	    for (final NodeFuncDec funcDec : funcDecs)
 		funcDec.analyse();
-	    if(initBlocks.size() > 0){
+	    if (initBlocks.size() > 0) {
 		Scope.push(new FuncScope(TypeI.getVoidType(), false, true));
-		for(NodeFuncBlock block : initBlocks){
+		for (final NodeFuncBlock block : initBlocks) {
 		    block.analyse();
 		    Scope.getScope().vars.clear();
 		}
@@ -623,7 +624,7 @@ public abstract class Node {
 		dec.generate();
 		if (dec.isStatic) staticVars.add(dec);
 	    }
-	    if (staticVars.size() > 0 || initBlocks.size() > 0) {
+	    if ((staticVars.size() > 0) || (initBlocks.size() > 0)) {
 		final GenNodeFunction staticFunc = new GenNodeFunction("<clinit>", EnumModifier.STATIC.intVal, "V");
 		addGenNodeFunction(staticFunc);
 		for (final NodeVarDec dec : staticVars) {
@@ -635,13 +636,14 @@ public abstract class Node {
 		    }
 		    addFuncStmt(new GenNodeFieldStore(dec.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName(), true));
 		}
-		for(NodeFuncBlock initBlock : initBlocks) initBlock.generate();
+		for (final NodeFuncBlock initBlock : initBlocks)
+		    initBlock.generate();
 		addFuncStmt(new GenNodeReturn());
 		exitGenNodeFunction();
 	    }
 	}
 
-	public void add(NodeFuncBlock block) {
+	public void add(final NodeFuncBlock block) {
 	    initBlocks.add(block);
 	}
 
@@ -750,8 +752,8 @@ public abstract class Node {
 	    shortName = data;
 	    return this;
 	}
-	
-	public NodeQualifiedName remove(){
+
+	public NodeQualifiedName remove() {
 	    paths.removeLast();
 	    shortName = paths.isEmpty() ? "" : paths.getLast();
 	    return this;
@@ -761,8 +763,9 @@ public abstract class Node {
 	public void generate() {}
 
 	public NodeQualifiedName copy() {
-	    NodeQualifiedName name = new NodeQualifiedName(line, column);
-	    for(String section : paths) name.add(section);
+	    final NodeQualifiedName name = new NodeQualifiedName(line, column);
+	    for (final String section : paths)
+		name.add(section);
 	    return name;
 	}
 
@@ -807,13 +810,13 @@ public abstract class Node {
 	    for (final NodeModifier mod : mods)
 		if ((mod.asInt() == EnumModifier.STATIC.intVal) && isMutFunc) semanticError(this, line, column, MUT_FUNC_IS_STATIC, id);
 		else modifiers |= mod.asInt();
-	    func = new Function(name, modifiers);
+	    func = new Function(name, modifiers, Semantics.currentType());
 	    for (final NodeType generic : generics.types)
 		func.generics.add(generic.id);
 
 	    isConstructor = id.equals(Semantics.currentType().qualifiedName.shortName);
 	    args.preAnalyse();
-	    if (args.hasDefExpr){
+	    if (args.hasDefExpr) {
 		func.hasDefExpr = true;
 		func.defExpr = args.defExpr;
 	    }
@@ -911,7 +914,7 @@ public abstract class Node {
 	    genNodeFunc.params = func.parameters;
 	    GenNode.addGenNodeFunction(genNodeFunc);
 	    int argID = 0;
-	    for (final TypeI arg : func.parameters){
+	    for (final TypeI arg : func.parameters) {
 		GenNode.addFuncStmt(new GenNodeVar("arg" + argID, arg.toBytecodeName(), argID + (func.isStatic() ? 0 : 1), null)); // TODO:
 		argID++;
 	    }
@@ -936,7 +939,7 @@ public abstract class Node {
 	public NodeVarDec subDec;
 	public IExpression expr;
 
-	public NodeVarDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, IExpression expr) {
+	public NodeVarDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, final IExpression expr) {
 	    super(line, column);
 	    this.mods = mods;
 	    this.keyword = keyword;
@@ -969,7 +972,7 @@ public abstract class Node {
 	    // declarations in types are already handled
 	    if ((Scope.getScope() != null) && Semantics.varExists(id)) semanticError(this, line, column, VAR_ALREADY_EXISTS, id);
 	}
-	
+
 	@Override
 	public void generate() {
 	    if (!var.isLocal) GenNode.addGenNodeField(new GenNodeField(var));
@@ -977,10 +980,9 @@ public abstract class Node {
 	    // need to do it here
 	    else {
 		final String type = var.type.toBytecodeName();
-		System.out.println("no local: " + type);
 		GenNode.addFuncStmt(new GenNodeVar(var.id, type, var.localID, null)); // TODO:
 		// generics
-		if(expr != null){
+		if (expr != null) {
 		    expr.generate();
 		    addFuncStmt(new GenNodeVarStore(var.type.getInstructionType(), var.localID));
 		}
@@ -1021,7 +1023,7 @@ public abstract class Node {
 		if (mod.asInt() == EnumModifier.STATIC.intVal) isStatic = true;
 		modifiers |= mod.asInt();
 	    }
-	    var = new Field(name, modifiers, new TypeI(type), setBlock != null, getBlock != null);
+	    var = new Field(name, modifiers, new TypeI(type), setBlock != null, getBlock != null, Semantics.currentType());
 	    if (!Semantics.fieldExists(var)) Semantics.addField(var);
 	    else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
 	}
@@ -1065,7 +1067,7 @@ public abstract class Node {
 	    }
 	    expr.analyse();
 	    final TypeI exprType = expr.getExprType();
-	    var = new Field(name, modifiers, exprType, setBlock != null, getBlock != null);
+	    var = new Field(name, modifiers, exprType, setBlock != null, getBlock != null, Semantics.currentType());
 	    if (!Semantics.fieldExists(var)) Semantics.addField(var);
 	    else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
 	}
@@ -1290,7 +1292,7 @@ public abstract class Node {
 	    else if (prefix != null) prefix.generate();
 	    for (final IExpression expr : args.exprs)
 		expr.generate();
-	    if(func.hasDefExpr && args.exprs.size() < func.parameters.size()) func.defExpr.generate();
+	    if (func.hasDefExpr && (args.exprs.size() < func.parameters.size())) func.defExpr.generate();
 	    final String name = func.isConstructor() ? "<init>" : Operator.filterOperators(func.qualifiedName.shortName);
 	    addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), name, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
 	}
@@ -2179,18 +2181,18 @@ public abstract class Node {
 	public NodeFuncBlock block;
 	public NodeIf elseStmt;
 	public EnumIfType type;
-	
+
 	public static enum EnumIfType {
 	    IF, ELSE, ELSEIF
 	}
 
-	public NodeIf(final int line, final int column, final IExpression expr, final NodeFuncBlock block, boolean isElse, boolean isElseIf) {
+	public NodeIf(final int line, final int column, final IExpression expr, final NodeFuncBlock block, final boolean isElse, final boolean isElseIf) {
 	    super(line, column);
 	    this.expr = expr;
 	    this.block = block;
 	    this.block.inFunction = false;
-	    if(isElse) type = EnumIfType.ELSE;
-	    else if(isElseIf) type = EnumIfType.ELSEIF;
+	    if (isElse) type = EnumIfType.ELSE;
+	    else if (isElseIf) type = EnumIfType.ELSEIF;
 	    else type = EnumIfType.IF;
 	}
 
@@ -2219,40 +2221,36 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    if(type == EnumIfType.IF){
-		if(elseStmt == null){
-		    Label lblEnd = new Label();
-		    addFuncStmt(new GenNodeConditionalJump(expr, lblEnd));
-		    block.generate();
-		    addFuncStmt(new GenNodeLabel(lblEnd));
-		}else{
-		    Label lblEnd = new Label(), lblNext = new Label();
-		    addFuncStmt(new GenNodeConditionalJump(expr, lblNext));
-		    block.generate();
-		    addFuncStmt(new GenNodeJump(lblEnd));
-		    addFuncStmt(new GenNodeLabel(lblNext));
-		    elseStmt.generate(lblEnd);
-		    addFuncStmt(new GenNodeLabel(lblEnd));
-		}
+	    if (type == EnumIfType.IF) if (elseStmt == null) {
+		final Label lblEnd = new Label();
+		addFuncStmt(new GenNodeConditionalJump(expr, lblEnd));
+		block.generate();
+		addFuncStmt(new GenNodeLabel(lblEnd));
+	    } else {
+		final Label lblEnd = new Label(), lblNext = new Label();
+		addFuncStmt(new GenNodeConditionalJump(expr, lblNext));
+		block.generate();
+		addFuncStmt(new GenNodeJump(lblEnd));
+		addFuncStmt(new GenNodeLabel(lblNext));
+		elseStmt.generate(lblEnd);
+		addFuncStmt(new GenNodeLabel(lblEnd));
 	    }
 	}
 
 	public void generate(final Label endLabel) {
-	    if(type == EnumIfType.ELSEIF){
+	    if (type == EnumIfType.ELSEIF) {
 		Label lblNext = null;
-		if(elseStmt != null){
+		if (elseStmt != null) {
 		    lblNext = new Label();
 		    addFuncStmt(new GenNodeConditionalJump(expr, lblNext));
-		}else addFuncStmt(new GenNodeConditionalJump(expr, endLabel));
+		} else addFuncStmt(new GenNodeConditionalJump(expr, endLabel));
 		block.generate();
-		if(elseStmt != null){
+		if (elseStmt != null) {
 		    addFuncStmt(new GenNodeJump(endLabel));
 		    addFuncStmt(new GenNodeLabel(lblNext));
 		    elseStmt.generate(endLabel);
 		}
-	    }else{
-		block.generate();
-	    }
+	    } else block.generate();
 	}
 
     }
@@ -2706,7 +2704,7 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    if(!hasDefaultCase) semanticError(this, line, column, MATCH_DOES_NOT_HAVE_DEFAULT);
+	    if (!hasDefaultCase) semanticError(this, line, column, MATCH_DOES_NOT_HAVE_DEFAULT);
 	    ((Node) expr).analyse();
 	    if (!((Node) expr).errored) {
 		exprType = expr.getExprType();
@@ -2723,7 +2721,7 @@ public abstract class Node {
 	}
 
 	public void add(final NodeMatchCase matchCase) {
-	    if(matchCase.isDefaultCase) this.hasDefaultCase = true;
+	    if (matchCase.isDefaultCase) hasDefaultCase = true;
 	    matchCases.add(matchCase);
 	}
 
@@ -2733,17 +2731,17 @@ public abstract class Node {
 	    final int size = matchCases.size();
 	    final EnumInstructionOperand type = exprType.getInstructionType();
 	    final int dupOpcode = type.size == 1 ? Opcodes.DUP : Opcodes.DUP2;
-	    Label endLabel = new Label();
-	    for(int i = 0; i < size; i++){
-		boolean isLast = i == (size - 1);
-		Label nextLabel = isLast ? null : new Label();
-		NodeMatchCase matchCase = matchCases.get(i);
+	    final Label endLabel = new Label();
+	    for (int i = 0; i < size; i++) {
+		final boolean isLast = i == (size - 1);
+		final Label nextLabel = isLast ? null : new Label();
+		final NodeMatchCase matchCase = matchCases.get(i);
 		// If this is not the last case, dupe the expression so the next case can use it
-		if(!isLast) addFuncStmt(new GenNodeOpcode(dupOpcode));
-		if(matchCase.exprs.size() == 1) matchCase.generate(type, endLabel, isLast, nextLabel);
+		if (!isLast) addFuncStmt(new GenNodeOpcode(dupOpcode));
+		if (matchCase.exprs.size() == 1) matchCase.generate(type, endLabel, isLast, nextLabel);
 		else matchCase.generateMultipleExprs(type, endLabel, isLast, nextLabel, expr);
 		// If this is not the last case, we have to generate the label for the next one
-		if(!isLast) addFuncStmt(new GenNodeLabel(nextLabel));
+		if (!isLast) addFuncStmt(new GenNodeLabel(nextLabel));
 	    }
 	    addFuncStmt(new GenNodeLabel(endLabel));
 	}
@@ -2760,9 +2758,7 @@ public abstract class Node {
 	    super(line, column);
 	    exprs.add(expr);
 	    this.block = block;
-	    if (expr == null) {
-		isDefaultCase = true;
-	    }
+	    if (expr == null) isDefaultCase = true;
 	}
 
 	@Override
@@ -2775,16 +2771,16 @@ public abstract class Node {
 	    if (block.errored) errored = true;
 	}
 
-	public void generate(final EnumInstructionOperand type, final Label endLabel, boolean isLast, Label nextLabel) {
+	public void generate(final EnumInstructionOperand type, final Label endLabel, final boolean isLast, final Label nextLabel) {
 	    if (isDefaultCase) {
 		// if this is the default case then just generate the block and flee
 		block.generate();
 		return;
 	    }
 
-	    IExpression expr = exprs.getFirst();
-	    boolean isNullExpr = expr instanceof NodeNull;
-	    if(!isNullExpr) expr.generate();
+	    final IExpression expr = exprs.getFirst();
+	    final boolean isNullExpr = expr instanceof NodeNull;
+	    if (!isNullExpr) expr.generate();
 	    // If the values are equal, then execute the block, otherwise jump to the next match case
 	    boolean is32BitPrimitive = false;
 	    GenNode equalityNode = null;
@@ -2793,11 +2789,9 @@ public abstract class Node {
 		    equalityNode = new GenNodeFuncCall("java/util/Arrays", "equals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z", false, false, true, false);
 		    break;
 		case REFERENCE:
-		    if(!isNullExpr) equalityNode = new GenNodeFuncCall("java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false, false, false, false);
-		    else {
-			if(!isLast) equalityNode = new GenNodeJump(Opcodes.IFNONNULL, nextLabel);
-			else equalityNode = new GenNodeJump(Opcodes.IFNONNULL, endLabel);
-		    }
+		    if (!isNullExpr) equalityNode = new GenNodeFuncCall("java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false, false, false, false);
+		    else if (!isLast) equalityNode = new GenNodeJump(Opcodes.IFNONNULL, nextLabel);
+		    else equalityNode = new GenNodeJump(Opcodes.IFNONNULL, endLabel);
 		    break;
 		case DOUBLE:
 		    equalityNode = new GenNodeOpcode(Opcodes.DCMPL);
@@ -2810,68 +2804,62 @@ public abstract class Node {
 		    break;
 		default:
 		    is32BitPrimitive = true;
-		    if(!isLast) equalityNode = new GenNodeJump(Opcodes.IF_ICMPNE, nextLabel);
+		    if (!isLast) equalityNode = new GenNodeJump(Opcodes.IF_ICMPNE, nextLabel);
 		    else equalityNode = new GenNodeJump(Opcodes.IF_ICMPNE, endLabel);
 
 	    }
-	    
+
 	    addFuncStmt(equalityNode);
-	    if (!is32BitPrimitive && !isNullExpr){
-		if(!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
-		else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, endLabel));
-	    }
+	    if (!is32BitPrimitive && !isNullExpr) if (!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
+	    else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, endLabel));
 	    block.generate();
 	    // If this is not the last, then we have to jump to the end of the match statement
-	    if(!isLast) addFuncStmt(new GenNodeJump(endLabel));
+	    if (!isLast) addFuncStmt(new GenNodeJump(endLabel));
 	}
 
-	private void generateMultipleExprs(EnumInstructionOperand type, Label endLabel, boolean isLast, Label nextLabel, IExpression matchExpr) {
-	    int size = exprs.size();
-	    int dupeOpcode = type.size == 1 ? Opcodes.DUP : Opcodes.DUP2;
-	    int popOpcode = type.size == 1 ? Opcodes.POP : Opcodes.POP2;
-	    Label blockLabel = new Label(), popLabel = new Label();
-	    for(int i = 0; i < size; i++) {
-		boolean isLastExpr = i == (size - 1);
-		if(!isLastExpr){
-		    // Dupe the match statement's expression so that each other expression in this match case can be tested
+	private void generateMultipleExprs(final EnumInstructionOperand type, final Label endLabel, final boolean isLast, final Label nextLabel,
+		final IExpression matchExpr) {
+	    final int size = exprs.size();
+	    final int dupeOpcode = type.size == 1 ? Opcodes.DUP : Opcodes.DUP2;
+	    final int popOpcode = type.size == 1 ? Opcodes.POP : Opcodes.POP2;
+	    final Label blockLabel = new Label(), popLabel = new Label();
+	    for (int i = 0; i < size; i++) {
+		final boolean isLastExpr = i == (size - 1);
+		if (!isLastExpr) // Dupe the match statement's expression so that each other expression in this match case can be tested
 		    addFuncStmt(new GenNodeOpcode(dupeOpcode));
-		}
-		IExpression expr = exprs.get(i);
-		boolean isNullExpr = expr instanceof NodeNull, is32BitPrimitive = false;
+		final IExpression expr = exprs.get(i);
+		final boolean isNullExpr = expr instanceof NodeNull;
+		boolean is32BitPrimitive = false;
 		GenNode equalityNode = null;
 		expr.generate();
-		
+
 		switch (type) {
-			case ARRAY:
-			    equalityNode = new GenNodeFuncCall("java/util/Arrays", "equals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z", false, false, true, false);
-			    break;
-			case REFERENCE:
-			    if(!isNullExpr) equalityNode = new GenNodeFuncCall("java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false, false, false, false);
-			    else {
-				if(!isLastExpr) equalityNode = new GenNodeJump(Opcodes.IFNONNULL, popLabel);
-				else equalityNode = new GenNodeJump(Opcodes.IFNULL, isLast ? endLabel : nextLabel);
-			    }
-			    break;
-			case DOUBLE:
-			    equalityNode = new GenNodeOpcode(Opcodes.DCMPL);
-			    break;
-			case FLOAT:
-			    equalityNode = new GenNodeOpcode(Opcodes.FCMPL);
-			    break;
-			case LONG:
-			    equalityNode = new GenNodeOpcode(Opcodes.LCMP);
-			    break;
-			default:
-			    is32BitPrimitive = true;
-			    if(!isLastExpr) equalityNode = new GenNodeJump(Opcodes.IF_ICMPEQ, popLabel);
-			    else equalityNode = new GenNodeJump(Opcodes.IF_ICMPNE, isLast ? endLabel : nextLabel);
-		    }
-		addFuncStmt(equalityNode);
-		if (!is32BitPrimitive && !isNullExpr){
-		    if(!isLastExpr) addFuncStmt(new GenNodeJump(Opcodes.IFNE, blockLabel));
-		    else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, isLast ? endLabel : nextLabel));
+		    case ARRAY:
+			equalityNode = new GenNodeFuncCall("java/util/Arrays", "equals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z", false, false, true, false);
+			break;
+		    case REFERENCE:
+			if (!isNullExpr) equalityNode = new GenNodeFuncCall("java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false, false, false, false);
+			else if (!isLastExpr) equalityNode = new GenNodeJump(Opcodes.IFNONNULL, popLabel);
+			else equalityNode = new GenNodeJump(Opcodes.IFNULL, isLast ? endLabel : nextLabel);
+			break;
+		    case DOUBLE:
+			equalityNode = new GenNodeOpcode(Opcodes.DCMPL);
+			break;
+		    case FLOAT:
+			equalityNode = new GenNodeOpcode(Opcodes.FCMPL);
+			break;
+		    case LONG:
+			equalityNode = new GenNodeOpcode(Opcodes.LCMP);
+			break;
+		    default:
+			is32BitPrimitive = true;
+			if (!isLastExpr) equalityNode = new GenNodeJump(Opcodes.IF_ICMPEQ, popLabel);
+			else equalityNode = new GenNodeJump(Opcodes.IF_ICMPNE, isLast ? endLabel : nextLabel);
 		}
-		if(isLastExpr) addFuncStmt(new GenNodeJump(blockLabel));
+		addFuncStmt(equalityNode);
+		if (!is32BitPrimitive && !isNullExpr) if (!isLastExpr) addFuncStmt(new GenNodeJump(Opcodes.IFNE, blockLabel));
+		else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, isLast ? endLabel : nextLabel));
+		if (isLastExpr) addFuncStmt(new GenNodeJump(blockLabel));
 	    }
 	    // Each expression that isn't the last one has to jump here instead so that we can pop off the top stack value
 	    addFuncStmt(new GenNodeLabel(popLabel));
@@ -2880,14 +2868,13 @@ public abstract class Node {
 	    addFuncStmt(new GenNodeLabel(blockLabel));
 	    block.generate();
 	    // if we are not the last match case, then we have to jump to the end of the match statement so that we don't go through any other match cases
-	    if(!isLast) addFuncStmt(new GenNodeJump(endLabel));
-	    
-	    /* Generating the match case for multiple expressions is quite complex...
-	     * First we iterate through each expression and generate the equality checking for each.
-	     * If the expression being generated is not the last one, we have to jump to a special label called "popLabel", 
-	     * which is where we pop off the top value of the stack as it won't bee needed for any more equality checks.
-	     * If the expression being generated is the last expression, then we jump to the block label instead and bypass the pop opcode, 
-	     * as we have already consumed the top value of the stack.
+	    if (!isLast) addFuncStmt(new GenNodeJump(endLabel));
+
+	    /*
+	     * Generating the match case for multiple expressions is quite complex... First we iterate through each expression and generate the equality
+	     * checking for each. If the expression being generated is not the last one, we have to jump to a special label called "popLabel", which is where we
+	     * pop off the top value of the stack as it won't bee needed for any more equality checks. If the expression being generated is the last expression,
+	     * then we jump to the block label instead and bypass the pop opcode, as we have already consumed the top value of the stack.
 	     */
 	}
 

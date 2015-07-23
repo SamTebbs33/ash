@@ -233,15 +233,15 @@ public class Parser {
 	final LinkedList<NodeImport> imports = new LinkedList<Node.NodeImport>();
 	while (getNext().type == TokenType.IMPORT) {
 	    final NodeQualifiedName name = parseQualifiedName();
-	    NodeQualifiedName parent = name.copy().remove();
+	    final NodeQualifiedName parent = name.copy().remove();
 	    imports.add(new NodeImport(line, column, name));
-	    
-	    while(getNext().type == TokenType.COMMA){
-		String cls = expect(TokenType.ID).data;
+
+	    while (getNext().type == TokenType.COMMA) {
+		final String cls = expect(TokenType.ID).data;
 		imports.add(new NodeImport(line, column, parent.copy().add(cls)));
 	    }
 	    rewind();
-	    
+
 	}
 	rewind();
 	return imports;
@@ -335,8 +335,7 @@ public class Parser {
 
     private NodeClassBlock parseClassBlock() throws UnexpectedTokenException {
 	final NodeClassBlock block = new NodeClassBlock();
-	if (getNext().type == TokenType.BRACEL) {
-	    while (getNext().type != TokenType.BRACER) {
+	if (getNext().type == TokenType.BRACEL) while (getNext().type != TokenType.BRACER) {
 	    rewind();
 	    final LinkedList<NodeModifier> mods = parseMods();
 	    final Token token = expect(TokenType.INIT, TokenType.FUNC, TokenType.MUT, TokenType.CONST, TokenType.VAR, TokenType.BRACER);
@@ -361,7 +360,6 @@ public class Parser {
 		    rewind();
 		    block.add(parseMutFuncDec(true, mods));
 		    continue;
-	    }
 	    }
 	}
 	else rewind();
@@ -545,7 +543,7 @@ public class Parser {
 	return new NodeWhile(line, column, parseExpression(), parseConstructBlock());
     }
 
-    private NodeIf parseIfStmt(boolean isElseIf) throws UnexpectedTokenException {
+    private NodeIf parseIfStmt(final boolean isElseIf) throws UnexpectedTokenException {
 	final NodeIf ifStmt = new NodeIf(line, column, parseExpression(), parseConstructBlock(), false, isElseIf);
 	if (getNext().type == TokenType.ELSE) {
 	    if (getNext().type == TokenType.IF) ifStmt.elseStmt = parseIfStmt(true);
@@ -821,8 +819,8 @@ public class Parser {
 	} else rewind();
 
 	if (allowMultipleDecs) // Var decs can be chained using commas, and they share the same keyword and modifiers
-	if (getNext().type == TokenType.COMMA) varDec.subDec = parseVarDec(mods, keyword, true);
-	else rewind();
+	    if (getNext().type == TokenType.COMMA) varDec.subDec = parseVarDec(mods, keyword, true);
+	    else rewind();
 
 	return varDec;
     }

@@ -50,9 +50,9 @@ public class Semantics {
 	return false;
     }
 
-    public static void addType(final Type type, boolean enterType) {
+    public static void addType(final Type type, final boolean enterType) {
 	types.put(type.qualifiedName, type);
-	if(enterType) enterType(type);
+	if (enterType) enterType(type);
 	bindName(type.qualifiedName);
     }
 
@@ -169,7 +169,7 @@ public class Semantics {
     public static Function getFunc(String id, final NodeExprs args) {
 	final Optional<Type> type = getType(id);
 	// Check if it is a constructor for an existing type
-	if (type.isPresent()){
+	if (type.isPresent()) {
 	    id = type.get().qualifiedName.shortName;
 	    return type.get().getFunc(id, args);
 	}

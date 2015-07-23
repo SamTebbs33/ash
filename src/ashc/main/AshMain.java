@@ -4,6 +4,7 @@ import java.io.*;
 import java.nio.file.*;
 
 import ashc.error.*;
+import ashc.library.*;
 import ashc.load.*;
 
 /**
@@ -16,10 +17,13 @@ public class AshMain {
     public static String outputDir, inputFile = null;
     public static boolean warningsEnabled = true, verboseMsgEnabled = false;;
 
-    public static void main(final String[] args) throws FileNotFoundException, IOException {
+    public static void main(final String[] args) throws FileNotFoundException, IOException, AshError {
+	Library.findLibs();
+	// System.out.println(System.getProperty("sun.boot.class.path"));
 	TypeImporter.loadClass("java.lang.String", "String");
 	TypeImporter.loadClass("java.lang.Object", "Object");
 	TypeImporter.loadClass("java.lang.System", "System");
+	TypeImporter.loadClass("java.lang.Iterable", "Iterable");
 	parseArgs(args);
 	if (outputDir == null) outputDir = "./";
 	else if (!outputDir.endsWith(File.separator)) outputDir += File.separatorChar;

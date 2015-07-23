@@ -1,6 +1,12 @@
 package ashc.load;
 
-import ashc.semantics.Member.Type;
+import java.io.*;
+
+import org.objectweb.asm.*;
+import org.objectweb.asm.tree.*;
+
+import ashc.error.*;
+import ashc.library.*;
 import ashc.semantics.*;
 
 /**
@@ -12,18 +18,26 @@ public class TypeImporter {
 
     public static ClassLoader loader = ClassLoader.getSystemClassLoader();
 
-    public static boolean loadClass(final String path, String alias) {
-	final String shortName = path.substring(path.lastIndexOf('.') + 1);
-	// Check if it's already been imported
-	if (Semantics.bindingExists(alias)) return true;
+    public static ashc.semantics.Member.Type loadClass(final String path, final String alias) {
 	try {
-	    final Class<?> cls = loader.loadClass(path);
-	    Type type = new Type(cls, path);
-	    Semantics.addType(type, false);
-	} catch (final ClassNotFoundException e) {
-	    e.printStackTrace();
+	    final InputStream stream = Library.getClassStream(path);
+	    if (stream != null) {
+		final ashc.semantics.Member.Type type = readClass(stream);
+		Semantics.addType(type, false);
+		return type;
+	    }
+	} catch (final IOException e) {
+	    AshError.compilerError("Cannot find class: " + path);
 	}
-	return true;
+	return null;
+    }
+
+    private static ashc.semantics.Member.Type readClass(final InputStream stream) throws IOException {
+	final ClassReader reader = new ClassReader(stream);
+	final ClassNode node = new ClassNode();
+	reader.accept(node, 0);
+	stream.close();
+	return new ashc.semantics.Member.Type(node);
     }
 
 }

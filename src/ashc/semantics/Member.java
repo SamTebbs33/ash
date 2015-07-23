@@ -1,12 +1,16 @@
 package ashc.semantics;
 
-import java.lang.reflect.*;
 import java.util.*;
+
+import org.objectweb.asm.tree.*;
 
 import ashc.grammar.*;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeExprs;
+import ashc.load.*;
 import ashc.util.*;
+
+import org.objectweb.asm.*;
 
 /**
  * Ash
@@ -50,7 +54,20 @@ public class Member {
     }
 
     public static enum EnumType {
-	CLASS, ENUM, INTERFACE
+	CLASS(0), ENUM(Opcodes.ACC_ENUM), INTERFACE(Opcodes.ACC_INTERFACE);
+	public int intVal;
+
+	private EnumType(final int intVal) {
+	    this.intVal = intVal;
+	}
+
+	public static boolean isEnum(final int modifiers) {
+	    return BitOp.and(modifiers, ENUM.intVal);
+	}
+
+	public static boolean isInterface(final int modifiers) {
+	    return BitOp.and(modifiers, INTERFACE.intVal);
+	}
     }
 
     public static class Type extends Member {
@@ -66,26 +83,38 @@ public class Member {
 	    this.type = type;
 	}
 
-	public Type(final Class<?> cls, final String path) {
-	    super(QualifiedName.fromPath(path), cls.getModifiers());
-	    type = cls.isEnum() ? EnumType.ENUM : cls.isInterface() ? EnumType.INTERFACE : EnumType.CLASS;
-	    for (final TypeVariable genericType : cls.getTypeParameters())
-		generics.add(genericType.getName());
-	    if (cls.getSuperclass() != null) {
-		final Type superType = new Type(cls.getSuperclass(), cls.getSuperclass().getName());
-		supers.add(superType);
+	public Type(final ClassNode node) {
+	    super(new QualifiedName(node.name.replace('/', '.')), node.access);
+	    type = EnumType.isEnum(modifiers) ? EnumType.ENUM : (EnumType.isInterface(modifiers) ? EnumType.INTERFACE : EnumType.CLASS);
+	    final String sig = node.signature;
+	    if (sig != null) {
+		// Get the type's generic declarations from the signature, they are in the format <T:Ljava/lang/Object;>;...
+		final String[] sigSections = sig.split(";");
+		for (final String section : sigSections)
+		    if (section.charAt(0) == '<') generics.add(section.substring(1, section.indexOf(':')));
 	    }
-	    for (final Class i : cls.getInterfaces())
-		supers.add(new Type(i, i.getName()));
+	    final String superCls = node.superName;
+	    if (superCls != null) {
+		final String[] split = superCls.split("/");
+		supers.add(TypeImporter.loadClass(superCls.replace('/', '.'), split[split.length - 1]));
+	    }
+	    for (final Object obj : node.interfaces) {
+		final String interfc = obj.toString();
+		final String[] split = interfc.split("/");
+		supers.add(TypeImporter.loadClass(interfc.replace('/', '.'), split[split.length - 1]));
+	    }
+	    for (final Object obj : node.methods) {
+		final MethodNode mNode = (MethodNode) obj;
+		addFunction(new Function(mNode, this));
+	    }
+	    for (final Object obj : node.fields) {
+		final FieldNode fNode = (FieldNode) obj;
+		addField(new Field(fNode, this));
+	    }
+	}
 
-	    Semantics.enterType(this);
-	    for (final Method method : cls.getMethods())
-		addFunction(Function.fromExecutable(method));
-	    for (final Constructor constructor : cls.getConstructors())
-		addFunction(Function.fromExecutable(constructor));
-	    for (final java.lang.reflect.Field field : cls.getFields())
-		fields.add(ashc.semantics.Member.Field.from(field));
-	    Semantics.exitType();
+	public void addField(final Field field) {
+	    fields.add(field);
 	}
 
 	public void addFunction(final Function func) {
@@ -188,25 +217,53 @@ public class Member {
 	public LinkedList<String> generics = new LinkedList<String>();
 	public IExpression defExpr;
 
-	public Function(final QualifiedName qualifiedName, final int modifiers) {
+	public Function(final QualifiedName qualifiedName, final int modifiers, final Type enclosing) {
 	    super(qualifiedName, modifiers);
-	    enclosingType = Semantics.currentType();
+	    enclosingType = enclosing;
+
 	}
 
-	public static Function fromExecutable(final Executable method) {
-	    final QualifiedName name = QualifiedName.fromClass(method.getDeclaringClass());
-	    name.add(method.getName().substring(method.getName().lastIndexOf('.') + 1));
+	public Function(final MethodNode mNode, final Type type) {
+	    this(mNode.name.equals("<init>") ? type.qualifiedName.copy().add(type.qualifiedName.shortName) : type.qualifiedName.copy().add(mNode.name), mNode.access, type);
+	    final boolean isConstructor = mNode.name.equals("<init>");
+	    final String desc = mNode.desc;
+	    final int parenIndex = desc.indexOf(')');
+	    String params = desc.substring(1, parenIndex);
+	    final String returnType = desc.substring(parenIndex + 1);
+	    TypeI typeI = null;
 
-	    final Function func = new Function(name, method.getModifiers());
+	    while (params.length() > 0) {
+		final char ch = params.charAt(0);
+		switch (ch) {
+		    case '[':
+			if (typeI == null) typeI = new TypeI("", 1, true);
+			else typeI.addArrDims(1);
+			params = params.substring(1);
+			break;
+		    case 'L':
+			final int colonIndex = params.indexOf(';');
+			final String name = params.substring(1, colonIndex);
+			params = params.substring(colonIndex + 1);
+			final int lastSlash = name.lastIndexOf('/');
+			final String shortName = lastSlash > -1 ? name.substring(lastSlash + 1) : name;
+			if (typeI == null) typeI = new TypeI(shortName, 0, true);
+			else typeI.shortName = shortName;
+			typeI.qualifiedName = new QualifiedName(name.replace('/', '.'));
+			parameters.add(typeI);
+			typeI = null;
+			break;
+		    default:
+			final EnumPrimitive primitive = EnumPrimitive.getFromBytecodePrimitive(ch);
+			if (typeI == null) typeI = new TypeI(primitive);
+			else typeI = new TypeI(primitive, typeI.arrDims);
+			params = params.substring(1);
+			parameters.add(typeI);
+			typeI = null;
+			break;
+		}
+	    }
+	    this.returnType = isConstructor ? new TypeI(type.qualifiedName.shortName, 0, false) : TypeI.fromBytecodeName(returnType);
 
-	    final Parameter[] params = method.getParameters();
-	    for (final Parameter param : params)
-		func.parameters.add(TypeI.fromClass(param.getType()));
-	    // If it's a method, get the return type, otherwise it's a
-	    // constructor
-	    if (method instanceof Method) func.returnType = TypeI.fromClass(((Method) method).getReturnType());
-	    else func.returnType = TypeI.fromClass(method.getDeclaringClass()).setOptional(false);
-	    return func;
 	}
 
 	@Override
@@ -245,7 +302,7 @@ public class Member {
     public static class Variable extends Field {
 
 	public Variable(final String id, final TypeI type) {
-	    super(new QualifiedName(id), 0, type, false, false);
+	    super(new QualifiedName(id), 0, type, false, false, Semantics.currentType());
 	    if (Scope.inFuncScope()) {
 		isLocal = true;
 		localID = ++Scope.getFuncScope().locals;
@@ -266,21 +323,17 @@ public class Member {
 	public int localID;
 	public boolean isSetProperty, isGetProperty;
 
-	public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type, final boolean isSetProperty, final boolean isGetProperty) {
+	public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type, final boolean isSetProperty, final boolean isGetProperty, final Type enclosingType) {
 	    super(qualifiedName, modifiers);
 	    id = qualifiedName.shortName;
 	    this.type = type;
-	    enclosingType = Semantics.currentType();
+	    this.enclosingType = enclosingType;
 	    this.isGetProperty = isGetProperty;
 	    this.isSetProperty = isSetProperty;
 	}
 
-	public static Field from(final java.lang.reflect.Field field) {
-	    final int mods = field.getModifiers();
-	    final TypeI type = TypeI.fromClass(field.getType());
-	    final QualifiedName name = QualifiedName.fromClass(field.getDeclaringClass());
-	    name.add(field.getName());
-	    return new Field(name, mods, type, false, false);
+	public Field(final FieldNode fNode, final Type enclosing) {
+	    this(new QualifiedName(fNode.name.replace('/', '.')), fNode.access, TypeI.fromBytecodeName(fNode.desc.replace(";", "")), false, false, enclosing);
 	}
 
 	@Override

@@ -141,8 +141,8 @@ public class TypeI {
 	    }
 	    return false;
 	}
-	if(isVoid() || exprType.isVoid()) return false;
-	
+	if (isVoid() || exprType.isVoid()) return false;
+
 	// Optionals can be assigned to non-optionals, but not the other way
 	// around
 	if (!optional && exprType.optional) return false;
@@ -240,7 +240,7 @@ public class TypeI {
 	    }
 	    name = new StringBuffer("L" + tupleClassName + ";");
 	} else if (isVoid()) name.append("V");
-	else if (EnumPrimitive.isPrimitive(shortName)) name.append(EnumPrimitive.getPrimitive(shortName).bytecodeName);
+	else if (EnumPrimitive.isPrimitive(shortName)) name.append(EnumPrimitive.getPrimitive(shortName).bytecodeChar);
 	else name.append("L" + Semantics.getType(shortName).get().qualifiedName.toString().replace('.', '/') + ";");
 	return name.toString();
     }
@@ -274,5 +274,32 @@ public class TypeI {
     public TypeI setTupleName(final String valueOf) {
 	tupleName = valueOf;
 	return this;
+    }
+
+    public void addArrDims(final int i) {
+	arrDims += i;
+    }
+
+    public static TypeI fromBytecodeName(String name) {
+	TypeI type = new TypeI("", 0, true);
+	if (name.equals("V")) return TypeI.getVoidType();
+	else {
+	    type = new TypeI("", 0, true);
+	    while (name.charAt(0) == '[') {
+		type.addArrDims(1);
+		name = name.substring(1);
+	    }
+	    if (name.charAt(0) == 'L') {
+		if (name.charAt(name.length() - 1) == ';') name = name.substring(1, name.length() - 1); // Remove semi-colon
+		else name = name.substring(1);
+		final int lastSlash = name.lastIndexOf('/');
+		type.shortName = lastSlash > -1 ? name.substring(lastSlash + 1) : name;
+		type.qualifiedName = new QualifiedName(name.replace('/', '.'));
+	    } else {
+		final EnumPrimitive p = EnumPrimitive.getFromBytecodePrimitive(name.charAt(0));
+		type = new TypeI(p, type.arrDims);
+	    }
+	}
+	return type;
     }
 }
