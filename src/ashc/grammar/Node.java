@@ -2792,7 +2792,6 @@ public abstract class Node {
 		    is32BitPrimitive = true;
 		    if (!isLast) equalityNode = new GenNodeJump(Opcodes.IF_ICMPNE, nextLabel);
 		    else equalityNode = new GenNodeJump(Opcodes.IF_ICMPNE, endLabel);
-
 	    }
 
 	    addFuncStmt(equalityNode);
@@ -3037,7 +3036,34 @@ public abstract class Node {
 	public NodeListSize(final int line, final int column, final NodeType type) {
 	    super(line, column, type);
 	}
-	// TODO:
+
+	@Override
+	public void analyse() {
+	    elementType.analyse();
+	}
+	
+	@Override
+	public TypeI getExprType() {
+	    boolean isArrayList = arrDims.size() > 0;
+	    type = new TypeI(isArrayList ? "ArrayList" : "LinkedList", 0, false);
+	    type.genericTypes.add(new TypeI(elementType));
+	    type.qualifiedName = new QualifiedName(isArrayList ? "java/util/ArrayList" : "java/util/LinkedList");
+	    return type;
+	}
+
+	@Override
+	public void generate() {
+	    boolean isArrayList = arrDims.size() > 0;
+	    String name = isArrayList ? "java/util/ArrayList" : "java/util/LinkedList";
+	    addFuncStmt(new GenNodeNew(name));
+	    addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
+	    String sig = "";
+	    if(isArrayList){
+		sig = "(I)V";
+		arrDims.getFirst().generate();
+	    }else sig = "()V";
+	    addFuncStmt(new GenNodeFuncCall(name, "<init>", sig, false, false, false, true));
+	}
 
     }
 
