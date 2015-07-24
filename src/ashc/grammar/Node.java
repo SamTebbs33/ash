@@ -2796,8 +2796,10 @@ public abstract class Node {
 	    }
 
 	    addFuncStmt(equalityNode);
-	    if (!is32BitPrimitive && !isNullExpr) if (!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
-	    else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, endLabel));
+	    if (!is32BitPrimitive && !isNullExpr){ 
+		if (!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
+	    	else addFuncStmt(new GenNodeJump(Opcodes.IFNE, endLabel));
+	    }
 	    // If this is not the last case, then we have to pop off the duplicated expression from NodeMatch.generate()
 	    // if(!isLast) addFuncStmt(new GenNodeOpcode(popOpcode));
 	    block.generate();
@@ -2845,8 +2847,10 @@ public abstract class Node {
 			else equalityNode = new GenNodeJump(Opcodes.IF_ICMPNE, isLast ? endLabel : nextLabel);
 		}
 		addFuncStmt(equalityNode);
-		if (!is32BitPrimitive && !isNullExpr) if (!isLastExpr) addFuncStmt(new GenNodeJump(Opcodes.IFNE, blockLabel));
-		else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, isLast ? endLabel : nextLabel));
+		if (!is32BitPrimitive && !isNullExpr){ 
+		    if (!isLastExpr) addFuncStmt(new GenNodeJump(Opcodes.IFNE, blockLabel));
+		    else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, isLast ? endLabel : nextLabel));
+		}
 		if (isLastExpr) addFuncStmt(new GenNodeJump(blockLabel));
 	    }
 	    // Each expression that isn't the last one has to jump here instead so that we can pop off the top stack value
@@ -3065,7 +3069,29 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    // TODO:
+	    if(isHashMap){
+		addFuncStmt(new GenNodeNew("java/util/HashMap"));
+		addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
+		addFuncStmt(new GenNodeFuncCall("java/util/HashMap", "<init>", "()V", false, false, false, true));
+		int i = 0;
+		for(IExpression expr : exprs) {
+		    addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
+		    expr.generate();
+		    mapValues.get(i++).generate();
+		    addFuncStmt(new GenNodeFuncCall("java/util/Map", "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true, false, false, false));
+		    addFuncStmt(new GenNodeOpcode(Opcodes.POP)); // Pop off the reference returned by put()
+		}
+	    }else{
+		addFuncStmt(new GenNodeNew("java/util/LinkedList"));
+		addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
+		addFuncStmt(new GenNodeFuncCall("java/util/LinkedList", "<init>", "()V", false, false, false, true));
+		for(IExpression expr : exprs) {
+		    addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
+		    expr.generate();
+		    addFuncStmt(new GenNodeFuncCall("java/util/List", "add", "(Ljava/lang/Object;)Z", true, false, false, false));
+		    addFuncStmt(new GenNodeOpcode(Opcodes.POP)); // Pop off the boolean returned by add()
+		}
+	    }
 	}
 
 	public void addMapVal(final IExpression parseExpression) {

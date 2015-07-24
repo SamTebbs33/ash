@@ -87,6 +87,7 @@ public class Member {
 		    : (EnumType.isInterface(node.access) ? EnumType.INTERFACE : EnumType.CLASS));
 	    final String sig = node.signature;
 	    if (sig != null) {
+		// Parse generics
 		final int openIndex = sig.indexOf('<'), closeIndex = sig.indexOf('>');
 		if ((openIndex > -1) && (closeIndex > -1)) {
 		    final String[] sigSections = sig.substring(openIndex + 1, closeIndex).split(";");

@@ -62,8 +62,13 @@ default parameter value:
   path: DefaultParameterValue
   pass: yes
   run: yes
+ 
+list and map:
+  path: ListAndMap
+  pass: yes
+  run: yes
   
 #match statement:
- # path: MatchStatement
- # pass: yes
- # run: yes
+#  path: MatchStatement
+#  pass: yes
+#  run: yes
