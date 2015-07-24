@@ -45,6 +45,7 @@ import ashc.codegen.GenNode.GenNodeVarStore;
 import ashc.codegen.GenNode.IGenNodeStmt;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
+import ashc.grammar.Node.IExpression;
 import ashc.load.*;
 import ashc.main.*;
 import ashc.semantics.*;
@@ -3044,6 +3045,49 @@ public abstract class Node {
 	    }
 	}
 
+    }
+    
+    public static class NodeListSize extends NodeArraySize implements IExpression {
+
+	public NodeListSize(int line, int column, NodeType type) {
+	    super(line, column, type);
+	}
+	//TODO:
+	
+    }
+    
+    public static class NodeList extends Node implements IExpression {
+	
+	LinkedList<IExpression> exprs = new LinkedList<>(), mapValues = new LinkedList<>();
+	public boolean isHashMap = false;
+
+	public NodeList(int line, int column) {
+	    super(line, column);
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    //TODO:
+	    return null;
+	}
+
+	@Override
+	public void registerScopedChecks() {}
+
+	@Override
+	public void generate() {
+	    //TODO:
+	}
+
+	public void addMapVal(IExpression parseExpression) {
+	    isHashMap = true;
+	    mapValues.add(parseExpression);
+	}
+
+	public void add(IExpression listElement) {
+	    exprs.add(listElement);
+	}
+	
     }
 
 }

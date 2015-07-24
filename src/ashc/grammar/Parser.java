@@ -41,6 +41,8 @@ import ashc.grammar.Node.NodeImport;
 import ashc.grammar.Node.NodeInteger;
 import ashc.grammar.Node.NodeInterfaceDec;
 import ashc.grammar.Node.NodeIs;
+import ashc.grammar.Node.NodeList;
+import ashc.grammar.Node.NodeListSize;
 import ashc.grammar.Node.NodeLong;
 import ashc.grammar.Node.NodeMatch;
 import ashc.grammar.Node.NodeMatchCase;
@@ -631,17 +633,55 @@ public class Parser {
 	    case UNARYOP:
 		expr = new NodeUnary(next.line, next.columnStart, parsePrimaryExpression(), next.data, true);
 		break;
+	    case BRACEL:
+		NodeList listExpr = new NodeList(next.line, next.columnStart);
+		boolean isHashMap = false;
+		// Parse an optional expression
+		silenceErrors = true;
+		IExpression listElement = parseExpression();
+		silenceErrors = false;
+		// If there was no expression, then return an empty list
+		if(listElement == null) break;
+		// If the next is a colon, then we need to parse a hash map literal
+		if(getNext().type == TokenType.COLON){
+		    isHashMap = true;
+		    listExpr.addMapVal(parseExpression());
+		}else rewind();
+		// Add the list element as a value
+		listExpr.add(listElement);
+		// List elements are separated by commas
+		while(expect(TokenType.COMMA, TokenType.BRACER).type == TokenType.COMMA){
+		    listElement = parseExpression();
+		    if(isHashMap){
+			// If this is a hash map literal, we have to parse a colon and map value
+			expect(TokenType.COLON);
+			listExpr.addMapVal(parseExpression());
+		    }
+		}
+		expr = listExpr;
+		break;
 	    case BRACKETL:
 		rewind();
 		expr = new NodeArray(next.line, next.columnStart, parseCallArgs(TokenType.BRACKETL, TokenType.BRACKETR));
 		break;
 	    case NEW:
-		expect(TokenType.BRACKETL);
-		final NodeArraySize arraySize = new NodeArraySize(next.line, next.columnStart, parseType());
-		expect(TokenType.COMMA);
-		do
-		    arraySize.arrDims.add(parseExpression());
-		while (expect(TokenType.BRACKETR, TokenType.COMMA).type == TokenType.COMMA);
+		NodeArraySize arraySize = null;
+		if(expect(TokenType.BRACKETL, TokenType.BRACEL).type == TokenType.BRACKETL){
+		    // Parse an array type and size initialiser
+		    arraySize = new NodeArraySize(next.line, next.columnStart, parseType());
+		    expect(TokenType.COMMA);
+		    do
+			arraySize.arrDims.add(parseExpression());
+		    while (expect(TokenType.BRACKETR, TokenType.COMMA).type == TokenType.COMMA);
+		}else{
+		    // Parse a list type and/or size initialiser. Sizes are not compulsory
+		    arraySize = new NodeListSize(next.line, next.columnStart, parseType());
+		    if(expect(TokenType.COMMA, TokenType.BRACER).type == TokenType.COMMA){
+			arraySize.arrDims.add(parseExpression());
+			expect(TokenType.BRACER);
+		    }
+		}
+		
 		expr = arraySize;
 		break;
 	    case PARENL:
