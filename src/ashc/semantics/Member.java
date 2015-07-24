@@ -2,6 +2,7 @@ package ashc.semantics;
 
 import java.util.*;
 
+import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
 
 import ashc.grammar.*;
@@ -9,8 +10,6 @@ import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeExprs;
 import ashc.load.*;
 import ashc.util.*;
-
-import org.objectweb.asm.*;
 
 /**
  * Ash
@@ -84,14 +83,15 @@ public class Member {
 	}
 
 	public Type(final ClassNode node) {
-	    this(new QualifiedName(node.name.replace('/', '.')), node.access, EnumType.isEnum(node.access) ? EnumType.ENUM : (EnumType.isInterface(node.access) ? EnumType.INTERFACE : EnumType.CLASS));
+	    this(new QualifiedName(node.name.replace('/', '.')), node.access, EnumType.isEnum(node.access) ? EnumType.ENUM
+		    : (EnumType.isInterface(node.access) ? EnumType.INTERFACE : EnumType.CLASS));
 	    final String sig = node.signature;
 	    if (sig != null) {
-		int openIndex = sig.indexOf('<'), closeIndex = sig.indexOf('>');
-		if(openIndex > -1 && closeIndex > -1){
+		final int openIndex = sig.indexOf('<'), closeIndex = sig.indexOf('>');
+		if ((openIndex > -1) && (closeIndex > -1)) {
 		    final String[] sigSections = sig.substring(openIndex + 1, closeIndex).split(";");
 		    for (final String section : sigSections)
-			if(section.indexOf(':') > -1) generics.add(section.substring(0, section.indexOf(':')));
+			if (section.indexOf(':') > -1) generics.add(section.substring(0, section.indexOf(':')));
 		}
 	    }
 	    final String superCls = node.superName;
@@ -106,7 +106,7 @@ public class Member {
 	    }
 	    for (final Object obj : node.methods) {
 		final MethodNode mNode = (MethodNode) obj;
-		if(mNode.name.equals("<clinit>")) continue;
+		if (mNode.name.equals("<clinit>")) continue;
 		addFunction(new Function(mNode, this));
 	    }
 	    for (final Object obj : node.fields) {

@@ -634,25 +634,25 @@ public class Parser {
 		expr = new NodeUnary(next.line, next.columnStart, parsePrimaryExpression(), next.data, true);
 		break;
 	    case BRACEL:
-		NodeList listExpr = new NodeList(next.line, next.columnStart);
+		final NodeList listExpr = new NodeList(next.line, next.columnStart);
 		boolean isHashMap = false;
 		// Parse an optional expression
 		silenceErrors = true;
 		IExpression listElement = parseExpression();
 		silenceErrors = false;
 		// If there was no expression, then return an empty list
-		if(listElement == null) break;
+		if (listElement == null) break;
 		// If the next is a colon, then we need to parse a hash map literal
-		if(getNext().type == TokenType.COLON){
+		if (getNext().type == TokenType.COLON) {
 		    isHashMap = true;
 		    listExpr.addMapVal(parseExpression());
-		}else rewind();
+		} else rewind();
 		// Add the list element as a value
 		listExpr.add(listElement);
 		// List elements are separated by commas
-		while(expect(TokenType.COMMA, TokenType.BRACER).type == TokenType.COMMA){
+		while (expect(TokenType.COMMA, TokenType.BRACER).type == TokenType.COMMA) {
 		    listElement = parseExpression();
-		    if(isHashMap){
+		    if (isHashMap) {
 			// If this is a hash map literal, we have to parse a colon and map value
 			expect(TokenType.COLON);
 			listExpr.addMapVal(parseExpression());
@@ -663,26 +663,26 @@ public class Parser {
 	    case BRACKETL:
 		rewind();
 		expr = new NodeArray(next.line, next.columnStart);
-		((NodeArray)expr).exprs = parseCallArgs(TokenType.BRACKETL, TokenType.BRACKETR).exprs;
+		((NodeArray) expr).exprs = parseCallArgs(TokenType.BRACKETL, TokenType.BRACKETR).exprs;
 		break;
 	    case NEW:
 		NodeArraySize arraySize = null;
-		if(expect(TokenType.BRACKETL, TokenType.BRACEL).type == TokenType.BRACKETL){
+		if (expect(TokenType.BRACKETL, TokenType.BRACEL).type == TokenType.BRACKETL) {
 		    // Parse an array type and size initialiser
 		    arraySize = new NodeArraySize(next.line, next.columnStart, parseType());
 		    expect(TokenType.COMMA);
 		    do
 			arraySize.arrDims.add(parseExpression());
 		    while (expect(TokenType.BRACKETR, TokenType.COMMA).type == TokenType.COMMA);
-		}else{
+		} else {
 		    // Parse a list type and/or size initialiser. Sizes are not compulsory
 		    arraySize = new NodeListSize(next.line, next.columnStart, parseType());
-		    if(expect(TokenType.COMMA, TokenType.BRACER).type == TokenType.COMMA){
+		    if (expect(TokenType.COMMA, TokenType.BRACER).type == TokenType.COMMA) {
 			arraySize.arrDims.add(parseExpression());
 			expect(TokenType.BRACER);
 		    }
 		}
-		
+
 		expr = arraySize;
 		break;
 	    case PARENL:
@@ -861,8 +861,8 @@ public class Parser {
 	} else rewind();
 
 	if (allowMultipleDecs) // Var decs can be chained using commas, and they share the same keyword and modifiers
-	    if (getNext().type == TokenType.COMMA) varDec.subDec = parseVarDec(mods, keyword, true);
-	    else rewind();
+	if (getNext().type == TokenType.COMMA) varDec.subDec = parseVarDec(mods, keyword, true);
+	else rewind();
 
 	return varDec;
     }

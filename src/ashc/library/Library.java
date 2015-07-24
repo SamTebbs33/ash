@@ -6,7 +6,7 @@ import ashc.error.*;
 
 /**
  * Ash
- * 
+ *
  * @author samtebbs, 09:45:35 - 23 Jul 2015
  */
 public abstract class Library {

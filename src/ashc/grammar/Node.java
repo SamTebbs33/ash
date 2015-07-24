@@ -628,8 +628,8 @@ public abstract class Node {
 		final GenNodeFunction staticFunc = new GenNodeFunction("<clinit>", EnumModifier.STATIC.intVal, "V");
 		addGenNodeFunction(staticFunc);
 		for (final NodeVarDec dec : staticVars) {
-			if (dec.expr != null) dec.expr.generate();
-			else dec.typeI.getDefaultValue().generate();
+		    if (dec.expr != null) dec.expr.generate();
+		    else dec.typeI.getDefaultValue().generate();
 		    addFuncStmt(new GenNodeFieldStore(dec.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName(), true));
 		}
 		for (final NodeFuncBlock initBlock : initBlocks)
@@ -2033,10 +2033,11 @@ public abstract class Node {
 	public void add(final IExpression expr) {
 	    exprs.add(expr);
 	}
-	
+
 	@Override
 	public void preAnalyse() {
-	    for(IExpression expr : exprs) expr.analyse();
+	    for (final IExpression expr : exprs)
+		expr.analyse();
 	}
 
 	@Override
@@ -2763,7 +2764,6 @@ public abstract class Node {
 		block.generate();
 		return;
 	    }
-	    final int popOpcode = type.size == 1 ? Opcodes.POP : Opcodes.POP2;
 	    final IExpression expr = exprs.getFirst();
 	    final boolean isNullExpr = expr instanceof NodeNull;
 	    if (!isNullExpr) expr.generate();
@@ -2796,12 +2796,10 @@ public abstract class Node {
 	    }
 
 	    addFuncStmt(equalityNode);
-	    if (!is32BitPrimitive && !isNullExpr) {
-		if (!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
-		else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, endLabel));
-	    }
+	    if (!is32BitPrimitive && !isNullExpr) if (!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
+	    else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, endLabel));
 	    // If this is not the last case, then we have to pop off the duplicated expression from NodeMatch.generate()
-	    //if(!isLast) addFuncStmt(new GenNodeOpcode(popOpcode));
+	    // if(!isLast) addFuncStmt(new GenNodeOpcode(popOpcode));
 	    block.generate();
 	    // If this is not the last, then we have to jump to the end of the match statement
 	    if (!isLast) addFuncStmt(new GenNodeJump(endLabel));
@@ -2816,7 +2814,7 @@ public abstract class Node {
 	    for (int i = 0; i < size; i++) {
 		final boolean isLastExpr = i == (size - 1);
 		if (!isLastExpr) // Dupe the match statement's expression so that each other expression in this match case can be tested
-		    addFuncStmt(new GenNodeOpcode(dupeOpcode));
+		addFuncStmt(new GenNodeOpcode(dupeOpcode));
 		final IExpression expr = exprs.get(i);
 		final boolean isNullExpr = expr instanceof NodeNull;
 		boolean is32BitPrimitive = false;
@@ -2847,10 +2845,8 @@ public abstract class Node {
 			else equalityNode = new GenNodeJump(Opcodes.IF_ICMPNE, isLast ? endLabel : nextLabel);
 		}
 		addFuncStmt(equalityNode);
-		if (!is32BitPrimitive && !isNullExpr){ 
-		    if (!isLastExpr) addFuncStmt(new GenNodeJump(Opcodes.IFNE, blockLabel));
-		    else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, isLast ? endLabel : nextLabel));
-		}
+		if (!is32BitPrimitive && !isNullExpr) if (!isLastExpr) addFuncStmt(new GenNodeJump(Opcodes.IFNE, blockLabel));
+		else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, isLast ? endLabel : nextLabel));
 		if (isLastExpr) addFuncStmt(new GenNodeJump(blockLabel));
 	    }
 	    // Each expression that isn't the last one has to jump here instead so that we can pop off the top stack value
@@ -2859,7 +2855,7 @@ public abstract class Node {
 	    // The last expression jumps here instead
 	    addFuncStmt(new GenNodeLabel(blockLabel));
 	    // If this is not the last case, then we have to pop off the duplicated expression from NodeMatch.generate()
-	    //if(!isLast) addFuncStmt(new GenNodeOpcode(popOpcode));
+	    // if(!isLast) addFuncStmt(new GenNodeOpcode(popOpcode));
 	    block.generate();
 	    // if we are not the last match case, then we have to jump to the end of the match statement so that we don't go through any other match cases
 	    if (!isLast) addFuncStmt(new GenNodeJump(endLabel));
@@ -3031,23 +3027,23 @@ public abstract class Node {
 	}
 
     }
-    
+
     public static class NodeListSize extends NodeArraySize implements IExpression {
 
-	public NodeListSize(int line, int column, NodeType type) {
+	public NodeListSize(final int line, final int column, final NodeType type) {
 	    super(line, column, type);
 	}
-	//TODO:
-	
+	// TODO:
+
     }
-    
+
     public static class NodeList extends NodeArray implements IExpression {
-	
+
 	LinkedList<IExpression> mapValues = new LinkedList<>();
 	public boolean isHashMap = false;
 	public TypeI exprType;
 
-	public NodeList(int line, int column) {
+	public NodeList(final int line, final int column) {
 	    super(line, column);
 	}
 
@@ -3055,10 +3051,10 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    exprType = new TypeI(isHashMap ? "HashMap" : "LinkedList", 0, false);
 	    exprType.setQualifiedName(new QualifiedName(isHashMap ? "java.util.HashMap" : "java.util.LinkedList"));
-	    TypeI valType = TypeI.getPrecedentType(exprs);
+	    final TypeI valType = TypeI.getPrecedentType(exprs);
 	    exprType.genericTypes.add(valType);
-	    if(isHashMap){
-		TypeI mapValType = TypeI.getPrecedentType(mapValues);
+	    if (isHashMap) {
+		final TypeI mapValType = TypeI.getPrecedentType(mapValues);
 		exprType.genericTypes.add(mapValType);
 	    }
 	    return exprType;
@@ -3069,18 +3065,19 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    //TODO:
+	    // TODO:
 	}
 
-	public void addMapVal(IExpression parseExpression) {
+	public void addMapVal(final IExpression parseExpression) {
 	    isHashMap = true;
 	    mapValues.add(parseExpression);
 	}
 
-	public void add(IExpression listElement) {
+	@Override
+	public void add(final IExpression listElement) {
 	    exprs.add(listElement);
 	}
-	
+
     }
 
 }

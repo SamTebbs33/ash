@@ -6,7 +6,7 @@ import java.util.jar.*;
 
 /**
  * Ash
- * 
+ *
  * @author samtebbs, 09:54:20 - 23 Jul 2015
  */
 public class JarLibrary extends Library {

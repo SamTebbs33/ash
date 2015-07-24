@@ -143,7 +143,7 @@ public abstract class GenNode {
 		func.generate(cw);
 
 	    cw.visitEnd();
-	    
+
 	    verifyClassBytecode(cw);
 
 	    final File classFile = new File(dirSb.toString() + shortName + ".class");
@@ -159,15 +159,15 @@ public abstract class GenNode {
 	    }
 	}
 
-	private void verifyClassBytecode(ClassWriter cw) {
+	private void verifyClassBytecode(final ClassWriter cw) {
 	    try {
-		InputStream is = new ByteArrayInputStream(cw.toByteArray());
-		ClassReader cr = new ClassReader(is);
-		ClassWriter cw2 = new ClassWriter(cr, ClassWriter.COMPUTE_FRAMES);
+		final InputStream is = new ByteArrayInputStream(cw.toByteArray());
+		final ClassReader cr = new ClassReader(is);
+		final ClassWriter cw2 = new ClassWriter(cr, ClassWriter.COMPUTE_FRAMES);
 		cr.accept(new CheckClassAdapter(cw2), 0);
-		PrintWriter pw = new PrintWriter(System.out);
+		final PrintWriter pw = new PrintWriter(System.out);
 		CheckClassAdapter.verify(new ClassReader(cw2.toByteArray()), false, pw);
-	    } catch (IOException e) {
+	    } catch (final IOException e) {
 		e.printStackTrace();
 	    }
 	}
@@ -224,14 +224,14 @@ public abstract class GenNode {
 		stmts.get(i).generate(mv);
 	    for (final LocalVariable local : locals.values())
 		if (!local.endLabelGenerated) mv.visitLabel(local.end.label);
-	    
+
 	    try {
 		mv.visitMaxs(-1, -1);
-	    } catch (Exception e1) {
+	    } catch (final Exception e1) {
 		System.out.println("Oh shit son, I got an exception from visitMaxs(): " + e1);
 		e1.printStackTrace();
 	    }
-	    
+
 	    mv.visitEnd();
 	}
 
@@ -655,7 +655,7 @@ public abstract class GenNode {
 	public GenNodeConditionalJump(final IExpression expr, final Label label) {
 	    this.expr = expr;
 	    this.label = label;
-	    if(expr != null) compute();
+	    if (expr != null) compute();
 	    addToStackRequirement(-1);
 	}
 
@@ -757,14 +757,14 @@ public abstract class GenNode {
 					break;
 				}
 			    } else // Compare the references
-			    switch (node.operator.operation) {
-				case NOT_EQUAL:
-				    opcode = IF_ACMPEQ;
-				    break;
-				case EQUAL:
-				    opcode = IF_ACMPNE;
-				    break;
-			    }
+				switch (node.operator.operation) {
+				    case NOT_EQUAL:
+					opcode = IF_ACMPEQ;
+					break;
+				    case EQUAL:
+					opcode = IF_ACMPNE;
+					break;
+				}
 
 		    }
 		} else {
@@ -971,7 +971,7 @@ public abstract class GenNode {
 			case MULTIPLY:
 			    opcode = IMUL;
 			    break;
-			// case POW: Pow is not defined for integers
+			    // case POW: Pow is not defined for integers
 			case SUBTRACT:
 			    opcode = ISUB;
 			    break;
@@ -1058,7 +1058,7 @@ public abstract class GenNode {
 			    else if (operation == EnumOperation.LESS_EQUAL) opcode = IFGT;
 			    else if (operation == EnumOperation.GREATER_EQUAL) opcode = IFLT;
 			    final Label l0 = new Label(),
-				    l1 = new Label();
+			    l1 = new Label();
 			    mv.visitJumpInsn(opcode, l0);
 			    mv.visitInsn(ICONST_1);
 			    mv.visitJumpInsn(GOTO, l1);
