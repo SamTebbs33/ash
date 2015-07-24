@@ -670,7 +670,7 @@ public abstract class GenNode {
 		if (node.operatorOverloadFunc == null) {
 		    // Get the precedent type of the operands to decide how they
 		    // should be compared
-		    final EnumInstructionOperand type = Semantics.getPrecedentType(node.exprType1, node.exprType2).getInstructionType();
+		    final EnumInstructionOperand type = TypeI.getPrecedentType(node.exprType1, node.exprType2).getInstructionType();
 
 		    // Cast the binary expression's sub expressions if necessary
 		    if (node.exprType1.getInstructionType() != type) addFuncStmt(new GenNodePrimitiveCast(node.exprType1.getInstructionType(), type));

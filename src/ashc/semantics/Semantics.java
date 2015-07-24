@@ -106,19 +106,6 @@ public class Semantics {
 	typeStack.peek().fields.add(field);
     }
 
-    public static TypeI getPrecedentType(final TypeI type1, final TypeI type2) {
-	if (type1.equals(type2)) return type1;
-	final String name1 = type1.shortName, name2 = type2.shortName;
-
-	if ((name1.equals("String") && (type1.arrDims == 0)) || (name2.equals("String") && (type2.arrDims == 0))) return new TypeI("String", 0, false);
-
-	// The values in EnumPrimitive are ordered by precedence
-	for (final EnumPrimitive p : EnumPrimitive.values())
-	    if (p.ashName.equals(name1) || p.ashName.equals(name2)) return new TypeI(p);
-
-	return null;
-    }
-
     public static Field getVar(final String id, final TypeI type) {
 	if (type.isTuple()) {
 	    for (final TypeI tupleType : type.tupleTypes)
@@ -234,7 +221,7 @@ public class Semantics {
     public static Object[] getOperationType(final TypeI type1, final TypeI type2, final Operator operator) {
 	if (type1.isNumeric() && type2.isNumeric()) {
 	    final EnumPrimitive result = operator.operation.primitive;
-	    return result == null ? new Object[] { getPrecedentType(type1, type2), null } : new Object[] { new TypeI(result), null };
+	    return result == null ? new Object[] { TypeI.getPrecedentType(type1, type2), null } : new Object[] { new TypeI(result), null };
 	} else if (type1.equals(TypeI.getStringType()) && (operator.operation == EnumOperation.ADD)) return new Object[] { TypeI.getStringType(), null };
 
 	if (type1.isArray() || type1.isTuple() || type1.isVoid() || type1.isNull()) return null;

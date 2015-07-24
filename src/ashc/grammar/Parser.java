@@ -662,7 +662,8 @@ public class Parser {
 		break;
 	    case BRACKETL:
 		rewind();
-		expr = new NodeArray(next.line, next.columnStart, parseCallArgs(TokenType.BRACKETL, TokenType.BRACKETR));
+		expr = new NodeArray(next.line, next.columnStart);
+		((NodeArray)expr).exprs = parseCallArgs(TokenType.BRACKETL, TokenType.BRACKETR).exprs;
 		break;
 	    case NEW:
 		NodeArraySize arraySize = null;

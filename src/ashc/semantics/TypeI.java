@@ -44,8 +44,9 @@ public class TypeI {
 
     public TypeI(final NodeType type) {
 	this(type.id, type.arrDims, type.optional);
-	for (final NodeType nodeType : type.generics.types)
+	for (final NodeType nodeType : type.generics.types){
 	    genericTypes.add(new TypeI(nodeType));
+	}
 	for (final NodeType nodeType : type.tupleTypes)
 	    tupleTypes.add(new TypeI(nodeType));
     }
@@ -92,7 +93,7 @@ public class TypeI {
     public boolean equals(final Object obj) {
 	if (obj instanceof TypeI) {
 	    final TypeI type = (TypeI) obj;
-	    return type.shortName.equals(shortName) && (type.arrDims == arrDims) && (type.optional == optional);
+	    return genericTypes.equals(type.genericTypes) && type.shortName.equals(shortName) && (type.arrDims == arrDims) && (type.optional == optional);
 	}
 	return false;
     }
@@ -114,7 +115,7 @@ public class TypeI {
 	if (genericTypes.size() > 0) {
 	    id += "<";
 	    for (int i = 0; i < (genericTypes.size() - 1); i++)
-		id += genericTypes.toString() + ", ";
+		id += genericTypes.get(i).toString() + ", ";
 	    id += genericTypes.getLast().toString() + ">";
 	}
 	return String.format("%s%s%s", id, arrBuffer.toString(), optional ? "?" : "");
@@ -142,6 +143,12 @@ public class TypeI {
 	    return false;
 	}
 	if (isVoid() || exprType.isVoid()) return false;
+	
+	// Ensure this type's generics can be assigned to the other type's
+	int i = 0;
+	for(TypeI generic : genericTypes){
+	    if(!generic.canBeAssignedTo(Semantics.getGeneric(exprType.genericTypes, i++))) return false;
+	}
 
 	// Optionals can be assigned to non-optionals, but not the other way
 	// around
@@ -276,8 +283,9 @@ public class TypeI {
 	return this;
     }
 
-    public void addArrDims(final int i) {
+    public TypeI addArrDims(final int i) {
 	arrDims += i;
+	return this;
     }
 
     public static TypeI fromBytecodeName(String name) {
@@ -301,5 +309,30 @@ public class TypeI {
 	    }
 	}
 	return type;
+    }
+
+    public TypeI setQualifiedName(QualifiedName qualifiedName2) {
+	this.qualifiedName = qualifiedName2;
+	return this;
+    }
+
+    public static TypeI getPrecedentType(final TypeI type1, final TypeI type2) {
+        if (type1.equals(type2)) return type1;
+        final String name1 = type1.shortName, name2 = type2.shortName;
+    
+        if ((name1.equals("String") && (type1.arrDims == 0)) || (name2.equals("String") && (type2.arrDims == 0))) return new TypeI("String", 0, false);
+    
+        // The values in EnumPrimitive are ordered by precedence
+        for (final EnumPrimitive p : EnumPrimitive.values())
+            if (p.ashName.equals(name1) || p.ashName.equals(name2)) return new TypeI(p);
+    
+        return null;
+    }
+
+    public static TypeI getPrecedentType(LinkedList<IExpression> exprs) {
+	TypeI result = exprs.getFirst().getExprType();
+	    for (int i = 1; i < exprs.size(); i++)
+		result = TypeI.getPrecedentType(result, exprs.get(i).getExprType());
+	   return result;
     }
 }

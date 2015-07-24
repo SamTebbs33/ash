@@ -45,7 +45,6 @@ import ashc.codegen.GenNode.GenNodeVarStore;
 import ashc.codegen.GenNode.IGenNodeStmt;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
-import ashc.grammar.Node.IExpression;
 import ashc.load.*;
 import ashc.main.*;
 import ashc.semantics.*;
@@ -629,12 +628,8 @@ public abstract class Node {
 		final GenNodeFunction staticFunc = new GenNodeFunction("<clinit>", EnumModifier.STATIC.intVal, "V");
 		addGenNodeFunction(staticFunc);
 		for (final NodeVarDec dec : staticVars) {
-		    if (dec instanceof NodeVarDecImplicit) ((NodeVarDecImplicit) dec).expr.generate();
-		    else {
-			final NodeVarDecExplicit decE = (NodeVarDecExplicit) dec;
-			if (decE.expr != null) decE.expr.generate();
-			else decE.typeI.getDefaultValue().generate();
-		    }
+			if (dec.expr != null) dec.expr.generate();
+			else dec.typeI.getDefaultValue().generate();
 		    addFuncStmt(new GenNodeFieldStore(dec.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName(), true));
 		}
 		for (final NodeFuncBlock initBlock : initBlocks)
@@ -931,6 +926,7 @@ public abstract class Node {
     }
 
     public static class NodeVarDec extends Node implements IFuncStmt {
+	public TypeI typeI;
 	public LinkedList<NodeModifier> mods;
 	public String keyword;
 	public String id;
@@ -1008,7 +1004,6 @@ public abstract class Node {
 
     public static class NodeVarDecExplicit extends NodeVarDec {
 	public NodeType type;
-	public TypeI typeI;
 
 	public NodeVarDecExplicit(final int line, final int column, final LinkedList<NodeModifier> mods, final String keyword, final String id, final NodeType type, final IExpression expr) {
 	    super(line, column, mods, keyword, id, expr);
@@ -1035,7 +1030,6 @@ public abstract class Node {
 	    type.analyse();
 	    if (expr != null) ((Node) expr).analyse();
 	    typeI = new TypeI(type);
-
 	    if (expr == null) {
 		if (!type.optional && !(EnumPrimitive.isPrimitive(type.id) && (type.arrDims == 0))) semanticError(this, line, column, MISSING_ASSIGNMENT);
 	    } else {
@@ -1067,8 +1061,8 @@ public abstract class Node {
 		modifiers |= mod.asInt();
 	    }
 	    expr.analyse();
-	    final TypeI exprType = expr.getExprType();
-	    var = new Field(name, modifiers, exprType, setBlock != null, getBlock != null, Semantics.currentType());
+	    typeI = expr.getExprType();
+	    var = new Field(name, modifiers, typeI, setBlock != null, getBlock != null, Semantics.currentType());
 	    if (!Semantics.fieldExists(var)) Semantics.addField(var);
 	    else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
 	}
@@ -1750,7 +1744,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    return Semantics.getPrecedentType(exprTrue.getExprType(), exprFalse.getExprType());
+	    return TypeI.getPrecedentType(exprTrue.getExprType(), exprFalse.getExprType());
 	}
 
 	@Override
@@ -1795,7 +1789,7 @@ public abstract class Node {
 	    // thrown by the next method call
 	    exprOptionalType.copy().optional = false;
 	    exprNotNullType.copy().optional = false;
-	    final TypeI type = Semantics.getPrecedentType(exprOptionalType, exprNotNullType).setOptional(false);
+	    final TypeI type = TypeI.getPrecedentType(exprOptionalType, exprNotNullType).setOptional(false);
 	    return type;
 	}
 
@@ -1871,7 +1865,7 @@ public abstract class Node {
 	public void generate() {
 	    if (operatorOverloadFunc == null) {
 		// Simple binary expression on primitive types
-		final EnumInstructionOperand precedentType = Semantics.getPrecedentType(exprType1, exprType2).getInstructionType();
+		final EnumInstructionOperand precedentType = TypeI.getPrecedentType(exprType1, exprType2).getInstructionType();
 
 		// Generate the expressions and add the necessary casts
 		expr1.generate();
@@ -2029,37 +2023,28 @@ public abstract class Node {
 
     public static class NodeArray extends Node implements IExpression {
 
-	public NodeExprs exprs = new NodeExprs();
+	public LinkedList<IExpression> exprs = new LinkedList<>();
 	public TypeI arrayType, elementType;
 
-	public NodeArray(final int line, final int column, final NodeExprs nodeExprs) {
+	public NodeArray(final int line, final int column) {
 	    super(line, column);
-	    exprs = nodeExprs;
 	}
 
 	public void add(final IExpression expr) {
 	    exprs.add(expr);
 	}
-
+	
 	@Override
 	public void preAnalyse() {
-	    exprs.preAnalyse();
-	}
-
-	@Override
-	public void analyse() {
-	    exprs.analyse();
+	    for(IExpression expr : exprs) expr.analyse();
 	}
 
 	@Override
 	public TypeI getExprType() {
-	    final LinkedList<IExpression> exprList = exprs.exprs;
 	    // Just infer an Object array
-	    if (exprList.size() == 0) return TypeI.getObjectType().copy().setArrDims(1);
+	    if (exprs.size() == 0) return TypeI.getObjectType().copy().setArrDims(1);
 	    // Infer the precedent type within this array expression
-	    elementType = exprList.getFirst().getExprType();
-	    for (int i = 1; i < exprList.size(); i++)
-		elementType = Semantics.getPrecedentType(elementType, exprList.get(i).getExprType());
+	    elementType = TypeI.getPrecedentType(exprs);
 	    arrayType = elementType.copy().setArrDims(elementType.arrDims + 1);
 	    // expression
 	    return arrayType;
@@ -2070,7 +2055,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    final int len = exprs.exprs.size();
+	    final int len = exprs.size();
 	    int arrayStoreOpcode = Opcodes.AASTORE;
 	    final EnumInstructionOperand type = elementType.getInstructionType();
 	    GenNode arrayCreateNode = null;
@@ -2120,7 +2105,7 @@ public abstract class Node {
 	    addFuncStmt(new GenNodeInt(len));
 	    addFuncStmt(arrayCreateNode);
 	    int index = 0;
-	    for (final IExpression expr : exprs.exprs) {
+	    for (final IExpression expr : exprs) {
 		addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 		addFuncStmt(new GenNodeInt(index++));
 		expr.generate();
@@ -2670,7 +2655,7 @@ public abstract class Node {
 
 	    if (!errored) {
 		final TypeI result = new TypeI("Range", 0, false);
-		result.genericTypes.add(Semantics.getPrecedentType(startType, endType));
+		result.genericTypes.add(TypeI.getPrecedentType(startType, endType));
 		return result;
 	    } else return null;
 	}
@@ -3056,10 +3041,11 @@ public abstract class Node {
 	
     }
     
-    public static class NodeList extends Node implements IExpression {
+    public static class NodeList extends NodeArray implements IExpression {
 	
-	LinkedList<IExpression> exprs = new LinkedList<>(), mapValues = new LinkedList<>();
+	LinkedList<IExpression> mapValues = new LinkedList<>();
 	public boolean isHashMap = false;
+	public TypeI exprType;
 
 	public NodeList(int line, int column) {
 	    super(line, column);
@@ -3067,8 +3053,15 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    //TODO:
-	    return null;
+	    exprType = new TypeI(isHashMap ? "HashMap" : "LinkedList", 0, false);
+	    exprType.setQualifiedName(new QualifiedName(isHashMap ? "java.util.HashMap" : "java.util.LinkedList"));
+	    TypeI valType = TypeI.getPrecedentType(exprs);
+	    exprType.genericTypes.add(valType);
+	    if(isHashMap){
+		TypeI mapValType = TypeI.getPrecedentType(mapValues);
+		exprType.genericTypes.add(mapValType);
+	    }
+	    return exprType;
 	}
 
 	@Override
