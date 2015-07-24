@@ -105,6 +105,7 @@ public class Member {
 	    }
 	    for (final Object obj : node.methods) {
 		final MethodNode mNode = (MethodNode) obj;
+		if(mNode.name.equals("<clinit>")) continue;
 		addFunction(new Function(mNode, this));
 	    }
 	    for (final Object obj : node.fields) {

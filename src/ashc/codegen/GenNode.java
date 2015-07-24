@@ -6,6 +6,7 @@ import java.io.*;
 import java.util.*;
 
 import org.objectweb.asm.*;
+import org.objectweb.asm.util.*;
 
 import ashc.codegen.GenNode.GenNodeFunction.LocalVariable;
 import ashc.error.*;
@@ -142,6 +143,8 @@ public abstract class GenNode {
 		func.generate(cw);
 
 	    cw.visitEnd();
+	    
+	    verifyClassBytecode(cw);
 
 	    final File classFile = new File(dirSb.toString() + shortName + ".class");
 	    if (classFile.exists()) classFile.delete();
@@ -152,6 +155,19 @@ public abstract class GenNode {
 		fos.write(cw.toByteArray());
 		fos.close();
 	    } catch (final IOException e) {
+		e.printStackTrace();
+	    }
+	}
+
+	private void verifyClassBytecode(ClassWriter cw) {
+	    try {
+		InputStream is = new ByteArrayInputStream(cw.toByteArray());
+		ClassReader cr = new ClassReader(is);
+		ClassWriter cw2 = new ClassWriter(cr, ClassWriter.COMPUTE_FRAMES);
+		cr.accept(new CheckClassAdapter(cw2), 0);
+		PrintWriter pw = new PrintWriter(System.out);
+		CheckClassAdapter.verify(new ClassReader(cw2.toByteArray()), false, pw);
+	    } catch (IOException e) {
 		e.printStackTrace();
 	    }
 	}
@@ -208,9 +224,14 @@ public abstract class GenNode {
 		stmts.get(i).generate(mv);
 	    for (final LocalVariable local : locals.values())
 		if (!local.endLabelGenerated) mv.visitLabel(local.end.label);
-	    // System.out.printf("Function: name=%s, stack=%d, locals=%d%n",
-	    // name, maxStack, locals.size());
-	    mv.visitMaxs(-1, -1);
+	    
+	    try {
+		mv.visitMaxs(-1, -1);
+	    } catch (Exception e1) {
+		System.err.println("Oh shit son, I got an exception from visitMaxs(): " + e1);
+		e1.printStackTrace();
+	    }
+	    
 	    mv.visitEnd();
 	}
 
@@ -266,6 +287,7 @@ public abstract class GenNode {
 
 	public GenNodeVar(final String name, final String type, final int id, final String generics) {
 	    local = new GenNodeFunction.LocalVariable(name, type, id);
+	    System.out.println("GenVar: " + name + " : " + type);
 	    this.generics = generics;
 	    getCurrentFunction().addLocal(local);
 	}
@@ -462,6 +484,7 @@ public abstract class GenNode {
 	    switch (val) {
 		case -1:
 		    mv.visitInsn(ICONST_M1);
+		    break;
 		case 0:
 		    mv.visitInsn(ICONST_0);
 		    break;
@@ -633,7 +656,7 @@ public abstract class GenNode {
 	public GenNodeConditionalJump(final IExpression expr, final Label label) {
 	    this.expr = expr;
 	    this.label = label;
-	    compute();
+	    if(expr != null) compute();
 	    addToStackRequirement(-1);
 	}
 

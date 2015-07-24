@@ -2736,7 +2736,7 @@ public abstract class Node {
 		final boolean isLast = i == (size - 1);
 		final Label nextLabel = isLast ? null : new Label();
 		final NodeMatchCase matchCase = matchCases.get(i);
-		// If this is not the last case, dupe the expression so the next case can use it
+		// If this is not the last case and the next is not the last case, dupe the expression so the next case can use it
 		if (!isLast) addFuncStmt(new GenNodeOpcode(dupOpcode));
 		if (matchCase.exprs.size() == 1) matchCase.generate(type, endLabel, isLast, nextLabel);
 		else matchCase.generateMultipleExprs(type, endLabel, isLast, nextLabel, expr);
@@ -2777,7 +2777,7 @@ public abstract class Node {
 		block.generate();
 		return;
 	    }
-
+	    final int popOpcode = type.size == 1 ? Opcodes.POP : Opcodes.POP2;
 	    final IExpression expr = exprs.getFirst();
 	    final boolean isNullExpr = expr instanceof NodeNull;
 	    if (!isNullExpr) expr.generate();
@@ -2810,8 +2810,12 @@ public abstract class Node {
 	    }
 
 	    addFuncStmt(equalityNode);
-	    if (!is32BitPrimitive && !isNullExpr) if (!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
-	    else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, endLabel));
+	    if (!is32BitPrimitive && !isNullExpr) {
+		if (!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
+		else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, endLabel));
+	    }
+	    // If this is not the last case, then we have to pop off the duplicated expression from NodeMatch.generate()
+	    //if(!isLast) addFuncStmt(new GenNodeOpcode(popOpcode));
 	    block.generate();
 	    // If this is not the last, then we have to jump to the end of the match statement
 	    if (!isLast) addFuncStmt(new GenNodeJump(endLabel));
@@ -2857,8 +2861,10 @@ public abstract class Node {
 			else equalityNode = new GenNodeJump(Opcodes.IF_ICMPNE, isLast ? endLabel : nextLabel);
 		}
 		addFuncStmt(equalityNode);
-		if (!is32BitPrimitive && !isNullExpr) if (!isLastExpr) addFuncStmt(new GenNodeJump(Opcodes.IFNE, blockLabel));
-		else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, isLast ? endLabel : nextLabel));
+		if (!is32BitPrimitive && !isNullExpr){ 
+		    if (!isLastExpr) addFuncStmt(new GenNodeJump(Opcodes.IFNE, blockLabel));
+		    else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, isLast ? endLabel : nextLabel));
+		}
 		if (isLastExpr) addFuncStmt(new GenNodeJump(blockLabel));
 	    }
 	    // Each expression that isn't the last one has to jump here instead so that we can pop off the top stack value
@@ -2866,6 +2872,8 @@ public abstract class Node {
 	    addFuncStmt(new GenNodeOpcode(popOpcode));
 	    // The last expression jumps here instead
 	    addFuncStmt(new GenNodeLabel(blockLabel));
+	    // If this is not the last case, then we have to pop off the duplicated expression from NodeMatch.generate()
+	    //if(!isLast) addFuncStmt(new GenNodeOpcode(popOpcode));
 	    block.generate();
 	    // if we are not the last match case, then we have to jump to the end of the match statement so that we don't go through any other match cases
 	    if (!isLast) addFuncStmt(new GenNodeJump(endLabel));
