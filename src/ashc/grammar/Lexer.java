@@ -25,6 +25,7 @@ public class Lexer {
     public static enum TokenTypeGroup implements TokenMatcher {
 	EXPRESSION_STARTER(
 		"expression",
+		TokenType.NEW,
 		TokenType.NULL,
 		TokenType.BRACEL,
 		TokenType.ID,
@@ -139,6 +140,7 @@ public class Lexer {
 	IS("is "),
 	GET("get "),
 	SET("set "),
+	NEW("new "),
 
 	IF("if"),
 	ELSE("else"),

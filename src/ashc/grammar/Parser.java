@@ -631,11 +631,12 @@ public class Parser {
 	    case UNARYOP:
 		expr = new NodeUnary(next.line, next.columnStart, parsePrimaryExpression(), next.data, true);
 		break;
-	    case BRACEL:
-		rewind();
-		expr = new NodeArray(next.line, next.columnStart, parseCallArgs(TokenType.BRACEL, TokenType.BRACER));
-		break;
 	    case BRACKETL:
+		rewind();
+		expr = new NodeArray(next.line, next.columnStart, parseCallArgs(TokenType.BRACKETL, TokenType.BRACKETR));
+		break;
+	    case NEW:
+		expect(TokenType.BRACKETL);
 		final NodeArraySize arraySize = new NodeArraySize(next.line, next.columnStart, parseType());
 		expect(TokenType.COMMA);
 		do

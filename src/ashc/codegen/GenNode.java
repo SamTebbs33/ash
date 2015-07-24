@@ -228,7 +228,7 @@ public abstract class GenNode {
 	    try {
 		mv.visitMaxs(-1, -1);
 	    } catch (Exception e1) {
-		System.err.println("Oh shit son, I got an exception from visitMaxs(): " + e1);
+		System.out.println("Oh shit son, I got an exception from visitMaxs(): " + e1);
 		e1.printStackTrace();
 	    }
 	    
@@ -287,7 +287,6 @@ public abstract class GenNode {
 
 	public GenNodeVar(final String name, final String type, final int id, final String generics) {
 	    local = new GenNodeFunction.LocalVariable(name, type, id);
-	    System.out.println("GenVar: " + name + " : " + type);
 	    this.generics = generics;
 	    getCurrentFunction().addLocal(local);
 	}

@@ -17,7 +17,7 @@ public class AshCPUMain {
 		JGE = 14,
 		HLT = 15
 		
-	static const PROGRAM = {
+	static const PROGRAM = [
 		R1, -10,
 		CMP, 0,
 		JGT, 11,
@@ -27,7 +27,7 @@ public class AshCPUMain {
 		R1, 1,
 		HLT,
 		R1, -1
-	}
+	]
 
 	static var r1 = 0, r2 = 0
 	static var pc = 0, cmp = 0
