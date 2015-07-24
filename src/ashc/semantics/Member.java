@@ -84,14 +84,15 @@ public class Member {
 	}
 
 	public Type(final ClassNode node) {
-	    super(new QualifiedName(node.name.replace('/', '.')), node.access);
-	    type = EnumType.isEnum(modifiers) ? EnumType.ENUM : (EnumType.isInterface(modifiers) ? EnumType.INTERFACE : EnumType.CLASS);
+	    this(new QualifiedName(node.name.replace('/', '.')), node.access, EnumType.isEnum(node.access) ? EnumType.ENUM : (EnumType.isInterface(node.access) ? EnumType.INTERFACE : EnumType.CLASS));
 	    final String sig = node.signature;
 	    if (sig != null) {
-		// Get the type's generic declarations from the signature, they are in the format <T:Ljava/lang/Object;>;...
-		final String[] sigSections = sig.split(";");
-		for (final String section : sigSections)
-		    if (section.charAt(0) == '<') generics.add(section.substring(1, section.indexOf(':')));
+		int openIndex = sig.indexOf('<'), closeIndex = sig.indexOf('>');
+		if(openIndex > -1 && closeIndex > -1){
+		    final String[] sigSections = sig.substring(openIndex + 1, closeIndex).split(";");
+		    for (final String section : sigSections)
+			if(section.indexOf(':') > -1) generics.add(section.substring(0, section.indexOf(':')));
+		}
 	    }
 	    final String superCls = node.superName;
 	    if (superCls != null) {
