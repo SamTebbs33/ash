@@ -70,6 +70,7 @@ import ashc.grammar.Node.NodeVarDecExplicit;
 import ashc.grammar.Node.NodeVarDecImplicit;
 import ashc.grammar.Node.NodeVariable;
 import ashc.grammar.Node.NodeWhile;
+import ashc.util.*;
 
 /**
  * Ash
@@ -317,6 +318,7 @@ public class Parser {
 	final Token id = expect(TokenType.ID);
 	final NodeTypes generics = parseGenerics();
 	NodeArgs args = null;
+	NodeExprs superArgs = null;
 	NodeTypes types = null;
 
 	if (getNext().type == TokenType.PARENL) {
@@ -324,11 +326,15 @@ public class Parser {
 	    args = parseArgs();
 	} else rewind();
 
-	if (getNext().type == TokenType.COLON) types = parseSuperTypes();
+	if (getNext().type == TokenType.COLON){
+	    Tuple<NodeTypes, NodeExprs> supers = parseSuperTypes(true);
+	    types = supers.a;
+	    superArgs = supers.b;
+	}
 	else rewind();
 
 	final NodeClassBlock block = parseClassBlock();
-	return new NodeClassDec(id.line, id.columnStart, mods, types, args, id, block, generics);
+	return new NodeClassDec(id.line, id.columnStart, mods, types, args, id, block, generics, superArgs);
     }
 
     private NodeTypes parseGenerics() throws UnexpectedTokenException {
@@ -412,7 +418,7 @@ public class Parser {
 
     public NodeTypes parseGenericsDecs() throws UnexpectedTokenException {
 	if (getNext().data.equals("<")) {
-	    final NodeTypes types = parseSuperTypes();
+	    final NodeTypes types = parseSuperTypes(false).a;
 	    expect(">");
 	    return types;
 	} else rewind();
@@ -893,13 +899,19 @@ public class Parser {
 	return parseTypes(true);
     }
 
-    private NodeTypes parseSuperTypes() throws UnexpectedTokenException {
+    private Tuple<NodeTypes, NodeExprs> parseSuperTypes(boolean allowArgs) throws UnexpectedTokenException {
 	final NodeTypes types = new NodeTypes();
+	NodeExprs superArgs = null;
 	types.add(parseSuperType());
+	// Parse arguments to the super-class constructor
+	if(getNext().type == TokenType.PARENL){
+	    rewind();
+	    superArgs = parseCallArgs(TokenType.PARENL, TokenType.PARENR);
+	}else rewind();
 	while (getNext().type == TokenType.COMMA)
 	    types.add(parseSuperType());
 	rewind();
-	return types;
+	return new Tuple<NodeTypes, NodeExprs>(types, superArgs);
     }
 
     private NodeArgs parseArgs() throws UnexpectedTokenException {
@@ -998,7 +1010,7 @@ public class Parser {
 	    args = parseArgs();
 	} else rewind();
 
-	if (getNext().type == TokenType.COLON) types = parseSuperTypes();
+	if (getNext().type == TokenType.COLON) types = parseSuperTypes(false).a;
 	else rewind();
 
 	final NodeClassBlock block = parseClassBlock();

@@ -212,6 +212,7 @@ public abstract class Node {
 	public LinkedList<NodeModifier> mods;
 	public NodeTypes types;
 	public NodeArgs args;
+	public NodeExprs superArgs;
 	public Token id;
 	public NodeTypes generics;
 	public NodeBlock block;
@@ -384,10 +385,11 @@ public abstract class Node {
 	    super(line, column);
 	}
 
-	public NodeClassDec(final int line, final int column, final LinkedList<NodeModifier> mods, final NodeTypes types, final NodeArgs args, final Token id, final NodeClassBlock block, final NodeTypes generics) {
+	public NodeClassDec(final int line, final int column, final LinkedList<NodeModifier> mods, final NodeTypes types, final NodeArgs args, final Token id, final NodeClassBlock block, final NodeTypes generics, NodeExprs superArgs) {
 	    super(line, column, mods, types, args, id);
 	    this.block = block;
 	    this.generics = generics;
+	    this.superArgs = superArgs;
 	}
 
 	@Override

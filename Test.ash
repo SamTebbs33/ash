@@ -1,10 +1,9 @@
 import java.util.LinkedList, HashMap, ArrayList
 
-public class Test {
-	construct {
-		System.out.println(name)
-	}
+class Foo(a : int)
+
+public class Test(b : int) : Foo(b) {
 	public static func main(args : String[]) {
-		var test = Test("Sam")
+		var test = Test(10)
 	}
 }
