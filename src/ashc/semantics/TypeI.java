@@ -44,12 +44,11 @@ public class TypeI {
 
     public TypeI(final NodeType type) {
 	this(type.id, type.arrDims, type.optional);
-	int requiredGenerics = Semantics.getNumGenericsForType(type.id);
-	if(type.generics != null){
-	for (final NodeType nodeType : type.generics.types)
+	final int requiredGenerics = Semantics.getNumGenericsForType(type.id);
+	if (type.generics != null) for (final NodeType nodeType : type.generics.types)
 	    genericTypes.add(new TypeI(nodeType));
-	}
-	for(int i = genericTypes.size(); i < requiredGenerics; i++) genericTypes.add(objectType);
+	for (int i = genericTypes.size(); i < requiredGenerics; i++)
+	    genericTypes.add(objectType);
 	for (final NodeType nodeType : type.tupleTypes)
 	    tupleTypes.add(new TypeI(nodeType));
     }
@@ -229,8 +228,8 @@ public class TypeI {
 	} else if (isVoid()) name.append("V");
 	else if (EnumPrimitive.isPrimitive(shortName)) name.append(EnumPrimitive.getPrimitive(shortName).bytecodeChar);
 	else {
-	    Optional<ashc.semantics.Member.Type> typeOpt = Semantics.getType(shortName);
-	    if(typeOpt.isPresent()) name.append("L" + typeOpt.get().qualifiedName.toString().replace('.', '/') + ";");
+	    final Optional<ashc.semantics.Member.Type> typeOpt = Semantics.getType(shortName);
+	    if (typeOpt.isPresent()) name.append("L" + typeOpt.get().qualifiedName.toString().replace('.', '/') + ";");
 	    else name.append("Ljava/lang/Object;");
 	}
 	return name.toString();

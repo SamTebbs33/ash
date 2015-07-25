@@ -38,10 +38,10 @@ public class Semantics {
 	    this.type = type;
 	}
     }
-    
-    public static int getNumGenericsForType(String typeID){
-	if(EnumPrimitive.isPrimitive(typeID)) return 0;
-	Optional<Type> typeOpt = getType(typeID);
+
+    public static int getNumGenericsForType(final String typeID) {
+	if (EnumPrimitive.isPrimitive(typeID)) return 0;
+	final Optional<Type> typeOpt = getType(typeID);
 	return typeOpt.isPresent() ? typeOpt.get().generics.size() : 0;
     }
 
@@ -226,8 +226,9 @@ public class Semantics {
     public static Tuple<TypeI, Function> getOperationType(final TypeI type1, final TypeI type2, final Operator operator) {
 	if (type1.isNumeric() && type2.isNumeric()) {
 	    final EnumPrimitive result = operator.operation.primitive;
-	    return result == null ? new Tuple<TypeI, Function>(TypeI.getPrecedentType(type1, type2), null) : new Tuple<TypeI, Function>( new TypeI(result), null);
-	} else if (type1.equals(TypeI.getStringType()) && (operator.operation == EnumOperation.ADD)) return new Tuple<TypeI, Function>( TypeI.getStringType(), null);
+	    return result == null ? new Tuple<TypeI, Function>(TypeI.getPrecedentType(type1, type2), null)
+		    : new Tuple<TypeI, Function>(new TypeI(result), null);
+	} else if (type1.equals(TypeI.getStringType()) && (operator.operation == EnumOperation.ADD)) return new Tuple<TypeI, Function>(TypeI.getStringType(), null);
 
 	if (type1.isArray() || type1.isTuple() || type1.isVoid() || type1.isNull()) return null;
 	else if (type2.isArray() || type2.isTuple() || type2.isVoid() || type2.isNull()) return null;

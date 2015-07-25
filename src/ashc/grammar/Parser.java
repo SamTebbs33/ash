@@ -326,12 +326,11 @@ public class Parser {
 	    args = parseArgs();
 	} else rewind();
 
-	if (getNext().type == TokenType.COLON){
-	    Tuple<NodeTypes, NodeExprs> supers = parseSuperTypes(true);
+	if (getNext().type == TokenType.COLON) {
+	    final Tuple<NodeTypes, NodeExprs> supers = parseSuperTypes(true);
 	    types = supers.a;
 	    superArgs = supers.b;
-	}
-	else rewind();
+	} else rewind();
 
 	final NodeClassBlock block = parseClassBlock();
 	return new NodeClassDec(id.line, id.columnStart, mods, types, args, id, block, generics, superArgs);
@@ -584,7 +583,7 @@ public class Parser {
 	do {
 	    final Token id = expect(TokenType.ID, TokenType.SELF, TokenType.SUPER, TokenType.THIS);
 	    savePointer();
-	    NodeTypes generics = parseGenerics(false);
+	    final NodeTypes generics = parseGenerics(false);
 	    if (getNext().type == TokenType.PARENL) {
 		rewind();
 		final NodeExprs exprs = parseCallArgs(TokenType.PARENL, TokenType.PARENR);
@@ -594,10 +593,10 @@ public class Parser {
 		prefix = new NodeFuncCall(id.line, id.columnStart, id.data, exprs, prefix, unwrapped, id.type == TokenType.THIS, id.type == TokenType.SUPER, generics);
 	    } else {
 		// Variable nodes cannot have generics
-		if(generics != null){
+		if (generics != null) {
 		    restorePointer();
 		    throw new UnexpectedTokenException(getNext());
-		}else rewind();
+		} else rewind();
 		boolean unwrapped = false;
 		if (getNext().data.equals("!")) unwrapped = true;
 		else rewind();
@@ -681,7 +680,7 @@ public class Parser {
 		break;
 	    case NEW:
 		NodeArraySize arraySize = null;
-		Token next2 = expect(TokenType.BRACKETL, TokenType.BRACEL);
+		final Token next2 = expect(TokenType.BRACKETL, TokenType.BRACEL);
 		if (next2.type == TokenType.BRACKETL) {
 		    // Parse an array type and size initialiser
 		    arraySize = new NodeArraySize(next.line, next.columnStart, parseType());
@@ -875,8 +874,8 @@ public class Parser {
 	} else rewind();
 
 	if (allowMultipleDecs) // Var decs can be chained using commas, and they share the same keyword and modifiers
-	if (getNext().type == TokenType.COMMA) varDec.subDec = parseVarDec(mods, keyword, true);
-	else rewind();
+	    if (getNext().type == TokenType.COMMA) varDec.subDec = parseVarDec(mods, keyword, true);
+	    else rewind();
 
 	return varDec;
     }
@@ -904,15 +903,15 @@ public class Parser {
 	return parseTypes(true);
     }
 
-    private Tuple<NodeTypes, NodeExprs> parseSuperTypes(boolean allowArgs) throws UnexpectedTokenException {
+    private Tuple<NodeTypes, NodeExprs> parseSuperTypes(final boolean allowArgs) throws UnexpectedTokenException {
 	final NodeTypes types = new NodeTypes();
 	NodeExprs superArgs = null;
 	types.add(parseSuperType());
 	// Parse arguments to the super-class constructor
-	if(getNext().type == TokenType.PARENL){
+	if (getNext().type == TokenType.PARENL) {
 	    rewind();
 	    superArgs = parseCallArgs(TokenType.PARENL, TokenType.PARENR);
-	}else rewind();
+	} else rewind();
 	while (getNext().type == TokenType.COMMA)
 	    types.add(parseSuperType());
 	rewind();

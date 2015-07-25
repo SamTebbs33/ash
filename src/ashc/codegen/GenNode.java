@@ -757,14 +757,14 @@ public abstract class GenNode {
 					break;
 				}
 			    } else // Compare the references
-				switch (node.operator.operation) {
-				    case NOT_EQUAL:
-					opcode = IF_ACMPEQ;
-					break;
-				    case EQUAL:
-					opcode = IF_ACMPNE;
-					break;
-				}
+			    switch (node.operator.operation) {
+				case NOT_EQUAL:
+				    opcode = IF_ACMPEQ;
+				    break;
+				case EQUAL:
+				    opcode = IF_ACMPNE;
+				    break;
+			    }
 
 		    }
 		} else {
@@ -971,7 +971,7 @@ public abstract class GenNode {
 			case MULTIPLY:
 			    opcode = IMUL;
 			    break;
-			    // case POW: Pow is not defined for integers
+			// case POW: Pow is not defined for integers
 			case SUBTRACT:
 			    opcode = ISUB;
 			    break;
@@ -1058,7 +1058,7 @@ public abstract class GenNode {
 			    else if (operation == EnumOperation.LESS_EQUAL) opcode = IFGT;
 			    else if (operation == EnumOperation.GREATER_EQUAL) opcode = IFLT;
 			    final Label l0 = new Label(),
-			    l1 = new Label();
+				    l1 = new Label();
 			    mv.visitJumpInsn(opcode, l0);
 			    mv.visitInsn(ICONST_1);
 			    mv.visitJumpInsn(GOTO, l1);

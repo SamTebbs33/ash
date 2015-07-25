@@ -45,7 +45,6 @@ import ashc.codegen.GenNode.GenNodeVarStore;
 import ashc.codegen.GenNode.IGenNodeStmt;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
-import ashc.grammar.Node.NodeFuncBlock;
 import ashc.load.*;
 import ashc.main.*;
 import ashc.semantics.*;
@@ -257,15 +256,11 @@ public abstract class Node {
 
 	    if (types != null) for (final NodeType nodeType : types.types) {
 		if (nodeType.optional) semanticError(this, line, column, CANNOT_EXTEND_OPTIONAL_TYPE, nodeType.id);
-		if(generics != null){
-		for (final NodeType generic : nodeType.generics.types)
+		if (generics != null) for (final NodeType generic : nodeType.generics.types)
 		    type.addGeneric(nodeType.id, new TypeI(generic));
-		}
 	    }
-	    if(generics != null){
-	    for (final NodeType generic : generics.types)
+	    if (generics != null) for (final NodeType generic : generics.types)
 		type.generics.add(generic.id);
-	    }
 
 	    Semantics.addType(type, true);
 
@@ -274,10 +269,8 @@ public abstract class Node {
 	    if (args != null) {
 		defConstructor = new Function(Scope.getNamespace().copy().add(id.data), EnumModifier.PUBLIC.intVal, type);
 		defConstructor.returnType = new TypeI(name.shortName, 0, false);
-		if(generics != null){
-		for (final NodeType generic : generics.types)
+		if (generics != null) for (final NodeType generic : generics.types)
 		    defConstructor.generics.add(generic.id);
-		}
 		for (final NodeArg arg : args.args) {
 		    arg.preAnalyse();
 		    if (!arg.errored) {
@@ -316,10 +309,10 @@ public abstract class Node {
 		    if (!errored) type.supers.add(typeOpt.get());
 		}
 		if (!hasSuperClass) type.supers.addFirst(Semantics.getType("Object").get());
-		if(superArgs != null){
+		if (superArgs != null) {
 		    superArgs.analyse();
-		    Type superClass = type.getSuperClass();
-		    if(superClass.getFunc(superClass.qualifiedName.shortName, superArgs) == null) semanticError(this, superArgs.line, superArgs.column, CONSTRUCTOR_DOES_NOT_EXIST, superClass.qualifiedName.shortName);
+		    final Type superClass = type.getSuperClass();
+		    if (superClass.getFunc(superClass.qualifiedName.shortName, superArgs) == null) semanticError(this, superArgs.line, superArgs.column, CONSTRUCTOR_DOES_NOT_EXIST, superClass.qualifiedName.shortName);
 		}
 	    } else type.supers.addFirst(Semantics.getType("Object").get());
 	}
@@ -358,9 +351,10 @@ public abstract class Node {
 		    GenNode.addFuncStmt(new GenNodeFieldStore(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName(), field.isStatic()));
 		    argID++;
 		}
-		if (block instanceof NodeClassBlock){
+		if (block instanceof NodeClassBlock) {
 		    NodeFuncDec.initialiseVarDecs(((NodeClassBlock) block).varDecs);
-		    for(NodeFuncBlock cBlock :  ((NodeClassBlock)block).constructBlocks) cBlock.generate();
+		    for (final NodeFuncBlock cBlock : ((NodeClassBlock) block).constructBlocks)
+			cBlock.generate();
 		}
 		GenNode.addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
 		GenNode.exitGenNodeFunction();
@@ -394,7 +388,7 @@ public abstract class Node {
 	    super(line, column);
 	}
 
-	public NodeClassDec(final int line, final int column, final LinkedList<NodeModifier> mods, final NodeTypes types, final NodeArgs args, final Token id, final NodeClassBlock block, final NodeTypes generics, NodeExprs superArgs) {
+	public NodeClassDec(final int line, final int column, final LinkedList<NodeModifier> mods, final NodeTypes types, final NodeArgs args, final Token id, final NodeClassBlock block, final NodeTypes generics, final NodeExprs superArgs) {
 	    super(line, column, mods, types, args, id);
 	    this.block = block;
 	    this.generics = generics;
@@ -411,10 +405,10 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    super.analyse();
-	    if(args == null){
+	    if (args == null) {
 		// Check if there is a "consruct" block in this class where there is no default constructor
-		LinkedList<NodeFuncBlock> cBlocks = ((NodeClassBlock)block).constructBlocks;
-		if(cBlocks.size() > 0) semanticError(this, cBlocks.getFirst().line, cBlocks.getFirst().column, CONSTRUCT_BLOCK_NOT_ALLOWED);
+		final LinkedList<NodeFuncBlock> cBlocks = ((NodeClassBlock) block).constructBlocks;
+		if (cBlocks.size() > 0) semanticError(this, cBlocks.getFirst().line, cBlocks.getFirst().column, CONSTRUCT_BLOCK_NOT_ALLOWED);
 	    }
 	    block.analyse();
 	    Semantics.exitType();
@@ -616,7 +610,8 @@ public abstract class Node {
 		varDec.preAnalyse();
 	    for (final NodeFuncBlock block : initBlocks)
 		block.preAnalyse();
-	    for(NodeFuncBlock block : constructBlocks) block.preAnalyse();
+	    for (final NodeFuncBlock block : constructBlocks)
+		block.preAnalyse();
 	}
 
 	@Override
@@ -626,7 +621,8 @@ public abstract class Node {
 	    for (final NodeFuncDec funcDec : funcDecs)
 		funcDec.analyse();
 	    Scope.push(new FuncScope(TypeI.getVoidType(), false, false));
-	    for(NodeFuncBlock block : constructBlocks) block.analyse();
+	    for (final NodeFuncBlock block : constructBlocks)
+		block.analyse();
 	    Scope.pop();
 	    if (initBlocks.size() > 0) {
 		Scope.push(new FuncScope(TypeI.getVoidType(), false, true));
@@ -667,7 +663,7 @@ public abstract class Node {
 	    initBlocks.add(block);
 	}
 
-	public void addConstructBlock(NodeFuncBlock block) {
+	public void addConstructBlock(final NodeFuncBlock block) {
 	    constructBlocks.add(block);
 	}
 
@@ -732,7 +728,7 @@ public abstract class Node {
 			for (final String generic : Semantics.currentType().generics)
 			    if (id.equals(generic)) return;
 			semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
-		    } else if (!EnumPrimitive.isPrimitive(id) && generics != null) if (generics.types.size() > typeOpt.get().generics.size()) semanticError(this, line, column, TOO_MANY_GENERICS);
+		    } else if (!EnumPrimitive.isPrimitive(id) && (generics != null)) if (generics.types.size() > typeOpt.get().generics.size()) semanticError(this, line, column, TOO_MANY_GENERICS);
 		}
 		if (EnumPrimitive.isPrimitive(id) && optional && (arrDims == 0)) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
 	    } else for (int i = 0; i < tupleTypes.size(); i++)
@@ -1223,7 +1219,7 @@ public abstract class Node {
 	public Function func;
 	public TypeI prefixType;
 
-	public NodeFuncCall(final int line, final int column, final String id, final NodeExprs args, final NodePrefix prefix, final boolean unwrapped, final boolean isThisCall, final boolean isSuperCall, NodeTypes generics) {
+	public NodeFuncCall(final int line, final int column, final String id, final NodeExprs args, final NodePrefix prefix, final boolean unwrapped, final boolean isThisCall, final boolean isSuperCall, final NodeTypes generics) {
 	    super(line, column);
 	    this.args = args;
 	    this.prefix = prefix;
@@ -1244,10 +1240,12 @@ public abstract class Node {
 	    TypeI result;
 	    if (prefix == null) {
 		final TypeI funcType = func.returnType.copy();
-		if(func.isConstructor() && generics != null){
-		    int genericsRequired = func.enclosingType.generics.size();
-		    for(NodeType generic : generics.types) funcType.genericTypes.add(new TypeI(generic));
-		    for(int i = funcType.genericTypes.size(); i < genericsRequired; i++) funcType.genericTypes.add(TypeI.getObjectType());
+		if (func.isConstructor() && (generics != null)) {
+		    final int genericsRequired = func.enclosingType.generics.size();
+		    for (final NodeType generic : generics.types)
+			funcType.genericTypes.add(new TypeI(generic));
+		    for (int i = funcType.genericTypes.size(); i < genericsRequired; i++)
+			funcType.genericTypes.add(TypeI.getObjectType());
 		}
 		// Fill in the function's generics based on the arguments
 		int i = 0;
@@ -1284,7 +1282,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    args.analyse();
-	    if(generics != null) generics.analyse();
+	    if (generics != null) generics.analyse();
 	    if (prefix != null) prefix.analyse();
 	    // If it's a "this" call, change the id to the name of the current
 	    // type
@@ -1882,8 +1880,8 @@ public abstract class Node {
 
 	    final Tuple<TypeI, Function> operation = Semantics.getOperationType(exprType1, exprType2, operator);
 	    if (operation == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, operator.opStr, exprType1, exprType2);
-	    operatorOverloadFunc = (Function) operation.b;
-	    return (TypeI) operation.a;
+	    operatorOverloadFunc = operation.b;
+	    return operation.a;
 
 	}
 
@@ -2829,10 +2827,8 @@ public abstract class Node {
 	    }
 
 	    addFuncStmt(equalityNode);
-	    if (!is32BitPrimitive && !isNullExpr){ 
-		if (!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
-	    	else addFuncStmt(new GenNodeJump(Opcodes.IFNE, endLabel));
-	    }
+	    if (!is32BitPrimitive && !isNullExpr) if (!isLast) addFuncStmt(new GenNodeJump(Opcodes.IFEQ, nextLabel));
+	    else addFuncStmt(new GenNodeJump(Opcodes.IFNE, endLabel));
 	    // If this is not the last case, then we have to pop off the duplicated expression from NodeMatch.generate()
 	    // if(!isLast) addFuncStmt(new GenNodeOpcode(popOpcode));
 	    block.generate();
@@ -2849,7 +2845,7 @@ public abstract class Node {
 	    for (int i = 0; i < size; i++) {
 		final boolean isLastExpr = i == (size - 1);
 		if (!isLastExpr) // Dupe the match statement's expression so that each other expression in this match case can be tested
-		addFuncStmt(new GenNodeOpcode(dupeOpcode));
+		    addFuncStmt(new GenNodeOpcode(dupeOpcode));
 		final IExpression expr = exprs.get(i);
 		final boolean isNullExpr = expr instanceof NodeNull;
 		boolean is32BitPrimitive = false;
@@ -2880,10 +2876,8 @@ public abstract class Node {
 			else equalityNode = new GenNodeJump(Opcodes.IF_ICMPNE, isLast ? endLabel : nextLabel);
 		}
 		addFuncStmt(equalityNode);
-		if (!is32BitPrimitive && !isNullExpr){ 
-		    if (!isLastExpr) addFuncStmt(new GenNodeJump(Opcodes.IFNE, blockLabel));
-		    else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, isLast ? endLabel : nextLabel));
-		}
+		if (!is32BitPrimitive && !isNullExpr) if (!isLastExpr) addFuncStmt(new GenNodeJump(Opcodes.IFNE, blockLabel));
+		else addFuncStmt(new GenNodeJump(Opcodes.IFEQ, isLast ? endLabel : nextLabel));
 		if (isLastExpr) addFuncStmt(new GenNodeJump(blockLabel));
 	    }
 	    // Each expression that isn't the last one has to jump here instead so that we can pop off the top stack value
@@ -3075,10 +3069,10 @@ public abstract class Node {
 	public void analyse() {
 	    elementType.analyse();
 	}
-	
+
 	@Override
 	public TypeI getExprType() {
-	    boolean isArrayList = arrDims.size() > 0;
+	    final boolean isArrayList = arrDims.size() > 0;
 	    type = new TypeI(isArrayList ? "ArrayList" : "LinkedList", 0, false);
 	    type.genericTypes.add(new TypeI(elementType));
 	    type.qualifiedName = new QualifiedName(isArrayList ? "java/util/ArrayList" : "java/util/LinkedList");
@@ -3087,15 +3081,15 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    boolean isArrayList = arrDims.size() > 0;
-	    String name = isArrayList ? "java/util/ArrayList" : "java/util/LinkedList";
+	    final boolean isArrayList = arrDims.size() > 0;
+	    final String name = isArrayList ? "java/util/ArrayList" : "java/util/LinkedList";
 	    addFuncStmt(new GenNodeNew(name));
 	    addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 	    String sig = "";
-	    if(isArrayList){
+	    if (isArrayList) {
 		sig = "(I)V";
 		arrDims.getFirst().generate();
-	    }else sig = "()V";
+	    } else sig = "()V";
 	    addFuncStmt(new GenNodeFuncCall(name, "<init>", sig, false, false, false, true));
 	}
 
@@ -3129,23 +3123,23 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    if(isHashMap){
+	    if (isHashMap) {
 		addFuncStmt(new GenNodeNew("java/util/HashMap"));
 		addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 		addFuncStmt(new GenNodeFuncCall("java/util/HashMap", "<init>", "()V", false, false, false, true));
 		int i = 0;
-		for(IExpression expr : exprs) {
+		for (final IExpression expr : exprs) {
 		    addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 		    expr.generate();
 		    mapValues.get(i++).generate();
 		    addFuncStmt(new GenNodeFuncCall("java/util/Map", "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true, false, false, false));
 		    addFuncStmt(new GenNodeOpcode(Opcodes.POP)); // Pop off the reference returned by put()
 		}
-	    }else{
+	    } else {
 		addFuncStmt(new GenNodeNew("java/util/LinkedList"));
 		addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 		addFuncStmt(new GenNodeFuncCall("java/util/LinkedList", "<init>", "()V", false, false, false, true));
-		for(IExpression expr : exprs) {
+		for (final IExpression expr : exprs) {
 		    addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 		    expr.generate();
 		    addFuncStmt(new GenNodeFuncCall("java/util/List", "add", "(Ljava/lang/Object;)Z", true, false, false, false));

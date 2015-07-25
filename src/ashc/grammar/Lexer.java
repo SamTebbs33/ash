@@ -44,9 +44,9 @@ public class Lexer {
 		TokenType.STRING,
 		TokenType.CHAR,
 		TokenType.BOOL), FUNC_CALL("function call", TokenType.THIS, TokenType.ID, TokenType.SELF, TokenType.SUPER), VAR_DEC(
-		"variable/constant declaration",
-		TokenType.VAR,
-		TokenType.CONST), CONTROL_STMT("control statement", TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.MATCH);
+			"variable/constant declaration",
+			TokenType.VAR,
+			TokenType.CONST), CONTROL_STMT("control statement", TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.MATCH);
 
 	public TokenType[] tokenTypes;
 	public String name;
