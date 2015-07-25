@@ -15,6 +15,7 @@ import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
 import ashc.semantics.Member.Variable;
+import ashc.util.*;
 
 /**
  * Ash
@@ -36,6 +37,12 @@ public class Semantics {
 	    this.overloadFunc = overloadFunc;
 	    this.type = type;
 	}
+    }
+    
+    public static int getNumGenericsForType(String typeID){
+	if(EnumPrimitive.isPrimitive(typeID)) return 0;
+	Optional<Type> typeOpt = getType(typeID);
+	return typeOpt.isPresent() ? typeOpt.get().generics.size() : 0;
     }
 
     public static boolean typeExists(final String typeName) {
@@ -216,13 +223,11 @@ public class Semantics {
 	aliases.put(alias, type);
     }
 
-    // Returning an array here is a messy hack, but the best way I can think of
-    // returning both a TypeI and Function, rather than using a new class. When porting to ash, I'll just use a tuple
-    public static Object[] getOperationType(final TypeI type1, final TypeI type2, final Operator operator) {
+    public static Tuple<TypeI, Function> getOperationType(final TypeI type1, final TypeI type2, final Operator operator) {
 	if (type1.isNumeric() && type2.isNumeric()) {
 	    final EnumPrimitive result = operator.operation.primitive;
-	    return result == null ? new Object[] { TypeI.getPrecedentType(type1, type2), null } : new Object[] { new TypeI(result), null };
-	} else if (type1.equals(TypeI.getStringType()) && (operator.operation == EnumOperation.ADD)) return new Object[] { TypeI.getStringType(), null };
+	    return result == null ? new Tuple<TypeI, Function>(TypeI.getPrecedentType(type1, type2), null) : new Tuple<TypeI, Function>( new TypeI(result), null);
+	} else if (type1.equals(TypeI.getStringType()) && (operator.operation == EnumOperation.ADD)) return new Tuple<TypeI, Function>( TypeI.getStringType(), null);
 
 	if (type1.isArray() || type1.isTuple() || type1.isVoid() || type1.isNull()) return null;
 	else if (type2.isArray() || type2.isTuple() || type2.isVoid() || type2.isNull()) return null;
@@ -235,7 +240,7 @@ public class Semantics {
 	    parameter.add(type2);
 	    type = Semantics.getType(type1.shortName).get();
 	    func = type.getFunc(operator.opStr, parameter);
-	    if (func != null) return new Object[] { func.returnType, func };
+	    if (func != null) return new Tuple<TypeI, Function>(func.returnType, func);
 	}
 	if (!type2.isPrimitive()) {
 	    // Check type 2 for operator overloads
@@ -243,7 +248,7 @@ public class Semantics {
 	    parameter.add(type1);
 	    type = Semantics.getType(type2.shortName).get();
 	    func = type.getFunc(operator.opStr, parameter);
-	    if (func != null) return new Object[] { func.returnType, func };
+	    if (func != null) return new Tuple<TypeI, Function>(func.returnType, func);
 	}
 	return null;
     }
@@ -253,10 +258,6 @@ public class Semantics {
 	if (type.isArray() || type.isNull() || type.isTuple() || type.isVoid()) return null;
 	final Function func = Semantics.getType(type.shortName).get().getFunc(operator.opStr, new LinkedList<>());
 	return func != null ? new Operation(func, func.returnType) : null;
-    }
-
-    public static TypeI getGeneric(final LinkedList<TypeI> generics, final int index) {
-	return generics.size() <= index ? TypeI.getObjectType() : generics.get(index);
     }
 
 }

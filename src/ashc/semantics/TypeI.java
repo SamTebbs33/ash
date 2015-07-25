@@ -44,8 +44,12 @@ public class TypeI {
 
     public TypeI(final NodeType type) {
 	this(type.id, type.arrDims, type.optional);
+	int requiredGenerics = Semantics.getNumGenericsForType(type.id);
+	if(type.generics != null){
 	for (final NodeType nodeType : type.generics.types)
 	    genericTypes.add(new TypeI(nodeType));
+	}
+	for(int i = genericTypes.size(); i < requiredGenerics; i++) genericTypes.add(objectType);
 	for (final NodeType nodeType : type.tupleTypes)
 	    tupleTypes.add(new TypeI(nodeType));
     }
@@ -64,28 +68,6 @@ public class TypeI {
 
 	for (final NodeType t : nodeType.type.generics.types)
 	    genericTypes.add(new TypeI(t));
-    }
-
-    public static TypeI fromClass(final Class cls) {
-	String clsName = cls.getName();
-	if (EnumPrimitive.isJavaPrimitive(clsName)) return new TypeI(EnumPrimitive.getFromJavaPrimitive(clsName));
-	int arrDims = clsName.length();
-	clsName = clsName.replace("[", "");
-	arrDims = arrDims - clsName.length();
-	final String shortName = clsName.substring(clsName.lastIndexOf('.') + 1);
-	if (clsName.charAt(0) == 'L') clsName = clsName.substring(1);
-	clsName = clsName.replace(";", "");
-	final TypeI type = new TypeI(shortName, arrDims, false);
-	type.qualifiedName = new QualifiedName("");
-	for (final String section : clsName.split("\\."))
-	    type.qualifiedName.add(section);
-	/*
-	 * if(!clsName.equals("void") && !EnumPrimitive.isJavaPrimitive(clsName)){ boolean isGeneric = false; for(TypeVariable tVar : cls.getTypeParameters())
-	 * if(tVar.getName().equals(clsName)){ isGeneric = true; break; } if(!isGeneric) TypeImporter.loadClass(clsName); }
-	 */
-	// Since all Java types are nullable, this must be set to optional
-	type.optional = true;
-	return type;
     }
 
     @Override
@@ -146,7 +128,7 @@ public class TypeI {
 	// Ensure this type's generics can be assigned to the other type's
 	int i = 0;
 	for (final TypeI generic : genericTypes)
-	    if (!generic.canBeAssignedTo(Semantics.getGeneric(exprType.genericTypes, i++))) return false;
+	    if (!generic.canBeAssignedTo(exprType.genericTypes.get(i++))) return false;
 
 	// Optionals can be assigned to non-optionals, but not the other way
 	// around
@@ -246,7 +228,11 @@ public class TypeI {
 	    name = new StringBuffer("L" + tupleClassName + ";");
 	} else if (isVoid()) name.append("V");
 	else if (EnumPrimitive.isPrimitive(shortName)) name.append(EnumPrimitive.getPrimitive(shortName).bytecodeChar);
-	else name.append("L" + Semantics.getType(shortName).get().qualifiedName.toString().replace('.', '/') + ";");
+	else {
+	    Optional<ashc.semantics.Member.Type> typeOpt = Semantics.getType(shortName);
+	    if(typeOpt.isPresent()) name.append("L" + typeOpt.get().qualifiedName.toString().replace('.', '/') + ";");
+	    else name.append("Ljava/lang/Object;");
+	}
 	return name.toString();
     }
 

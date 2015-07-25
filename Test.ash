@@ -1,9 +1,3 @@
-import java.util.LinkedList, HashMap, ArrayList
+class A(name : String)
 
-class Foo(a : int)
-
-public class Test(b : int) : Foo(b) {
-	public static func main(args : String[]) {
-		var test = Test(10)
-	}
-}
+class B(name : String) : A(name)

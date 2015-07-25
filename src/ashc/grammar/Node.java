@@ -257,11 +257,15 @@ public abstract class Node {
 
 	    if (types != null) for (final NodeType nodeType : types.types) {
 		if (nodeType.optional) semanticError(this, line, column, CANNOT_EXTEND_OPTIONAL_TYPE, nodeType.id);
+		if(generics != null){
 		for (final NodeType generic : nodeType.generics.types)
 		    type.addGeneric(nodeType.id, new TypeI(generic));
+		}
 	    }
+	    if(generics != null){
 	    for (final NodeType generic : generics.types)
 		type.generics.add(generic.id);
+	    }
 
 	    Semantics.addType(type, true);
 
@@ -270,8 +274,10 @@ public abstract class Node {
 	    if (args != null) {
 		defConstructor = new Function(Scope.getNamespace().copy().add(id.data), EnumModifier.PUBLIC.intVal, type);
 		defConstructor.returnType = new TypeI(name.shortName, 0, false);
+		if(generics != null){
 		for (final NodeType generic : generics.types)
 		    defConstructor.generics.add(generic.id);
+		}
 		for (final NodeArg arg : args.args) {
 		    arg.preAnalyse();
 		    if (!arg.errored) {
@@ -290,7 +296,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    // Ensure the super-types are valid
-
+	    Semantics.enterType(type);
 	    if (types != null) {
 		types.analyse();
 		boolean hasSuperClass = false;
@@ -310,9 +316,12 @@ public abstract class Node {
 		    if (!errored) type.supers.add(typeOpt.get());
 		}
 		if (!hasSuperClass) type.supers.addFirst(Semantics.getType("Object").get());
-
+		if(superArgs != null){
+		    superArgs.analyse();
+		    Type superClass = type.getSuperClass();
+		    if(superClass.getFunc(superClass.qualifiedName.shortName, superArgs) == null) semanticError(this, superArgs.line, superArgs.column, CONSTRUCTOR_DOES_NOT_EXIST, superClass.qualifiedName.shortName);
+		}
 	    } else type.supers.addFirst(Semantics.getType("Object").get());
-	    Semantics.enterType(type);
 	}
 
 	@Override
@@ -723,7 +732,7 @@ public abstract class Node {
 			for (final String generic : Semantics.currentType().generics)
 			    if (id.equals(generic)) return;
 			semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
-		    } else if (!EnumPrimitive.isPrimitive(id)) if (generics.types.size() > typeOpt.get().generics.size()) semanticError(this, line, column, TOO_MANY_GENERICS);
+		    } else if (!EnumPrimitive.isPrimitive(id) && generics != null) if (generics.types.size() > typeOpt.get().generics.size()) semanticError(this, line, column, TOO_MANY_GENERICS);
 		}
 		if (EnumPrimitive.isPrimitive(id) && optional && (arrDims == 0)) semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
 	    } else for (int i = 0; i < tupleTypes.size(); i++)
@@ -1207,13 +1216,14 @@ public abstract class Node {
 	public boolean isThisCall, isSuperCall;
 	public String id;
 	public NodeExprs args;
+	public NodeTypes generics;
 	public NodePrefix prefix;
 	public boolean unwrapped;
 
 	public Function func;
 	public TypeI prefixType;
 
-	public NodeFuncCall(final int line, final int column, final String id, final NodeExprs args, final NodePrefix prefix, final boolean unwrapped, final boolean isThisCall, final boolean isSuperCall) {
+	public NodeFuncCall(final int line, final int column, final String id, final NodeExprs args, final NodePrefix prefix, final boolean unwrapped, final boolean isThisCall, final boolean isSuperCall, NodeTypes generics) {
 	    super(line, column);
 	    this.args = args;
 	    this.prefix = prefix;
@@ -1221,6 +1231,7 @@ public abstract class Node {
 	    this.id = id;
 	    this.isThisCall = isThisCall;
 	    this.isSuperCall = isSuperCall;
+	    this.generics = generics;
 	}
 
 	@Override
@@ -1233,6 +1244,11 @@ public abstract class Node {
 	    TypeI result;
 	    if (prefix == null) {
 		final TypeI funcType = func.returnType.copy();
+		if(func.isConstructor() && generics != null){
+		    int genericsRequired = func.enclosingType.generics.size();
+		    for(NodeType generic : generics.types) funcType.genericTypes.add(new TypeI(generic));
+		    for(int i = funcType.genericTypes.size(); i < genericsRequired; i++) funcType.genericTypes.add(TypeI.getObjectType());
+		}
 		// Fill in the function's generics based on the arguments
 		int i = 0;
 		for (final String g : func.generics) {
@@ -1268,6 +1284,7 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    args.analyse();
+	    if(generics != null) generics.analyse();
 	    if (prefix != null) prefix.analyse();
 	    // If it's a "this" call, change the id to the name of the current
 	    // type
@@ -1335,6 +1352,7 @@ public abstract class Node {
 	    if (isArrayLength) return new TypeI(EnumPrimitive.INT);
 	    TypeI result = var.type;
 	    int i = 0;
+	    System.out.println("Prefix: " + prefixType);
 	    if (var.enclosingType != null) for (final String generic : var.enclosingType.generics)
 		if (generic.equals(var.type.shortName)) {
 		    result = prefixType.genericTypes.get(i);
@@ -1862,13 +1880,10 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    if (errored) return null;
 
-	    // Returning an array here is messy, but the best way I can
-	    // think of returning both a TypeI and Function, rather than using a
-	    // new class
-	    final Object[] operation = Semantics.getOperationType(exprType1, exprType2, operator);
+	    final Tuple<TypeI, Function> operation = Semantics.getOperationType(exprType1, exprType2, operator);
 	    if (operation == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, operator.opStr, exprType1, exprType2);
-	    operatorOverloadFunc = (Function) operation[1];
-	    return (TypeI) operation[0];
+	    operatorOverloadFunc = (Function) operation.b;
+	    return (TypeI) operation.a;
 
 	}
 
@@ -2391,7 +2406,7 @@ public abstract class Node {
 	    varType = TypeI.getObjectType();
 	    if (exprType.isTuple()) semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
 	    if (exprType.isArray()) varType = exprType.copy().setArrDims(exprType.arrDims - 1);
-	    else if (exprType.isRange()) varType = Semantics.getGeneric(exprType.genericTypes, 0);
+	    else if (exprType.isRange()) varType = exprType.genericTypes.get(0);
 	    else {
 		final Optional<Type> type = Semantics.getType(exprType.shortName);
 		if (type.isPresent()) if (type.get().hasSuper(new QualifiedName("java").add("lang").add("Iterable"))) {
@@ -2719,7 +2734,7 @@ public abstract class Node {
 		    if (!matchCase.isDefaultCase && !matchCase.errored) for (final IExpression expr : matchCase.exprs) {
 			TypeI caseType = expr.getExprType();
 			// The generic used for ranges must be extracted
-			if (caseType.isRange()) caseType = Semantics.getGeneric(caseType.genericTypes, 0);
+			if (caseType.isRange()) caseType = caseType.genericTypes.get(0);
 			if (!exprType.canBeAssignedTo(caseType)) semanticError(this, matchCase.line, matchCase.column, INCOMPATIBLE_TYPES, exprType, caseType);
 		    }
 		}

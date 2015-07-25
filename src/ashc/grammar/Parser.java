@@ -431,7 +431,7 @@ public class Parser {
 	    expect(">");
 	    return types;
 	} else rewind();
-	return new NodeTypes();
+	return null;
     }
 
     private NodeFuncBlock parseFuncBlock(final boolean allowSingleLine, final boolean singleLineExpression) throws UnexpectedTokenException {
@@ -583,16 +583,21 @@ public class Parser {
 	NodePrefix prefix = null;
 	do {
 	    final Token id = expect(TokenType.ID, TokenType.SELF, TokenType.SUPER, TokenType.THIS);
-	    // final NodeTypes generics = parseGenerics(false);
+	    savePointer();
+	    NodeTypes generics = parseGenerics(false);
 	    if (getNext().type == TokenType.PARENL) {
 		rewind();
 		final NodeExprs exprs = parseCallArgs(TokenType.PARENL, TokenType.PARENR);
 		boolean unwrapped = false;
 		if (getNext().data.equals("!")) unwrapped = true;
 		else rewind();
-		prefix = new NodeFuncCall(id.line, id.columnStart, id.data, exprs, prefix, unwrapped, id.type == TokenType.THIS, id.type == TokenType.SUPER);
+		prefix = new NodeFuncCall(id.line, id.columnStart, id.data, exprs, prefix, unwrapped, id.type == TokenType.THIS, id.type == TokenType.SUPER, generics);
 	    } else {
-		rewind();
+		// Variable nodes cannot have generics
+		if(generics != null){
+		    restorePointer();
+		    throw new UnexpectedTokenException(getNext());
+		}else rewind();
 		boolean unwrapped = false;
 		if (getNext().data.equals("!")) unwrapped = true;
 		else rewind();
@@ -676,7 +681,8 @@ public class Parser {
 		break;
 	    case NEW:
 		NodeArraySize arraySize = null;
-		if (expect(TokenType.BRACKETL, TokenType.BRACEL).type == TokenType.BRACKETL) {
+		Token next2 = expect(TokenType.BRACKETL, TokenType.BRACEL);
+		if (next2.type == TokenType.BRACKETL) {
 		    // Parse an array type and size initialiser
 		    arraySize = new NodeArraySize(next.line, next.columnStart, parseType());
 		    expect(TokenType.COMMA);
@@ -691,7 +697,6 @@ public class Parser {
 			expect(TokenType.BRACER);
 		    }
 		}
-
 		expr = arraySize;
 		break;
 	    case PARENL:
