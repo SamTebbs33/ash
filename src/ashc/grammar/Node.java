@@ -45,6 +45,7 @@ import ashc.codegen.GenNode.GenNodeVarStore;
 import ashc.codegen.GenNode.IGenNodeStmt;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
+import ashc.grammar.Node.NodeFuncBlock;
 import ashc.load.*;
 import ashc.main.*;
 import ashc.semantics.*;
@@ -347,7 +348,10 @@ public abstract class Node {
 		    GenNode.addFuncStmt(new GenNodeFieldStore(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName(), field.isStatic()));
 		    argID++;
 		}
-		if (block instanceof NodeClassBlock) NodeFuncDec.initialiseVarDecs(((NodeClassBlock) block).varDecs);
+		if (block instanceof NodeClassBlock){
+		    NodeFuncDec.initialiseVarDecs(((NodeClassBlock) block).varDecs);
+		    for(NodeFuncBlock cBlock :  ((NodeClassBlock)block).constructBlocks) cBlock.generate();
+		}
 		GenNode.addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID));
 		GenNode.exitGenNodeFunction();
 	    }
@@ -396,6 +400,11 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    super.analyse();
+	    if(args == null){
+		// Check if there is a "consruct" block in this class where there is no default constructor
+		LinkedList<NodeFuncBlock> cBlocks = ((NodeClassBlock)block).constructBlocks;
+		if(cBlocks.size() > 0) semanticError(this, cBlocks.getFirst().line, cBlocks.getFirst().column, CONSTRUCT_BLOCK_NOT_ALLOWED);
+	    }
 	    block.analyse();
 	    Semantics.exitType();
 	}
@@ -566,7 +575,7 @@ public abstract class Node {
     public static class NodeClassBlock extends NodeBlock {
 	public LinkedList<NodeFuncDec> funcDecs = new LinkedList<NodeFuncDec>();
 	public LinkedList<NodeVarDec> varDecs = new LinkedList<NodeVarDec>();
-	public LinkedList<NodeFuncBlock> initBlocks = new LinkedList<NodeFuncBlock>();
+	public LinkedList<NodeFuncBlock> initBlocks = new LinkedList<NodeFuncBlock>(), constructBlocks = new LinkedList<>();
 
 	public void add(final NodeVarDec parseVarDec) {
 	    varDecs.add(parseVarDec);
@@ -596,6 +605,7 @@ public abstract class Node {
 		varDec.preAnalyse();
 	    for (final NodeFuncBlock block : initBlocks)
 		block.preAnalyse();
+	    for(NodeFuncBlock block : constructBlocks) block.preAnalyse();
 	}
 
 	@Override
@@ -604,6 +614,9 @@ public abstract class Node {
 		varDec.analyse();
 	    for (final NodeFuncDec funcDec : funcDecs)
 		funcDec.analyse();
+	    Scope.push(new FuncScope(TypeI.getVoidType(), false, false));
+	    for(NodeFuncBlock block : constructBlocks) block.analyse();
+	    Scope.pop();
 	    if (initBlocks.size() > 0) {
 		Scope.push(new FuncScope(TypeI.getVoidType(), false, true));
 		for (final NodeFuncBlock block : initBlocks) {
@@ -641,6 +654,10 @@ public abstract class Node {
 
 	public void add(final NodeFuncBlock block) {
 	    initBlocks.add(block);
+	}
+
+	public void addConstructBlock(NodeFuncBlock block) {
+	    constructBlocks.add(block);
 	}
 
     }

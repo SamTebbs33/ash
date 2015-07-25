@@ -114,6 +114,7 @@ public class Lexer {
 	CONST("const "),
 	FUNC("func "),
 	INIT("init"),
+	CONSTRUCT("construct"),
 	MUT("mut "),
 	ALIAS("alias "),
 	CLASS("class "),

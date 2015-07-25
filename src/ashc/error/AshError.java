@@ -68,6 +68,7 @@ public class AshError extends Exception {
 	CANNOT_EXTEND_TYPE("%s %s cannot extend %s %s (%s)"),
 	CANNOT_EXTEND_OPTIONAL_TYPE("Cannot extend an optional type (%s)"),
 	CANNOT_EXTEND_MULTIPLE_CLASSES("Cannot extend multiple classes (%s)"),
+	CONSTRUCT_BLOCK_NOT_ALLOWED("A construct block is not allowed in a type with no default constructor"),
 
 	DUPLICATE_MODIFIERS("Duplicate modifiers (%s)"),
 	DUPLICATE_ARGUMENTS("Duplicate arguments (%s)"),

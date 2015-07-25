@@ -340,8 +340,11 @@ public class Parser {
 	if (getNext().type == TokenType.BRACEL) while (getNext().type != TokenType.BRACER) {
 	    rewind();
 	    final LinkedList<NodeModifier> mods = parseMods();
-	    final Token token = expect(TokenType.INIT, TokenType.FUNC, TokenType.MUT, TokenType.CONST, TokenType.VAR, TokenType.BRACER);
+	    final Token token = expect(TokenType.CONSTRUCT, TokenType.INIT, TokenType.FUNC, TokenType.MUT, TokenType.CONST, TokenType.VAR, TokenType.BRACER);
 	    switch (token.type) {
+		case CONSTRUCT:
+		    block.addConstructBlock(parseFuncBlock(true, false));
+		    break;
 		case INIT:
 		    block.add(parseFuncBlock(true, false));
 		    break;
