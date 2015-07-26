@@ -23,6 +23,7 @@ import ashc.grammar.Node.NodeBool;
 import ashc.grammar.Node.NodeChar;
 import ashc.grammar.Node.NodeClassBlock;
 import ashc.grammar.Node.NodeClassDec;
+import ashc.grammar.Node.NodeDefFile;
 import ashc.grammar.Node.NodeDouble;
 import ashc.grammar.Node.NodeElvis;
 import ashc.grammar.Node.NodeEnumBlock;
@@ -38,6 +39,7 @@ import ashc.grammar.Node.NodeFuncCall;
 import ashc.grammar.Node.NodeFuncDec;
 import ashc.grammar.Node.NodeIf;
 import ashc.grammar.Node.NodeImport;
+import ashc.grammar.Node.NodeInclude;
 import ashc.grammar.Node.NodeInteger;
 import ashc.grammar.Node.NodeInterfaceDec;
 import ashc.grammar.Node.NodeIs;
@@ -48,6 +50,7 @@ import ashc.grammar.Node.NodeMatch;
 import ashc.grammar.Node.NodeMatchCase;
 import ashc.grammar.Node.NodeModifier;
 import ashc.grammar.Node.NodeNull;
+import ashc.grammar.Node.NodeOperatorDef;
 import ashc.grammar.Node.NodePackage;
 import ashc.grammar.Node.NodePrefix;
 import ashc.grammar.Node.NodeQualifiedName;
@@ -96,21 +99,6 @@ public class Parser {
 		System.err.printf("Error:%d:%d Invalid token (%s)%n", e.line, e.column, e.data);
 		ashc.error.AshError.numErrors++;
 	    }
-    }
-
-    /**
-     * Start the parser and return an AST node representing the file
-     *
-     * @return NodeFile
-     *
-     */
-    public NodeFile start() {
-	try {
-	    return parseFile();
-	} catch (final UnexpectedTokenException e) {
-	    handleException(e);
-	}
-	return null;
     }
 
     public void handleException(final UnexpectedTokenException e) {
@@ -1053,12 +1041,13 @@ public class Parser {
 	return typeDecs;
     }
 
-    private NodeFile parseFile() throws UnexpectedTokenException {
+    public NodeFile parseFile() throws UnexpectedTokenException {
 	final NodePackage pkg = parsePackage();
+	final LinkedList<NodeInclude> includes = parseIncludes();
 	final LinkedList<NodeImport> imports = parseImports();
 	final LinkedList<NodeAlias> aliases = parseAliases();
 	final LinkedList<NodeTypeDec> typeDecs = parseTypeDecs();
-	return new NodeFile(pkg, imports, aliases, typeDecs);
+	return new NodeFile(pkg, includes, imports, aliases, typeDecs);
     }
 
     public LinkedList<NodeAlias> parseAliases() throws UnexpectedTokenException {
@@ -1081,6 +1070,65 @@ public class Parser {
 	}
 	rewind();
 	return new NodeEnumInstance(id.line, id.columnStart, id, null);
+    }
+
+    public NodeDefFile parseDefFile() throws UnexpectedTokenException {
+	NodeDefFile defFile = new NodeDefFile();
+	defFile.includes = parseIncludes();
+	defFile.imports = parseImports();
+	defFile.operatorDefs = parseOperatorDefs();
+	defFile.funcs = parseDefFileFuncDecs();
+	return defFile;
+    }
+
+    private LinkedList<NodeFuncDec> parseDefFileFuncDecs() throws UnexpectedTokenException {
+	LinkedList<NodeFuncDec> decs = new LinkedList<Node.NodeFuncDec>();
+	while(getNext().type == TokenType.FUNC){
+	    rewind();
+	    decs.add(parseFuncDec(true, new LinkedList<>()));
+	}
+	rewind();
+	return decs;
+    }
+
+    private LinkedList<NodeOperatorDef> parseOperatorDefs() throws UnexpectedTokenException {
+	LinkedList<NodeOperatorDef> operatorDefs = new LinkedList<>();
+	Token next;
+	while((next = getNext()).type == TokenType.OPERATOR){
+	    operatorDefs.add(parseOperatorDef());
+	}
+	rewind();
+	return operatorDefs;
+    }
+
+    private NodeOperatorDef parseOperatorDef() throws UnexpectedTokenException {
+	Token id = expect(TokenType.CUSTOMOP);
+	expect(TokenType.ASSIGNOP);
+	expect("type");
+	expect(TokenType.COLON);
+	String type = expect(TokenType.OPTYPE).data;
+	expect(TokenType.COMMA);
+	String assoc = null;
+	if(!type.equals("unary")){
+	    expect("assoc");
+	    expect(TokenType.COLON);
+	    assoc = expect(TokenType.ID).data;
+	    expect(TokenType.COMMA);
+	}
+	expect("prec");
+	expect(TokenType.COLON);
+	int precedence = Integer.parseInt(expect(TokenType.INT).data);
+	return new NodeOperatorDef(id.line, id.columnStart, id.data, type, assoc, precedence);
+    }
+
+    private LinkedList<NodeInclude> parseIncludes() throws UnexpectedTokenException {
+	LinkedList<NodeInclude> includes = new LinkedList<>();
+	Token next;
+	while((next = getNext()).type == TokenType.INCLUDE){
+	    includes.add(new NodeInclude(next.line, next.columnStart, parseQualifiedName()));
+	}
+	rewind();
+	return includes;
     }
 
 }

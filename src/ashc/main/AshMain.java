@@ -28,7 +28,7 @@ public class AshMain {
 	if (outputDir == null) outputDir = "./";
 	else if (!outputDir.endsWith(File.separator)) outputDir += File.separatorChar;
 	final AshCompiler compiler = new AshCompiler(inputFile);
-	compiler.parse();
+	compiler.parseSourceFile();
 	compiler.preAnalyse();
 	compiler.analyse();
 	if (AshError.numErrors == 0) compiler.generate();

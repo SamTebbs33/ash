@@ -112,16 +112,14 @@ public abstract class Node {
 	}
 
 	public NodePackage pkg;
+	public LinkedList<NodeInclude> includes;
 	public LinkedList<NodeImport> imports;
 	public LinkedList<NodeTypeDec> typeDecs;
 	public LinkedList<NodeAlias> aliases;
 
-	public NodeFile(final NodePackage pkg2, final LinkedList<NodeImport> imports2, final LinkedList<NodeTypeDec> typeDecs2) {
-	    super();
-	}
-
-	public NodeFile(final NodePackage pkg, final LinkedList<NodeImport> imports, final LinkedList<NodeAlias> aliases, final LinkedList<NodeTypeDec> typeDecs) {
+	public NodeFile(final NodePackage pkg, final LinkedList<NodeInclude> includes, final LinkedList<NodeImport> imports, final LinkedList<NodeAlias> aliases, final LinkedList<NodeTypeDec> typeDecs) {
 	    this.pkg = pkg;
+	    this.includes = includes;
 	    this.imports = imports;
 	    this.typeDecs = typeDecs;
 	    this.aliases = aliases;
@@ -140,6 +138,7 @@ public abstract class Node {
 	    }
 	    if (!AshCompiler.get().parentPath.equals(packagePath)) semanticError(this, -1, -1, PATH_DOES_NOT_MATCH_PACKAGE, packagePath);
 	    Scope.setNamespace(name);
+	    if(includes != null) for(final NodeInclude i : includes) i.preAnalyse();
 	    if (imports != null) for (final NodeImport i : imports)
 		i.preAnalyse();
 	    if (typeDecs != null) for (final NodeTypeDec t : typeDecs)
@@ -160,6 +159,46 @@ public abstract class Node {
 		dec.generate();
 	}
 
+    }
+    
+    public static class NodeDefFile extends Node {
+	
+	public LinkedList<NodeImport> imports;
+	public LinkedList<NodeInclude> includes;
+	public LinkedList<NodeOperatorDef> operatorDefs;
+	public LinkedList<NodeFuncDec> funcs;
+
+	@Override
+	public void preAnalyse() {
+	    super.preAnalyse();
+	}
+
+	@Override
+	public void analyse() {
+	    super.analyse();
+	}
+
+	@Override
+	public void generate() {}
+	
+    }
+    
+    public static class NodeOperatorDef extends Node {
+	
+	private String id, type, assoc;
+	private int precedence;
+
+	public NodeOperatorDef(int line, int columnStart, String data, String type, String assoc, int precedence) {
+	    super(line, columnStart);
+	    this.id = data;
+	    this.type = type;
+	    this.assoc = assoc;
+	    this.precedence = precedence;
+	}
+
+	@Override
+	public void generate() {}	
+	
     }
 
     public static class NodePackage extends Node {
@@ -198,6 +237,25 @@ public abstract class Node {
 	@Override
 	public void generate() {}
 
+    }
+    
+    public static class NodeInclude extends Node {
+	
+	NodeQualifiedName qualifiedName;
+
+	public NodeInclude(int line, int columnStart, NodeQualifiedName parseQualifiedName) {
+	    super(line, columnStart);
+	    this.qualifiedName = parseQualifiedName;
+	}
+
+	@Override
+	public void preAnalyse() {
+	    TypeImporter.loadDefFile(qualifiedName.toString());
+	}
+
+	@Override
+	public void generate() {}
+	
     }
 
     public static abstract class NodeBlock extends Node {
