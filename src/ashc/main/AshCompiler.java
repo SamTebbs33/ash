@@ -18,6 +18,7 @@ public class AshCompiler {
     private final Lexer lexer;
     private NodeFile fileNode;
     public String relFilePath, parentPath;
+    public int errors;
 
     public static Stack<AshCompiler> compilers = new Stack<AshCompiler>();
 

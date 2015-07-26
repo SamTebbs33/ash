@@ -98,6 +98,7 @@ public class AshError extends Exception {
 	if ((line >= 0) && (column >= 0)) System.err.printf("Error[%s:%d:%d] ", AshCompiler.get().relFilePath, line, column);
 	else System.err.printf("Error[%s] ", AshCompiler.get().relFilePath, line, column);
 	System.err.printf(error.format + "%n", args);
+	AshCompiler.get().errors++;
 	numErrors++;
     }
 
@@ -115,6 +116,7 @@ public class AshError extends Exception {
 
     public static void compilerError(final String string) {
 	System.err.printf("Error: %s%n", string);
+	AshCompiler.get().errors++;
 	numErrors++;
     }
 
