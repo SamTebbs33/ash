@@ -38,6 +38,7 @@ public class AshError extends Exception {
 	NON_STATIC_FUNC_USED_IN_STATIC_CONTEXT("A non-static function cannot be used from a static context (%s)"),
 	NON_STATIC_VAR_USED_IN_STATIC_CONTEXT("A non-static variable/field cannot be used from a static context (%s)"),
 	MUT_FUNC_IS_STATIC("Mutator functions cannot be static (%s)"),
+	MUST_CALL_SUPER_CONSTRUCTOR("A sub-class must call one of the super-class' (%s) non-empty constructors"),
 
 	FIELD_ALREADY_EXISTS("\'%s\' already exists"),
 

@@ -313,6 +313,9 @@ public abstract class Node {
 		    superArgs.analyse();
 		    final Type superClass = type.getSuperClass();
 		    if (superClass.getFunc(superClass.qualifiedName.shortName, superArgs) == null) semanticError(this, superArgs.line, superArgs.column, CONSTRUCTOR_DOES_NOT_EXIST, superClass.qualifiedName.shortName);
+		}else{
+		    final Type superClass = type.getSuperClass();
+		    if(superClass.hasNonEmptyConstructor) semanticError(this, line, column, MUST_CALL_SUPER_CONSTRUCTOR, type.qualifiedName.shortName);
 		}
 	    } else type.supers.addFirst(Semantics.getType("Object").get());
 	}
