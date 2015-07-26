@@ -1,16 +1,5 @@
-class A(name : String){
-	construct {
-		System.out.println("A")
-	}
-}
+import Test2
 
-class B(name : String) : A(name){
-
-	construct {
-		System.out.println("B")
-	}
-	
-	public static func main(args : String[]) {
-		var b = B("Sam")
-	}
+class Test {
+	var test = Test2()
 }

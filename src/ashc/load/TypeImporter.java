@@ -7,6 +7,7 @@ import org.objectweb.asm.tree.*;
 
 import ashc.error.*;
 import ashc.library.*;
+import ashc.main.*;
 import ashc.semantics.*;
 
 /**
@@ -19,6 +20,19 @@ public class TypeImporter {
     public static ClassLoader loader = ClassLoader.getSystemClassLoader();
 
     public static ashc.semantics.Member.Type loadClass(final String path, final String alias) {
+	// Attempt to find a source file relative to current working directory
+	File srcFile = new File(path.replace('.', File.separatorChar)+".ash");
+	if(srcFile.exists() && srcFile.isFile()){
+	    try {
+		AshCompiler compiler = new AshCompiler(srcFile.toString());
+		compiler.parse();
+		compiler.preAnalyse();
+		compiler.analyse();
+		compiler.generate();
+	    } catch (IOException e) {
+		AshError.compilerError("Cannot find source file: " + srcFile.toString());
+	    }
+	}
 	try {
 	    final InputStream stream = Library.getClassStream(path);
 	    if (stream != null) {
