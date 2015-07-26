@@ -187,12 +187,13 @@ public abstract class Node {
     
     public static class NodeOperatorDef extends Node {
 	
-	private String id, type, assoc;
+	private String id, name, type, assoc;
 	private int precedence;
 
-	public NodeOperatorDef(int line, int columnStart, String data, String type, String assoc, int precedence) {
+	public NodeOperatorDef(int line, int columnStart, String data, String name, String type, String assoc, int precedence) {
 	    super(line, columnStart);
 	    this.id = data;
+	    this.name = name;
 	    this.type = type;
 	    this.assoc = assoc;
 	    this.precedence = precedence;
@@ -201,7 +202,7 @@ public abstract class Node {
 	@Override
 	public void preAnalyse() {
 	    if(OperatorDef.operatorDefExists(id)) semanticError(this, line, column, OPERATOR_ALREADY_EXISTS, id);
-	    else OperatorDef.addOperatorDef(new OperatorDef(id, EnumOperatorType.get(type), precedence, EnumOperatorAssociativity.get(assoc)));
+	    else OperatorDef.addOperatorDef(new OperatorDef(id, name, EnumOperatorType.get(type), precedence, EnumOperatorAssociativity.get(assoc)));
 	}
 
 	@Override

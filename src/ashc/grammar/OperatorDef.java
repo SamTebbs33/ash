@@ -10,7 +10,7 @@ public class OperatorDef {
     
     public static HashMap<String, OperatorDef> operatorDefs = new HashMap<>();
     
-    public String id;
+    public String id, name;
     public EnumOperatorType type;
     public int precedence;
     public EnumOperatorAssociativity assoc;
@@ -33,8 +33,9 @@ public class OperatorDef {
 	}
     }
 
-    public OperatorDef(String id, EnumOperatorType type, int precedence, EnumOperatorAssociativity assoc) {
+    public OperatorDef(String id, String name, EnumOperatorType type, int precedence, EnumOperatorAssociativity assoc) {
 	this.id = id;
+	this.name = name;
 	this.type = type;
 	this.precedence = precedence;
 	this.assoc = assoc;

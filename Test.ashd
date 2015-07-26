@@ -1,3 +1,4 @@
 import java.util.LinkedList, ArrayList, HashMap
 
-operator ?+ = type: binary, assoc: right, prec: 100
+operator ?+ = type: binary, name: is_positive, assoc: right, prec: 100
+operator ?+ = type: binary, name: is_positive, assoc: right, prec: 100

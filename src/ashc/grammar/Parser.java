@@ -1108,6 +1108,10 @@ public class Parser {
 	expect(TokenType.COLON);
 	String type = expect(TokenType.OPTYPE).data;
 	expect(TokenType.COMMA);
+	expect("name");
+	expect(TokenType.COLON);
+	String name = expect(TokenType.ID).data;
+	expect(TokenType.COMMA);
 	String assoc = null;
 	if(!type.equals("unary")){
 	    expect("assoc");
@@ -1118,7 +1122,7 @@ public class Parser {
 	expect("prec");
 	expect(TokenType.COLON);
 	int precedence = Integer.parseInt(expect(TokenType.INT).data);
-	return new NodeOperatorDef(id.line, id.columnStart, id.data, type, assoc, precedence);
+	return new NodeOperatorDef(id.line, id.columnStart, id.data, name, type, assoc, precedence);
     }
 
     private LinkedList<NodeInclude> parseIncludes() throws UnexpectedTokenException {
