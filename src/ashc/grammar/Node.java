@@ -85,7 +85,6 @@ public abstract class Node {
     public abstract void generate();
 
     public static interface IFuncStmt {
-	public IGenNodeStmt genStmt = null;
 
 	void generate();
 
@@ -220,6 +219,8 @@ public abstract class Node {
 	public LinkedList<Field> argFields = new LinkedList<Field>();
 	public Function defConstructor;
 	public GenNodeType genNodeType;
+	public FuncScope defConstructorScope;
+	public boolean hasConstructor;
 
 	public NodeTypeDec(final int line, final int column) {
 	    super(line, column);
@@ -267,20 +268,28 @@ public abstract class Node {
 	    // Create the default constructor and add fields supplied by the
 	    // arguments
 	    if (args != null) {
+		hasConstructor = true;
 		defConstructor = new Function(Scope.getNamespace().copy().add(id.data), EnumModifier.PUBLIC.intVal, type);
 		defConstructor.returnType = new TypeI(name.shortName, 0, false);
 		if (generics != null) for (final NodeType generic : generics.types)
 		    defConstructor.generics.add(generic.id);
+		defConstructorScope = new FuncScope(defConstructor.returnType, false, false);
+		Scope.push(defConstructorScope);
 		for (final NodeArg arg : args.args) {
 		    arg.preAnalyse();
 		    if (!arg.errored) {
 			final TypeI argType = new TypeI(arg.type);
+			Variable local = new Variable(arg.id, argType);
+			System.out.printf("LocalID = %d%n", local.localID);
+			local.isLocal = true;
+			defConstructorScope.addVar(local);
 			final Field field = new Field(Scope.getNamespace().copy().add(arg.id), EnumModifier.PUBLIC.intVal, argType, false, false, type);
-			type.fields.add(field);
+			type.addField(field);
 			argFields.add(field);
 			defConstructor.parameters.add(argType);
 		    }
 		}
+		Scope.pop();
 		type.addFunction(defConstructor);
 	    }
 
@@ -309,8 +318,11 @@ public abstract class Node {
 		    if (!errored) type.supers.add(typeOpt.get());
 		}
 		if (!hasSuperClass) type.supers.addFirst(Semantics.getType("Object").get());
-		if (superArgs != null) {
+		if (superArgs != null) {	
+		    // Super-class args are evaluated in the context of the default constructor, so push its scope.
+		    Scope.push(defConstructorScope);
 		    superArgs.analyse();
+		    Scope.pop();
 		    final Type superClass = type.getSuperClass();
 		    if (superClass.getFunc(superClass.qualifiedName.shortName, superArgs) == null) semanticError(this, superArgs.line, superArgs.column, CONSTRUCTOR_DOES_NOT_EXIST, superClass.qualifiedName.shortName);
 		}else{
@@ -344,8 +356,16 @@ public abstract class Node {
 		
 		GenNode.addFuncStmt(new GenNodeThis());
 		
+		for(Field field : argFields){
+		    addFuncStmt(new GenNodeVar(field.id, field.type.toBytecodeName(), argID, null));
+
+		}
+		
 		// Call the right constructor depending on whether or not super-class arguments were provided
-		if(superArgs == null || superArgs.exprs.isEmpty()) GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", "()V", false, false, false, true));
+		if(superArgs == null || superArgs.exprs.isEmpty()){
+		    System.out.println("gen empty constructor call: " + superClass);
+		    GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", "()V", false, false, false, true));
+		}
 		else{
 		    StringBuffer params = new StringBuffer("(");
 		    for(IExpression expr : superArgs.exprs){
@@ -353,13 +373,13 @@ public abstract class Node {
 			params.append(expr.getExprType().toBytecodeName());
 		    }
 		    params.append(")V");
+		    System.out.println("gen non-empty constructor call: " + superClass + "." + params.toString());
 		    GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", params.toString(), false, false, false, true));
 		}
 		// Generate the fields and their assignments
 		for (final Field field : argFields) {
 		    genNodeType.addField(new GenNodeField(field));
 		    GenNode.addFuncStmt(new GenNodeThis());
-		    addFuncStmt(new GenNodeVar(field.id, field.type.toBytecodeName(), argID, null));
 		    GenNode.addFuncStmt(new GenNodeVarLoad(field.type.getInstructionType(), argID));
 		    GenNode.addFuncStmt(new GenNodeFieldStore(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName(), field.isStatic()));
 		    argID++;
@@ -413,6 +433,15 @@ public abstract class Node {
 	public void preAnalyse() {
 	    super.preAnalyse();
 	    block.preAnalyse();
+	    if (!((NodeClassBlock)block).hasConstructor && args == null) {
+		// Give the class a default constructor if a constructor is not
+		// already declared
+		final LinkedList<NodeModifier> mods = new LinkedList<NodeModifier>();
+		mods.add(new NodeModifier(0, 0, "public"));
+		final NodeFuncDec dec = new NodeFuncDec(0, 0, mods, Semantics.currentType().qualifiedName.shortName, new NodeArgs(), null, new NodeFuncBlock(), new NodeTypes(), false);
+		((NodeClassBlock)block).funcDecs.add(dec);
+		dec.preAnalyse();
+	    }
 	    Semantics.exitType();
 	}
 
@@ -424,6 +453,7 @@ public abstract class Node {
 		final LinkedList<NodeFuncBlock> cBlocks = ((NodeClassBlock) block).constructBlocks;
 		if (cBlocks.size() > 0) semanticError(this, cBlocks.getFirst().line, cBlocks.getFirst().column, CONSTRUCT_BLOCK_NOT_ALLOWED);
 	    }
+	    if(((NodeClassBlock)block).hasConstructor) hasConstructor = true;
 	    block.analyse();
 	    Semantics.exitType();
 	}
@@ -595,7 +625,8 @@ public abstract class Node {
 	public LinkedList<NodeFuncDec> funcDecs = new LinkedList<NodeFuncDec>();
 	public LinkedList<NodeVarDec> varDecs = new LinkedList<NodeVarDec>();
 	public LinkedList<NodeFuncBlock> initBlocks = new LinkedList<NodeFuncBlock>(), constructBlocks = new LinkedList<>();
-
+	public boolean hasConstructor;
+	
 	public void add(final NodeVarDec parseVarDec) {
 	    varDecs.add(parseVarDec);
 	}
@@ -606,19 +637,9 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {
-	    boolean hasConstructor = false;
 	    for (final NodeFuncDec funcDec : funcDecs) {
 		funcDec.preAnalyse();
 		if (funcDec.isConstructor) hasConstructor = true;
-	    }
-	    if (!hasConstructor) {
-		// Give the class a default constructor if a constructor is not
-		// already declared
-		final LinkedList<NodeModifier> mods = new LinkedList<NodeModifier>();
-		mods.add(new NodeModifier(0, 0, "public"));
-		final NodeFuncDec dec = new NodeFuncDec(0, 0, mods, Semantics.currentType().qualifiedName.shortName, new NodeArgs(), null, new NodeFuncBlock(), new NodeTypes(), false);
-		funcDecs.add(dec);
-		dec.preAnalyse();
 	    }
 	    for (final NodeVarDec varDec : varDecs)
 		varDec.preAnalyse();

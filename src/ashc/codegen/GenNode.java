@@ -144,7 +144,7 @@ public abstract class GenNode {
 
 	    cw.visitEnd();
 
-	    verifyClassBytecode(cw);
+	    //verifyClassBytecode(cw);
 
 	    final File classFile = new File(dirSb.toString() + shortName + ".class");
 	    if (classFile.exists()) classFile.delete();
@@ -390,6 +390,7 @@ public abstract class GenNode {
 	    this.operand = operand;
 	    this.varID = varID;
 	    addToStackRequirement(operand.size);
+	    System.out.println("var load: " + varID);
 	    getCurrentFunction().getLocal(varID).updateUse();
 	}
 
