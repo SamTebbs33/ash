@@ -25,6 +25,7 @@ public class AshError extends Exception {
 
 	EXPECTED_STRING_INTERP_TERMINATOR("Expected terminating } for string interpolated expression"),
 	PATH_DOES_NOT_MATCH_PACKAGE("The relative path to this file does not match the package structure (%s)"),
+	CANNOT_FIND_CLASS("Cannot find class file or source file \"%s\""),
 
 	FUNC_ALREADY_EXISTS("The function \'%s\' already exists"),
 	FUNC_DOES_NOT_EXIST_IN_TYPE("The function \'%s\' with the given arguments doesn't exist in type %s"),

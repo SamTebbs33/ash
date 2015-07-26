@@ -126,7 +126,7 @@ public class Semantics {
 
     public static Variable getVar(final String id, final Scope scope) {
 	if (scope != null) {
-	    for (final Variable var : scope.vars){
+	    for (final Variable var : scope.vars) {
 		System.out.println("-> " + var);
 		if (var.id.equals(id)) return var;
 	    }

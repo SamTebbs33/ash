@@ -129,7 +129,7 @@ public class Member {
 		funcs.add(func);
 		functions.put(name, funcs);
 	    }
-	    if(func.isConstructor() && !func.parameters.isEmpty()) this.hasNonEmptyConstructor = true;
+	    if (func.isConstructor() && !func.parameters.isEmpty()) hasNonEmptyConstructor = true;
 	}
 
 	public void addGeneric(final String typeName, final TypeI generic) {

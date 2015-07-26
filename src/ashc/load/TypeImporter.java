@@ -21,19 +21,17 @@ public class TypeImporter {
 
     public static ashc.semantics.Member.Type loadClass(final String path, final String alias) {
 	// Attempt to find an Ash source file relative to current working directory
-	String filePath = path.replace('.', File.separatorChar);
-	File srcFile = new File(filePath+".ash");
-	if(srcFile.exists() && srcFile.isFile()){
-	    if(importAshSource(srcFile)) return Semantics.getType(alias).get();
-	}
+	final String filePath = path.replace('.', File.separatorChar);
+	File srcFile = new File(filePath + ".ash");
+	if (srcFile.exists() && srcFile.isFile()) if (importAshSource(srcFile)) return Semantics.getType(alias).get();
 	// Attempt to find a java source file
-	srcFile = new File(filePath+".java");
-	if(srcFile.exists() && srcFile.isFile()){
+	srcFile = new File(filePath + ".java");
+	if (srcFile.exists() && srcFile.isFile()) {
 	    compileJavaSource(srcFile);
 	    try {
 		// Import the resulting .class file
-		return importStream(new FileInputStream(new File(filePath+".class")));
-	    } catch (IOException e) {
+		return importStream(new FileInputStream(new File(filePath + ".class")));
+	    } catch (final IOException e) {
 		e.printStackTrace();
 	    }
 	}
@@ -46,44 +44,46 @@ public class TypeImporter {
 	return null;
     }
 
-    private static ashc.semantics.Member.Type importStream(InputStream stream) throws IOException {
+    private static ashc.semantics.Member.Type importStream(final InputStream stream) throws IOException {
 	if (stream != null) {
-		final ashc.semantics.Member.Type type = readClass(stream);
-		Semantics.addType(type, false);
-		return type;
-	    }
+	    final ashc.semantics.Member.Type type = readClass(stream);
+	    Semantics.addType(type, false);
+	    return type;
+	}
 	return null;
     }
 
-    private static void compileJavaSource(File srcFile) {
-	ProcessBuilder pb = new ProcessBuilder("javac", srcFile.toString());
+    private static void compileJavaSource(final File srcFile) {
+	final ProcessBuilder pb = new ProcessBuilder("javac", srcFile.toString());
 	try {
-	    Process process = pb.start();
+	    final Process process = pb.start();
 	    process.waitFor();
 	    BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 	    String line = null;
-	    while((line = reader.readLine()) != null) System.out.println(line);
+	    while ((line = reader.readLine()) != null)
+		System.out.println(line);
 	    reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 	    line = null;
-	    while((line = reader.readLine()) != null) System.err.println(line);
+	    while ((line = reader.readLine()) != null)
+		System.err.println(line);
 	} catch (IOException | InterruptedException e) {
 	    e.printStackTrace();
 	}
     }
 
-    private static boolean importAshSource(File srcFile) {
+    private static boolean importAshSource(final File srcFile) {
 	try {
-		AshCompiler compiler = new AshCompiler(srcFile.toString());
-		compiler.parse();
-		compiler.preAnalyse();
-		compiler.analyse();
-		if(compiler.errors == 0){
-		    compiler.generate();
-		    return true;
-		}
-	    } catch (IOException e) {
-		AshError.compilerError("Cannot find source file: " + srcFile.toString());
+	    final AshCompiler compiler = new AshCompiler(srcFile.toString());
+	    compiler.parse();
+	    compiler.preAnalyse();
+	    compiler.analyse();
+	    if (compiler.errors == 0) {
+		compiler.generate();
+		return true;
 	    }
+	} catch (final IOException e) {
+	    AshError.compilerError("Cannot find source file: " + srcFile.toString());
+	}
 	return false;
     }
 

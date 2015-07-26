@@ -2,7 +2,7 @@ package ashc.util;
 
 /**
  * Ash
- * 
+ *
  * @author samtebbs, 09:48:36 - 25 Jul 2015
  */
 public class Tuple<T, E> {

@@ -874,8 +874,8 @@ public class Parser {
 	} else rewind();
 
 	if (allowMultipleDecs) // Var decs can be chained using commas, and they share the same keyword and modifiers
-	    if (getNext().type == TokenType.COMMA) varDec.subDec = parseVarDec(mods, keyword, true);
-	    else rewind();
+	if (getNext().type == TokenType.COMMA) varDec.subDec = parseVarDec(mods, keyword, true);
+	else rewind();
 
 	return varDec;
     }

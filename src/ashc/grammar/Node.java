@@ -42,7 +42,6 @@ import ashc.codegen.GenNode.GenNodeUnary;
 import ashc.codegen.GenNode.GenNodeVar;
 import ashc.codegen.GenNode.GenNodeVarLoad;
 import ashc.codegen.GenNode.GenNodeVarStore;
-import ashc.codegen.GenNode.IGenNodeStmt;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
 import ashc.load.*;
@@ -193,7 +192,7 @@ public abstract class Node {
 	public void preAnalyse() {
 	    // Test if the type has already been imported
 	    if (Semantics.typeExists(qualifiedName.shortName)) semanticError(line, column, TYPE_ALREADY_IMPORTED, qualifiedName.shortName);
-	    else TypeImporter.loadClass(qualifiedName.toString(), qualifiedName.shortName);
+	    else if (TypeImporter.loadClass(qualifiedName.toString(), qualifiedName.shortName) == null) semanticError(this, line, column, CANNOT_FIND_CLASS, qualifiedName.toString());
 	}
 
 	@Override
@@ -279,7 +278,7 @@ public abstract class Node {
 		    arg.preAnalyse();
 		    if (!arg.errored) {
 			final TypeI argType = new TypeI(arg.type);
-			Variable local = new Variable(arg.id, argType);
+			final Variable local = new Variable(arg.id, argType);
 			System.out.printf("LocalID = %d%n", local.localID);
 			local.isLocal = true;
 			defConstructorScope.addVar(local);
@@ -318,16 +317,16 @@ public abstract class Node {
 		    if (!errored) type.supers.add(typeOpt.get());
 		}
 		if (!hasSuperClass) type.supers.addFirst(Semantics.getType("Object").get());
-		if (superArgs != null) {	
+		if (superArgs != null) {
 		    // Super-class args are evaluated in the context of the default constructor, so push its scope.
 		    Scope.push(defConstructorScope);
 		    superArgs.analyse();
 		    Scope.pop();
 		    final Type superClass = type.getSuperClass();
 		    if (superClass.getFunc(superClass.qualifiedName.shortName, superArgs) == null) semanticError(this, superArgs.line, superArgs.column, CONSTRUCTOR_DOES_NOT_EXIST, superClass.qualifiedName.shortName);
-		}else{
+		} else {
 		    final Type superClass = type.getSuperClass();
-		    if(superClass.hasNonEmptyConstructor) semanticError(this, line, column, MUST_CALL_SUPER_CONSTRUCTOR, type.qualifiedName.shortName);
+		    if (superClass.hasNonEmptyConstructor) semanticError(this, line, column, MUST_CALL_SUPER_CONSTRUCTOR, type.qualifiedName.shortName);
 		}
 	    } else type.supers.addFirst(Semantics.getType("Object").get());
 	}
@@ -353,22 +352,19 @@ public abstract class Node {
 		GenNode.addGenNodeFunction(func);
 		func.params = defConstructor.parameters;
 		int argID = 1;
-		
+
 		GenNode.addFuncStmt(new GenNodeThis());
-		
-		for(Field field : argFields){
+
+		for (final Field field : argFields)
 		    addFuncStmt(new GenNodeVar(field.id, field.type.toBytecodeName(), argID, null));
 
-		}
-		
 		// Call the right constructor depending on whether or not super-class arguments were provided
-		if(superArgs == null || superArgs.exprs.isEmpty()){
+		if ((superArgs == null) || superArgs.exprs.isEmpty()) {
 		    System.out.println("gen empty constructor call: " + superClass);
 		    GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", "()V", false, false, false, true));
-		}
-		else{
-		    StringBuffer params = new StringBuffer("(");
-		    for(IExpression expr : superArgs.exprs){
+		} else {
+		    final StringBuffer params = new StringBuffer("(");
+		    for (final IExpression expr : superArgs.exprs) {
 			expr.generate();
 			params.append(expr.getExprType().toBytecodeName());
 		    }
@@ -433,13 +429,13 @@ public abstract class Node {
 	public void preAnalyse() {
 	    super.preAnalyse();
 	    block.preAnalyse();
-	    if (!((NodeClassBlock)block).hasConstructor && args == null) {
+	    if (!((NodeClassBlock) block).hasConstructor && (args == null)) {
 		// Give the class a default constructor if a constructor is not
 		// already declared
 		final LinkedList<NodeModifier> mods = new LinkedList<NodeModifier>();
 		mods.add(new NodeModifier(0, 0, "public"));
 		final NodeFuncDec dec = new NodeFuncDec(0, 0, mods, Semantics.currentType().qualifiedName.shortName, new NodeArgs(), null, new NodeFuncBlock(), new NodeTypes(), false);
-		((NodeClassBlock)block).funcDecs.add(dec);
+		((NodeClassBlock) block).funcDecs.add(dec);
 		dec.preAnalyse();
 	    }
 	    Semantics.exitType();
@@ -453,7 +449,7 @@ public abstract class Node {
 		final LinkedList<NodeFuncBlock> cBlocks = ((NodeClassBlock) block).constructBlocks;
 		if (cBlocks.size() > 0) semanticError(this, cBlocks.getFirst().line, cBlocks.getFirst().column, CONSTRUCT_BLOCK_NOT_ALLOWED);
 	    }
-	    if(((NodeClassBlock)block).hasConstructor) hasConstructor = true;
+	    if (((NodeClassBlock) block).hasConstructor) hasConstructor = true;
 	    block.analyse();
 	    Semantics.exitType();
 	}
@@ -626,7 +622,7 @@ public abstract class Node {
 	public LinkedList<NodeVarDec> varDecs = new LinkedList<NodeVarDec>();
 	public LinkedList<NodeFuncBlock> initBlocks = new LinkedList<NodeFuncBlock>(), constructBlocks = new LinkedList<>();
 	public boolean hasConstructor;
-	
+
 	public void add(final NodeVarDec parseVarDec) {
 	    varDecs.add(parseVarDec);
 	}
@@ -2880,7 +2876,7 @@ public abstract class Node {
 	    for (int i = 0; i < size; i++) {
 		final boolean isLastExpr = i == (size - 1);
 		if (!isLastExpr) // Dupe the match statement's expression so that each other expression in this match case can be tested
-		    addFuncStmt(new GenNodeOpcode(dupeOpcode));
+		addFuncStmt(new GenNodeOpcode(dupeOpcode));
 		final IExpression expr = exprs.get(i);
 		final boolean isNullExpr = expr instanceof NodeNull;
 		boolean is32BitPrimitive = false;
