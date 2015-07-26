@@ -44,6 +44,8 @@ import ashc.codegen.GenNode.GenNodeVarLoad;
 import ashc.codegen.GenNode.GenNodeVarStore;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
+import ashc.grammar.OperatorDef.EnumOperatorAssociativity;
+import ashc.grammar.OperatorDef.EnumOperatorType;
 import ashc.load.*;
 import ashc.main.*;
 import ashc.semantics.*;
@@ -194,6 +196,12 @@ public abstract class Node {
 	    this.type = type;
 	    this.assoc = assoc;
 	    this.precedence = precedence;
+	}
+
+	@Override
+	public void preAnalyse() {
+	    if(OperatorDef.operatorDefExists(id)) semanticError(this, line, column, OPERATOR_ALREADY_EXISTS, id);
+	    else OperatorDef.addOperatorDef(new OperatorDef(id, EnumOperatorType.get(type), precedence, EnumOperatorAssociativity.get(assoc)));
 	}
 
 	@Override

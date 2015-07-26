@@ -42,6 +42,8 @@ public class AshError extends Exception {
 	MUST_CALL_SUPER_CONSTRUCTOR("A sub-class must call one of the super-class' (%s) non-empty constructors"),
 
 	FIELD_ALREADY_EXISTS("\'%s\' already exists"),
+	
+	OPERATOR_ALREADY_EXISTS("Operator \"%s\" already exists"),
 
 	VAR_ALREADY_EXISTS("\'%s\' already exists"),
 	VAR_DOES_NOT_EXIST("\'%s\' does not exist"),
