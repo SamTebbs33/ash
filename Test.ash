@@ -1,3 +1,3 @@
-class A(name : String)
+class A
 
 class B(name : String) : A

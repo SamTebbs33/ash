@@ -341,11 +341,21 @@ public abstract class Node {
 		GenNode.addGenNodeFunction(func);
 		func.params = defConstructor.parameters;
 		int argID = 1;
-		// Call the super class' constructor
-		// TODO: Change so it calls the right constructor for classes
-		// that don't extend Object
+		
 		GenNode.addFuncStmt(new GenNodeThis());
-		GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", "()V", false, false, false, true));
+		
+		// Call the right constructor depending on whether or not super-class arguments were provided
+		if(superArgs == null || superArgs.exprs.isEmpty()) GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", "()V", false, false, false, true));
+		else{
+		    StringBuffer params = new StringBuffer("(");
+		    for(IExpression expr : superArgs.exprs){
+			expr.generate();
+			params.append(expr.getExprType().toBytecodeName());
+		    }
+		    params.append(")V");
+		    GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", params.toString(), false, false, false, true));
+		}
+		// Generate the fields and their assignments
 		for (final Field field : argFields) {
 		    genNodeType.addField(new GenNodeField(field));
 		    GenNode.addFuncStmt(new GenNodeThis());
@@ -354,6 +364,7 @@ public abstract class Node {
 		    GenNode.addFuncStmt(new GenNodeFieldStore(field.qualifiedName.shortName, field.enclosingType.qualifiedName.toBytecodeName(), field.type.toBytecodeName(), field.isStatic()));
 		    argID++;
 		}
+		// Initialise the class' fields to their default or assigned values
 		if (block instanceof NodeClassBlock) {
 		    NodeFuncDec.initialiseVarDecs(((NodeClassBlock) block).varDecs);
 		    for (final NodeFuncBlock cBlock : ((NodeClassBlock) block).constructBlocks)
