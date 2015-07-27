@@ -7,6 +7,6 @@ class Test {
 class Test2 {
 	public static func main(args : String[]) {
 		var test = Test()
-		var a = test &/ 10
+		var a : double = test &/ 10
 	}
 }

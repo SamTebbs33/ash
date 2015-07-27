@@ -160,7 +160,7 @@ public class TypeI {
 	// around
 	if (!optional && exprType.optional) return false;
 	// If they are both numeric and the array dimensions are 0
-	if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && (arrDims == exprType.arrDims)) return true;
+	//if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && (arrDims == exprType.arrDims)) return true;
 	return (exprType.arrDims == arrDims)
 		&& (shortName.equals(exprType.shortName) || (exprType.isNull() && !EnumPrimitive.isNumeric(shortName)) || Semantics.typeHasSuper(exprType.shortName, shortName));
     }
