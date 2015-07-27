@@ -46,6 +46,7 @@ import ashc.grammar.Lexer.Token;
 import ashc.grammar.Lexer.UnexpectedTokenException;
 import ashc.grammar.OperatorDef.EnumOperatorAssociativity;
 import ashc.grammar.OperatorDef.EnumOperatorType;
+import ashc.grammar.Parser.GrammarException;
 import ashc.load.*;
 import ashc.main.*;
 import ashc.semantics.*;
@@ -172,7 +173,10 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {
-	    super.preAnalyse();
+	    for(NodeImport i : imports) i.preAnalyse();
+	    for(NodeInclude i : includes) i.preAnalyse();
+	    for(NodeOperatorDef d : operatorDefs) d.preAnalyse();
+	    for(NodeFuncDec f : funcs) f.preAnalyse();
 	}
 
 	@Override
@@ -202,6 +206,7 @@ public abstract class Node {
 	@Override
 	public void preAnalyse() {
 	    if(OperatorDef.operatorDefExists(id)) semanticError(this, line, column, OPERATOR_ALREADY_EXISTS, id);
+	    else if(OperatorDef.operatorNameExists(name)) semanticError(this, line, column, OPERATOR_ALREADY_EXISTS, name);
 	    else OperatorDef.addOperatorDef(new OperatorDef(id, name, EnumOperatorType.get(type), precedence, EnumOperatorAssociativity.get(assoc)));
 	}
 
@@ -255,11 +260,12 @@ public abstract class Node {
 	public NodeInclude(int line, int columnStart, NodeQualifiedName parseQualifiedName) {
 	    super(line, columnStart);
 	    this.qualifiedName = parseQualifiedName;
+	    TypeImporter.loadDefFile(qualifiedName.toString());
 	}
 
 	@Override
 	public void preAnalyse() {
-	    TypeImporter.loadDefFile(qualifiedName.toString());
+	    
 	}
 
 	@Override
@@ -959,6 +965,16 @@ public abstract class Node {
 		func.parameters.add(new TypeI(arg.type));
 	    if (!Semantics.funcExists(func)) Semantics.addFunc(func);
 	    else semanticError(this, line, column, FUNC_ALREADY_EXISTS, id);
+	    
+	    if(OperatorDef.operatorDefExists(id)){
+		if(args.hasDefExpr) semanticError(this, line, column, OP_OVERLOADS_CANNOT_HAVE_DEFEXPR);
+		OperatorDef op = OperatorDef.getOperatorDef(id);
+		if(op.type == EnumOperatorType.UNARY){
+		    if(args.args.size() != 0) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, "unary", 0);
+		}else{
+		    if(args.args.size() != 1) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, "binary", 1);
+		}
+	    }
 	}
 
 	@Override
@@ -1025,7 +1041,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    final String name = Operator.filterOperators(id), type = returnType.toBytecodeName();
+	    final String name = OperatorDef.filterOperators(id), type = returnType.toBytecodeName();
 	    genNodeFunc = new GenNodeFunction(name, func.modifiers, type);
 	    // TODO: Generate constructor calls if this function is a
 	    // constructor
@@ -1420,7 +1436,7 @@ public abstract class Node {
 	    for (final IExpression expr : args.exprs)
 		expr.generate();
 	    if (func.hasDefExpr && (args.exprs.size() < func.parameters.size())) func.defExpr.generate();
-	    final String name = func.isConstructor() ? "<init>" : Operator.filterOperators(func.qualifiedName.shortName);
+	    final String name = func.isConstructor() ? "<init>" : OperatorDef.filterOperators(func.qualifiedName.shortName);
 	    addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), name, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
 	}
 
@@ -1758,12 +1774,15 @@ public abstract class Node {
 			parser = new Parser(new Lexer(new BufferedReader(new InputStreamReader(new ByteArrayInputStream(varName.getBytes())))));
 			parser.lineOffset = line - 2;
 			parser.columnOffset = column + i;
-			final IExpression expr = parser.parseExpression();
+			IExpression expr = null;
+			try {
+			    expr = parser.parseExpression();
+			} catch (GrammarException e) {
+			    parser.handleException(e);
+			}
 			if (expr != null) ((Node) expr).analyse();
 		    } catch (final IOException e) {
 			e.printStackTrace();
-		    } catch (final UnexpectedTokenException e) {
-			if (parser != null) parser.handleException(e);
 		    }
 		} else if (ch == ' ') {
 		    if (inVarName && !inExpr) {
@@ -1945,15 +1964,15 @@ public abstract class Node {
 
     public static class NodeBinary extends Node implements IExpression {
 	public IExpression expr1, expr2;
-	public Operator operator;
+	public OperatorDef operator;
 	public Function operatorOverloadFunc;
 	public TypeI exprType1, exprType2;
 
-	public NodeBinary(final int line, final int columnStart, final IExpression expr1, final String operator, final IExpression expr2) {
+	public NodeBinary(final int line, final int columnStart, final IExpression expr1, final OperatorDef op, final IExpression expr2) {
 	    super(line, columnStart);
 	    this.expr1 = expr1;
 	    this.expr2 = expr2;
-	    this.operator = new Operator(operator);
+	    this.operator = op;
 	}
 
 	@Override
@@ -1977,7 +1996,7 @@ public abstract class Node {
 	    if (errored) return null;
 
 	    final Tuple<TypeI, Function> operation = Semantics.getOperationType(exprType1, exprType2, operator);
-	    if (operation == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, operator.opStr, exprType1, exprType2);
+	    if (operation == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, operator.id, exprType1, exprType2);
 	    operatorOverloadFunc = operation.b;
 	    return operation.a;
 
@@ -1985,7 +2004,7 @@ public abstract class Node {
 
 	@Override
 	public void registerScopedChecks() {
-	    if ((expr2 instanceof NodeNull) && operator.opStr.equals("!=") && (expr1 instanceof NodeVariable)) {
+	    if ((expr2 instanceof NodeNull) && operator.id.equals("!=") && (expr1 instanceof NodeVariable)) {
 		final NodeVariable varExpr = (NodeVariable) expr1;
 		if (varExpr.var != null) Scope.getScope().nullChecks.add(varExpr.var);
 	    }
@@ -2023,7 +2042,7 @@ public abstract class Node {
 		    expr1.generate();
 		    parameterType = exprType1.toBytecodeName();
 		}
-		final String name = Operator.filterOperators(operator.opStr);
+		final String name = OperatorDef.filterOperators(operator.id);
 		addFuncStmt(new GenNodeFuncCall(enclosingType, name, "(" + parameterType + ")" + operatorOverloadFunc.returnType.toBytecodeName(), interfaceFunc, privateFunc, false, false));
 	    }
 	}
@@ -2031,15 +2050,15 @@ public abstract class Node {
 
     public static class NodeUnary extends Node implements IExpression, IFuncStmt {
 	public IExpression expr;
-	public Operator operator;
+	public OperatorDef operator;
 	public boolean prefix;
 	public Function overloadFunc;
 	public TypeI type;
 
-	public NodeUnary(final int line, final int column, final IExpression expr, final String operator, final boolean prefix) {
+	public NodeUnary(final int line, final int column, final IExpression expr, final OperatorDef operator, final boolean prefix) {
 	    super(line, column);
 	    this.expr = expr;
-	    this.operator = new Operator(operator);
+	    this.operator = operator;
 	    this.prefix = prefix;
 	}
 
@@ -2058,7 +2077,7 @@ public abstract class Node {
 	    if (!((NodeVariable) expr).errored) {
 		final TypeI exprType = expr.getExprType();
 		final Operation op = Semantics.getOperationType(exprType, operator);
-		if (op == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPE, operator.opStr, exprType);
+		if (op == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPE, operator.id, exprType);
 		else {
 		    overloadFunc = op.overloadFunc;
 		    type = op.type;
@@ -2079,7 +2098,7 @@ public abstract class Node {
 		expr.generate();
 		final String enclosingType = overloadFunc.enclosingType.qualifiedName.toBytecodeName(), returnType = overloadFunc.returnType.toBytecodeName();
 		final boolean privateFunc = BitOp.and(overloadFunc.modifiers, EnumModifier.PRIVATE.intVal), interfaceFunc = overloadFunc.enclosingType.type == EnumType.INTERFACE;
-		final String name = Operator.filterOperators(operator.opStr);
+		final String name = OperatorDef.filterOperators(operator.id);
 		addFuncStmt(new GenNodeFuncCall(enclosingType, name, "()" + returnType, interfaceFunc, privateFunc, false, false));
 	    }
 	}

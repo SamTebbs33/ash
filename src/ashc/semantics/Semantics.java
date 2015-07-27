@@ -9,7 +9,8 @@ import ashc.grammar.*;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeExprs;
 import ashc.grammar.Node.NodeVariable;
-import ashc.grammar.Operator.EnumOperation;
+import ashc.grammar.OperatorDef.OperatorDefNative;
+import ashc.grammar.OperatorDef.OperatorDefNative.NativeOpInfo;
 import ashc.load.*;
 import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
@@ -226,12 +227,18 @@ public class Semantics {
 	aliases.put(alias, type);
     }
 
-    public static Tuple<TypeI, Function> getOperationType(final TypeI type1, final TypeI type2, final Operator operator) {
+    public static Tuple<TypeI, Function> getOperationType(final TypeI type1, final TypeI type2, final OperatorDef operator) {
 	if (type1.isNumeric() && type2.isNumeric()) {
-	    final EnumPrimitive result = operator.operation.primitive;
-	    return result == null ? new Tuple<TypeI, Function>(TypeI.getPrecedentType(type1, type2), null)
-		    : new Tuple<TypeI, Function>(new TypeI(result), null);
-	} else if (type1.equals(TypeI.getStringType()) && (operator.operation == EnumOperation.ADD)) return new Tuple<TypeI, Function>(TypeI.getStringType(), null);
+	    if(operator instanceof OperatorDefNative){
+		OperatorDefNative op = (OperatorDefNative)operator;
+		for(NativeOpInfo info : op.opInfo){
+		    if(info.type1 == type1.getInstructionType() && info.type2 == type2.getInstructionType()){
+			return new Tuple<TypeI, Function>(TypeI.from(info.retType), null);
+		    }
+		}
+	    }
+	    return new Tuple<TypeI, Function>(TypeI.getPrecedentType(type1, type2), null);
+	}
 
 	if (type1.isArray() || type1.isTuple() || type1.isVoid() || type1.isNull()) return null;
 	else if (type2.isArray() || type2.isTuple() || type2.isVoid() || type2.isNull()) return null;
@@ -243,7 +250,7 @@ public class Semantics {
 	if (!type1.isPrimitive()) {
 	    parameter.add(type2);
 	    type = Semantics.getType(type1.shortName).get();
-	    func = type.getFunc(operator.opStr, parameter);
+	    func = type.getFunc(operator.id, parameter);
 	    if (func != null) return new Tuple<TypeI, Function>(func.returnType, func);
 	}
 	if (!type2.isPrimitive()) {
@@ -251,16 +258,16 @@ public class Semantics {
 	    parameter.clear();
 	    parameter.add(type1);
 	    type = Semantics.getType(type2.shortName).get();
-	    func = type.getFunc(operator.opStr, parameter);
+	    func = type.getFunc(operator.id, parameter);
 	    if (func != null) return new Tuple<TypeI, Function>(func.returnType, func);
 	}
 	return null;
     }
 
-    public static Operation getOperationType(final TypeI type, final Operator operator) {
+    public static Operation getOperationType(final TypeI type, final OperatorDef operator) {
 	if (type.isNumeric()) return new Operation(null, type);
 	if (type.isArray() || type.isNull() || type.isTuple() || type.isVoid()) return null;
-	final Function func = Semantics.getType(type.shortName).get().getFunc(operator.opStr, new LinkedList<>());
+	final Function func = Semantics.getType(type.shortName).get().getFunc(operator.id, new LinkedList<>());
 	return func != null ? new Operation(func, func.returnType) : null;
     }
 

@@ -73,6 +73,7 @@ import ashc.grammar.Node.NodeVarDecExplicit;
 import ashc.grammar.Node.NodeVarDecImplicit;
 import ashc.grammar.Node.NodeVariable;
 import ashc.grammar.Node.NodeWhile;
+import ashc.grammar.OperatorDef.EnumOperatorType;
 import ashc.util.*;
 
 /**
@@ -87,6 +88,18 @@ public class Parser {
     private int pointer = 0, pointerTemp = 0, line = 1, column = 1;
     public boolean silenceErrors = false;
     public int columnOffset, lineOffset;
+    
+    public static class GrammarException extends Exception {
+
+	public GrammarException(String arg0) {
+	    super(arg0);
+	}
+
+	public void print(int lineOffset, int columnOffset, Lexer lexer) {
+	    System.err.println(this.getMessage());
+	}
+	
+    }
 
     public Parser(final Lexer lexer) {
 	this.lexer = lexer;
@@ -101,33 +114,18 @@ public class Parser {
 	    }
     }
 
-    public void handleException(final UnexpectedTokenException e) {
-	final int line = e.token.line + lineOffset, colStart = e.token.columnStart + columnOffset, colEnd = e.token.columnEnd + columnOffset;
-	System.err.printf("Error:[%d:%d -> %d] %s%n", line, colStart, colEnd, e.msg);
-	AshError.numErrors++;
-
-	// Print out the line and location of the error
-	if (line <= lexer.lines.size()) {
-	    System.out.println(lexer.lines.get(line - 1));
-	    for (int i = 0; i < (colStart - 1); i++)
-		System.out.print(" ");
-	    System.out.print("^");
-	    if ((colEnd - colStart) > 1) {
-		for (int i = colStart; i < (colEnd - 2); i++)
-		    System.out.print("-");
-		System.out.println("^");
-	    } else System.out.println();
-	}
+    public void handleException(final GrammarException e) {
+	e.print(lineOffset, columnOffset, lexer);
     }
 
     /**
      * Return the next token, or null if we have passed the EOF token
      *
      * @return {@link Token}
-     * @throws UnexpectedTokenException
+     * @throws GrammarException
      *
      */
-    private Token getNext() throws UnexpectedTokenException {
+    private Token getNext() throws GrammarException {
 	if (pointer < tokens.size()) {
 	    final Token t = tokens.get(pointer++);
 	    line = t.line;
@@ -162,23 +160,23 @@ public class Parser {
      * @param t
      *            - The token type expected
      * @return {@link Token}
-     * @throws UnexpectedTokenException
+     * @throws GrammarException
      *
      */
-    private Token expect(final TokenType t) throws UnexpectedTokenException {
+    private Token expect(final TokenType t) throws GrammarException {
 	final Token token = getNext();
 	if ((token.type != t) && !silenceErrors) throw new UnexpectedTokenException(token, t);
 	return token;
     }
 
-    private Token expect(final TokenMatcher... matchers) throws UnexpectedTokenException {
+    private Token expect(final TokenMatcher... matchers) throws GrammarException {
 	final Token token = getNext();
 	for (final TokenMatcher matcher : matchers)
 	    if (matcher.matches(token)) return token;
 	throw new UnexpectedTokenException(token, matchers);
     }
 
-    private Token expect(final String tokenData) throws UnexpectedTokenException {
+    private Token expect(final String tokenData) throws GrammarException {
 	final Token next = getNext();
 	if (!next.data.equals(tokenData) && !silenceErrors) throw new UnexpectedTokenException(next, tokenData);
 	return next;
@@ -190,10 +188,10 @@ public class Parser {
      * @param t
      *            - The token types expected
      * @return {@link Token}
-     * @throws UnexpectedTokenException
+     * @throws GrammarException
      *
      */
-    private Token expect(final TokenType... t) throws UnexpectedTokenException {
+    private Token expect(final TokenType... t) throws GrammarException {
 	final Token token = getNext();
 	boolean found = false;
 	for (final TokenType type : t)
@@ -217,10 +215,10 @@ public class Parser {
      * Parse an optional list of import declarations
      *
      * @return {@link LinkedList}
-     * @throws UnexpectedTokenException
+     * @throws GrammarException
      *
      */
-    private LinkedList<NodeImport> parseImports() throws UnexpectedTokenException {
+    private LinkedList<NodeImport> parseImports() throws GrammarException {
 	final LinkedList<NodeImport> imports = new LinkedList<Node.NodeImport>();
 	while (getNext().type == TokenType.IMPORT) {
 	    final NodeQualifiedName name = parseQualifiedName();
@@ -242,10 +240,10 @@ public class Parser {
      * Parses and returns a qualified name node
      *
      * @return {@link NodeQualifiedName}
-     * @throws UnexpectedTokenException
+     * @throws GrammarException
      *
      */
-    private NodeQualifiedName parseQualifiedName() throws UnexpectedTokenException {
+    private NodeQualifiedName parseQualifiedName() throws GrammarException {
 	Token id = expect(TokenType.ID);
 	final NodeQualifiedName name = new NodeQualifiedName(id.line, id.columnStart);
 	name.add(id.data);
@@ -261,10 +259,10 @@ public class Parser {
      * Parses and returns an optional package declaration
      *
      * @return {@link NodePackage}
-     * @throws UnexpectedTokenException
+     * @throws GrammarException
      *
      */
-    private NodePackage parsePackage() throws UnexpectedTokenException {
+    private NodePackage parsePackage() throws GrammarException {
 	if (getNext().type == TokenType.PACKAGE) {
 	    final NodeQualifiedName name = parseQualifiedName();
 	    if (name != null) return new NodePackage(name.line, name.column, name);
@@ -286,7 +284,7 @@ public class Parser {
 		|| (type == TokenType.STATIC);
     }
 
-    private LinkedList<NodeModifier> parseMods() throws UnexpectedTokenException {
+    private LinkedList<NodeModifier> parseMods() throws GrammarException {
 	final LinkedList<NodeModifier> mods = new LinkedList<NodeModifier>();
 	Token token = getNext();
 	TokenType type = token.type;
@@ -302,7 +300,7 @@ public class Parser {
     /**
      * class id args? (: types)? { block }
      */
-    private NodeClassDec parseClassDec(final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
+    private NodeClassDec parseClassDec(final LinkedList<NodeModifier> mods) throws GrammarException {
 	final Token id = expect(TokenType.ID);
 	final NodeTypes generics = parseGenerics();
 	NodeArgs args = null;
@@ -324,11 +322,11 @@ public class Parser {
 	return new NodeClassDec(id.line, id.columnStart, mods, types, args, id, block, generics, superArgs);
     }
 
-    private NodeTypes parseGenerics() throws UnexpectedTokenException {
+    private NodeTypes parseGenerics() throws GrammarException {
 	return parseGenerics(true);
     }
 
-    private NodeClassBlock parseClassBlock() throws UnexpectedTokenException {
+    private NodeClassBlock parseClassBlock() throws GrammarException {
 	final NodeClassBlock block = new NodeClassBlock();
 	if (getNext().type == TokenType.BRACEL) while (getNext().type != TokenType.BRACER) {
 	    rewind();
@@ -364,9 +362,9 @@ public class Parser {
 	return block;
     }
 
-    private NodeFuncDec parseMutFuncDec(final boolean needsBody, final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
+    private NodeFuncDec parseMutFuncDec(final boolean needsBody, final LinkedList<NodeModifier> mods) throws GrammarException {
 	expect(TokenType.MUT);
-	final Token id = expect(TokenType.ID, TokenType.BINARYOP, TokenType.UNARYOP);
+	final Token id = expect(TokenType.ID, TokenType.OP);
 	final NodeArgs args = parseArgs();
 	NodeType throwsType = null;
 	NodeFuncBlock block = null;
@@ -379,9 +377,9 @@ public class Parser {
     /**
      * func id(args?) (: type)?
      */
-    private NodeFuncDec parseFuncDec(final boolean needsBody, final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
+    private NodeFuncDec parseFuncDec(final boolean needsBody, final LinkedList<NodeModifier> mods) throws GrammarException {
 	expect(TokenType.FUNC);
-	final Token id = expect(TokenType.ID, TokenType.BINARYOP, TokenType.UNARYOP, TokenType.ARRAYDIMENSION);
+	final Token id = expect(TokenType.ID, TokenType.OP, TokenType.ARRAYDIMENSION);
 	final NodeTypes types = parseGenericsDecs();
 	final NodeArgs args = parseArgs();
 	NodeType type = null, throwsType = null;
@@ -403,7 +401,7 @@ public class Parser {
 	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, type, throwsType, block, types);
     }
 
-    public NodeTypes parseGenericsDecs() throws UnexpectedTokenException {
+    public NodeTypes parseGenericsDecs() throws GrammarException {
 	if (getNext().data.equals("<")) {
 	    final NodeTypes types = parseSuperTypes(false).a;
 	    expect(">");
@@ -412,7 +410,7 @@ public class Parser {
 	return new NodeTypes();
     }
 
-    public NodeTypes parseGenerics(final boolean necessary) throws UnexpectedTokenException {
+    public NodeTypes parseGenerics(final boolean necessary) throws GrammarException {
 	if (getNext().data.equals("<")) {
 	    final NodeTypes types = parseTypes(necessary);
 	    expect(">");
@@ -421,7 +419,7 @@ public class Parser {
 	return null;
     }
 
-    private NodeFuncBlock parseFuncBlock(final boolean allowSingleLine, final boolean singleLineExpression) throws UnexpectedTokenException {
+    private NodeFuncBlock parseFuncBlock(final boolean allowSingleLine, final boolean singleLineExpression) throws GrammarException {
 	final NodeFuncBlock block = new NodeFuncBlock();
 	Token token = null;
 	if (allowSingleLine) token = expect(TokenType.LAMBDAARROW, TokenType.BRACEL);
@@ -435,7 +433,7 @@ public class Parser {
 	return block;
     }
 
-    private IFuncStmt parseFuncStmt() throws UnexpectedTokenException {
+    private IFuncStmt parseFuncStmt() throws GrammarException {
 	final Token token = expect(TokenTypeGroup.FUNC_CALL, TokenTypeGroup.VAR_DEC, TokenTypeGroup.CONTROL_STMT, TokenType.RETURN);
 	switch (token.type) {
 	    case RETURN:
@@ -453,11 +451,12 @@ public class Parser {
 		rewind();
 		final IFuncStmt stmt = parsePrefix();
 		if (stmt instanceof NodeVariable) {
-		    /*
-		     * while(getNext().type == TokenType.BRACKETL){ ((NodeVariable)stmt).exprs.add(parseExpression()); expect(TokenType.BRACKETR); } rewind();
-		     */
-		    final Token op = expect(TokenType.ASSIGNOP, TokenType.COMPOUNDASSIGNOP, TokenType.UNARYOP);
-		    if (op.type == TokenType.UNARYOP) return new NodeUnary(op.line, op.columnStart, (NodeVariable) stmt, op.data, false);
+		    final Token op = expect(TokenType.ASSIGNOP, TokenType.COMPOUNDASSIGNOP, TokenType.OP);
+		    if (op.type == TokenType.OP){
+			if(!OperatorDef.operatorDefExists(op.data)) throw new GrammarException("Undefined operator: " + op.data);
+			if(OperatorDef.getOperatorDef(op.data).type != EnumOperatorType.UNARY) throw new GrammarException("The \"" + op.data + "\" operator is not a unary operator");
+			return new NodeUnary(op.line, op.columnStart, (NodeVariable) stmt, OperatorDef.getOperatorDef(op.data), false);
+		    }
 		    return new NodeVarAssign(op.line, op.columnStart, (NodeVariable) stmt, op.data, parseExpression());
 		} else return stmt;
 	    case IF:
@@ -475,7 +474,7 @@ public class Parser {
 	return null;
     }
 
-    private IFuncStmt parseMatchStmt() throws UnexpectedTokenException {
+    private IFuncStmt parseMatchStmt() throws GrammarException {
 	final IExpression expr = parseExpression();
 	expect(TokenType.BRACEL);
 	final NodeMatch match = new NodeMatch(((Node) expr).line, ((Node) expr).column, expr);
@@ -491,7 +490,7 @@ public class Parser {
 	return match;
     }
 
-    private NodeMatchCase parseMatchCase() throws UnexpectedTokenException {
+    private NodeMatchCase parseMatchCase() throws GrammarException {
 	Token next;
 	if ((next = getNext()).type == TokenType.UNDERSCORE) return new NodeMatchCase(next.line, next.columnStart, null, parseFuncBlock(true, false));
 	else rewind();
@@ -505,7 +504,7 @@ public class Parser {
 	return matchCase;
     }
 
-    private IFuncStmt parseForStmt() throws UnexpectedTokenException {
+    private IFuncStmt parseForStmt() throws GrammarException {
 	int parens = 0;
 	while (getNext().type == TokenType.PARENL)
 	    parens++;
@@ -537,11 +536,11 @@ public class Parser {
 	}
     }
 
-    private IFuncStmt parseWhileStmt() throws UnexpectedTokenException {
+    private IFuncStmt parseWhileStmt() throws GrammarException {
 	return new NodeWhile(line, column, parseExpression(), parseConstructBlock());
     }
 
-    private NodeIf parseIfStmt(final boolean isElseIf) throws UnexpectedTokenException {
+    private NodeIf parseIfStmt(final boolean isElseIf) throws GrammarException {
 	final NodeIf ifStmt = new NodeIf(line, column, parseExpression(), parseConstructBlock(), false, isElseIf);
 	if (getNext().type == TokenType.ELSE) {
 	    if (getNext().type == TokenType.IF) ifStmt.elseStmt = parseIfStmt(true);
@@ -553,7 +552,7 @@ public class Parser {
 	return ifStmt;
     }
 
-    private NodeFuncBlock parseConstructBlock() throws UnexpectedTokenException {
+    private NodeFuncBlock parseConstructBlock() throws GrammarException {
 	if (getNext().type == TokenType.BRACEL) {
 	    rewind();
 	    return parseFuncBlock(false, false);
@@ -566,7 +565,7 @@ public class Parser {
     }
 
     // A prefix is just another name for a func call or variable
-    private NodePrefix parsePrefix() throws UnexpectedTokenException {
+    private NodePrefix parsePrefix() throws GrammarException {
 	NodePrefix prefix = null;
 	do {
 	    final Token id = expect(TokenType.ID, TokenType.SELF, TokenType.SUPER, TokenType.THIS);
@@ -596,7 +595,7 @@ public class Parser {
 	return prefix;
     }
 
-    private NodeExprs parseCallArgs(final TokenType start, final TokenType end) throws UnexpectedTokenException {
+    private NodeExprs parseCallArgs(final TokenType start, final TokenType end) throws GrammarException {
 	final NodeExprs exprs = new NodeExprs();
 	expect(start);
 	Token next = getNext();
@@ -614,7 +613,7 @@ public class Parser {
 	return exprs;
     }
 
-    private IExpression parsePrimaryExpression() throws UnexpectedTokenException {
+    private IExpression parsePrimaryExpression() throws GrammarException {
 	Token next = expect(Lexer.TokenTypeGroup.EXPRESSION_STARTER);
 	IExpression expr = null;
 	switch (next.type) {
@@ -631,8 +630,11 @@ public class Parser {
 	    case SELF:
 		expr = new NodeSelf(next.line, next.columnStart);
 		break;
-	    case UNARYOP:
-		expr = new NodeUnary(next.line, next.columnStart, parsePrimaryExpression(), next.data, true);
+	    case OP:
+		if(!OperatorDef.operatorDefExists(next.data)) throw new GrammarException("Undefined operator: " + next.data);
+		OperatorDef operator = OperatorDef.getOperatorDef(next.data);
+		if(operator.type != EnumOperatorType.UNARY) throw new GrammarException("The \"" + next.data + "\" operator is not a unary operator");
+		expr = new NodeUnary(next.line, next.columnStart, parsePrimaryExpression(), operator, true);
 		break;
 	    case BRACEL:
 		final NodeList listExpr = new NodeList(next.line, next.columnStart);
@@ -728,19 +730,19 @@ public class Parser {
 		expr = new NodeBool(next.line, next.columnStart, next.data.equals("true"));
 		break;
 	}
-	if (expr != null) {
+	/*if (expr != null) {
 	    next = getNext();
 	    switch (next.type) {
-		case BINARYOP:
+		case OP:
 		    return new NodeBinary(next.line, next.columnStart, expr, next.data, parsePrimaryExpression());
 		default:
 		    rewind();
 	    }
-	}
+	}*/
 	return expr;
     }
 
-    private LinkedList<NodeTupleExprArg> parseTupleExpr() throws UnexpectedTokenException {
+    private LinkedList<NodeTupleExprArg> parseTupleExpr() throws GrammarException {
 	expect(TokenType.BRACKETL);
 	boolean named = false, unnamed = false;
 	final LinkedList<NodeTupleExprArg> args = new LinkedList<NodeTupleExprArg>();
@@ -757,7 +759,7 @@ public class Parser {
 	return args;
     }
 
-    private NodeTupleExprArg parseTupleExprArg(final boolean named, final boolean unnamed) throws UnexpectedTokenException {
+    private NodeTupleExprArg parseTupleExprArg(final boolean named, final boolean unnamed) throws GrammarException {
 	final Token next = getNext();
 	final NodeTupleExprArg arg = new NodeTupleExprArg(next.line, next.columnStart);
 	if (next.type == TokenType.ID) {
@@ -768,7 +770,7 @@ public class Parser {
 	return arg;
     }
 
-    public IExpression parseExpression() throws UnexpectedTokenException {
+    public IExpression parseExpression() throws GrammarException {
 	final IExpression expr = parsePrimaryExpression();
 	Token next = getNext();
 	switch (next.type) {
@@ -782,9 +784,12 @@ public class Parser {
 	    case IS:
 		return new NodeIs(next.line, next.columnStart, expr, parseSuperType());
 		// Postfix unary expression
-	    case UNARYOP:
+	    case OP:
 		if (next.data.equals("!")) return new NodeUnwrapOptional(next.line, next.columnStart, expr);
-		return new NodeUnary(next.line, next.columnStart, expr, next.data, false);
+		if(!OperatorDef.operatorDefExists(next.data)) throw new GrammarException("Undefined operator: " + next.data);
+		OperatorDef op = OperatorDef.getOperatorDef(next.data);
+		if(op.type == EnumOperatorType.UNARY) return new NodeUnary(next.line, next.columnStart, expr, op, false);
+		else return new NodeBinary(next.line, next.columnStart, expr, op, parseExpression());
 	    case QUESTIONMARK:
 		if ((next = getNext()).type == TokenType.QUESTIONMARK) return new NodeElvis(next.line, next.columnStart, expr, parseExpression());
 		else rewind();
@@ -805,7 +810,7 @@ public class Parser {
 	return expr;
     }
 
-    private NodeVarDec parseVarDec(final LinkedList<NodeModifier> mods, final Token keyword, final boolean allowMultipleDecs) throws UnexpectedTokenException {
+    private NodeVarDec parseVarDec(final LinkedList<NodeModifier> mods, final Token keyword, final boolean allowMultipleDecs) throws GrammarException {
 	final Token id = expect(TokenType.ID);
 	Token next = expect(TokenType.COLON, TokenType.ASSIGNOP);
 	NodeVarDec varDec;
@@ -868,7 +873,7 @@ public class Parser {
 	return varDec;
     }
 
-    private NodeTypes parseTypes(final boolean necessary) throws UnexpectedTokenException {
+    private NodeTypes parseTypes(final boolean necessary) throws GrammarException {
 	final NodeTypes types = new NodeTypes();
 	savePointer();
 	final NodeType type = parseType(necessary);
@@ -883,15 +888,15 @@ public class Parser {
 	return types;
     }
 
-    private NodeType parseType() throws UnexpectedTokenException {
+    private NodeType parseType() throws GrammarException {
 	return parseType(true);
     }
 
-    private NodeTypes parseTypes() throws UnexpectedTokenException {
+    private NodeTypes parseTypes() throws GrammarException {
 	return parseTypes(true);
     }
 
-    private Tuple<NodeTypes, NodeExprs> parseSuperTypes(final boolean allowArgs) throws UnexpectedTokenException {
+    private Tuple<NodeTypes, NodeExprs> parseSuperTypes(final boolean allowArgs) throws GrammarException {
 	final NodeTypes types = new NodeTypes();
 	NodeExprs superArgs = null;
 	types.add(parseSuperType());
@@ -906,7 +911,7 @@ public class Parser {
 	return new Tuple<NodeTypes, NodeExprs>(types, superArgs);
     }
 
-    private NodeArgs parseArgs() throws UnexpectedTokenException {
+    private NodeArgs parseArgs() throws GrammarException {
 	expect(TokenType.PARENL);
 	final NodeArgs args = new NodeArgs();
 	NodeArg arg;
@@ -920,7 +925,7 @@ public class Parser {
 	return args;
     }
 
-    private NodeArg parseArg() throws UnexpectedTokenException {
+    private NodeArg parseArg() throws GrammarException {
 	final Token id = getNext();
 	if (id.type == TokenType.ID) {
 	    expect(TokenType.COLON);
@@ -933,7 +938,7 @@ public class Parser {
 	return null;
     }
 
-    private NodeType parseType(final boolean necessary) throws UnexpectedTokenException {
+    private NodeType parseType(final boolean necessary) throws GrammarException {
 	final NodeType type = new NodeType();
 	// Parse tuple types
 	if (getNext().type == TokenType.PARENL) {
@@ -963,14 +968,14 @@ public class Parser {
 	return type;
     }
 
-    private NodeType parseSuperType() throws UnexpectedTokenException {
+    private NodeType parseSuperType() throws GrammarException {
 	final Token id = expect(TokenType.ID);
 	final NodeType type = new NodeType(id.line, id.columnStart, id.data);
 	type.generics = parseGenerics();
 	return type;
     }
 
-    private NodeEnumDec parseEnumDec(final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
+    private NodeEnumDec parseEnumDec(final LinkedList<NodeModifier> mods) throws GrammarException {
 	final Token id = expect(TokenType.ID);
 	NodeArgs args = null;
 
@@ -983,7 +988,7 @@ public class Parser {
 	return new NodeEnumDec(id.line, id.columnStart, mods, id, args, block);
     }
 
-    private NodeEnumBlock parseEnumBlock() throws UnexpectedTokenException {
+    private NodeEnumBlock parseEnumBlock() throws GrammarException {
 	final LinkedList<NodeEnumInstance> instances = new LinkedList<Node.NodeEnumInstance>();
 	instances.add(parseEnumInstance());
 	while (getNext().type == TokenType.COMMA)
@@ -992,7 +997,7 @@ public class Parser {
 	return new NodeEnumBlock(line, column, instances, parseClassBlock());
     }
 
-    private NodeInterfaceDec parseInterfaceDec(final LinkedList<NodeModifier> mods) throws UnexpectedTokenException {
+    private NodeInterfaceDec parseInterfaceDec(final LinkedList<NodeModifier> mods) throws GrammarException {
 	final Token id = expect(TokenType.ID);
 	NodeArgs args = null;
 	NodeTypes types = null;
@@ -1009,7 +1014,7 @@ public class Parser {
 	return new NodeInterfaceDec(id.line, id.columnStart, mods, types, args, id, block);
     }
 
-    private NodeTypeDec parseTypeDec() throws UnexpectedTokenException {
+    private NodeTypeDec parseTypeDec() throws GrammarException {
 	final LinkedList<NodeModifier> mods = parseMods();
 	final Token token = expect(TokenType.CLASS, TokenType.ENUM, TokenType.INTERFACE);
 	switch (token.type) {
@@ -1026,7 +1031,7 @@ public class Parser {
 	return null;
     }
 
-    private LinkedList<NodeTypeDec> parseTypeDecs() throws UnexpectedTokenException {
+    private LinkedList<NodeTypeDec> parseTypeDecs() throws GrammarException {
 	final LinkedList<NodeTypeDec> typeDecs = new LinkedList<Node.NodeTypeDec>();
 	NodeTypeDec typeDec = parseTypeDec();
 	typeDecs.add(typeDec);
@@ -1041,7 +1046,7 @@ public class Parser {
 	return typeDecs;
     }
 
-    public NodeFile parseFile() throws UnexpectedTokenException {
+    public NodeFile parseFile() throws GrammarException {
 	final NodePackage pkg = parsePackage();
 	final LinkedList<NodeInclude> includes = parseIncludes();
 	final LinkedList<NodeImport> imports = parseImports();
@@ -1050,7 +1055,7 @@ public class Parser {
 	return new NodeFile(pkg, includes, imports, aliases, typeDecs);
     }
 
-    public LinkedList<NodeAlias> parseAliases() throws UnexpectedTokenException {
+    public LinkedList<NodeAlias> parseAliases() throws GrammarException {
 	final LinkedList<NodeAlias> result = new LinkedList<NodeAlias>();
 	Token next;
 	while ((next = getNext()).type == TokenType.ALIAS) {
@@ -1062,7 +1067,7 @@ public class Parser {
 	return result;
     }
 
-    private NodeEnumInstance parseEnumInstance() throws UnexpectedTokenException {
+    private NodeEnumInstance parseEnumInstance() throws GrammarException {
 	final Token id = expect(TokenType.ID);
 	if (getNext().type == TokenType.PARENL) {
 	    rewind();
@@ -1072,7 +1077,7 @@ public class Parser {
 	return new NodeEnumInstance(id.line, id.columnStart, id, null);
     }
 
-    public NodeDefFile parseDefFile() throws UnexpectedTokenException {
+    public NodeDefFile parseDefFile() throws GrammarException {
 	NodeDefFile defFile = new NodeDefFile();
 	defFile.includes = parseIncludes();
 	defFile.imports = parseImports();
@@ -1081,7 +1086,7 @@ public class Parser {
 	return defFile;
     }
 
-    private LinkedList<NodeFuncDec> parseDefFileFuncDecs() throws UnexpectedTokenException {
+    private LinkedList<NodeFuncDec> parseDefFileFuncDecs() throws GrammarException {
 	LinkedList<NodeFuncDec> decs = new LinkedList<Node.NodeFuncDec>();
 	while(getNext().type == TokenType.FUNC){
 	    rewind();
@@ -1091,7 +1096,7 @@ public class Parser {
 	return decs;
     }
 
-    private LinkedList<NodeOperatorDef> parseOperatorDefs() throws UnexpectedTokenException {
+    private LinkedList<NodeOperatorDef> parseOperatorDefs() throws GrammarException {
 	LinkedList<NodeOperatorDef> operatorDefs = new LinkedList<>();
 	Token next;
 	while((next = getNext()).type == TokenType.OPERATOR){
@@ -1101,8 +1106,8 @@ public class Parser {
 	return operatorDefs;
     }
 
-    private NodeOperatorDef parseOperatorDef() throws UnexpectedTokenException {
-	Token id = expect(TokenType.CUSTOMOP);
+    private NodeOperatorDef parseOperatorDef() throws GrammarException {
+	Token id = expect(TokenType.OP);
 	expect(TokenType.ASSIGNOP);
 	expect("type");
 	expect(TokenType.COLON);
@@ -1125,7 +1130,7 @@ public class Parser {
 	return new NodeOperatorDef(id.line, id.columnStart, id.data, name, type, assoc, precedence);
     }
 
-    private LinkedList<NodeInclude> parseIncludes() throws UnexpectedTokenException {
+    private LinkedList<NodeInclude> parseIncludes() throws GrammarException {
 	LinkedList<NodeInclude> includes = new LinkedList<>();
 	Token next;
 	while((next = getNext()).type == TokenType.INCLUDE){

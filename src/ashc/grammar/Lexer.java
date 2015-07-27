@@ -4,6 +4,9 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
+import ashc.error.*;
+import ashc.grammar.Parser.GrammarException;
+
 /**
  * Ash
  *
@@ -31,7 +34,7 @@ public class Lexer {
 		TokenType.ID,
 		TokenType.THIS,
 		TokenType.SELF,
-		TokenType.UNARYOP,
+		//TokenType.UNARYOP,
 		TokenType.BRACKETL,
 		TokenType.PARENL,
 		TokenType.OCTINT,
@@ -89,10 +92,10 @@ public class Lexer {
 	LAMBDAARROW("->", "lambda arrow"),
 
 	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
-	UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
-	BINARYOP("<|>|<=|>=|==|!=|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|", "binary operator"),
+	/*UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
+	BINARYOP("<|>|<=|>=|==|!=|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|", "binary operator"),*/
 	ASSIGNOP("=", "assignment operator"),
-	CUSTOMOP("[\\+|\\-|!|~|=|\\*|/|%|^|&|<|>|?|@|#]+", "custom operator"),
+	OP("[\\+|\\-|!|~|=|\\*|/|%|^|&|<|>|?|@|#]+", "custom operator"),
 	ARRAYDIMENSION("\\[\\]"),
 	WHITESPACE("[\n\t ]+", "whitespace"),
 
@@ -154,7 +157,7 @@ public class Lexer {
 	MATCH("match "),
 	IN("in "),
 
-	ID("[a-zA-Z](\\d|[a-zA-Z])*", "identifier"),
+	ID("[a-zA-Z_](\\d|[a-zA-Z_])*", "identifier"),
 	EOF("\\Z", "end of file"),
 	ERROR(".*", "error");
 
@@ -213,30 +216,53 @@ public class Lexer {
 
     }
 
-    public static class UnexpectedTokenException extends Exception {
+    public static class UnexpectedTokenException extends GrammarException {
 
 	public Token token;
-	public String msg;
 
 	public UnexpectedTokenException(final Token found, final TokenMatcher... t) {
+	    super(String.format("Expected %s, found %s", asString(t), found.type.typeName));
 	    token = found;
+	}
+
+	public UnexpectedTokenException(final Token t) {
+	    super(String.format("Unexpected %s", t.type.typeName));
+	    token = t;
+	}
+
+	public UnexpectedTokenException(final Token next, final String tokenData) {
+	    super(String.format("Unexpected %s, expected %s", next.type.typeName, tokenData));
+	    token = next;
+	}
+	
+	private static String asString(TokenMatcher...t){
 	    final StringBuilder typesStr = new StringBuilder("");
 	    for (int i = 0; i < t.length; i++) {
 		typesStr.append(t[i].getName());
 		if (i == (t.length - 2)) typesStr.append(" or ");
 		else if (i < (t.length - 1)) typesStr.append(", ");
 	    }
-	    msg = String.format("Expected %s, found %s", typesStr, found.type.typeName);
+	    return typesStr.toString();
 	}
 
-	public UnexpectedTokenException(final Token t) {
-	    token = t;
-	    msg = String.format("Unexpected %s", t.type.typeName);
-	}
+	@Override
+	public void print(int lineOffset, int columnOffset, Lexer lexer) {
+	    final int line = token.line + lineOffset, colStart = token.columnStart + columnOffset, colEnd = token.columnEnd + columnOffset;
+		System.err.printf("Error:[%d:%d -> %d] %s%n", line, colStart, colEnd, getMessage());
+		AshError.numErrors++;
 
-	public UnexpectedTokenException(final Token next, final String tokenData) {
-	    token = next;
-	    msg = String.format("Unexpected %s, expected %s", next.type.typeName, tokenData);
+		// Print out the line and location of the error
+		if (line <= lexer.lines.size()) {
+		    System.out.println(lexer.lines.get(line - 1));
+		    for (int i = 0; i < (colStart - 1); i++)
+			System.out.print(" ");
+		    System.out.print("^");
+		    if ((colEnd - colStart) > 1) {
+			for (int i = colStart; i < (colEnd - 2); i++)
+			    System.out.print("-");
+			System.out.println("^");
+		    } else System.out.println();
+		}
 	}
 
     }

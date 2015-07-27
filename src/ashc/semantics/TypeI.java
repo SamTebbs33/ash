@@ -69,6 +69,33 @@ public class TypeI {
 	    genericTypes.add(new TypeI(t));
     }
 
+    public static TypeI from(EnumInstructionOperand retType) {
+	switch(retType){
+	    case ARRAY:
+		return new TypeI("Object", 1, false);
+	    case BOOL:
+		return new TypeI(EnumPrimitive.BOOL);
+	    case BYTE:
+		return new TypeI(EnumPrimitive.BYTE);
+	    case CHAR:
+		return new TypeI(EnumPrimitive.CHAR);
+	    case DOUBLE:
+		return new TypeI(EnumPrimitive.DOUBLE);
+	    case FLOAT:
+		return new TypeI(EnumPrimitive.FLOAT);
+	    case INT:
+		return new TypeI(EnumPrimitive.INT);
+	    case LONG:
+		return new TypeI(EnumPrimitive.LONG);
+	    case REFERENCE:
+		return TypeI.getObjectType();
+	    case SHORT:
+		return new TypeI(EnumPrimitive.SHORT);
+	    default:
+		return TypeI.getVoidType();
+	}
+    }
+
     @Override
     public boolean equals(final Object obj) {
 	if (obj instanceof TypeI) {

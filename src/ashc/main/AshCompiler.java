@@ -5,10 +5,10 @@ import java.util.*;
 
 import ashc.codegen.*;
 import ashc.grammar.*;
-import ashc.grammar.Lexer.*;
 import ashc.grammar.Lexer.UnexpectedTokenException;
 import ashc.grammar.Node.NodeDefFile;
 import ashc.grammar.Node.NodeFile;
+import ashc.grammar.Parser.GrammarException;
 
 /**
  * Ash
@@ -38,7 +38,7 @@ public class AshCompiler {
     public void parseSourceFile() {
 	try {
 	    fileNode = parser.parseFile();
-	} catch (final UnexpectedTokenException e) {
+	} catch (final GrammarException e) {
 	    parser.handleException(e);
 	}
     }
@@ -70,7 +70,7 @@ public class AshCompiler {
     public void parseDefFile() {
 	try {
 	    defFileNode = parser.parseDefFile();
-	} catch (UnexpectedTokenException e) {
+	} catch (GrammarException e) {
 	    parser.handleException(e);
 	}
     }

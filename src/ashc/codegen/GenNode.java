@@ -12,9 +12,10 @@ import ashc.codegen.GenNode.GenNodeFunction.LocalVariable;
 import ashc.error.*;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeBinary;
-import ashc.grammar.Node.NodeNull;
 import ashc.grammar.*;
-import ashc.grammar.Operator.EnumOperation;
+import ashc.grammar.OperatorDef.EnumOperation;
+import ashc.grammar.OperatorDef.OperatorDefNative;
+import ashc.grammar.OperatorDef.OperatorDefNative.NativeOpInfo;
 import ashc.main.*;
 import ashc.semantics.Member.Field;
 import ashc.semantics.*;
@@ -85,12 +86,18 @@ public abstract class GenNode {
     }
 
     public static enum EnumInstructionOperand {
-	REFERENCE(1), BOOL(1), BYTE(1), CHAR(1), INT(1), LONG(2), FLOAT(1), DOUBLE(2), ARRAY(1), SHORT(1), VOID(0);
+	REFERENCE(1), BOOL(1), BYTE(1), CHAR(1), INT(1), LONG(2, Opcodes.LCMP), FLOAT(1, Opcodes.FCMPG), DOUBLE(2, Opcodes.DCMPG), ARRAY(1), SHORT(1), VOID(0);
 
 	public int size;
+	public int cmpOpcode;
 
 	private EnumInstructionOperand(final int size) {
 	    this.size = size;
+	}
+	
+	private EnumInstructionOperand(final int size, final int cmpOpcode){
+	    this(size);
+	    this.cmpOpcode = cmpOpcode;
 	}
     }
 
@@ -669,105 +676,151 @@ public abstract class GenNode {
 	    if (expr != null) if (expr instanceof NodeBinary) {
 		final NodeBinary node = (NodeBinary) expr;
 		if (node.operatorOverloadFunc == null) {
+		    node.expr1.generate();
+		    node.expr2.generate();
 		    // Get the precedent type of the operands to decide how they
 		    // should be compared
-		    final EnumInstructionOperand type = TypeI.getPrecedentType(node.exprType1, node.exprType2).getInstructionType();
+		    //final EnumInstructionOperand type = TypeI.getPrecedentType(node.exprType1, node.exprType2).getInstructionType();
 
+		    EnumInstructionOperand type1 = node.exprType1.getInstructionType(), type2 = node.exprType2.getInstructionType(); 
 		    // Cast the binary expression's sub expressions if necessary
-		    if (node.exprType1.getInstructionType() != type) addFuncStmt(new GenNodePrimitiveCast(node.exprType1.getInstructionType(), type));
-		    else if (node.exprType2.getInstructionType() != type) addFuncStmt(new GenNodePrimitiveCast(node.exprType2.getInstructionType(), type));
+		    /*if (node.exprType1.getInstructionType() != type) addFuncStmt(new GenNodePrimitiveCast(node.exprType1.getInstructionType(), type));
+		    else if (node.exprType2.getInstructionType() != type) addFuncStmt(new GenNodePrimitiveCast(node.exprType2.getInstructionType(), type));*/
 
-		    // Decide which opcode to use
-		    switch (type) {
-			case INT:
-			case BYTE:
-			case SHORT:
-			case BOOL:
-			    node.expr1.generate();
-			    node.expr2.generate();
-
-			    // Integer type operands are handled by one single
-			    // opcode
-			    switch (node.operator.operation) {
-				case LESS:
-				    opcode = IF_ICMPGE;
-				    break;
-				case GREATER:
-				    opcode = IF_ICMPLE;
-				    break;
-				case EQUAL:
-				    opcode = IF_ICMPNE;
-				    break;
-				case NOT_EQUAL:
-				    opcode = IF_ICMPEQ;
-				    break;
-				case LESS_EQUAL:
-				    opcode = IF_ICMPGT;
-				    break;
-				case GREATER_EQUAL:
-				    opcode = IF_ICMPLT;
-				    break;
+		    OperatorDef op = node.operator;
+		    NativeOpInfo info = null;
+		    
+		    if(op instanceof OperatorDefNative){
+			
+			for(NativeOpInfo info2 : ((OperatorDefNative) op).opInfo){
+			    if(info2.type1 == type1 && info.type2 == type2){
+				info = info2;
+				break;
 			    }
-			    break;
-			case LONG:
-			case DOUBLE:
-			case FLOAT:
-			    node.expr1.generate();
-			    node.expr2.generate();
-			    // Non integer-types must be compared first
-			    if (type == EnumInstructionOperand.LONG) extraOpcodes.add(Opcodes.LCMP);
-			    else if (type == EnumInstructionOperand.DOUBLE) extraOpcodes.add(DCMPG);
-			    else if (type == EnumInstructionOperand.FLOAT) extraOpcodes.add(FCMPG);
-			    switch (node.operator.operation) {
-				case LESS:
-				    opcode = IFGE;
-				    break;
-				case GREATER:
-				    opcode = IFLE;
-				    break;
-				case EQUAL:
-				    opcode = IFNE;
-				    break;
-				case NOT_EQUAL:
-				    opcode = IFEQ;
-				    break;
-				case LESS_EQUAL:
-				    opcode = IFGT;
-				    break;
-				case GREATER_EQUAL:
-				    opcode = IFLT;
-				    break;
-			    }
-			    break;
-			default:
-			    // If it is a null comparison expression
-			    final boolean expr1IsNull = node.expr1 instanceof NodeNull,
-			    expr2IsNull = node.expr2 instanceof NodeNull;
-			    if (expr1IsNull ^ expr2IsNull) {
-
-				// Generate the expression that isn't a null
-				// expression
-				if (!expr1IsNull) node.expr1.generate();
-				else node.expr2.generate();
-				switch (node.operator.operation) {
-				    case NOT_EQUAL:
-					opcode = IFNULL;
+			}
+			if(info == null) System.err.printf("Oops, no native info for op %s with types %s and %s%n", op.id, type1, type2);
+			else {
+			    if(info.opcode == -1){
+				switch(op.id){
+				    case "||":
+					//TODO
 					break;
-				    case EQUAL:
-					opcode = IFNONNULL;
+				    case "&&":
+					//TODO
+					break;
+				    case "!=":
+					switch(type1){
+					    case BYTE:
+					    case BOOL:
+					    case SHORT:
+					    case CHAR:
+					    case INT:
+						opcode = IF_ICMPEQ;
+						break;
+					    case LONG:
+					    case DOUBLE:
+					    case FLOAT:
+						extraOpcodes.add(type1.cmpOpcode);
+						opcode = IFEQ;
+						break;
+					    default:
+						opcode = IF_ACMPEQ;
+					}
+					break;
+				    case "==":
+					switch(type1){
+					    case BYTE:
+					    case BOOL:
+					    case SHORT:
+					    case CHAR:
+					    case INT:
+						opcode = IF_ICMPNE;
+						break;
+					    case LONG:
+					    case DOUBLE:
+					    case FLOAT:
+						extraOpcodes.add(type1.cmpOpcode);
+						opcode = IFNE;
+						break;
+					    default:
+						opcode = IF_ACMPNE;
+					}
+					break;
+				    case "<":
+					switch(type1){
+					    case BYTE:
+					    case BOOL:
+					    case SHORT:
+					    case CHAR:
+					    case INT:
+						opcode = IF_ICMPGE;
+						break;
+					    case LONG:
+					    case DOUBLE:
+					    case FLOAT:
+						extraOpcodes.add(type1.cmpOpcode);
+						opcode = IFGE;
+						break;
+					}
+					break;
+				    case ">":
+					switch(type1){
+					    case BYTE:
+					    case BOOL:
+					    case SHORT:
+					    case CHAR:
+					    case INT:
+						opcode = IF_ICMPLE;
+						break;
+					    case LONG:
+					    case DOUBLE:
+					    case FLOAT:
+						extraOpcodes.add(type1.cmpOpcode);
+						opcode = IFLE;
+						break;
+					}
+					break;
+				    case "<=":
+					switch(type1){
+					    case BYTE:
+					    case BOOL:
+					    case SHORT:
+					    case CHAR:
+					    case INT:
+						opcode = IF_ICMPGT;
+						break;
+					    case LONG:
+					    case DOUBLE:
+					    case FLOAT:
+						extraOpcodes.add(type1.cmpOpcode);
+						opcode = IFGT;
+						break;
+					}
+					break;
+				    case ">=":
+					switch(type1){
+					    case BYTE:
+					    case BOOL:
+					    case SHORT:
+					    case CHAR:
+					    case INT:
+						opcode = IF_ICMPLT;
+						break;
+					    case LONG:
+					    case DOUBLE:
+					    case FLOAT:
+						extraOpcodes.add(type1.cmpOpcode);
+						opcode = IFLT;
+						break;
+					}
 					break;
 				}
-			    } else // Compare the references
-				switch (node.operator.operation) {
-				    case NOT_EQUAL:
-					opcode = IF_ACMPEQ;
-					break;
-				    case EQUAL:
-					opcode = IF_ACMPNE;
-					break;
-				}
-
-		    }
+				
+			    }else opcode = info.opcode;
+			}
+		    
+		    }else System.err.println("Oops, I don't have an overload for a non-native operator...: " + op.id + "");
+		    
 		} else {
 		    // If it is an operator overloaded expression, then generate
 		    // the function call and then check if the return value was
@@ -921,10 +974,10 @@ public abstract class GenNode {
     }
 
     public static class GenNodeBinary extends GenNode {
-	public Operator operator;
+	public OperatorDef operator;
 	public EnumInstructionOperand type;
 
-	public GenNodeBinary(final Operator operator, final EnumInstructionOperand type) {
+	public GenNodeBinary(final OperatorDef operator, final EnumInstructionOperand type) {
 	    this.operator = operator;
 	    this.type = type;
 	    addToStackRequirement(type.size);
@@ -934,142 +987,95 @@ public abstract class GenNode {
 	public void generate(final Object visitor) {
 	    final MethodVisitor mv = (MethodVisitor) visitor;
 	    int opcode = 0;
-	    final EnumOperation operation = operator.operation;
-	    switch (type) {
-		case BYTE:
-		case CHAR:
-		case INT:
-		case SHORT:
-		case BOOL:
-		    switch (operation) {
-			case ADD:
-			    opcode = IADD;
-			    break;
-			case BIT_AND:
-			    opcode = IAND;
-			    break;
-			case BIT_OR:
-			    opcode = IOR;
-			    break;
-			case BIT_XOR:
-			    opcode = IXOR;
-			    break;
-			case DIVIDE:
-			    opcode = IDIV;
-			    break;
-			case L_SHIFT:
-			    opcode = ISHL;
-			    break;
-			case R_SHIFT:
-			    opcode = ISHR;
-			    break;
-			case R_SHIFT_LOGICAL:
-			    opcode = IUSHR;
-			    break;
-			case MOD:
-			    opcode = IREM;
-			    break;
-			case MULTIPLY:
-			    opcode = IMUL;
-			    break;
-			    // case POW: Pow is not defined for integers
-			case SUBTRACT:
-			    opcode = ISUB;
-			    break;
-			default:
-			    // I curse Java for not having an opcode that simply
-			    // checks integer equality...
-			    final Label l0 = new Label(),
-			    l1 = new Label();
-			    if (operation == EnumOperation.EQUAL) opcode = IF_ICMPNE;
-			    else if (operation == EnumOperation.GREATER) opcode = IF_ICMPLE;
-			    else if (operation == EnumOperation.LESS) opcode = IF_ICMPGE;
-			    else if (operation == EnumOperation.NOT_EQUAL) opcode = IF_ICMPEQ;
-			    else if (operation == EnumOperation.GREATER_EQUAL) opcode = IF_ICMPLT;
-			    else if (operation == EnumOperation.LESS_EQUAL) opcode = IF_ICMPGT;
-			    else if (operation == EnumOperation.AND) {
-				// Checks if either of the two pushed
-				// expressions are 0, and if so, jumps to label
-				// 0
-				mv.visitJumpInsn(IFEQ, l0);
-				mv.visitJumpInsn(IFEQ, l0);
-			    } else if (operation == EnumOperation.OR) {
-				// Checks if either of the two pushed
-				// expressions are 0, and if so, jumps to label
-				// 0
-				mv.visitJumpInsn(IFNE, l0);
-				mv.visitJumpInsn(IFNE, l0);
-			    }
-			    mv.visitJumpInsn(opcode, l0);
-			    mv.visitInsn(ICONST_1);
-			    mv.visitJumpInsn(GOTO, l1);
-			    mv.visitLabel(l0);
-			    mv.visitInsn(ICONST_0);
-			    mv.visitLabel(l1);
-			    return; // No more to do here
-		    }
-		    break;
-		default:
-		    switch (operation) {
-			case ADD:
-			    if (type == EnumInstructionOperand.DOUBLE) opcode = DADD;
-			    else if (type == EnumInstructionOperand.FLOAT) opcode = FADD;
-			    else if (type == EnumInstructionOperand.LONG) opcode = LADD;
-			    break;
-			case SUBTRACT:
-			    if (type == EnumInstructionOperand.DOUBLE) opcode = DSUB;
-			    else if (type == EnumInstructionOperand.FLOAT) opcode = FSUB;
-			    else if (type == EnumInstructionOperand.LONG) opcode = LSUB;
-			    break;
-			case DIVIDE:
-			    if (type == EnumInstructionOperand.DOUBLE) opcode = DDIV;
-			    else if (type == EnumInstructionOperand.FLOAT) opcode = FDIV;
-			    else if (type == EnumInstructionOperand.LONG) opcode = LDIV;
-			    break;
-			case MOD:
-			    if (type == EnumInstructionOperand.DOUBLE) opcode = DREM;
-			    else if (type == EnumInstructionOperand.FLOAT) opcode = FREM;
-			    else if (type == EnumInstructionOperand.LONG) opcode = LREM;
-			    break;
-			case MULTIPLY:
-			    if (type == EnumInstructionOperand.DOUBLE) opcode = DMUL;
-			    else if (type == EnumInstructionOperand.FLOAT) opcode = FMUL;
-			    else if (type == EnumInstructionOperand.LONG) opcode = LMUL;
-			    break;
-			case POW:
-			    // Only doubles should be using this
-			    final GenNodeFuncCall powCall = new GenNodeFuncCall("java/lang/Math", "pow", "(DD)D", false, false, true, false);
-			    powCall.generate(mv);
-			    return; // No more to do here
-			case EQUAL:
-			case LESS:
-			case GREATER:
-			case NOT_EQUAL:
-			case LESS_EQUAL:
-			case GREATER_EQUAL:
-			    int compOpcode = DCMPL;
-			    if (type == EnumInstructionOperand.FLOAT) compOpcode = FCMPL;
-			    else if (type == EnumInstructionOperand.LONG) compOpcode = LCMP;
-			    mv.visitInsn(compOpcode);
-
-			    if (operation == EnumOperation.EQUAL) opcode = IFNE;
-			    else if (operation == EnumOperation.NOT_EQUAL) opcode = IFEQ;
-			    else if (operation == EnumOperation.LESS) opcode = IFGE;
-			    else if (operation == EnumOperation.GREATER) opcode = IFLE;
-			    else if (operation == EnumOperation.LESS_EQUAL) opcode = IFGT;
-			    else if (operation == EnumOperation.GREATER_EQUAL) opcode = IFLT;
-			    final Label l0 = new Label(),
-			    l1 = new Label();
-			    mv.visitJumpInsn(opcode, l0);
-			    mv.visitInsn(ICONST_1);
-			    mv.visitJumpInsn(GOTO, l1);
-			    mv.visitLabel(l0);
-			    mv.visitInsn(ICONST_0);
-			    mv.visitLabel(l1);
-			    return;
-		    }
-		    break;
+	    EnumOperation operation = null;
+	    OperatorDefNative op = null;
+	    if(operator instanceof OperatorDefNative){
+		op = ((OperatorDefNative)operator);
+		operation = op.operation;
 	    }
+	    else System.err.println("Oops, we've come across a binary expr without an overload or a native operator");
+	    NativeOpInfo info = null;
+	    for(NativeOpInfo i : op.opInfo) if(i.type1 == type){
+		info = i;
+		break;
+	    }
+	    if(info == null) System.err.printf("No native op info found for %s on type %s%n", op.id, type);
+	    if(info.opcode == -1){
+		switch (type) {
+			case BYTE:
+			case CHAR:
+			case INT:
+			case SHORT:
+			case BOOL:
+			    switch (operation) {
+				default:
+				    // I curse Java for not having an opcode that simply compares integers
+				    final Label l0 = new Label(),
+				    l1 = new Label();
+				    if (operation == EnumOperation.EQUAL) opcode = IF_ICMPNE;
+				    else if (operation == EnumOperation.GREATER) opcode = IF_ICMPLE;
+				    else if (operation == EnumOperation.LESS) opcode = IF_ICMPGE;
+				    else if (operation == EnumOperation.NOT_EQUAL) opcode = IF_ICMPEQ;
+				    else if (operation == EnumOperation.GREATER_EQUAL) opcode = IF_ICMPLT;
+				    else if (operation == EnumOperation.LESS_EQUAL) opcode = IF_ICMPGT;
+				    else if (operation == EnumOperation.AND) {
+					// Checks if either of the two pushed
+					// expressions are 0, and if so, jumps to label
+					// 0
+					mv.visitJumpInsn(IFEQ, l0);
+					mv.visitJumpInsn(IFEQ, l0);
+				    } else if (operation == EnumOperation.OR) {
+					// Checks if either of the two pushed
+					// expressions are 0, and if so, jumps to label
+					// 0
+					mv.visitJumpInsn(IFNE, l0);
+					mv.visitJumpInsn(IFNE, l0);
+				    }
+				    mv.visitJumpInsn(opcode, l0);
+				    mv.visitInsn(ICONST_1);
+				    mv.visitJumpInsn(GOTO, l1);
+				    mv.visitLabel(l0);
+				    mv.visitInsn(ICONST_0);
+				    mv.visitLabel(l1);
+				    return; // No more to do here
+			    }
+			default:
+			    switch (operation) {
+				case POW:
+				    // Only doubles should be using this
+				    final GenNodeFuncCall powCall = new GenNodeFuncCall("java/lang/Math", "pow", "(DD)D", false, false, true, false);
+				    powCall.generate(mv);
+				    return; // No more to do here
+				case EQUAL:
+				case LESS:
+				case GREATER:
+				case NOT_EQUAL:
+				case LESS_EQUAL:
+				case GREATER_EQUAL:
+				    int compOpcode = DCMPL;
+				    if (type == EnumInstructionOperand.FLOAT) compOpcode = FCMPL;
+				    else if (type == EnumInstructionOperand.LONG) compOpcode = LCMP;
+				    mv.visitInsn(compOpcode);
+
+				    if (operation == EnumOperation.EQUAL) opcode = IFNE;
+				    else if (operation == EnumOperation.NOT_EQUAL) opcode = IFEQ;
+				    else if (operation == EnumOperation.LESS) opcode = IFGE;
+				    else if (operation == EnumOperation.GREATER) opcode = IFLE;
+				    else if (operation == EnumOperation.LESS_EQUAL) opcode = IFGT;
+				    else if (operation == EnumOperation.GREATER_EQUAL) opcode = IFLT;
+				    final Label l0 = new Label(),
+				    l1 = new Label();
+				    mv.visitJumpInsn(opcode, l0);
+				    mv.visitInsn(ICONST_1);
+				    mv.visitJumpInsn(GOTO, l1);
+				    mv.visitLabel(l0);
+				    mv.visitInsn(ICONST_0);
+				    mv.visitLabel(l1);
+				    return;
+			    }
+			    break;
+		    }
+	    }else opcode = info.opcode;
 	    mv.visitInsn(opcode);
 	}
 
@@ -1077,10 +1083,10 @@ public abstract class GenNode {
 
     public static class GenNodeUnary extends GenNode {
 	public EnumInstructionOperand type;
-	public Operator operator;
+	public OperatorDef operator;
 	boolean prefix;
 
-	public GenNodeUnary(final EnumInstructionOperand type, final Operator operator, final boolean prefix) {
+	public GenNodeUnary(final EnumInstructionOperand type, final OperatorDef operator, final boolean prefix) {
 	    this.type = type;
 	    this.operator = operator;
 	    this.prefix = prefix;
