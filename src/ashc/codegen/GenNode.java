@@ -397,7 +397,6 @@ public abstract class GenNode {
 	    this.operand = operand;
 	    this.varID = varID;
 	    addToStackRequirement(operand.size);
-	    System.out.println("var load: " + varID);
 	    getCurrentFunction().getLocal(varID).updateUse();
 	}
 

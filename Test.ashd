@@ -1,1 +1,5 @@
 operator &/ = type: binary, name: test_op, assoc: non, prec: 120
+
+func foo() {
+	System.out.println("Def file test")
+}

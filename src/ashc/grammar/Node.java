@@ -43,7 +43,6 @@ import ashc.codegen.GenNode.GenNodeVar;
 import ashc.codegen.GenNode.GenNodeVarLoad;
 import ashc.codegen.GenNode.GenNodeVarStore;
 import ashc.grammar.Lexer.Token;
-import ashc.grammar.Lexer.UnexpectedTokenException;
 import ashc.grammar.OperatorDef.EnumOperatorAssociativity;
 import ashc.grammar.OperatorDef.EnumOperatorType;
 import ashc.grammar.Parser.GrammarException;
@@ -173,19 +172,33 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {
+	    Semantics.enterDefFile("$Global"+AshCompiler.get().fileName);
 	    for(NodeImport i : imports) i.preAnalyse();
 	    for(NodeInclude i : includes) i.preAnalyse();
 	    for(NodeOperatorDef d : operatorDefs) d.preAnalyse();
-	    for(NodeFuncDec f : funcs) f.preAnalyse();
+	    for(NodeFuncDec f : funcs) f.preAnalyseGlobal();
+	    Semantics.exitDefFile();
 	}
 
 	@Override
 	public void analyse() {
-	    super.analyse();
+	    Semantics.enterDefFile("$Global"+AshCompiler.get().fileName);
+	    for(NodeImport i : imports) i.analyse();
+	    for(NodeInclude i : includes) i.analyse();
+	    for(NodeOperatorDef d : operatorDefs) d.analyse();
+	    for(NodeFuncDec f : funcs) f.analyse();
+	    Semantics.exitDefFile();
 	}
 
 	@Override
-	public void generate() {}
+	public void generate() {
+	    QualifiedName name = new QualifiedName(AshCompiler.get().parentPath.replace('.', '/'));
+	    name.pop(); // Remove the last section (the file extension ".ash")
+	    name.setLast("$Global"+AshCompiler.get().fileName);
+	    GenNode.addGenNodeType(new GenNodeType(name.toBytecodeName(), name.shortName, "java/lang/Object", null, Opcodes.ACC_PUBLIC));
+	    for(NodeFuncDec dec : funcs) dec.generate();
+	    GenNode.exitGenNodeType();
+	}
 	
     }
     
@@ -352,7 +365,6 @@ public abstract class Node {
 		    if (!arg.errored) {
 			final TypeI argType = new TypeI(arg.type);
 			final Variable local = new Variable(arg.id, argType);
-			System.out.printf("LocalID = %d%n", local.localID);
 			local.isLocal = true;
 			defConstructorScope.addVar(local);
 			final Field field = new Field(Scope.getNamespace().copy().add(arg.id), EnumModifier.PUBLIC.intVal, argType, false, false, type);
@@ -433,7 +445,6 @@ public abstract class Node {
 
 		// Call the right constructor depending on whether or not super-class arguments were provided
 		if ((superArgs == null) || superArgs.exprs.isEmpty()) {
-		    System.out.println("gen empty constructor call: " + superClass);
 		    GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", "()V", false, false, false, true));
 		} else {
 		    final StringBuffer params = new StringBuffer("(");
@@ -442,7 +453,6 @@ public abstract class Node {
 			params.append(expr.getExprType().toBytecodeName());
 		    }
 		    params.append(")V");
-		    System.out.println("gen non-empty constructor call: " + superClass + "." + params.toString());
 		    GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", params.toString(), false, false, false, true));
 		}
 		// Generate the fields and their assignments
@@ -919,6 +929,45 @@ public abstract class Node {
 	    this.block = block;
 	    generics = types;
 	    this.block.inFunction = true;
+	}
+
+	public void preAnalyseGlobal() {
+	    QualifiedName name = Semantics.getGlobalType().qualifiedName.copy().add(id);
+	    func = new Function(name, EnumModifier.PUBLIC.intVal + EnumModifier.STATIC.intVal, Semantics.getGlobalType());
+	    isConstructor = false;
+	    args.preAnalyse();
+	    if (args.hasDefExpr) {
+		func.hasDefExpr = true;
+		func.defExpr = args.defExpr;
+	    }
+	    
+	    // We need to push a new scope and add the parameters as variables
+	    // so that return type inference works
+	    Scope.push(new FuncScope(returnType, isMutFunc, true));
+	    for (final NodeArg arg : args.args)
+		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
+
+	    if (!type.id.equals("void")) func.returnType = new TypeI(type);
+	    else func.returnType = TypeI.getVoidType();
+	    returnType = func.returnType;
+
+	    Scope.getFuncScope().returnType = func.returnType;
+	    Scope.pop();
+
+	    for (final NodeArg arg : args.args)
+		func.parameters.add(new TypeI(arg.type));
+	    if (!Semantics.funcExists(func)) Semantics.addFunc(func);
+	    else semanticError(this, line, column, FUNC_ALREADY_EXISTS, id);
+	    
+	    if(OperatorDef.operatorDefExists(id)){
+		if(args.hasDefExpr) semanticError(this, line, column, OP_OVERLOADS_CANNOT_HAVE_DEFEXPR);
+		OperatorDef op = OperatorDef.getOperatorDef(id);
+		if(op.type == EnumOperatorType.UNARY){
+		    if(args.args.size() != 0) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, "unary", 0);
+		}else{
+		    if(args.args.size() != 1) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, "binary", 1);
+		}
+	    }
 	}
 
 	public NodeFuncDec(final int line, final int columnStart, final LinkedList<NodeModifier> mods2, final String data, final NodeArgs args2, final NodeType throwsType2, final NodeFuncBlock block2, final NodeTypes nodeTypes, final boolean isMutFunc) {
@@ -1437,6 +1486,7 @@ public abstract class Node {
 		expr.generate();
 	    if (func.hasDefExpr && (args.exprs.size() < func.parameters.size())) func.defExpr.generate();
 	    final String name = func.isConstructor() ? "<init>" : OperatorDef.filterOperators(func.qualifiedName.shortName);
+	    System.out.println("-> " + func.enclosingType.qualifiedName);
 	    addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), name, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
 	}
 
@@ -1464,7 +1514,6 @@ public abstract class Node {
 	    if (isArrayLength) return new TypeI(EnumPrimitive.INT);
 	    TypeI result = var.type;
 	    int i = 0;
-	    System.out.println("Prefix: " + prefixType);
 	    if (var.enclosingType != null) for (final String generic : var.enclosingType.generics)
 		if (generic.equals(var.type.shortName)) {
 		    result = prefixType.genericTypes.get(i);

@@ -23,11 +23,15 @@ public class AshCompiler {
     private NodeDefFile defFileNode;
     public String relFilePath, parentPath;
     public int errors;
+    public String fileName;
 
     public static Stack<AshCompiler> compilers = new Stack<AshCompiler>();
 
     public AshCompiler(final String relFilePath) throws FileNotFoundException, IOException {
 	final File file = new File(relFilePath);
+	fileName = file.getName();
+	if(fileName.indexOf('.') > 0) fileName = fileName.substring(0, fileName.indexOf('.'));
+	System.out.println(fileName);
 	parentPath = file.getParentFile() != null ? file.getParentFile().getPath() : "";
 	this.relFilePath = relFilePath;
 	lexer = new Lexer(new BufferedReader(new FileReader(file)));

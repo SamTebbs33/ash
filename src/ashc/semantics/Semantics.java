@@ -12,6 +12,7 @@ import ashc.grammar.Node.NodeVariable;
 import ashc.grammar.OperatorDef.OperatorDefNative;
 import ashc.grammar.OperatorDef.OperatorDefNative.NativeOpInfo;
 import ashc.load.*;
+import ashc.semantics.Member.EnumType;
 import ashc.semantics.Member.Field;
 import ashc.semantics.Member.Function;
 import ashc.semantics.Member.Type;
@@ -29,6 +30,7 @@ public class Semantics {
     public static HashMap<String, QualifiedName> typeNameMap = new HashMap<String, QualifiedName>();
     public static HashMap<String, Type> aliases = new HashMap<String, Type>();
     public static Stack<Type> typeStack = new Stack<Type>();
+    public static LinkedList<Type> globalTypes = new LinkedList<>();
 
     public static class Operation {
 	public Function overloadFunc;
@@ -128,7 +130,6 @@ public class Semantics {
     public static Variable getVar(final String id, final Scope scope) {
 	if (scope != null) {
 	    for (final Variable var : scope.vars) {
-		System.out.println("-> " + var);
 		if (var.id.equals(id)) return var;
 	    }
 	    if (scope.parent != null) return getVar(id, scope.parent);
@@ -140,7 +141,6 @@ public class Semantics {
 	// Look in scope
 	Variable var = null;
 	if ((var = getVar(id, Scope.getScope())) != null) return var;
-	System.out.println(id + " not found in scope");
 	// Else, look in the current type
 	return getVar(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false));
     }
@@ -165,11 +165,16 @@ public class Semantics {
     }
 
     public static Function getFunc(String id, final NodeExprs args) {
+	System.out.println("");
 	final Optional<Type> type = getType(id);
 	// Check if it is a constructor for an existing type
 	if (type.isPresent()) {
 	    id = type.get().qualifiedName.shortName;
 	    return type.get().getFunc(id, args);
+	}
+	for(Type gType : globalTypes){
+	    Function func = gType.getFunc(id, args);
+	    if(func != null) return func;
 	}
 	return getFunc(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args);
     }
@@ -237,7 +242,9 @@ public class Semantics {
 		    }
 		}
 	    }
-	    return new Tuple<TypeI, Function>(TypeI.getPrecedentType(type1, type2), null);
+	    //TODO: Check if there is a global operator overload for these two primitives and the operator.
+	    // Else, return null
+	    return null;
 	}
 
 	if (type1.isArray() || type1.isTuple() || type1.isVoid() || type1.isNull()) return null;
@@ -269,6 +276,21 @@ public class Semantics {
 	if (type.isArray() || type.isNull() || type.isTuple() || type.isVoid()) return null;
 	final Function func = Semantics.getType(type.shortName).get().getFunc(operator.id, new LinkedList<>());
 	return func != null ? new Operation(func, func.returnType) : null;
+    }
+
+    public static void enterDefFile(String defFileName) {
+	Type type = new Type(new QualifiedName(defFileName), EnumModifier.PUBLIC.intVal, EnumType.CLASS);
+	type.isGlobalType = true;
+	globalTypes.add(type);
+	enterType(type);
+    }
+
+    public static void exitDefFile() {
+	exitType();
+    }
+
+    public static Type getGlobalType() {
+	return currentType().isGlobalType ? currentType() : null;
     }
 
 }

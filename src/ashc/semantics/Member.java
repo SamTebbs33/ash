@@ -76,7 +76,7 @@ public class Member {
 	public LinkedList<Type> supers = new LinkedList<Member.Type>();
 	public LinkedList<String> generics = new LinkedList<String>();
 	public HashMap<String, LinkedList<TypeI>> genericsMap = new HashMap<String, LinkedList<TypeI>>();
-	public boolean hasNonEmptyConstructor;
+	public boolean hasNonEmptyConstructor, isGlobalType;
 
 	public Type(final QualifiedName qualifiedName, final int modifiers, final EnumType type) {
 	    super(qualifiedName, modifiers);
