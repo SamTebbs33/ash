@@ -27,8 +27,8 @@ import ashc.semantics.*;
  */
 public abstract class GenNode {
 
-    private static LinkedList<GenNodeType> types = new LinkedList<GenNodeType>();
-    private static Stack<GenNodeType> typeStack = new Stack<GenNodeType>();
+    public static LinkedList<GenNodeType> types = new LinkedList<GenNodeType>();
+    public static Stack<GenNodeType> typeStack = new Stack<GenNodeType>();
     public static HashSet<String> generatedTupleClasses = new HashSet<String>();
     private static Stack<GenNodeFunction> functionStack = new Stack<GenNodeFunction>();
 
@@ -235,7 +235,7 @@ public abstract class GenNode {
 	    try {
 		mv.visitMaxs(-1, -1);
 	    } catch (final Exception e1) {
-		System.out.println("Oh shit son, I got an exception from visitMaxs(): " + e1);
+		System.err.println("Oh shit son, I got an exception from visitMaxs(): " + e1);
 		e1.printStackTrace();
 	    }
 
@@ -692,7 +692,7 @@ public abstract class GenNode {
 		    if(op instanceof OperatorDefNative){
 			
 			for(NativeOpInfo info2 : ((OperatorDefNative) op).opInfo){
-			    if(info2.type1 == type1 && info.type2 == type2){
+			    if(info2.type1 == type1 && info2.type2 == type2){
 				info = info2;
 				break;
 			    }

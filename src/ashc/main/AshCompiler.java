@@ -77,6 +77,7 @@ public class AshCompiler {
 	} catch (GrammarException e) {
 	    parser.handleException(e);
 	}
+	parser.clear();
     }
 
 }

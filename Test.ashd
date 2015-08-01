@@ -1,5 +1,6 @@
-operator &/ = type: binary, name: test_op, assoc: non, prec: 120
+operator ?? = type: binary, name: not_null, assoc: non, prec: 120
 
-func foo() {
-	System.out.println("Def file test")
+func ??(optObj : Object?, obj : Object) : Object {
+	if(optObj == null) return obj
+	else return optObj!
 }

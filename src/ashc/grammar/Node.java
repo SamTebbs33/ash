@@ -962,11 +962,8 @@ public abstract class Node {
 	    if(OperatorDef.operatorDefExists(id)){
 		if(args.hasDefExpr) semanticError(this, line, column, OP_OVERLOADS_CANNOT_HAVE_DEFEXPR);
 		OperatorDef op = OperatorDef.getOperatorDef(id);
-		if(op.type == EnumOperatorType.UNARY){
-		    if(args.args.size() != 0) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, "unary", 0);
-		}else{
-		    if(args.args.size() != 1) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, "binary", 1);
-		}
+		int paramsRequired = op.type == EnumOperatorType.UNARY ? (Semantics.inGlobal ? 1 : 0) : (Semantics.inGlobal ? 2 : 1);
+		if(args.args.size() != paramsRequired) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, op.type.name().toLowerCase(), paramsRequired);
 	    }
 	}
 
@@ -1486,7 +1483,6 @@ public abstract class Node {
 		expr.generate();
 	    if (func.hasDefExpr && (args.exprs.size() < func.parameters.size())) func.defExpr.generate();
 	    final String name = func.isConstructor() ? "<init>" : OperatorDef.filterOperators(func.qualifiedName.shortName);
-	    System.out.println("-> " + func.enclosingType.qualifiedName);
 	    addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), name, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
 	}
 
@@ -2016,6 +2012,7 @@ public abstract class Node {
 	public OperatorDef operator;
 	public Function operatorOverloadFunc;
 	public TypeI exprType1, exprType2;
+	public TypeI type;
 
 	public NodeBinary(final int line, final int columnStart, final IExpression expr1, final OperatorDef op, final IExpression expr2) {
 	    super(line, columnStart);
@@ -2032,6 +2029,11 @@ public abstract class Node {
 	    else {
 		exprType1 = expr1.getExprType();
 		exprType2 = expr2.getExprType();
+
+		    final Tuple<TypeI, Function> operation = Semantics.getOperationType(exprType1, exprType2, operator);
+		    if (operation == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, operator.id, exprType1, exprType2);
+		    operatorOverloadFunc = operation.b;
+		    type = operation.a;
 	    }
 	}
 
@@ -2042,12 +2044,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    if (errored) return null;
-
-	    final Tuple<TypeI, Function> operation = Semantics.getOperationType(exprType1, exprType2, operator);
-	    if (operation == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, operator.id, exprType1, exprType2);
-	    operatorOverloadFunc = operation.b;
-	    return operation.a;
+	    return type;
 
 	}
 

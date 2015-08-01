@@ -5,6 +5,7 @@ import java.io.*;
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
 
+import ashc.codegen.*;
 import ashc.error.*;
 import ashc.library.*;
 import ashc.main.*;
@@ -104,6 +105,8 @@ public class TypeImporter {
 		compiler.preAnalyse();
 		compiler.analyse();
 		if(compiler.errors == 0) compiler.generate();
+		GenNode.types.clear();
+		GenNode.typeStack.clear();
 	    } catch (IOException e) {
 		    AshError.compilerError("Cannot find definition file: " + defFile.toString());
 	    }

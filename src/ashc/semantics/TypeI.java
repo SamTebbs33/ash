@@ -212,7 +212,7 @@ public class TypeI {
     }
 
     public boolean isRange() {
-	return (shortName != null) & shortName.equals("Range");
+	return (shortName != null) && shortName.equals("Range");
     }
 
     public String toBytecodeName() {

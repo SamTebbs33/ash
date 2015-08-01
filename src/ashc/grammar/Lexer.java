@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.regex.*;
 
 import ashc.error.*;
+import ashc.grammar.Lexer.Token;
+import ashc.grammar.Lexer.TokenMatcher;
 import ashc.grammar.Parser.GrammarException;
 
 /**
@@ -92,10 +94,7 @@ public class Lexer {
 	LAMBDAARROW("->", "lambda arrow"),
 
 	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
-	/*UNARYOP("\\+\\+|\\-\\-|!|~", "unary operator"),
-	BINARYOP("<|>|<=|>=|==|!=|/|\\+|\\-|\\*\\*|\\*|\\^\\^|&&|\\|\\||<<|>>|&|\\|", "binary operator"),*/
-	ASSIGNOP("=", "assignment operator"),
-	OP("[\\+|\\-|!|~|=|\\*|/|%|^|&|<|>|?|@|#]+", "custom operator"),
+	OP("[\\+|\\-|!|~|=|\\*|/|%|^|&|<|>|@|#|\\?]+", "operator"),
 	ARRAYDIMENSION("\\[\\]"),
 	WHITESPACE("[\n\t ]+", "whitespace"),
 
@@ -111,7 +110,6 @@ public class Lexer {
 	DOUBLEDOT("\\.\\.", "double dot"),
 	DOT("\\.", "dot"),
 	COMMA(",", "comma"),
-	QUESTIONMARK("\\?", "question mark"),
 	COLON(":", "colon"),
 
 	VAR("var "),
@@ -235,6 +233,10 @@ public class Lexer {
 	    token = next;
 	}
 	
+	public UnexpectedTokenException(Token next, String data, TokenMatcher[] matchers) {
+	    super(String.format("Unexpected %s, expected %s, %s", next.type.typeName, data, asString(matchers)));
+	}
+
 	private static String asString(TokenMatcher...t){
 	    final StringBuilder typesStr = new StringBuilder("");
 	    for (int i = 0; i < t.length; i++) {

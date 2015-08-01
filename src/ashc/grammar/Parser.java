@@ -113,6 +113,13 @@ public class Parser {
 		ashc.error.AshError.numErrors++;
 	    }
     }
+    
+    public void clear() {
+	tokens.clear();
+	pointer = 0;
+	line = 1;
+	column = 1;
+    }
 
     public void handleException(final GrammarException e) {
 	e.print(lineOffset, columnOffset, lexer);
@@ -167,6 +174,14 @@ public class Parser {
 	final Token token = getNext();
 	if ((token.type != t) && !silenceErrors) throw new UnexpectedTokenException(token, t);
 	return token;
+    }
+    
+    private Token expect(String data, TokenMatcher...matchers) throws GrammarException {
+	Token next = getNext();
+	if(next.data.equals(data)) return next;
+	for (final TokenMatcher matcher : matchers)
+	    if (matcher.matches(next)) return next;
+	throw new UnexpectedTokenException(next, data, matchers);
     }
 
     private Token expect(final TokenMatcher... matchers) throws GrammarException {
@@ -451,8 +466,8 @@ public class Parser {
 		rewind();
 		final IFuncStmt stmt = parsePrefix();
 		if (stmt instanceof NodeVariable) {
-		    final Token op = expect(TokenType.ASSIGNOP, TokenType.COMPOUNDASSIGNOP, TokenType.OP);
-		    if (op.type == TokenType.OP){
+		    final Token op = expect("=", TokenType.COMPOUNDASSIGNOP, TokenType.OP);
+		    if (op.type == TokenType.OP && !op.data.equals("=")){
 			if(!OperatorDef.operatorDefExists(op.data)) throw new GrammarException("Undefined operator: " + op.data);
 			if(OperatorDef.getOperatorDef(op.data).type != EnumOperatorType.UNARY) throw new GrammarException("The \"" + op.data + "\" operator is not a unary operator");
 			return new NodeUnary(op.line, op.columnStart, (NodeVariable) stmt, OperatorDef.getOperatorDef(op.data), false);
@@ -790,12 +805,12 @@ public class Parser {
 		OperatorDef op = OperatorDef.getOperatorDef(next.data);
 		if(op.type == EnumOperatorType.UNARY) return new NodeUnary(next.line, next.columnStart, expr, op, false);
 		else return new NodeBinary(next.line, next.columnStart, expr, op, parseExpression());
-	    case QUESTIONMARK:
+	    /*case QUESTIONMARK:
 		if ((next = getNext()).type == TokenType.QUESTIONMARK) return new NodeElvis(next.line, next.columnStart, expr, parseExpression());
 		else rewind();
 		final IExpression exprTrue = parseExpression();
 		expect(TokenType.COLON);
-		return new NodeTernary(expr, exprTrue, parseExpression());
+		return new NodeTernary(expr, exprTrue, parseExpression());*/
 	    case BRACKETL:
 		NodeArrayAccess arrayExpr = new NodeArrayAccess(((Node) expr).line, ((Node) expr).column, expr, parseExpression());
 		expect(TokenType.BRACKETR);
@@ -812,7 +827,7 @@ public class Parser {
 
     private NodeVarDec parseVarDec(final LinkedList<NodeModifier> mods, final Token keyword, final boolean allowMultipleDecs) throws GrammarException {
 	final Token id = expect(TokenType.ID);
-	Token next = expect(TokenType.COLON, TokenType.ASSIGNOP);
+	Token next = expect("=", TokenType.COLON);
 	NodeVarDec varDec;
 	final TokenType type = next.type;
 	// If a type is given, parse it as an explicit var declaration,
@@ -820,7 +835,7 @@ public class Parser {
 	if (type == TokenType.COLON) {
 	    final NodeType nodeType = parseType();
 	    varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, null);
-	    if (getNext().type == TokenType.ASSIGNOP) varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, parseExpression());
+	    if (getNext().data.equals("=")) varDec = new NodeVarDecExplicit(id.line, id.columnStart, mods, keyword.data, id.data, nodeType, parseExpression());
 	    else rewind();
 	} else varDec = new NodeVarDecImplicit(id.line, id.columnStart, mods, keyword.data, id.data, parseExpression());
 
@@ -931,7 +946,7 @@ public class Parser {
 	    expect(TokenType.COLON);
 	    final NodeType type = parseType();
 	    IExpression defExpr = null;
-	    if (expect(TokenType.COMMA, TokenType.ASSIGNOP, TokenType.PARENR).type == TokenType.ASSIGNOP) defExpr = parseExpression();
+	    if (expect("=", TokenType.COMMA, TokenType.PARENR).data.equals("=")) defExpr = parseExpression();
 	    else rewind();
 	    return new NodeArg(id.line, id.columnStart, id.data, type, defExpr);
 	} else rewind();
@@ -963,7 +978,7 @@ public class Parser {
 	while (getNext().type == TokenType.ARRAYDIMENSION)
 	    type.arrDims++;
 	rewind();
-	if (getNext().type == TokenType.QUESTIONMARK) type.optional = true;
+	if (getNext().data.equals("?")) type.optional = true;
 	else rewind();
 	return type;
     }
@@ -1060,7 +1075,7 @@ public class Parser {
 	Token next;
 	while ((next = getNext()).type == TokenType.ALIAS) {
 	    final String alias = expect(TokenType.ID).data;
-	    expect(TokenType.ASSIGNOP);
+	    expect("=");
 	    result.add(new NodeAlias(next.line, next.columnStart, alias, parseSuperType()));
 	}
 	rewind();
@@ -1108,7 +1123,7 @@ public class Parser {
 
     private NodeOperatorDef parseOperatorDef() throws GrammarException {
 	Token id = expect(TokenType.OP);
-	expect(TokenType.ASSIGNOP);
+	expect("=");
 	expect("type");
 	expect(TokenType.COLON);
 	String type = expect(TokenType.OPTYPE).data;

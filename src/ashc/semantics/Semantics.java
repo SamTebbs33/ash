@@ -31,6 +31,7 @@ public class Semantics {
     public static HashMap<String, Type> aliases = new HashMap<String, Type>();
     public static Stack<Type> typeStack = new Stack<Type>();
     public static LinkedList<Type> globalTypes = new LinkedList<>();
+    public static boolean inGlobal = false;
 
     public static class Operation {
 	public Function overloadFunc;
@@ -69,6 +70,7 @@ public class Semantics {
     public static void exitType() {
 	typeStack.pop();
 	Scope.getNamespace().pop();
+	inGlobal = typeStack.isEmpty() ? false : typeStack.peek().isGlobalType;
     }
 
     public static void bindName(final String shortName, final QualifiedName qualifiedName) {
@@ -163,9 +165,28 @@ public class Semantics {
 	if (t.isPresent()) return t.get().getFunc(id, args);
 	return null;
     }
+    
+    public static Function getFunc(final String id, final TypeI type, final LinkedList<TypeI> args) {
+	final Optional<Type> t = type.qualifiedName != null ? getType(type.shortName, type.qualifiedName) : getType(type.shortName);
+	if (t.isPresent()) return t.get().getFunc(id, args);
+	return null;
+    }
 
     public static Function getFunc(String id, final NodeExprs args) {
-	System.out.println("");
+	final Optional<Type> type = getType(id);
+	// Check if it is a constructor for an existing type
+	if (type.isPresent()) {
+	    id = type.get().qualifiedName.shortName;
+	    return type.get().getFunc(id, args);
+	}
+	for(Type gType : globalTypes){
+	    Function func = gType.getFunc(id, args);
+	    if(func != null) return func;
+	}
+	return getFunc(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args);
+    }
+    
+    public static Function getFunc(String id, final LinkedList<TypeI> args) {
 	final Optional<Type> type = getType(id);
 	// Check if it is a constructor for an existing type
 	if (type.isPresent()) {
@@ -180,6 +201,7 @@ public class Semantics {
     }
 
     public static void enterType(final Type type) {
+	inGlobal = type.isGlobalType;
 	typeStack.push(type);
     }
 
@@ -233,7 +255,6 @@ public class Semantics {
     }
 
     public static Tuple<TypeI, Function> getOperationType(final TypeI type1, final TypeI type2, final OperatorDef operator) {
-	if (type1.isNumeric() && type2.isNumeric()) {
 	    if(operator instanceof OperatorDefNative){
 		OperatorDefNative op = (OperatorDefNative)operator;
 		for(NativeOpInfo info : op.opInfo){
@@ -242,10 +263,6 @@ public class Semantics {
 		    }
 		}
 	    }
-	    //TODO: Check if there is a global operator overload for these two primitives and the operator.
-	    // Else, return null
-	    return null;
-	}
 
 	if (type1.isArray() || type1.isTuple() || type1.isVoid() || type1.isNull()) return null;
 	else if (type2.isArray() || type2.isTuple() || type2.isVoid() || type2.isNull()) return null;
@@ -253,7 +270,8 @@ public class Semantics {
 	// Check for operator overloads, start with type 1
 	final LinkedList<TypeI> parameter = new LinkedList<TypeI>();
 	Type type;
-	Function func;
+	Function func = null;
+	
 	if (!type1.isPrimitive()) {
 	    parameter.add(type2);
 	    type = Semantics.getType(type1.shortName).get();
@@ -268,6 +286,9 @@ public class Semantics {
 	    func = type.getFunc(operator.id, parameter);
 	    if (func != null) return new Tuple<TypeI, Function>(func.returnType, func);
 	}
+	parameter.add(type2);
+	func = Semantics.getFunc(operator.id, parameter);
+	if(func != null) return new Tuple<TypeI, Function>(func.returnType, func);
 	return null;
     }
 

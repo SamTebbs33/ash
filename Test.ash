@@ -2,6 +2,7 @@ include Test
 
 class Test {
 	public static func main(args : String[]) {
-		foo()
+		var obj = null
+		var obj2 = obj ?? Object()
 	}
 }

@@ -152,7 +152,7 @@ public class OperatorDef {
 		new NativeOpInfo(Opcodes.IAND, EnumInstructionOperand.INT),
 		new NativeOpInfo(Opcodes.LAND, EnumInstructionOperand.LONG, EnumInstructionOperand.LONG)));
 		
-	addOperatorDef(new OperatorDefNative(EnumOperation.EQUAL, "==", "equal", EnumOperatorType.BINARY, 60, EnumOperatorAssociativity.LEFT, equalityOpInfo));
+	addOperatorDef(new OperatorDefNative(EnumOperation.EQUAL, "==", "equal", EnumOperatorType.BINARY, 60, EnumOperatorAssociativity.NONE, equalityOpInfo));
 		
 	addOperatorDef(new OperatorDefNative(EnumOperation.NOT_EQUAL, "!=", "not_equal", EnumOperatorType.BINARY, 60, EnumOperatorAssociativity.LEFT, equalityOpInfo));
 	addOperatorDef(new OperatorDefNative(EnumOperation.LESS, "<", "less", EnumOperatorType.BINARY, 70, EnumOperatorAssociativity.LEFT, equalityOpInfo));
