@@ -286,6 +286,8 @@ public class Semantics {
 	    func = type.getFunc(operator.id, parameter);
 	    if (func != null) return new Tuple<TypeI, Function>(func.returnType, func);
 	}
+	// Check if there is a global overload for the types.
+	// Global overloads are ordered, which means that the operands must appear in the same order as the overloading func's params
 	parameter.add(type2);
 	func = Semantics.getFunc(operator.id, parameter);
 	if(func != null) return new Tuple<TypeI, Function>(func.returnType, func);
