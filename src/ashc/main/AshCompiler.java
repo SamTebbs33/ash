@@ -31,7 +31,6 @@ public class AshCompiler {
 	final File file = new File(relFilePath);
 	fileName = file.getName();
 	if(fileName.indexOf('.') > 0) fileName = fileName.substring(0, fileName.indexOf('.'));
-	System.out.println(fileName);
 	parentPath = file.getParentFile() != null ? file.getParentFile().getPath() : "";
 	this.relFilePath = relFilePath;
 	lexer = new Lexer(new BufferedReader(new FileReader(file)));

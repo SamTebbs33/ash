@@ -1074,6 +1074,7 @@ public abstract class GenNode {
 			    }
 			    break;
 		    }
+		return;
 	    }else opcode = info.opcode;
 	    mv.visitInsn(opcode);
 	}

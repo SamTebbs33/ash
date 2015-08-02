@@ -28,6 +28,7 @@ public class AshError extends Exception {
 	CANNOT_FIND_CLASS("Cannot find class file or source file \"%s\""),
 
 	FUNC_ALREADY_EXISTS("The function \'%s\' already exists"),
+	FUNC_ALREADY_EXISTS_IN_TYPE("The function \'%s\' already exists in type %s"),
 	FUNC_DOES_NOT_EXIST_IN_TYPE("The function \'%s\' with the given arguments doesn't exist in type %s"),
 	FUNC_DOES_NOT_EXIST("The function \'%s\' with the given arguments doesn't exist"),
 	FUNC_IS_NOT_VISIBLE("The function \'%s\' is not visible from the current context"),
@@ -38,6 +39,7 @@ public class AshError extends Exception {
 	RETURN_VOID_IN_NONVOID_FUNC("Cannot return void in a non-void function"),
 	NON_STATIC_FUNC_USED_IN_STATIC_CONTEXT("A non-static function cannot be used from a static context (%s)"),
 	NON_STATIC_VAR_USED_IN_STATIC_CONTEXT("A non-static variable/field cannot be used from a static context (%s)"),
+	THIS_USED_IN_GLOBAL_FUNC("The \'this\' keyword cannot be used in a non-extension global function"),
 	MUT_FUNC_IS_STATIC("Mutator functions cannot be static (%s)"),
 	MUST_CALL_SUPER_CONSTRUCTOR("A sub-class must call one of the super-class' (%s) non-empty constructors"),
 

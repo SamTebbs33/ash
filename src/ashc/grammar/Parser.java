@@ -365,7 +365,7 @@ public class Parser {
 		    continue;
 		case FUNC:
 		    rewind();
-		    block.add(parseFuncDec(true, mods));
+		    block.add(parseFuncDec(false, true, mods));
 		    continue;
 		case MUT:
 		    rewind();
@@ -392,9 +392,17 @@ public class Parser {
     /**
      * func id(args?) (: type)?
      */
-    private NodeFuncDec parseFuncDec(final boolean needsBody, final LinkedList<NodeModifier> mods) throws GrammarException {
+    private NodeFuncDec parseFuncDec(final boolean allowExtensionFunc, final boolean needsBody, final LinkedList<NodeModifier> mods) throws GrammarException {
+	Token id;
+	Token extensionType = null;
 	expect(TokenType.FUNC);
-	final Token id = expect(TokenType.ID, TokenType.OP, TokenType.ARRAYDIMENSION);
+	id = expect(TokenType.ID, TokenType.OP, TokenType.ARRAYDIMENSION);
+	if(allowExtensionFunc){
+	    if(getNext().type == TokenType.DOT){
+		extensionType = id;
+		id = expect(TokenType.ID, TokenType.OP, TokenType.ARRAYDIMENSION);
+	    }else rewind();
+	}
 	final NodeTypes types = parseGenericsDecs();
 	final NodeArgs args = parseArgs();
 	NodeType type = null, throwsType = null;
@@ -413,7 +421,7 @@ public class Parser {
 
 	if (needsBody) block = parseFuncBlock(true, !type.id.equals("void"));
 
-	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, type, throwsType, block, types);
+	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, type, throwsType, block, types, extensionType);
     }
 
     public NodeTypes parseGenericsDecs() throws GrammarException {
@@ -1105,7 +1113,7 @@ public class Parser {
 	LinkedList<NodeFuncDec> decs = new LinkedList<Node.NodeFuncDec>();
 	while(getNext().type == TokenType.FUNC){
 	    rewind();
-	    decs.add(parseFuncDec(true, new LinkedList<>()));
+	    decs.add(parseFuncDec(true, true, new LinkedList<>()));
 	}
 	rewind();
 	return decs;

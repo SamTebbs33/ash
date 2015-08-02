@@ -76,9 +76,7 @@ public class OperatorDef {
 		new NativeOpInfo(-1, EnumInstructionOperand.INT, EnumInstructionOperand.BOOL),
 		new NativeOpInfo(-1, EnumInstructionOperand.FLOAT, EnumInstructionOperand.BOOL),
 		new NativeOpInfo(-1, EnumInstructionOperand.DOUBLE, EnumInstructionOperand.BOOL),
-		new NativeOpInfo(-1, EnumInstructionOperand.LONG, EnumInstructionOperand.LONG),
-		new NativeOpInfo(-1, EnumInstructionOperand.ARRAY, EnumInstructionOperand.BOOL),
-		new NativeOpInfo(-1, EnumInstructionOperand.REFERENCE, EnumInstructionOperand.BOOL)};
+		new NativeOpInfo(-1, EnumInstructionOperand.LONG, EnumInstructionOperand.LONG)};
 	
 	addOperatorDef(new OperatorDefNative(EnumOperation.ADD, "+", "plus", EnumOperatorType.BINARY, 90, EnumOperatorAssociativity.LEFT, 
 		new NativeOpInfo(Opcodes.IADD, EnumInstructionOperand.BYTE),
@@ -152,7 +150,16 @@ public class OperatorDef {
 		new NativeOpInfo(Opcodes.IAND, EnumInstructionOperand.INT),
 		new NativeOpInfo(Opcodes.LAND, EnumInstructionOperand.LONG, EnumInstructionOperand.LONG)));
 		
-	addOperatorDef(new OperatorDefNative(EnumOperation.EQUAL, "==", "equal", EnumOperatorType.BINARY, 60, EnumOperatorAssociativity.NONE, equalityOpInfo));
+	addOperatorDef(new OperatorDefNative(EnumOperation.EQUAL, "==", "equal", EnumOperatorType.BINARY, 60, EnumOperatorAssociativity.NONE, 
+		new NativeOpInfo(-1, EnumInstructionOperand.BYTE, EnumInstructionOperand.BOOL),
+		new NativeOpInfo(-1, EnumInstructionOperand.CHAR, EnumInstructionOperand.BOOL),
+		new NativeOpInfo(-1, EnumInstructionOperand.SHORT, EnumInstructionOperand.BOOL),
+		new NativeOpInfo(-1, EnumInstructionOperand.INT, EnumInstructionOperand.BOOL),
+		new NativeOpInfo(-1, EnumInstructionOperand.FLOAT, EnumInstructionOperand.BOOL),
+		new NativeOpInfo(-1, EnumInstructionOperand.DOUBLE, EnumInstructionOperand.BOOL),
+		new NativeOpInfo(-1, EnumInstructionOperand.LONG, EnumInstructionOperand.LONG),
+		new NativeOpInfo(-1, EnumInstructionOperand.ARRAY, EnumInstructionOperand.BOOL),
+		new NativeOpInfo(-1, EnumInstructionOperand.REFERENCE, EnumInstructionOperand.BOOL)));
 		
 	addOperatorDef(new OperatorDefNative(EnumOperation.NOT_EQUAL, "!=", "not_equal", EnumOperatorType.BINARY, 60, EnumOperatorAssociativity.LEFT, equalityOpInfo));
 	addOperatorDef(new OperatorDefNative(EnumOperation.LESS, "<", "less", EnumOperatorType.BINARY, 70, EnumOperatorAssociativity.LEFT, equalityOpInfo));
@@ -234,6 +241,7 @@ public class OperatorDef {
 	public OperatorDefNative(EnumOperation operation, String id, String name, EnumOperatorType type, int precedence, EnumOperatorAssociativity assoc, NativeOpInfo...opInfo) {
 	    super(id, name, type, precedence, assoc);
 	    this.opInfo = opInfo;
+	    this.operation = operation;
 	}
 	
     }

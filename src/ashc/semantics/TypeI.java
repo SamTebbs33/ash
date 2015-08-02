@@ -24,6 +24,7 @@ import ashc.grammar.Node.NodeLong;
 import ashc.grammar.Node.NodeNull;
 import ashc.grammar.Node.NodeTupleType;
 import ashc.grammar.Node.NodeType;
+import ashc.semantics.Member.Type;
 
 public class TypeI {
 
@@ -67,6 +68,10 @@ public class TypeI {
 
 	for (final NodeType t : nodeType.type.generics.types)
 	    genericTypes.add(new TypeI(t));
+    }
+
+    public TypeI(Type type) {
+	this(type.qualifiedName.shortName, 0, false);
     }
 
     public static TypeI from(EnumInstructionOperand retType) {
@@ -336,7 +341,7 @@ public class TypeI {
 	for (final EnumPrimitive p : EnumPrimitive.values())
 	    if (p.ashName.equals(name1) || p.ashName.equals(name2)) return new TypeI(p);
 
-	return null;
+	return TypeI.getObjectType().setOptional(type1.optional || type2.optional);
     }
 
     public static TypeI getPrecedentType(final LinkedList<IExpression> exprs) {

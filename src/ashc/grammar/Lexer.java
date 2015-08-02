@@ -95,7 +95,7 @@ public class Lexer {
 
 	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
 	OP("[\\+|\\-|!|~|=|\\*|/|%|^|&|<|>|@|#|\\?]+", "operator"),
-	ARRAYDIMENSION("\\[\\]"),
+	ARRAYDIMENSION("\\[\\]", "array dimension"),
 	WHITESPACE("[\n\t ]+", "whitespace"),
 
 	UNDERSCORE("_", "underscore"),

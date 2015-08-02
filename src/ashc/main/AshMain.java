@@ -21,6 +21,7 @@ public class AshMain {
 	Library.findLibs();
 	// System.out.println(System.getProperty("sun.boot.class.path"));
 	TypeImporter.loadClass("java.lang.String", "String");
+	TypeImporter.loadClass("java.lang.Integer", "Integer");
 	TypeImporter.loadClass("java.lang.Object", "Object");
 	TypeImporter.loadClass("java.lang.System", "System");
 	TypeImporter.loadClass("java.lang.Iterable", "Iterable");

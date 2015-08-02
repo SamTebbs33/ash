@@ -1,6 +1,4 @@
-operator ?? = type: binary, name: not_null, assoc: non, prec: 120
+operator ?? = type: binary, name: not_null, assoc: none, prec: 120
+operator === = type: binary, name: value_equality, assoc: none, prec: 120
 
-func ??(optObj : Object?, obj : Object) : Object {
-	if(optObj == null) return obj
-	else return optObj!
-}
+func String.toInt() : int -> Integer.parseInt(this)

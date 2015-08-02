@@ -358,7 +358,7 @@ public abstract class Node {
 		defConstructor.returnType = new TypeI(name.shortName, 0, false);
 		if (generics != null) for (final NodeType generic : generics.types)
 		    defConstructor.generics.add(generic.id);
-		defConstructorScope = new FuncScope(defConstructor.returnType, false, false);
+		defConstructorScope = new FuncScope(defConstructor.returnType, false, false, false);
 		Scope.push(defConstructorScope);
 		for (final NodeArg arg : args.args) {
 		    arg.preAnalyse();
@@ -734,12 +734,12 @@ public abstract class Node {
 		varDec.analyse();
 	    for (final NodeFuncDec funcDec : funcDecs)
 		funcDec.analyse();
-	    Scope.push(new FuncScope(TypeI.getVoidType(), false, false));
+	    Scope.push(new FuncScope(TypeI.getVoidType(), false, false, false));
 	    for (final NodeFuncBlock block : constructBlocks)
 		block.analyse();
 	    Scope.pop();
 	    if (initBlocks.size() > 0) {
-		Scope.push(new FuncScope(TypeI.getVoidType(), false, true));
+		Scope.push(new FuncScope(TypeI.getVoidType(), false, true, false));
 		for (final NodeFuncBlock block : initBlocks) {
 		    block.analyse();
 		    Scope.getScope().vars.clear();
@@ -853,6 +853,10 @@ public abstract class Node {
 	@Override
 	public void generate() {}
 
+	public boolean isJustID() {
+	    return arrDims == 0 && !optional && tupleTypes.size() == 0 && generics.types.size() == 0;
+	}
+
     }
 
     public static class NodeQualifiedName extends Node {
@@ -911,15 +915,18 @@ public abstract class Node {
 	public String id;
 	public NodeArgs args;
 	public NodeType type, throwsType;
+	public Token extensionType;
 	public NodeFuncBlock block;
 	public NodeTypes generics;
 
 	private TypeI returnType;
 	private Function func;
-	private boolean isMutFunc, isConstructor;
+	private boolean isMutFunc, isConstructor, isGlobal;
 	private GenNodeFunction genNodeFunc;
+	private FuncScope scope;
+	private Type extType = null;
 
-	public NodeFuncDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String id, final NodeArgs args, final NodeType type, final NodeType throwsType, final NodeFuncBlock block, final NodeTypes types) {
+	public NodeFuncDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String id, final NodeArgs args, final NodeType type, final NodeType throwsType, final NodeFuncBlock block, final NodeTypes types, Token extensionType2) {
 	    super(line, column);
 	    this.mods = mods;
 	    this.id = id;
@@ -929,35 +936,61 @@ public abstract class Node {
 	    this.block = block;
 	    generics = types;
 	    this.block.inFunction = true;
+	    this.extensionType = extensionType2;
+	}
+	
+	public NodeFuncDec(final int line, final int columnStart, final LinkedList<NodeModifier> mods2, final String data, final NodeArgs args2, final NodeType throwsType2, final NodeFuncBlock block2, final NodeTypes nodeTypes, final boolean isMutFunc) {
+	    this(line, columnStart, mods2, data, args2, null, throwsType2, block2, nodeTypes, null);
+	    this.isMutFunc = true;
 	}
 
 	public void preAnalyseGlobal() {
 	    QualifiedName name = Semantics.getGlobalType().qualifiedName.copy().add(id);
 	    func = new Function(name, EnumModifier.PUBLIC.intVal + EnumModifier.STATIC.intVal, Semantics.getGlobalType());
 	    isConstructor = false;
+	    isGlobal = true;
+	    finishPreAnalysis();
+	    if(extType != null) extType.addFunction(func);
+	}
+
+	private void finishPreAnalysis() {
 	    args.preAnalyse();
 	    if (args.hasDefExpr) {
 		func.hasDefExpr = true;
 		func.defExpr = args.defExpr;
 	    }
+	    if(extensionType != null){
+		Optional<Type> typeOpt = Semantics.getType(extensionType.data);
+		if(typeOpt.isPresent()) extType = typeOpt.get();
+		else semanticError(this, line, column, TYPE_DOES_NOT_EXIST, extensionType.data);
+	    }
 	    
 	    // We need to push a new scope and add the parameters as variables
-	    // so that return type inference works
-	    Scope.push(new FuncScope(returnType, isMutFunc, true));
+	    scope = new FuncScope(returnType, isMutFunc, true, isGlobal, extType);
+	    Scope.push(scope);
 	    for (final NodeArg arg : args.args)
 		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
 
-	    if (!type.id.equals("void")) func.returnType = new TypeI(type);
-	    else func.returnType = TypeI.getVoidType();
-	    returnType = func.returnType;
+	    if (!isMutFunc && !isConstructor) {
+		if (!type.id.equals("void")) returnType = new TypeI(type);
+		else returnType = TypeI.getVoidType();
+		returnType = Semantics.filterNullType(returnType);
+	    } else returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
+	    func.returnType = returnType;
 
 	    Scope.getFuncScope().returnType = func.returnType;
 	    Scope.pop();
 
 	    for (final NodeArg arg : args.args)
 		func.parameters.add(new TypeI(arg.type));
-	    if (!Semantics.funcExists(func)) Semantics.addFunc(func);
-	    else semanticError(this, line, column, FUNC_ALREADY_EXISTS, id);
+	    
+	    if(extensionType == null){
+		if (!Semantics.funcExists(func)) Semantics.addFunc(func);
+		else semanticError(this, line, column, FUNC_ALREADY_EXISTS, id);
+	    }else if(extType != null){
+		if(extType.getFunc(id, func.parameters) != null) semanticError(this, line, column, FUNC_ALREADY_EXISTS_IN_TYPE, id, extType.qualifiedName);
+		else extType.addFunction(func);
+	    }
 	    
 	    if(OperatorDef.operatorDefExists(id)){
 		if(args.hasDefExpr) semanticError(this, line, column, OP_OVERLOADS_CANNOT_HAVE_DEFEXPR);
@@ -965,11 +998,6 @@ public abstract class Node {
 		int paramsRequired = op.type == EnumOperatorType.UNARY ? (Semantics.inGlobal ? 1 : 0) : (Semantics.inGlobal ? 2 : 1);
 		if(args.args.size() != paramsRequired) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, op.type.name().toLowerCase(), paramsRequired);
 	    }
-	}
-
-	public NodeFuncDec(final int line, final int columnStart, final LinkedList<NodeModifier> mods2, final String data, final NodeArgs args2, final NodeType throwsType2, final NodeFuncBlock block2, final NodeTypes nodeTypes, final boolean isMutFunc) {
-	    this(line, columnStart, mods2, data, args2, null, throwsType2, block2, nodeTypes);
-	    this.isMutFunc = true;
 	}
 
 	@Override
@@ -985,42 +1013,7 @@ public abstract class Node {
 		func.generics.add(generic.id);
 
 	    isConstructor = id.equals(Semantics.currentType().qualifiedName.shortName);
-	    args.preAnalyse();
-	    if (args.hasDefExpr) {
-		func.hasDefExpr = true;
-		func.defExpr = args.defExpr;
-	    }
-
-	    // We need to push a new scope and add the parameters as variables
-	    // so that return type inference works
-	    Scope.push(new FuncScope(returnType, isMutFunc, BitOp.and(modifiers, EnumModifier.STATIC.intVal)));
-	    for (final NodeArg arg : args.args)
-		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
-
-	    if (!isMutFunc && !isConstructor) {
-		if (!type.id.equals("void")) returnType = new TypeI(type);
-		else returnType = TypeI.getVoidType();
-		returnType = Semantics.filterNullType(returnType);
-	    } else returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
-	    func.returnType = returnType;
-
-	    Scope.getFuncScope().returnType = returnType;
-	    Scope.pop();
-
-	    for (final NodeArg arg : args.args)
-		func.parameters.add(new TypeI(arg.type));
-	    if (!Semantics.funcExists(func)) Semantics.addFunc(func);
-	    else semanticError(this, line, column, FUNC_ALREADY_EXISTS, id);
-	    
-	    if(OperatorDef.operatorDefExists(id)){
-		if(args.hasDefExpr) semanticError(this, line, column, OP_OVERLOADS_CANNOT_HAVE_DEFEXPR);
-		OperatorDef op = OperatorDef.getOperatorDef(id);
-		if(op.type == EnumOperatorType.UNARY){
-		    if(args.args.size() != 0) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, "unary", 0);
-		}else{
-		    if(args.args.size() != 1) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, "binary", 1);
-		}
-	    }
+	    finishPreAnalysis();
 	}
 
 	@Override
@@ -1033,9 +1026,7 @@ public abstract class Node {
 		final Optional<Type> type = Semantics.getType(throwsType.id);
 		if (type.isPresent()) if (!type.get().hasSuper(new QualifiedName("").add("java").add("lang").add("Throwable"))) semanticError(this, line, column, TYPE_DOES_NOT_EXTEND, throwsType.id, "java.lang.Throwable");
 	    }
-	    Scope.push(new FuncScope(returnType, isMutFunc, BitOp.and(func.modifiers, EnumModifier.STATIC.intVal)));
-	    for (final NodeArg arg : args.args)
-		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
+	    Scope.push(scope);
 	    block.analyse();
 	    // If the return type is not "void", all code paths must have a
 	    // return statement
@@ -2152,13 +2143,27 @@ public abstract class Node {
     }
 
     public static class NodeThis extends Node implements IExpression {
+	
+	TypeI type;
+	
 	public NodeThis(final int line, final int column) {
 	    super(line, column);
 	}
 
 	@Override
+	public void analyse() {
+	    if(Scope.inFuncScope()){
+		FuncScope scope = Scope.getFuncScope();
+		if(scope.isGlobal){
+		    if(scope.extensionType == null) semanticError(this, line, column, THIS_USED_IN_GLOBAL_FUNC);
+		    else type = new TypeI(scope.extensionType);
+		}else type = new TypeI(Semantics.currentType());
+	    }
+	}
+
+	@Override
 	public TypeI getExprType() {
-	    return new TypeI(Semantics.typeStack.peek().qualifiedName.shortName, 0, false);
+	    return type;
 	}
 
 	@Override
@@ -2397,7 +2402,7 @@ public abstract class Node {
 	@Override
 	public boolean hasReturnStmt() {
 	    if (block.hasReturnStmt()) if (type == EnumIfType.ELSE) return true;
-	    else if (elseStmt.hasReturnStmt()) return true;
+	    else if (elseStmt != null && elseStmt.hasReturnStmt()) return true;
 	    return false;
 	}
 

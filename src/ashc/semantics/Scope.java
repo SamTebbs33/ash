@@ -18,14 +18,21 @@ public class Scope {
     public static class FuncScope extends Scope {
 
 	public TypeI returnType;
-	public boolean isMutFunc, isStatic;
+	public boolean isMutFunc, isStatic, isGlobal;
 	public int locals = 0;
+	public Type extensionType;
 
-	public FuncScope(final TypeI typeI, final boolean isMutFunc, final boolean isStatic) {
+	public FuncScope(final TypeI typeI, final boolean isMutFunc, final boolean isStatic, final boolean isGlobal, Type extensionType) {
 	    super();
 	    returnType = typeI;
 	    this.isMutFunc = isMutFunc;
 	    this.isStatic = isStatic;
+	    this.isGlobal = isGlobal;
+	    this.extensionType = extensionType;
+	}
+	
+	public FuncScope(final TypeI typeI, final boolean isMutFunc, final boolean isStatic, final boolean isGlobal) {
+	    this(typeI, isMutFunc, isStatic, isGlobal, null);
 	}
 
     }
@@ -35,7 +42,7 @@ public class Scope {
 	public Field field;
 
 	public PropertyScope(final Field field) {
-	    super(field.type, false, false);
+	    super(field.type, false, false, false, null);
 	    this.field = field;
 	}
     }
