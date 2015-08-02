@@ -950,7 +950,6 @@ public abstract class Node {
 	    isConstructor = false;
 	    isGlobal = true;
 	    finishPreAnalysis();
-	    if(extType != null) extType.addFunction(func);
 	}
 
 	private void finishPreAnalysis() {
@@ -961,10 +960,13 @@ public abstract class Node {
 	    }
 	    if(extensionType != null){
 		Optional<Type> typeOpt = Semantics.getType(extensionType.data);
-		if(typeOpt.isPresent()) extType = typeOpt.get();
+		if(typeOpt.isPresent()){
+		    extType = typeOpt.get();
+		    func.extType = extType;
+		}
 		else semanticError(this, line, column, TYPE_DOES_NOT_EXIST, extensionType.data);
 	    }
-	    
+	   
 	    // We need to push a new scope and add the parameters as variables
 	    scope = new FuncScope(returnType, isMutFunc, true, isGlobal, extType);
 	    Scope.push(scope);
@@ -1082,7 +1084,9 @@ public abstract class Node {
 	    genNodeFunc = new GenNodeFunction(name, func.modifiers, type);
 	    // TODO: Generate constructor calls if this function is a
 	    // constructor
-	    genNodeFunc.params = func.parameters;
+	    genNodeFunc.params = new LinkedList<>();
+	    for(TypeI param : func.parameters) genNodeFunc.params.add(param);
+	    if(extType != null) genNodeFunc.params.addFirst(new TypeI(extType));
 	    GenNode.addGenNodeFunction(genNodeFunc);
 	    int argID = 0;
 	    for (final TypeI arg : func.parameters) {
@@ -1460,6 +1464,7 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    final StringBuffer sb = new StringBuffer("(");
+	    if(func.extType != null) sb.append("L"+func.extType.qualifiedName.toBytecodeName()+";");
 	    for (final TypeI type : func.parameters)
 		sb.append(type.toBytecodeName());
 	    sb.append(")" + (func.isConstructor() ? "V" : func.returnType.toBytecodeName()));
@@ -2145,6 +2150,7 @@ public abstract class Node {
     public static class NodeThis extends Node implements IExpression {
 	
 	TypeI type;
+	boolean inExtFunc;
 	
 	public NodeThis(final int line, final int column) {
 	    super(line, column);
@@ -2156,7 +2162,10 @@ public abstract class Node {
 		FuncScope scope = Scope.getFuncScope();
 		if(scope.isGlobal){
 		    if(scope.extensionType == null) semanticError(this, line, column, THIS_USED_IN_GLOBAL_FUNC);
-		    else type = new TypeI(scope.extensionType);
+		    else{
+			inExtFunc = true;
+			type = new TypeI(scope.extensionType);
+		    }
 		}else type = new TypeI(Semantics.currentType());
 	    }
 	}

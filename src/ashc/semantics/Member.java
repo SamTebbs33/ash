@@ -182,8 +182,11 @@ public class Member {
 	}
 
 	public Function getFunc(final String id, final LinkedList<TypeI> parameters) {
-	    if (functions.containsKey(id)) for (final Function func : functions.get(id))
-		if (func.paramsAreEqual(parameters)) return func;
+	    if (functions.containsKey(id)){
+		for (final Function func : functions.get(id)){
+		    if (func.paramsAreEqual(parameters)) return func;
+		}
+	    }
 
 	    Function func = null;
 	    for (final Type superType : supers)
@@ -221,6 +224,7 @@ public class Member {
 	public TypeI returnType;
 	public LinkedList<String> generics = new LinkedList<String>();
 	public IExpression defExpr;
+	public Type extType;
 
 	public Function(final QualifiedName qualifiedName, final int modifiers, final Type enclosing) {
 	    super(qualifiedName, modifiers);
@@ -281,6 +285,7 @@ public class Member {
 	}
 
 	private boolean paramsAreEqual(final LinkedList<TypeI> params2) {
+	    if(this.parameters.size() == 0 && params2.size() == 0) return true;
 	    // If the function has a default parameter expression and the size
 	    // of parmas2 is 1 less than params then allow it
 	    if ((parameters.size() != params2.size()) && !(hasDefExpr && (parameters.size() == (params2.size() + 1)))) return false;
