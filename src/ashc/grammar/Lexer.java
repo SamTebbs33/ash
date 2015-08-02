@@ -250,20 +250,20 @@ public class Lexer {
 	@Override
 	public void print(int lineOffset, int columnOffset, Lexer lexer) {
 	    final int line = token.line + lineOffset, colStart = token.columnStart + columnOffset, colEnd = token.columnEnd + columnOffset;
-		System.err.printf("Error:[%d:%d -> %d] %s%n", line, colStart, colEnd, getMessage());
+		System.err.printf("Error[%d:%d-%d] %s%n", line, colStart, colEnd, getMessage());
 		AshError.numErrors++;
 
 		// Print out the line and location of the error
 		if (line <= lexer.lines.size()) {
-		    System.out.println(lexer.lines.get(line - 1));
+		    System.err.println(lexer.lines.get(line - 1));
 		    for (int i = 0; i < (colStart - 1); i++)
-			System.out.print(" ");
-		    System.out.print("^");
+			System.err.print(" ");
+		    System.err.print("^");
 		    if ((colEnd - colStart) > 1) {
 			for (int i = colStart; i < (colEnd - 2); i++)
-			    System.out.print("-");
-			System.out.println("^");
-		    } else System.out.println();
+			    System.err.print("-");
+			System.err.println("^");
+		    } else System.err.println();
 		}
 	}
 

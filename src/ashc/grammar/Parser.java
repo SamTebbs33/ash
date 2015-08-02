@@ -317,7 +317,7 @@ public class Parser {
      */
     private NodeClassDec parseClassDec(final LinkedList<NodeModifier> mods) throws GrammarException {
 	final Token id = expect(TokenType.ID);
-	final NodeTypes generics = parseGenerics();
+	final NodeTypes generics = null;
 	NodeArgs args = null;
 	NodeExprs superArgs = null;
 	NodeTypes types = null;
@@ -335,10 +335,6 @@ public class Parser {
 
 	final NodeClassBlock block = parseClassBlock();
 	return new NodeClassDec(id.line, id.columnStart, mods, types, args, id, block, generics, superArgs);
-    }
-
-    private NodeTypes parseGenerics() throws GrammarException {
-	return parseGenerics(true);
     }
 
     private NodeClassBlock parseClassBlock() throws GrammarException {
@@ -403,7 +399,7 @@ public class Parser {
 		id = expect(TokenType.ID, TokenType.OP, TokenType.ARRAYDIMENSION);
 	    }else rewind();
 	}
-	final NodeTypes types = parseGenericsDecs();
+	final NodeTypes types = null;//parseGenericsDecs();
 	final NodeArgs args = parseArgs();
 	NodeType type = null, throwsType = null;
 	NodeFuncBlock block = new NodeFuncBlock();
@@ -431,15 +427,6 @@ public class Parser {
 	    return types;
 	} else rewind();
 	return new NodeTypes();
-    }
-
-    public NodeTypes parseGenerics(final boolean necessary) throws GrammarException {
-	if (getNext().data.equals("<")) {
-	    final NodeTypes types = parseTypes(necessary);
-	    expect(">");
-	    return types;
-	} else rewind();
-	return null;
     }
 
     private NodeFuncBlock parseFuncBlock(final boolean allowSingleLine, final boolean singleLineExpression) throws GrammarException {
@@ -593,7 +580,7 @@ public class Parser {
 	do {
 	    final Token id = expect(TokenType.ID, TokenType.SELF, TokenType.SUPER, TokenType.THIS);
 	    savePointer();
-	    final NodeTypes generics = parseGenerics(false);
+	    final NodeTypes generics = null;
 	    if (getNext().type == TokenType.PARENL) {
 		rewind();
 		final NodeExprs exprs = parseCallArgs(TokenType.PARENL, TokenType.PARENR);
@@ -979,7 +966,7 @@ public class Parser {
 		if (!necessary) return null;
 		else throw e;
 	    }
-	    type.generics = parseGenerics();
+	    type.generics = null;
 	}
 
 	// Parse array dimensions
@@ -994,7 +981,7 @@ public class Parser {
     private NodeType parseSuperType() throws GrammarException {
 	final Token id = expect(TokenType.ID);
 	final NodeType type = new NodeType(id.line, id.columnStart, id.data);
-	type.generics = parseGenerics();
+	type.generics = null;
 	return type;
     }
 

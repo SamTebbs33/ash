@@ -1011,8 +1011,6 @@ public abstract class Node {
 		if ((mod.asInt() == EnumModifier.STATIC.intVal) && isMutFunc) semanticError(this, line, column, MUT_FUNC_IS_STATIC, id);
 		else modifiers |= mod.asInt();
 	    func = new Function(name, modifiers, Semantics.currentType());
-	    for (final NodeType generic : generics.types)
-		func.generics.add(generic.id);
 
 	    isConstructor = id.equals(Semantics.currentType().qualifiedName.shortName);
 	    finishPreAnalysis();
