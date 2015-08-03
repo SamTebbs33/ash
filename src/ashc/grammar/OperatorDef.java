@@ -78,6 +78,8 @@ public class OperatorDef {
 		new NativeOpInfo(-1, EnumInstructionOperand.DOUBLE, EnumInstructionOperand.BOOL),
 		new NativeOpInfo(-1, EnumInstructionOperand.LONG, EnumInstructionOperand.LONG)};
 	
+	addOperatorDef(new OperatorDef("?", "ternary", EnumOperatorType.BINARY));
+	
 	addOperatorDef(new OperatorDefNative(EnumOperation.ADD, "+", "plus", EnumOperatorType.BINARY, 90, EnumOperatorAssociativity.LEFT, 
 		new NativeOpInfo(Opcodes.IADD, EnumInstructionOperand.BYTE),
 		new NativeOpInfo(Opcodes.IADD, EnumInstructionOperand.CHAR),

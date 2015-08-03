@@ -796,16 +796,15 @@ public class Parser {
 		// Postfix unary expression
 	    case OP:
 		if (next.data.equals("!")) return new NodeUnwrapOptional(next.line, next.columnStart, expr);
+		else if(next.data.equals("?")){
+		    final IExpression exprTrue = parseExpression();
+		    expect(TokenType.COLON);
+		    return new NodeTernary(expr, exprTrue, parseExpression());
+		}
 		if(!OperatorDef.operatorDefExists(next.data)) throw new GrammarException("Undefined operator: " + next.data);
 		OperatorDef op = OperatorDef.getOperatorDef(next.data);
 		if(op.type == EnumOperatorType.UNARY) return new NodeUnary(next.line, next.columnStart, expr, op, false);
 		else return new NodeBinary(next.line, next.columnStart, expr, op, parseExpression());
-	    /*case QUESTIONMARK:
-		if ((next = getNext()).type == TokenType.QUESTIONMARK) return new NodeElvis(next.line, next.columnStart, expr, parseExpression());
-		else rewind();
-		final IExpression exprTrue = parseExpression();
-		expect(TokenType.COLON);
-		return new NodeTernary(expr, exprTrue, parseExpression());*/
 	    case BRACKETL:
 		NodeArrayAccess arrayExpr = new NodeArrayAccess(((Node) expr).line, ((Node) expr).column, expr, parseExpression());
 		expect(TokenType.BRACKETR);

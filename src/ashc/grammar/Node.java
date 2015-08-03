@@ -1503,12 +1503,6 @@ public abstract class Node {
 	    if (isTypeName) return new TypeI(id, 0, false);
 	    if (isArrayLength) return new TypeI(EnumPrimitive.INT);
 	    TypeI result = var.type;
-	    int i = 0;
-	    if (var.enclosingType != null) for (final String generic : var.enclosingType.generics)
-		if (generic.equals(var.type.shortName)) {
-		    result = prefixType.genericTypes.get(i);
-		    break;
-		} else i++;
 	    if (unwrapped) return Semantics.checkUnwrappedOptional(result, this, this);
 	    return result;
 	}
