@@ -96,20 +96,18 @@ public class TypeImporter {
 	return new ashc.semantics.Member.Type(node);
     }
 
-    public static void loadDefFile(String path) {
-	File defFile = new File(path.replace('.', File.separatorChar)+".ashd");
-	if(defFile.exists() && defFile.isFile()){
-	    try {
-		AshCompiler compiler = new AshCompiler(defFile.toString());
-		compiler.parseDefFile();
-		compiler.preAnalyse();
-		compiler.analyse();
-		if(compiler.errors == 0) compiler.generate();
-		GenNode.types.clear();
-		GenNode.typeStack.clear();
-	    } catch (IOException e) {
-		    AshError.compilerError("Cannot find definition file: " + defFile.toString());
-	    }
+    public static void loadDefFile(final String path) {
+	final File defFile = new File(path.replace('.', File.separatorChar) + ".ashd");
+	if (defFile.exists() && defFile.isFile()) try {
+	    final AshCompiler compiler = new AshCompiler(defFile.toString());
+	    compiler.parseDefFile();
+	    compiler.preAnalyse();
+	    compiler.analyse();
+	    if (compiler.errors == 0) compiler.generate();
+	    GenNode.types.clear();
+	    GenNode.typeStack.clear();
+	} catch (final IOException e) {
+	    AshError.compilerError("Cannot find definition file: " + defFile.toString());
 	}
     }
 

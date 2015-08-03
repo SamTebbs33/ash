@@ -5,8 +5,6 @@ import java.util.*;
 import java.util.regex.*;
 
 import ashc.error.*;
-import ashc.grammar.Lexer.Token;
-import ashc.grammar.Lexer.TokenMatcher;
 import ashc.grammar.Parser.GrammarException;
 
 /**
@@ -28,15 +26,8 @@ public class Lexer {
     }
 
     public static enum TokenTypeGroup implements TokenMatcher {
-	EXPRESSION_STARTER(
-		"expression",
-		TokenType.NEW,
-		TokenType.NULL,
-		TokenType.BRACEL,
-		TokenType.ID,
-		TokenType.THIS,
-		TokenType.SELF,
-		//TokenType.UNARYOP,
+	EXPRESSION_STARTER("expression", TokenType.NEW, TokenType.NULL, TokenType.BRACEL, TokenType.ID, TokenType.THIS, TokenType.SELF,
+	// TokenType.UNARYOP,
 		TokenType.BRACKETL,
 		TokenType.PARENL,
 		TokenType.OCTINT,
@@ -49,9 +40,9 @@ public class Lexer {
 		TokenType.STRING,
 		TokenType.CHAR,
 		TokenType.BOOL), FUNC_CALL("function call", TokenType.THIS, TokenType.ID, TokenType.SELF, TokenType.SUPER), VAR_DEC(
-		"variable/constant declaration",
-		TokenType.VAR,
-		TokenType.CONST), CONTROL_STMT("control statement", TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.MATCH);
+			"variable/constant declaration",
+			TokenType.VAR,
+			TokenType.CONST), CONTROL_STMT("control statement", TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.MATCH);
 
 	public TokenType[] tokenTypes;
 	public String name;
@@ -232,12 +223,12 @@ public class Lexer {
 	    super(String.format("Unexpected %s, expected %s", next.type.typeName, tokenData));
 	    token = next;
 	}
-	
-	public UnexpectedTokenException(Token next, String data, TokenMatcher[] matchers) {
+
+	public UnexpectedTokenException(final Token next, final String data, final TokenMatcher[] matchers) {
 	    super(String.format("Unexpected %s, expected %s, %s", next.type.typeName, data, asString(matchers)));
 	}
 
-	private static String asString(TokenMatcher...t){
+	private static String asString(final TokenMatcher... t) {
 	    final StringBuilder typesStr = new StringBuilder("");
 	    for (int i = 0; i < t.length; i++) {
 		typesStr.append(t[i].getName());
@@ -248,23 +239,23 @@ public class Lexer {
 	}
 
 	@Override
-	public void print(int lineOffset, int columnOffset, Lexer lexer) {
+	public void print(final int lineOffset, final int columnOffset, final Lexer lexer) {
 	    final int line = token.line + lineOffset, colStart = token.columnStart + columnOffset, colEnd = token.columnEnd + columnOffset;
-		System.err.printf("Error[%d:%d-%d] %s%n", line, colStart, colEnd, getMessage());
-		AshError.numErrors++;
+	    System.err.printf("Error[%d:%d-%d] %s%n", line, colStart, colEnd, getMessage());
+	    AshError.numErrors++;
 
-		// Print out the line and location of the error
-		if (line <= lexer.lines.size()) {
-		    System.err.println(lexer.lines.get(line - 1));
-		    for (int i = 0; i < (colStart - 1); i++)
-			System.err.print(" ");
-		    System.err.print("^");
-		    if ((colEnd - colStart) > 1) {
-			for (int i = colStart; i < (colEnd - 2); i++)
-			    System.err.print("-");
-			System.err.println("^");
-		    } else System.err.println();
-		}
+	    // Print out the line and location of the error
+	    if (line <= lexer.lines.size()) {
+		System.err.println(lexer.lines.get(line - 1));
+		for (int i = 0; i < (colStart - 1); i++)
+		    System.err.print(" ");
+		System.err.print("^");
+		if ((colEnd - colStart) > 1) {
+		    for (int i = colStart; i < (colEnd - 2); i++)
+			System.err.print("-");
+		    System.err.println("^");
+		} else System.err.println();
+	    }
 	}
 
     }

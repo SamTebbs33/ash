@@ -5,7 +5,6 @@ import java.util.*;
 
 import ashc.codegen.*;
 import ashc.grammar.*;
-import ashc.grammar.Lexer.UnexpectedTokenException;
 import ashc.grammar.Node.NodeDefFile;
 import ashc.grammar.Node.NodeFile;
 import ashc.grammar.Parser.GrammarException;
@@ -30,7 +29,7 @@ public class AshCompiler {
     public AshCompiler(final String relFilePath) throws FileNotFoundException, IOException {
 	final File file = new File(relFilePath);
 	fileName = file.getName();
-	if(fileName.indexOf('.') > 0) fileName = fileName.substring(0, fileName.indexOf('.'));
+	if (fileName.indexOf('.') > 0) fileName = fileName.substring(0, fileName.indexOf('.'));
 	parentPath = file.getParentFile() != null ? file.getParentFile().getPath() : "";
 	this.relFilePath = relFilePath;
 	lexer = new Lexer(new BufferedReader(new FileReader(file)));
@@ -48,19 +47,19 @@ public class AshCompiler {
 
     public void preAnalyse() {
 	if (fileNode != null) fileNode.preAnalyse();
-	else if(defFileNode != null) defFileNode.preAnalyse();
+	else if (defFileNode != null) defFileNode.preAnalyse();
     }
 
     public void analyse() {
 	if (fileNode != null) fileNode.analyse();
-	else if(defFileNode != null) defFileNode.analyse();
+	else if (defFileNode != null) defFileNode.analyse();
     }
 
     public void generate() {
 	if (fileNode != null) {
 	    fileNode.generate();
 	    GenNode.generate();
-	}else if(defFileNode != null){
+	} else if (defFileNode != null) {
 	    defFileNode.generate();
 	    GenNode.generate();
 	}
@@ -73,7 +72,7 @@ public class AshCompiler {
     public void parseDefFile() {
 	try {
 	    defFileNode = parser.parseDefFile();
-	} catch (GrammarException e) {
+	} catch (final GrammarException e) {
 	    parser.handleException(e);
 	}
 	parser.clear();

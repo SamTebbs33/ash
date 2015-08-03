@@ -80,7 +80,7 @@ public class QualifiedName {
 	return toString().replace('.', '/');
     }
 
-    public void setLast(String string) {
+    public void setLast(final String string) {
 	pop();
 	add(string);
     }

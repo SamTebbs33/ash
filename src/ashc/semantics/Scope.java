@@ -22,7 +22,7 @@ public class Scope {
 	public int locals = 0;
 	public Type extensionType;
 
-	public FuncScope(final TypeI typeI, final boolean isMutFunc, final boolean isStatic, final boolean isGlobal, Type extensionType) {
+	public FuncScope(final TypeI typeI, final boolean isMutFunc, final boolean isStatic, final boolean isGlobal, final Type extensionType) {
 	    super();
 	    returnType = typeI;
 	    this.isMutFunc = isMutFunc;
@@ -30,7 +30,7 @@ public class Scope {
 	    this.isGlobal = isGlobal;
 	    this.extensionType = extensionType;
 	}
-	
+
 	public FuncScope(final TypeI typeI, final boolean isMutFunc, final boolean isStatic, final boolean isGlobal) {
 	    this(typeI, isMutFunc, isStatic, isGlobal, null);
 	}

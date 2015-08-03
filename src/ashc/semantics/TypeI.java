@@ -70,12 +70,12 @@ public class TypeI {
 	    genericTypes.add(new TypeI(t));
     }
 
-    public TypeI(Type type) {
+    public TypeI(final Type type) {
 	this(type.qualifiedName.shortName, 0, false);
     }
 
-    public static TypeI from(EnumInstructionOperand retType) {
-	switch(retType){
+    public static TypeI from(final EnumInstructionOperand retType) {
+	switch (retType) {
 	    case ARRAY:
 		return new TypeI("Object", 1, false);
 	    case BOOL:
@@ -165,7 +165,7 @@ public class TypeI {
 	// around
 	if (!optional && exprType.optional) return false;
 	// If they are both numeric and the array dimensions are 0
-	//if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && (arrDims == exprType.arrDims)) return true;
+	// if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && (arrDims == exprType.arrDims)) return true;
 	return (exprType.arrDims == arrDims)
 		&& (shortName.equals(exprType.shortName) || (exprType.isNull() && !EnumPrimitive.isNumeric(shortName)) || Semantics.typeHasSuper(exprType.shortName, shortName));
     }

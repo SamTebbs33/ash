@@ -140,7 +140,8 @@ public abstract class Node {
 	    }
 	    if (!AshCompiler.get().parentPath.equals(packagePath)) semanticError(this, -1, -1, PATH_DOES_NOT_MATCH_PACKAGE, packagePath);
 	    Scope.setNamespace(name);
-	    if(includes != null) for(final NodeInclude i : includes) i.preAnalyse();
+	    if (includes != null) for (final NodeInclude i : includes)
+		i.preAnalyse();
 	    if (imports != null) for (final NodeImport i : imports)
 		i.preAnalyse();
 	    if (typeDecs != null) for (final NodeTypeDec t : typeDecs)
@@ -162,9 +163,9 @@ public abstract class Node {
 	}
 
     }
-    
+
     public static class NodeDefFile extends Node {
-	
+
 	public LinkedList<NodeImport> imports;
 	public LinkedList<NodeInclude> includes;
 	public LinkedList<NodeOperatorDef> operatorDefs;
@@ -172,44 +173,53 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {
-	    Semantics.enterDefFile("$Global"+AshCompiler.get().fileName);
-	    for(NodeImport i : imports) i.preAnalyse();
-	    for(NodeInclude i : includes) i.preAnalyse();
-	    for(NodeOperatorDef d : operatorDefs) d.preAnalyse();
-	    for(NodeFuncDec f : funcs) f.preAnalyseGlobal();
+	    Semantics.enterDefFile("$Global" + AshCompiler.get().fileName);
+	    for (final NodeImport i : imports)
+		i.preAnalyse();
+	    for (final NodeInclude i : includes)
+		i.preAnalyse();
+	    for (final NodeOperatorDef d : operatorDefs)
+		d.preAnalyse();
+	    for (final NodeFuncDec f : funcs)
+		f.preAnalyseGlobal();
 	    Semantics.exitDefFile();
 	}
 
 	@Override
 	public void analyse() {
-	    Semantics.enterDefFile("$Global"+AshCompiler.get().fileName);
-	    for(NodeImport i : imports) i.analyse();
-	    for(NodeInclude i : includes) i.analyse();
-	    for(NodeOperatorDef d : operatorDefs) d.analyse();
-	    for(NodeFuncDec f : funcs) f.analyse();
+	    Semantics.enterDefFile("$Global" + AshCompiler.get().fileName);
+	    for (final NodeImport i : imports)
+		i.analyse();
+	    for (final NodeInclude i : includes)
+		i.analyse();
+	    for (final NodeOperatorDef d : operatorDefs)
+		d.analyse();
+	    for (final NodeFuncDec f : funcs)
+		f.analyse();
 	    Semantics.exitDefFile();
 	}
 
 	@Override
 	public void generate() {
-	    QualifiedName name = new QualifiedName(AshCompiler.get().parentPath.replace('.', '/'));
+	    final QualifiedName name = new QualifiedName(AshCompiler.get().parentPath.replace('.', '/'));
 	    name.pop(); // Remove the last section (the file extension ".ash")
-	    name.setLast("$Global"+AshCompiler.get().fileName);
+	    name.setLast("$Global" + AshCompiler.get().fileName);
 	    GenNode.addGenNodeType(new GenNodeType(name.toBytecodeName(), name.shortName, "java/lang/Object", null, Opcodes.ACC_PUBLIC));
-	    for(NodeFuncDec dec : funcs) dec.generate();
+	    for (final NodeFuncDec dec : funcs)
+		dec.generate();
 	    GenNode.exitGenNodeType();
 	}
-	
-    }
-    
-    public static class NodeOperatorDef extends Node {
-	
-	private String id, name, type, assoc;
-	private int precedence;
 
-	public NodeOperatorDef(int line, int columnStart, String data, String name, String type, String assoc, int precedence) {
+    }
+
+    public static class NodeOperatorDef extends Node {
+
+	private final String id, name, type, assoc;
+	private final int precedence;
+
+	public NodeOperatorDef(final int line, final int columnStart, final String data, final String name, final String type, final String assoc, final int precedence) {
 	    super(line, columnStart);
-	    this.id = data;
+	    id = data;
 	    this.name = name;
 	    this.type = type;
 	    this.assoc = assoc;
@@ -218,14 +228,14 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {
-	    if(OperatorDef.operatorDefExists(id)) semanticError(this, line, column, OPERATOR_ALREADY_EXISTS, id);
-	    else if(OperatorDef.operatorNameExists(name)) semanticError(this, line, column, OPERATOR_ALREADY_EXISTS, name);
+	    if (OperatorDef.operatorDefExists(id)) semanticError(this, line, column, OPERATOR_ALREADY_EXISTS, id);
+	    else if (OperatorDef.operatorNameExists(name)) semanticError(this, line, column, OPERATOR_ALREADY_EXISTS, name);
 	    else OperatorDef.addOperatorDef(new OperatorDef(id, name, EnumOperatorType.get(type), precedence, EnumOperatorAssociativity.get(assoc)));
 	}
 
 	@Override
-	public void generate() {}	
-	
+	public void generate() {}
+
     }
 
     public static class NodePackage extends Node {
@@ -265,25 +275,25 @@ public abstract class Node {
 	public void generate() {}
 
     }
-    
+
     public static class NodeInclude extends Node {
-	
+
 	NodeQualifiedName qualifiedName;
 
-	public NodeInclude(int line, int columnStart, NodeQualifiedName parseQualifiedName) {
+	public NodeInclude(final int line, final int columnStart, final NodeQualifiedName parseQualifiedName) {
 	    super(line, columnStart);
-	    this.qualifiedName = parseQualifiedName;
+	    qualifiedName = parseQualifiedName;
 	    TypeImporter.loadDefFile(qualifiedName.toString());
 	}
 
 	@Override
 	public void preAnalyse() {
-	    
+
 	}
 
 	@Override
 	public void generate() {}
-	
+
     }
 
     public static abstract class NodeBlock extends Node {
@@ -444,9 +454,8 @@ public abstract class Node {
 		    addFuncStmt(new GenNodeVar(field.id, field.type.toBytecodeName(), argID, null));
 
 		// Call the right constructor depending on whether or not super-class arguments were provided
-		if ((superArgs == null) || superArgs.exprs.isEmpty()) {
-		    GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", "()V", false, false, false, true));
-		} else {
+		if ((superArgs == null) || superArgs.exprs.isEmpty()) GenNode.addFuncStmt(new GenNodeFuncCall(superClass, "<init>", "()V", false, false, false, true));
+		else {
 		    final StringBuffer params = new StringBuffer("(");
 		    for (final IExpression expr : superArgs.exprs) {
 			expr.generate();
@@ -854,7 +863,7 @@ public abstract class Node {
 	public void generate() {}
 
 	public boolean isJustID() {
-	    return arrDims == 0 && !optional && tupleTypes.size() == 0 && generics.types.size() == 0;
+	    return (arrDims == 0) && !optional && (tupleTypes.size() == 0) && (generics.types.size() == 0);
 	}
 
     }
@@ -926,7 +935,7 @@ public abstract class Node {
 	private FuncScope scope;
 	private Type extType = null;
 
-	public NodeFuncDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String id, final NodeArgs args, final NodeType type, final NodeType throwsType, final NodeFuncBlock block, final NodeTypes types, Token extensionType2) {
+	public NodeFuncDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String id, final NodeArgs args, final NodeType type, final NodeType throwsType, final NodeFuncBlock block, final NodeTypes types, final Token extensionType2) {
 	    super(line, column);
 	    this.mods = mods;
 	    this.id = id;
@@ -936,16 +945,16 @@ public abstract class Node {
 	    this.block = block;
 	    generics = types;
 	    this.block.inFunction = true;
-	    this.extensionType = extensionType2;
+	    extensionType = extensionType2;
 	}
-	
+
 	public NodeFuncDec(final int line, final int columnStart, final LinkedList<NodeModifier> mods2, final String data, final NodeArgs args2, final NodeType throwsType2, final NodeFuncBlock block2, final NodeTypes nodeTypes, final boolean isMutFunc) {
 	    this(line, columnStart, mods2, data, args2, null, throwsType2, block2, nodeTypes, null);
 	    this.isMutFunc = true;
 	}
 
 	public void preAnalyseGlobal() {
-	    QualifiedName name = Semantics.getGlobalType().qualifiedName.copy().add(id);
+	    final QualifiedName name = Semantics.getGlobalType().qualifiedName.copy().add(id);
 	    func = new Function(name, EnumModifier.PUBLIC.intVal + EnumModifier.STATIC.intVal, Semantics.getGlobalType());
 	    isConstructor = false;
 	    isGlobal = true;
@@ -958,15 +967,14 @@ public abstract class Node {
 		func.hasDefExpr = true;
 		func.defExpr = args.defExpr;
 	    }
-	    if(extensionType != null){
-		Optional<Type> typeOpt = Semantics.getType(extensionType.data);
-		if(typeOpt.isPresent()){
+	    if (extensionType != null) {
+		final Optional<Type> typeOpt = Semantics.getType(extensionType.data);
+		if (typeOpt.isPresent()) {
 		    extType = typeOpt.get();
 		    func.extType = extType;
-		}
-		else semanticError(this, line, column, TYPE_DOES_NOT_EXIST, extensionType.data);
+		} else semanticError(this, line, column, TYPE_DOES_NOT_EXIST, extensionType.data);
 	    }
-	   
+
 	    // We need to push a new scope and add the parameters as variables
 	    scope = new FuncScope(returnType, isMutFunc, true, isGlobal, extType);
 	    Scope.push(scope);
@@ -985,20 +993,18 @@ public abstract class Node {
 
 	    for (final NodeArg arg : args.args)
 		func.parameters.add(new TypeI(arg.type));
-	    
-	    if(extensionType == null){
+
+	    if (extensionType == null) {
 		if (!Semantics.funcExists(func)) Semantics.addFunc(func);
 		else semanticError(this, line, column, FUNC_ALREADY_EXISTS, id);
-	    }else if(extType != null){
-		if(extType.getFunc(id, func.parameters) != null) semanticError(this, line, column, FUNC_ALREADY_EXISTS_IN_TYPE, id, extType.qualifiedName);
-		else extType.addFunction(func);
-	    }
-	    
-	    if(OperatorDef.operatorDefExists(id)){
-		if(args.hasDefExpr) semanticError(this, line, column, OP_OVERLOADS_CANNOT_HAVE_DEFEXPR);
-		OperatorDef op = OperatorDef.getOperatorDef(id);
-		int paramsRequired = op.type == EnumOperatorType.UNARY ? (Semantics.inGlobal ? 1 : 0) : (Semantics.inGlobal ? 2 : 1);
-		if(args.args.size() != paramsRequired) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, op.type.name().toLowerCase(), paramsRequired);
+	    } else if (extType != null) if (extType.getFunc(id, func.parameters) != null) semanticError(this, line, column, FUNC_ALREADY_EXISTS_IN_TYPE, id, extType.qualifiedName);
+	    else extType.addFunction(func);
+
+	    if (OperatorDef.operatorDefExists(id)) {
+		if (args.hasDefExpr) semanticError(this, line, column, OP_OVERLOADS_CANNOT_HAVE_DEFEXPR);
+		final OperatorDef op = OperatorDef.getOperatorDef(id);
+		final int paramsRequired = op.type == EnumOperatorType.UNARY ? (Semantics.inGlobal ? 1 : 0) : (Semantics.inGlobal ? 2 : 1);
+		if (args.args.size() != paramsRequired) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, op.type.name().toLowerCase(), paramsRequired);
 	    }
 	}
 
@@ -1083,8 +1089,9 @@ public abstract class Node {
 	    // TODO: Generate constructor calls if this function is a
 	    // constructor
 	    genNodeFunc.params = new LinkedList<>();
-	    for(TypeI param : func.parameters) genNodeFunc.params.add(param);
-	    if(extType != null) genNodeFunc.params.addFirst(new TypeI(extType));
+	    for (final TypeI param : func.parameters)
+		genNodeFunc.params.add(param);
+	    if (extType != null) genNodeFunc.params.addFirst(new TypeI(extType));
 	    GenNode.addGenNodeFunction(genNodeFunc);
 	    int argID = 0;
 	    for (final TypeI arg : func.parameters) {
@@ -1462,7 +1469,7 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    final StringBuffer sb = new StringBuffer("(");
-	    if(func.extType != null) sb.append("L"+func.extType.qualifiedName.toBytecodeName()+";");
+	    if (func.extType != null) sb.append("L" + func.extType.qualifiedName.toBytecodeName() + ";");
 	    for (final TypeI type : func.parameters)
 		sb.append(type.toBytecodeName());
 	    sb.append(")" + (func.isConstructor() ? "V" : func.returnType.toBytecodeName()));
@@ -1502,7 +1509,7 @@ public abstract class Node {
 	public TypeI getExprType() {
 	    if (isTypeName) return new TypeI(id, 0, false);
 	    if (isArrayLength) return new TypeI(EnumPrimitive.INT);
-	    TypeI result = var.type;
+	    final TypeI result = var.type;
 	    if (unwrapped) return Semantics.checkUnwrappedOptional(result, this, this);
 	    return result;
 	}
@@ -1810,7 +1817,7 @@ public abstract class Node {
 			IExpression expr = null;
 			try {
 			    expr = parser.parseExpression();
-			} catch (GrammarException e) {
+			} catch (final GrammarException e) {
 			    parser.handleException(e);
 			}
 			if (expr != null) ((Node) expr).analyse();
@@ -2006,7 +2013,7 @@ public abstract class Node {
 	    super(line, columnStart);
 	    this.expr1 = expr1;
 	    this.expr2 = expr2;
-	    this.operator = op;
+	    operator = op;
 	}
 
 	@Override
@@ -2018,10 +2025,10 @@ public abstract class Node {
 		exprType1 = expr1.getExprType();
 		exprType2 = expr2.getExprType();
 
-		    final Tuple<TypeI, Function> operation = Semantics.getOperationType(exprType1, exprType2, operator);
-		    if (operation == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, operator.id, exprType1, exprType2);
-		    operatorOverloadFunc = operation.b;
-		    type = operation.a;
+		final Tuple<TypeI, Function> operation = Semantics.getOperationType(exprType1, exprType2, operator);
+		if (operation == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, operator.id, exprType1, exprType2);
+		operatorOverloadFunc = operation.b;
+		type = operation.a;
 	    }
 	}
 
@@ -2140,25 +2147,25 @@ public abstract class Node {
     }
 
     public static class NodeThis extends Node implements IExpression {
-	
+
 	TypeI type;
 	boolean inExtFunc;
-	
+
 	public NodeThis(final int line, final int column) {
 	    super(line, column);
 	}
 
 	@Override
 	public void analyse() {
-	    if(Scope.inFuncScope()){
-		FuncScope scope = Scope.getFuncScope();
-		if(scope.isGlobal){
-		    if(scope.extensionType == null) semanticError(this, line, column, THIS_USED_IN_GLOBAL_FUNC);
-		    else{
+	    if (Scope.inFuncScope()) {
+		final FuncScope scope = Scope.getFuncScope();
+		if (scope.isGlobal) {
+		    if (scope.extensionType == null) semanticError(this, line, column, THIS_USED_IN_GLOBAL_FUNC);
+		    else {
 			inExtFunc = true;
 			type = new TypeI(scope.extensionType);
 		    }
-		}else type = new TypeI(Semantics.currentType());
+		} else type = new TypeI(Semantics.currentType());
 	    }
 	}
 
@@ -2403,7 +2410,7 @@ public abstract class Node {
 	@Override
 	public boolean hasReturnStmt() {
 	    if (block.hasReturnStmt()) if (type == EnumIfType.ELSE) return true;
-	    else if (elseStmt != null && elseStmt.hasReturnStmt()) return true;
+	    else if ((elseStmt != null) && elseStmt.hasReturnStmt()) return true;
 	    return false;
 	}
 
@@ -3014,7 +3021,7 @@ public abstract class Node {
 	    for (int i = 0; i < size; i++) {
 		final boolean isLastExpr = i == (size - 1);
 		if (!isLastExpr) // Dupe the match statement's expression so that each other expression in this match case can be tested
-		addFuncStmt(new GenNodeOpcode(dupeOpcode));
+		    addFuncStmt(new GenNodeOpcode(dupeOpcode));
 		final IExpression expr = exprs.get(i);
 		final boolean isNullExpr = expr instanceof NodeNull;
 		boolean is32BitPrimitive = false;

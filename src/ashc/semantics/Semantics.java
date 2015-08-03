@@ -131,9 +131,8 @@ public class Semantics {
 
     public static Variable getVar(final String id, final Scope scope) {
 	if (scope != null) {
-	    for (final Variable var : scope.vars) {
+	    for (final Variable var : scope.vars)
 		if (var.id.equals(id)) return var;
-	    }
 	    if (scope.parent != null) return getVar(id, scope.parent);
 	}
 	return null;
@@ -165,7 +164,7 @@ public class Semantics {
 	if (t.isPresent()) return t.get().getFunc(id, args);
 	return null;
     }
-    
+
     public static Function getFunc(final String id, final TypeI type, final LinkedList<TypeI> args) {
 	final Optional<Type> t = type.qualifiedName != null ? getType(type.shortName, type.qualifiedName) : getType(type.shortName);
 	if (t.isPresent()) return t.get().getFunc(id, args);
@@ -179,13 +178,13 @@ public class Semantics {
 	    id = type.get().qualifiedName.shortName;
 	    return type.get().getFunc(id, args);
 	}
-	for(Type gType : globalTypes){
-	    Function func = gType.getFunc(id, args);
-	    if(func != null) return func;
+	for (final Type gType : globalTypes) {
+	    final Function func = gType.getFunc(id, args);
+	    if (func != null) return func;
 	}
 	return getFunc(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args);
     }
-    
+
     public static Function getFunc(String id, final LinkedList<TypeI> args) {
 	final Optional<Type> type = getType(id);
 	// Check if it is a constructor for an existing type
@@ -193,9 +192,9 @@ public class Semantics {
 	    id = type.get().qualifiedName.shortName;
 	    return type.get().getFunc(id, args);
 	}
-	for(Type gType : globalTypes){
-	    Function func = gType.getFunc(id, args);
-	    if(func != null) return func;
+	for (final Type gType : globalTypes) {
+	    final Function func = gType.getFunc(id, args);
+	    if (func != null) return func;
 	}
 	return getFunc(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args);
     }
@@ -255,14 +254,11 @@ public class Semantics {
     }
 
     public static Tuple<TypeI, Function> getOperationType(final TypeI type1, final TypeI type2, final OperatorDef operator) {
-	    if(operator instanceof OperatorDefNative){
-		OperatorDefNative op = (OperatorDefNative)operator;
-		for(NativeOpInfo info : op.opInfo){
-		    if(info.type1 == type1.getInstructionType() && info.type2 == type2.getInstructionType()){
-			return new Tuple<TypeI, Function>(TypeI.from(info.retType), null);
-		    }
-		}
-	    }
+	if (operator instanceof OperatorDefNative) {
+	    final OperatorDefNative op = (OperatorDefNative) operator;
+	    for (final NativeOpInfo info : op.opInfo)
+		if ((info.type1 == type1.getInstructionType()) && (info.type2 == type2.getInstructionType())) return new Tuple<TypeI, Function>(TypeI.from(info.retType), null);
+	}
 
 	if (type1.isArray() || type1.isTuple() || type1.isVoid() || type1.isNull()) return null;
 	else if (type2.isArray() || type2.isTuple() || type2.isVoid() || type2.isNull()) return null;
@@ -271,7 +267,7 @@ public class Semantics {
 	final LinkedList<TypeI> parameter = new LinkedList<TypeI>();
 	Type type;
 	Function func = null;
-	
+
 	if (!type1.isPrimitive()) {
 	    parameter.add(type2);
 	    type = Semantics.getType(type1.shortName).get();
@@ -290,7 +286,7 @@ public class Semantics {
 	// Global overloads are ordered, which means that the operands must appear in the same order as the overloading func's params
 	parameter.add(type2);
 	func = Semantics.getFunc(operator.id, parameter);
-	if(func != null) return new Tuple<TypeI, Function>(func.returnType, func);
+	if (func != null) return new Tuple<TypeI, Function>(func.returnType, func);
 	return null;
     }
 
@@ -301,8 +297,8 @@ public class Semantics {
 	return func != null ? new Operation(func, func.returnType) : null;
     }
 
-    public static void enterDefFile(String defFileName) {
-	Type type = new Type(new QualifiedName(defFileName), EnumModifier.PUBLIC.intVal, EnumType.CLASS);
+    public static void enterDefFile(final String defFileName) {
+	final Type type = new Type(new QualifiedName(defFileName), EnumModifier.PUBLIC.intVal, EnumType.CLASS);
 	type.isGlobalType = true;
 	globalTypes.add(type);
 	enterType(type);

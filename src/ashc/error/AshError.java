@@ -44,7 +44,7 @@ public class AshError extends Exception {
 	MUST_CALL_SUPER_CONSTRUCTOR("A sub-class must call one of the super-class' (%s) non-empty constructors"),
 
 	FIELD_ALREADY_EXISTS("\'%s\' already exists"),
-	
+
 	OPERATOR_ALREADY_EXISTS("Operator \"%s\" already exists"),
 	WRONG_NUMBER_OF_PARAMS_FOR_OP("An overload for a %s operator must have %d parameters"),
 	OP_OVERLOADS_CANNOT_HAVE_DEFEXPR("Operator overloads cannot use a default parameter value"),
