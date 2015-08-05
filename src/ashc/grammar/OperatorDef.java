@@ -5,7 +5,7 @@ import java.util.*;
 import ashc.codegen.GenNode.EnumInstructionOperand;
 import ashc.grammar.OperatorDef.OperatorDefNative.NativeOpInfo;
 
-import com.sun.xml.internal.ws.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 
 /**
  * Ash

@@ -941,6 +941,9 @@ public class Parser {
 
     private NodeType parseType(final boolean necessary) throws GrammarException {
 	final NodeType type = new NodeType();
+	// Parse opening brackets
+	while(getNext().type == TokenType.BRACKETL) type.arrDims++;
+	rewind();
 	// Parse tuple types
 	if (getNext().type == TokenType.PARENL) {
 	    // Tuple types must have more then one type to avoid clashes between tuple expressions and bracketed expressions
@@ -960,10 +963,9 @@ public class Parser {
 	    type.generics = null;
 	}
 
-	// Parse array dimensions
-	while (getNext().type == TokenType.ARRAYDIMENSION)
-	    type.arrDims++;
-	rewind();
+	// Parse closing brackets
+	int i = 0;
+	while (i++ < type.arrDims) expect(TokenType.BRACKETR);
 	if (getNext().data.equals("?")) type.optional = true;
 	else rewind();
 	return type;

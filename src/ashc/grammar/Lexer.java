@@ -226,6 +226,7 @@ public class Lexer {
 
 	public UnexpectedTokenException(final Token next, final String data, final TokenMatcher[] matchers) {
 	    super(String.format("Unexpected %s, expected %s, %s", next.type.typeName, data, asString(matchers)));
+	    token = next;
 	}
 
 	private static String asString(final TokenMatcher... t) {
@@ -240,6 +241,7 @@ public class Lexer {
 
 	@Override
 	public void print(final int lineOffset, final int columnOffset, final Lexer lexer) {
+	    System.out.println("token: " + token);
 	    final int line = token.line + lineOffset, colStart = token.columnStart + columnOffset, colEnd = token.columnEnd + columnOffset;
 	    System.err.printf("Error[%d:%d-%d] %s%n", line, colStart, colEnd, getMessage());
 	    AshError.numErrors++;

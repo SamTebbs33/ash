@@ -68,6 +68,11 @@ list and map:
   pass: yes
   run: yes
   
+definition files:
+  path: DefinitionFiles
+  pass: yes
+  run: yes
+  
 #match statement:
 #  path: MatchStatement
 #  pass: yes
