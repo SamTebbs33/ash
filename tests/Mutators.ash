@@ -2,7 +2,7 @@ import java.util.LinkedList
 
 public class Mutators {
 
-	public static func main(args : String[]?) {
+	public static func main(args : [String]?) {
 		var list = ListHolder()
 		list.add("Sam").add("Tebbs")
 	}

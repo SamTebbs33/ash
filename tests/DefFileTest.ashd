@@ -1,0 +1,10 @@
+import java.util.Random
+
+operator +- = type: binary, name: rand_plus_minus, assoc: none, prec: 100
+
+func String.toInt() : int -> Integer.parseInt(this)
+
+func +-(a : int, b : int) : int {
+	if(Random.nextBoolean()) return a + b
+	else return a - b
+}

@@ -1,5 +1,5 @@
 public class IfStatements {
-	public static func main(args : String[]) {
+	public static func main(args : [String]) {
 		const name = "Sam"
 		if name.equals("Sam") {
 			print("Yay :D")

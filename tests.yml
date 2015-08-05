@@ -63,10 +63,10 @@ default parameter value:
   pass: yes
   run: yes
  
-list and map:
-  path: ListAndMap
-  pass: yes
-  run: yes
+#list and map:
+#  path: ListAndMap
+#  pass: yes
+#  run: yes
   
 definition files:
   path: DefinitionFiles

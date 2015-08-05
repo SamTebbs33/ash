@@ -1,5 +1,5 @@
 public class OperatorOverloads {
-	public static func main(args : String[]){
+	public static func main(args : [String]){
 		var person = Person(19)
 		var person2 = person + 1
 	}
