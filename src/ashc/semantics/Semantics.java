@@ -264,29 +264,31 @@ public class Semantics {
 	else if (type2.isArray() || type2.isTuple() || type2.isVoid() || type2.isNull()) return null;
 
 	// Check for operator overloads, start with type 1
-	final LinkedList<TypeI> parameter = new LinkedList<TypeI>();
+	final LinkedList<TypeI> parameters = new LinkedList<TypeI>();
 	Type type;
-	Function func = null;
+	
+	// Check if there is a global overload for the types.
+	// Global overloads are ordered, which means that the operands must appear in the same order as the overloading func's params
+	parameters.add(type1);
+	parameters.add(type2);
+	Function func = Semantics.getFunc(operator.id, parameters);
+	if (func != null) return new Tuple<TypeI, Function>(func.returnType, func);
 
 	if (!type1.isPrimitive()) {
-	    parameter.add(type2);
+	    parameters.clear();
+	    parameters.add(type2);
 	    type = Semantics.getType(type1.shortName).get();
-	    func = type.getFunc(operator.id, parameter);
+	    func = type.getFunc(operator.id, parameters);
 	    if (func != null) return new Tuple<TypeI, Function>(func.returnType, func);
 	}
 	if (!type2.isPrimitive()) {
 	    // Check type 2 for operator overloads
-	    parameter.clear();
-	    parameter.add(type1);
+	    parameters.clear();
+	    parameters.add(type1);
 	    type = Semantics.getType(type2.shortName).get();
-	    func = type.getFunc(operator.id, parameter);
+	    func = type.getFunc(operator.id, parameters);
 	    if (func != null) return new Tuple<TypeI, Function>(func.returnType, func);
 	}
-	// Check if there is a global overload for the types.
-	// Global overloads are ordered, which means that the operands must appear in the same order as the overloading func's params
-	parameter.add(type2);
-	func = Semantics.getFunc(operator.id, parameter);
-	if (func != null) return new Tuple<TypeI, Function>(func.returnType, func);
 	return null;
     }
 

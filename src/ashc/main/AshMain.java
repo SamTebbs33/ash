@@ -25,6 +25,7 @@ public class AshMain {
 	TypeImporter.loadClass("java.lang.Object", "Object");
 	TypeImporter.loadClass("java.lang.System", "System");
 	TypeImporter.loadClass("java.lang.Iterable", "Iterable");
+	TypeImporter.loadClass("java.lang.Math", "Math");
 	parseArgs(args);
 	if (outputDir == null) outputDir = "./";
 	else if (!outputDir.endsWith(File.separator)) outputDir += File.separatorChar;

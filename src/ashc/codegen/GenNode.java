@@ -152,7 +152,7 @@ public abstract class GenNode {
 
 	    cw.visitEnd();
 
-	    // verifyClassBytecode(cw);
+	    //verifyClassBytecode(cw);
 
 	    final File classFile = new File(dirSb.toString() + shortName + ".class");
 	    if (classFile.exists()) classFile.delete();

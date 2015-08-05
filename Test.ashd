@@ -1,1 +1,14 @@
+import java.util.Random
+
+operator +- = type: binary, name: rand_plus_minus, assoc: none, prec: 100
+
 func String.toInt() : int -> Integer.parseInt(this)
+
+func foo() {
+	System.out.println("global func test")
+}
+
+func +-(a : int, b : int) : int {
+	if(Math.random() < 0.5) return a + b
+	else return a - b
+}
