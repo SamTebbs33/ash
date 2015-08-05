@@ -133,12 +133,13 @@ public abstract class GenNode {
 		genericsSignature.append(">Ljava/lang/Object;");
 	    }
 	    cw.visit(52, modifiers | Opcodes.ACC_SUPER, name, genericsSignature != null ? genericsSignature.toString() : null, superclass, interfaces);
-	    // I can't splut by escape character, for some reason...
-	    final String[] folders = name.replace('\\', '.').split("\\.");
+	    // I can't split by escape character, for some reason...
+	    final String[] folders = name.split("/");
 	    int i = 0;
 	    final StringBuffer dirSb = new StringBuffer(AshMain.outputDir);
-	    for (; i < (folders.length - 1); i++)
+	    for (; i < (folders.length - 1); i++){
 		dirSb.append(folders[i] + "/");
+	    }
 	    final String shortName = folders[i];
 	    final File parentFolders = new File(dirSb.toString());
 	    parentFolders.mkdirs();
