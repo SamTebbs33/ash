@@ -217,7 +217,7 @@ public class Member {
     public static class Function extends Member {
 
 	public LinkedList<TypeI> parameters = new LinkedList<TypeI>();
-	public boolean hasDefExpr = false;
+	public boolean hasDefExpr = false, isGlobal;
 	public TypeI returnType;
 	public LinkedList<String> generics = new LinkedList<String>();
 	public IExpression defExpr;
@@ -302,6 +302,10 @@ public class Member {
 
 	public boolean isConstructor() {
 	    return qualifiedName.shortName.equals(enclosingType.qualifiedName.shortName);
+	}
+
+	public boolean isGlobal() {
+	    return isGlobal;
 	}
 
     }

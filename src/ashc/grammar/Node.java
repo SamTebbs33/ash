@@ -956,6 +956,7 @@ public abstract class Node {
 	public void preAnalyseGlobal() {
 	    final QualifiedName name = Semantics.getGlobalType().qualifiedName.copy().add(id);
 	    func = new Function(name, EnumModifier.PUBLIC.intVal + EnumModifier.STATIC.intVal, Semantics.getGlobalType());
+	    func.isGlobal = true;
 	    isConstructor = false;
 	    isGlobal = true;
 	    finishPreAnalysis();
@@ -2064,27 +2065,29 @@ public abstract class Node {
 		if (exprType2.getInstructionType() != precedentType) addFuncStmt(new GenNodePrimitiveCast(exprType2.getInstructionType(), precedentType));
 		addFuncStmt(new GenNodeBinary(operator, precedentType));
 	    } else {
+		final String name = OperatorDef.filterOperators(operator.id);
 		// Operator-overloaded binary expression
 		final String enclosingType = operatorOverloadFunc.enclosingType.qualifiedName.toBytecodeName();
 		final boolean interfaceFunc = operatorOverloadFunc.enclosingType.type == EnumType.INTERFACE, privateFunc = BitOp.and(operatorOverloadFunc.modifiers, EnumModifier.PRIVATE.intVal);
-		String parameterType = null;
-		if (operatorOverloadFunc.enclosingType.qualifiedName.shortName.equals(exprType1.shortName)) {
+		if(operatorOverloadFunc.isGlobal()){
+		    expr1.generate();
+		    expr2.generate();
+		    addFuncStmt(new GenNodeFuncCall(enclosingType, name, "(" + exprType1.toBytecodeName() + exprType2.toBytecodeName() + ")" + operatorOverloadFunc.returnType.toBytecodeName(), false, false, true, false));
+		}else if (operatorOverloadFunc.enclosingType.qualifiedName.shortName.equals(exprType1.shortName)) {
 		    // expression 1 is the reference from which the method
 		    // should be called
 		    expr1.generate();
 		    // expr2 is the parameter to the method
 		    expr2.generate();
-		    parameterType = exprType2.toBytecodeName();
+		    addFuncStmt(new GenNodeFuncCall(enclosingType, name, "(" + exprType2.toBytecodeName() + ")" + operatorOverloadFunc.returnType.toBytecodeName(), interfaceFunc, privateFunc, false, false));
 		} else {
 		    // expression 2 is the reference from which the method
 		    // should be called
 		    expr2.generate();
 		    // expr1 is the parameter to the method
 		    expr1.generate();
-		    parameterType = exprType1.toBytecodeName();
+		    addFuncStmt(new GenNodeFuncCall(enclosingType, name, "(" + exprType1.toBytecodeName() + ")" + operatorOverloadFunc.returnType.toBytecodeName(), interfaceFunc, privateFunc, false, false));
 		}
-		final String name = OperatorDef.filterOperators(operator.id);
-		addFuncStmt(new GenNodeFuncCall(enclosingType, name, "(" + parameterType + ")" + operatorOverloadFunc.returnType.toBytecodeName(), interfaceFunc, privateFunc, false, false));
 	    }
 	}
     }
