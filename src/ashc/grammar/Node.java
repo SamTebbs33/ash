@@ -976,7 +976,7 @@ public abstract class Node {
 	    }
 
 	    // We need to push a new scope and add the parameters as variables
-	    scope = new FuncScope(returnType, isMutFunc, true, isGlobal, extType);
+	    scope = new FuncScope(returnType, isMutFunc, isGlobal || func.isStatic(), isGlobal, extType);
 	    Scope.push(scope);
 	    for (final NodeArg arg : args.args)
 		Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
