@@ -42,6 +42,11 @@ public class AshError extends Exception {
 	THIS_USED_IN_GLOBAL_FUNC("The \'this\' keyword cannot be used in a non-extension global function"),
 	MUT_FUNC_IS_STATIC("Mutator functions cannot be static (%s)"),
 	MUST_CALL_SUPER_CONSTRUCTOR("A sub-class must call one of the super-class' (%s) non-empty constructors"),
+	OVERRIDE_KEYWORD_REQUIRED("The \'override\' modifier is required when overriding a super-type's function"),
+	CANNOT_OVERRIDE_PRIVATE_FUNC("A private function cannot be overriden"),
+	CANNOT_OVERRIDE_FINAL_FUNC("A final function cannot be overriden"),
+	FUNC_SIGNATURES_DO_NOT_MATCH("The overridden and overriding functions' signatures do not match"),
+	OVERRIDEN_FUNC_DOES_NOT_EXIST("The overriden function does not exist in a super class"),
 
 	FIELD_ALREADY_EXISTS("\'%s\' already exists"),
 

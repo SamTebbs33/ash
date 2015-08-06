@@ -1,10 +1,11 @@
-include Test
+public class Foo {
+	func foo() {}
+	private func bar() {}
+	func foo2(obj : Object) : String? -> null
+}
 
-public class Test {
-	public static func main(args : [String]) {
-		foo() // Test global functions
-		var str = "12345"
-		var a : int = str.toInt() // Test extension functions
-		var b = a +- 1 // Test custom operators
-	}
+class Bar : Foo {
+	override public func foo() {}
+	override func bar() {}
+	override func foo2(obj : Object){}
 }

@@ -684,6 +684,12 @@ public abstract class Node {
 
 	@Override
 	public void generate() {}
+
+	public LinkedList<TypeI> toTypeIList() {
+	    LinkedList<TypeI> result = new LinkedList<>();
+	    for(NodeArg arg : args) result.add(new TypeI(arg.type));
+	    return result;
+	}
     }
 
     public static class NodeTypes extends Node {
@@ -1007,6 +1013,7 @@ public abstract class Node {
 		final int paramsRequired = op.type == EnumOperatorType.UNARY ? (Semantics.inGlobal ? 1 : 0) : (Semantics.inGlobal ? 2 : 1);
 		if (args.args.size() != paramsRequired) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, op.type.name().toLowerCase(), paramsRequired);
 	    }
+	  
 	}
 
 	@Override
@@ -1033,6 +1040,17 @@ public abstract class Node {
 		final Optional<Type> type = Semantics.getType(throwsType.id);
 		if (type.isPresent()) if (!type.get().hasSuper(new QualifiedName("").add("java").add("lang").add("Throwable"))) semanticError(this, line, column, TYPE_DOES_NOT_EXTEND, throwsType.id, "java.lang.Throwable");
 	    }
+	    
+	    // Ensure that overriding is handled properly
+	    Function superFunc = Semantics.currentType().getSuperClass().getFunc(id, args.toTypeIList());
+	    boolean hasOverrideMod = BitOp.and(func.modifiers, EnumModifier.OVERRIDE.intVal);
+	    if(superFunc != null){
+		if(superFunc.isPrivate()) semanticError(this, line, column, CANNOT_OVERRIDE_PRIVATE_FUNC);
+		if(superFunc.isFinal()) semanticError(this, line, column, CANNOT_OVERRIDE_FINAL_FUNC);
+		if(!hasOverrideMod) semanticError(this, line, column, OVERRIDE_KEYWORD_REQUIRED);
+		if(!func.hasEqualSignature(superFunc)) semanticError(this, line, column, FUNC_SIGNATURES_DO_NOT_MATCH);
+	    }else if(hasOverrideMod) semanticError(this, line, column, OVERRIDEN_FUNC_DOES_NOT_EXIST);
+
 	    Scope.push(scope);
 	    block.analyse();
 	    // If the return type is not "void", all code paths must have a

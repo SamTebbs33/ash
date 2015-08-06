@@ -9,6 +9,7 @@ import ashc.grammar.*;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeExprs;
 import ashc.load.*;
+import ashc.semantics.Member.Function;
 import ashc.util.*;
 
 /**
@@ -212,6 +213,10 @@ public class Member {
 	    return supers.getFirst();
 	}
 
+	public boolean hasSuperClass() {
+	    return !supers.isEmpty() && supers.getFirst().type == EnumType.CLASS;
+	}
+
     }
 
     public static class Function extends Member {
@@ -306,6 +311,15 @@ public class Member {
 
 	public boolean isGlobal() {
 	    return isGlobal;
+	}
+
+	public boolean isFinal() {
+	    return BitOp.and(modifiers, EnumModifier.FINAL.intVal);
+	}
+
+	public boolean hasEqualSignature(Function superFunc) {
+	    int modsA = EnumModifier.stripOverridingModifiers(this.modifiers), modsB = EnumModifier.stripOverridingModifiers(superFunc.modifiers);
+	    return modsA == modsB && this.returnType.equals(superFunc.returnType);
 	}
 
     }

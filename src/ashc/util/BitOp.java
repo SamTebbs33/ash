@@ -19,4 +19,12 @@ public class BitOp {
 	return (a ^ b) != 0;
     }
 
+    public static int clearBit(int modifiers, int bit) {
+	return modifiers & ~(1 << bit);
+    }
+    
+    public static int clearPow2(int modifiers, int product) {
+	return modifiers & ~(1 << (int)(Math.log(product) / Math.log(2)));
+    }
+
 }
