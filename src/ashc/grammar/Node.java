@@ -1042,14 +1042,16 @@ public abstract class Node {
 	    }
 	    
 	    // Ensure that overriding is handled properly
-	    Function superFunc = Semantics.currentType().getSuperClass().getFunc(id, args.toTypeIList());
-	    boolean hasOverrideMod = BitOp.and(func.modifiers, EnumModifier.OVERRIDE.intVal);
-	    if(superFunc != null){
-		if(superFunc.isPrivate()) semanticError(this, line, column, CANNOT_OVERRIDE_PRIVATE_FUNC);
-		if(superFunc.isFinal()) semanticError(this, line, column, CANNOT_OVERRIDE_FINAL_FUNC);
-		if(!hasOverrideMod) semanticError(this, line, column, OVERRIDE_KEYWORD_REQUIRED);
-		if(!func.hasEqualSignature(superFunc)) semanticError(this, line, column, FUNC_SIGNATURES_DO_NOT_MATCH);
-	    }else if(hasOverrideMod) semanticError(this, line, column, OVERRIDEN_FUNC_DOES_NOT_EXIST);
+	    if(Semantics.currentType().hasSuperClass()){
+		Function superFunc = Semantics.currentType().getSuperClass().getFunc(id, args.toTypeIList());
+		boolean hasOverrideMod = BitOp.and(func.modifiers, EnumModifier.OVERRIDE.intVal);
+		if(superFunc != null){
+		    if(superFunc.isPrivate()) semanticError(this, line, column, CANNOT_OVERRIDE_PRIVATE_FUNC);
+		    if(superFunc.isFinal()) semanticError(this, line, column, CANNOT_OVERRIDE_FINAL_FUNC);
+		    if(!hasOverrideMod) semanticError(this, line, column, OVERRIDE_KEYWORD_REQUIRED);
+		    if(!func.hasEqualSignature(superFunc)) semanticError(this, line, column, FUNC_SIGNATURES_DO_NOT_MATCH);
+		}else if(hasOverrideMod) semanticError(this, line, column, OVERRIDEN_FUNC_DOES_NOT_EXIST);
+	    }
 
 	    Scope.push(scope);
 	    block.analyse();

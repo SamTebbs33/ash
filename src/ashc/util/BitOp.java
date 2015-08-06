@@ -6,6 +6,8 @@ package ashc.util;
  * @author samtebbs, 16:32:09 - 24 May 2015
  */
 public class BitOp {
+    
+    public static final double LOG_2 = Math.log(2);
 
     public static boolean and(final int a, final int b) {
 	return (a & b) != 0;
@@ -24,7 +26,7 @@ public class BitOp {
     }
     
     public static int clearPow2(int modifiers, int product) {
-	return modifiers & ~(1 << (int)(Math.log(product) / Math.log(2)));
+	return modifiers & ~(1 << (int)(Math.log(product) / LOG_2));
     }
 
 }
