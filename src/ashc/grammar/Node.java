@@ -403,15 +403,23 @@ public abstract class Node {
 		    else {
 			final Type type = typeOpt.get();
 			if (type.type == EnumType.CLASS) {
-			    if (getType() == EnumType.CLASS) if (hasSuperClass) semanticError(this, line, column, CANNOT_EXTEND_MULTIPLE_CLASSES, typeNode.id);
-			    else hasSuperClass = true;
-			} else semanticError(this, line, column, CANNOT_EXTEND_TYPE, "an", getType().name().toLowerCase(), "a", "class", typeNode.id);
-			if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
-			if ((type.type == EnumType.ENUM) && (getType() != EnumType.ENUM)) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
+			    if (getType() == EnumType.CLASS){
+				if (hasSuperClass) semanticError(this, line, column, CANNOT_EXTEND_MULTIPLE_CLASSES, typeNode.id);
+				else {
+				    type.superClass = type;
+				    hasSuperClass = true;
+				}
+			    } else semanticError(this, line, column, CANNOT_EXTEND_TYPE, "an", getType().name().toLowerCase(), "a", "class", typeNode.id);
+			    if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
+			    if ((type.type == EnumType.ENUM) && (getType() != EnumType.ENUM)) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
+			}else if(type.type == EnumType.INTERFACE){
+			    type.interfaces.add(type);
+			}else{
+			    semanticError(this, line, column, CANNOT_EXTEND_ENUM, typeNode.id);
+			}
 		    }
-		    if (!errored) type.supers.add(typeOpt.get());
 		}
-		if (!hasSuperClass) type.supers.addFirst(Semantics.getType("Object").get());
+		if (!hasSuperClass) type.superClass = Semantics.getType("Object").get();
 		if (superArgs != null) {
 		    // Super-class args are evaluated in the context of the default constructor, so push its scope.
 		    Scope.push(defConstructorScope);
@@ -423,20 +431,37 @@ public abstract class Node {
 		    final Type superClass = type.getSuperClass();
 		    if (superClass.hasNonEmptyConstructor) semanticError(this, line, column, MUST_CALL_SUPER_CONSTRUCTOR, type.qualifiedName.shortName);
 		}
-	    } else type.supers.addFirst(Semantics.getType("Object").get());
+	    } else type.superClass = Semantics.getType("Object").get();
+	    
+	    // Ensure that all necessary interface functions are overriden
+	    if(type.type != EnumType.INTERFACE){
+		for(Type interfc : type.interfaces){
+		    for(LinkedList<Function> funcs : interfc.functions.values()){
+			for(Function func : funcs){
+			    Function implementingFunc = type.getFunc(func.qualifiedName.shortName, func.parameters);
+			    if(!func.hasImplementation){
+				if(implementingFunc == null) semanticError(this, line, column, MISSING_FUNC_IMPLEMENTATION, func, interfc.qualifiedName.shortName);
+				else Semantics.checkOverride(implementingFunc, func, this);
+			    }else if(implementingFunc != null) Semantics.checkOverride(implementingFunc, func, this);
+			}
+		    }
+		}
+	    }
 	}
 
 	@Override
 	public void generate() {
 	    final String name = type.qualifiedName.toBytecodeName();
-	    final String superClass = type.supers.getFirst().qualifiedName.toBytecodeName();
+	    final String superClass = type.superClass.qualifiedName.toBytecodeName();
 
 	    // Build the interfaces array
 	    String[] interfaces = null;
-	    if (type.supers.size() > 1) {
-		interfaces = new String[type.supers.size() - 1];
-		for (int i = 1; i < type.supers.size(); i++)
-		    interfaces[i - 1] = type.supers.get(i).qualifiedName.toString();
+	    if (type.interfaces.size() > 0) {
+		interfaces = new String[type.interfaces.size()];
+		int i = 0;
+		for (Type interfc : type.interfaces){
+		    interfaces[i++] = interfc.qualifiedName.toString();
+		}
 	    }
 	    genNodeType = new GenNodeType(name, type.qualifiedName.shortName, superClass, interfaces, type.modifiers);
 	    GenNode.addGenNodeType(genNodeType);
@@ -526,7 +551,7 @@ public abstract class Node {
 		// already declared
 		final LinkedList<NodeModifier> mods = new LinkedList<NodeModifier>();
 		mods.add(new NodeModifier(0, 0, "public"));
-		final NodeFuncDec dec = new NodeFuncDec(0, 0, mods, Semantics.currentType().qualifiedName.shortName, new NodeArgs(), null, new NodeFuncBlock(), new NodeTypes(), false);
+		final NodeFuncDec dec = new NodeFuncDec(0, 0, mods, Semantics.currentType().qualifiedName.shortName, new NodeArgs(), null, new NodeFuncBlock(), new NodeTypes(), false, true);
 		((NodeClassBlock) block).funcDecs.add(dec);
 		dec.preAnalyse();
 	    }
@@ -936,12 +961,12 @@ public abstract class Node {
 
 	private TypeI returnType;
 	private Function func;
-	private boolean isMutFunc, isConstructor, isGlobal;
+	private boolean isMutFunc, isConstructor, isGlobal, hasBody;
 	private GenNodeFunction genNodeFunc;
 	private FuncScope scope;
 	private Type extType = null;
 
-	public NodeFuncDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String id, final NodeArgs args, final NodeType type, final NodeType throwsType, final NodeFuncBlock block, final NodeTypes types, final Token extensionType2) {
+	public NodeFuncDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String id, final NodeArgs args, final NodeType type, final NodeType throwsType, final NodeFuncBlock block, final NodeTypes types, final Token extensionType2, boolean hasBody) {
 	    super(line, column);
 	    this.mods = mods;
 	    this.id = id;
@@ -952,10 +977,11 @@ public abstract class Node {
 	    generics = types;
 	    this.block.inFunction = true;
 	    extensionType = extensionType2;
+	    this.hasBody = hasBody;
 	}
 
-	public NodeFuncDec(final int line, final int columnStart, final LinkedList<NodeModifier> mods2, final String data, final NodeArgs args2, final NodeType throwsType2, final NodeFuncBlock block2, final NodeTypes nodeTypes, final boolean isMutFunc) {
-	    this(line, columnStart, mods2, data, args2, null, throwsType2, block2, nodeTypes, null);
+	public NodeFuncDec(final int line, final int columnStart, final LinkedList<NodeModifier> mods2, final String data, final NodeArgs args2, final NodeType throwsType2, final NodeFuncBlock block2, final NodeTypes nodeTypes, final boolean isMutFunc, boolean hasBody) {
+	    this(line, columnStart, mods2, data, args2, null, throwsType2, block2, nodeTypes, null, hasBody);
 	    this.isMutFunc = true;
 	}
 
@@ -969,6 +995,7 @@ public abstract class Node {
 	}
 
 	private void finishPreAnalysis() {
+	    func.hasImplementation = hasBody;
 	    args.preAnalyse();
 	    if (args.hasDefExpr) {
 		func.hasDefExpr = true;
@@ -1044,13 +1071,7 @@ public abstract class Node {
 	    // Ensure that overriding is handled properly
 	    if(Semantics.currentType().hasSuperClass()){
 		Function superFunc = Semantics.currentType().getSuperClass().getFunc(id, args.toTypeIList());
-		boolean hasOverrideMod = BitOp.and(func.modifiers, EnumModifier.OVERRIDE.intVal);
-		if(superFunc != null){
-		    if(superFunc.isPrivate()) semanticError(this, line, column, CANNOT_OVERRIDE_PRIVATE_FUNC);
-		    if(superFunc.isFinal()) semanticError(this, line, column, CANNOT_OVERRIDE_FINAL_FUNC);
-		    if(!hasOverrideMod) semanticError(this, line, column, OVERRIDE_KEYWORD_REQUIRED);
-		    if(!func.hasEqualSignature(superFunc)) semanticError(this, line, column, FUNC_SIGNATURES_DO_NOT_MATCH);
-		}else if(hasOverrideMod) semanticError(this, line, column, OVERRIDEN_FUNC_DOES_NOT_EXIST);
+		Semantics.checkOverride(func, superFunc, this);
 	    }
 
 	    Scope.push(scope);

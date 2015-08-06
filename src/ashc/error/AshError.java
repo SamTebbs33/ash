@@ -47,6 +47,7 @@ public class AshError extends Exception {
 	CANNOT_OVERRIDE_FINAL_FUNC("A final function cannot be overriden"),
 	FUNC_SIGNATURES_DO_NOT_MATCH("The overridden and overriding functions' signatures do not match"),
 	OVERRIDEN_FUNC_DOES_NOT_EXIST("The overriden function does not exist in a super class"),
+	MISSING_FUNC_IMPLEMENTATION("An implementation for the \'%s\' function from %s is missing"),
 
 	FIELD_ALREADY_EXISTS("\'%s\' already exists"),
 
@@ -79,6 +80,7 @@ public class AshError extends Exception {
 
 	CANNOT_EXTEND_FINAL_TYPE("Cannot extend a final type (%s)"),
 	CANNOT_EXTEND_TYPE("%s %s cannot extend %s %s (%s)"),
+	CANNOT_EXTEND_ENUM("A type cannot extend an enum (%s)"),
 	CANNOT_EXTEND_OPTIONAL_TYPE("Cannot extend an optional type (%s)"),
 	CANNOT_EXTEND_MULTIPLE_CLASSES("Cannot extend multiple classes (%s)"),
 	CONSTRUCT_BLOCK_NOT_ALLOWED("A construct block is not allowed in a type with no default constructor"),

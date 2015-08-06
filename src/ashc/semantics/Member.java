@@ -74,14 +74,19 @@ public class Member {
 	public EnumType type;
 	public HashMap<String, LinkedList<Function>> functions = new HashMap<String, LinkedList<Function>>();
 	public LinkedList<Field> fields = new LinkedList<Field>();
-	public LinkedList<Type> supers = new LinkedList<Member.Type>();
 	public LinkedList<String> generics = new LinkedList<String>();
 	public HashMap<String, LinkedList<TypeI>> genericsMap = new HashMap<String, LinkedList<TypeI>>();
 	public boolean hasNonEmptyConstructor, isGlobalType;
+	public Type superClass;
+	public LinkedList<Type> interfaces = new LinkedList<>();
 
 	public Type(final QualifiedName qualifiedName, final int modifiers, final EnumType type) {
 	    super(qualifiedName, modifiers);
 	    this.type = type;
+	}
+
+	public boolean hasSuper(QualifiedName qualifiedName) {
+	    return hasSuperInterface(qualifiedName) || (hasSuperClass() && superClass.qualifiedName.equals(qualifiedName));
 	}
 
 	public Type(final ClassNode node) {
@@ -100,12 +105,12 @@ public class Member {
 	    final String superCls = node.superName;
 	    if (superCls != null) {
 		final String[] split = superCls.split("/");
-		supers.add(TypeImporter.loadClass(superCls.replace('/', '.'), split[split.length - 1]));
+		superClass = TypeImporter.loadClass(superCls.replace('/', '.'), split[split.length - 1]);
 	    }
 	    for (final Object obj : node.interfaces) {
 		final String interfc = obj.toString();
 		final String[] split = interfc.split("/");
-		supers.add(TypeImporter.loadClass(interfc.replace('/', '.'), split[split.length - 1]));
+		interfaces.add(TypeImporter.loadClass(interfc.replace('/', '.'), split[split.length - 1]));
 	    }
 	    for (final Object obj : node.methods) {
 		final MethodNode mNode = (MethodNode) obj;
@@ -152,11 +157,7 @@ public class Member {
 	public Field getField(final String id) {
 	    for (final Field field : fields)
 		if (field.qualifiedName.shortName.equals(id)) return field;
-	    for (final Type superType : supers) {
-		final Field field = superType.getField(id);
-		if (field != null) return field;
-	    }
-	    return null;
+	    return superClass.getField(id);
 	}
 
 	public TypeI getFuncType(final String id, final NodeExprs args) {
@@ -168,10 +169,10 @@ public class Member {
 	    return null;
 	}
 
-	public boolean hasSuper(final QualifiedName name) {
-	    for (final Type type : supers)
+	public boolean hasSuperInterface(final QualifiedName name) {
+	    for (final Type type : interfaces)
 		if (type.qualifiedName.equals(name)) return true;
-		else if (type.hasSuper(name)) return true;
+		else if (type.hasSuperInterface(name)) return true;
 	    return false;
 	}
 
@@ -187,7 +188,7 @@ public class Member {
 		if (func.paramsAreEqual(parameters)) return func;
 
 	    Function func = null;
-	    for (final Type superType : supers)
+	    for (final Type superType : interfaces)
 		if ((func = superType.getFunc(id, parameters)) != null) return func;
 	    return null;
 	}
@@ -199,7 +200,7 @@ public class Member {
 
 	public LinkedList<TypeI> getGenerics(final String string) {
 	    if (genericsMap.containsKey(string)) return genericsMap.get(string);
-	    else for (final Type type : supers)
+	    else for (final Type type : interfaces)
 		if (type.qualifiedName.shortName.equals(string)) {
 		    final LinkedList<TypeI> genericList = new LinkedList<TypeI>();
 		    for (int i = 0; i < type.generics.size(); i++)
@@ -210,11 +211,11 @@ public class Member {
 	}
 
 	public Type getSuperClass() {
-	    return supers.getFirst();
+	    return superClass;
 	}
 
 	public boolean hasSuperClass() {
-	    return !supers.isEmpty() && supers.getFirst().type == EnumType.CLASS;
+	    return superClass != null;
 	}
 
     }
@@ -222,7 +223,7 @@ public class Member {
     public static class Function extends Member {
 
 	public LinkedList<TypeI> parameters = new LinkedList<TypeI>();
-	public boolean hasDefExpr = false, isGlobal;
+	public boolean hasDefExpr = false, isGlobal, hasImplementation;
 	public TypeI returnType;
 	public LinkedList<String> generics = new LinkedList<String>();
 	public IExpression defExpr;

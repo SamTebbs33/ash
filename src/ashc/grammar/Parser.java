@@ -377,10 +377,26 @@ public class Parser {
 	final NodeArgs args = parseArgs();
 	NodeType throwsType = null;
 	NodeFuncBlock block = null;
+	boolean hasBody = true;
 	if (expect(TokenType.ARROW, TokenType.BRACEL, TokenType.LAMBDAARROW).type == TokenType.ARROW) throwsType = parseType();
 	else rewind();
-	if (needsBody) block = parseFuncBlock(true, false);
-	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, throwsType, block, new NodeTypes(), true);
+	
+	if (needsBody)
+	    block = parseFuncBlock(true, false);
+	else {
+	    // Parse an optional function block, used for interface bodies
+	    savePointer();
+	    silenceErrors = true;
+	    block = parseFuncBlock(true, false);
+	    silenceErrors = false;
+	    if(block == null){
+		// If there wasn't a function block, then we have to restore the token pointer
+		hasBody = false;
+		restorePointer();
+		block = new NodeFuncBlock();
+	    }
+	}
+	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, throwsType, block, new NodeTypes(), true, hasBody);
     }
 
     /**
@@ -389,6 +405,7 @@ public class Parser {
     private NodeFuncDec parseFuncDec(final boolean allowExtensionFunc, final boolean needsBody, final LinkedList<NodeModifier> mods) throws GrammarException {
 	Token id;
 	Token extensionType = null;
+	boolean hasBody = true;
 	expect(TokenType.FUNC);
 	id = expect(TokenType.ID, TokenType.OP, TokenType.ARRAYDIMENSION);
 	if (allowExtensionFunc) if (getNext().type == TokenType.DOT) {
@@ -411,9 +428,23 @@ public class Parser {
 	if (getNext().type == TokenType.ARROW) throwsType = parseType();
 	else rewind();
 
-	if (needsBody) block = parseFuncBlock(true, !type.id.equals("void"));
+	if (needsBody)
+	    block = parseFuncBlock(true, !type.id.equals("void"));
+	else {
+	    // Parse an optional function block, used for interface bodies
+	    savePointer();
+	    silenceErrors = true;
+	    block = parseFuncBlock(true, !type.id.equals("void"));
+	    silenceErrors = false;
+	    if(block == null){
+		// If there wasn't a function block, then we have to restore the token pointer
+		hasBody = false;
+		restorePointer();
+		block = new NodeFuncBlock();
+	    }
+	}
 
-	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, type, throwsType, block, types, extensionType);
+	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, type, throwsType, block, types, extensionType, hasBody);
     }
 
     public NodeTypes parseGenericsDecs() throws GrammarException {
