@@ -1,2 +1,16 @@
 operator ?? = type: binary, name: not_null, assoc: none, prec: 120
 operator === = type: binary, name: value_equality, assoc: none, prec: 120
+
+func String.toInt() : int -> Integer.parseInt(this)
+func String.toInt(radix : int) : int -> Integer.parseInt(this, radix)
+
+func ===(obj : Object, obj2 : Object) : bool -> obj.equals(obj2)
+func ===(obj : Object?, obj2 : Object) : bool -> obj != null && obj.equals(obj2)
+func ===(obj : Object, obj2 : Object?) : bool -> obj2 != null && obj2.equals(obj)
+func ===(obj : Object?, obj2 : Object?) : bool {
+    if (obj == null ^ obj2 == null) return false
+    else if (obj == null && obj2 == null) return true
+    return obj.equals(obj2)
+}
+
+func ??(objOpt : Object?, obj : Object) : Object -> objOpt != null ? objOpt! : obj
