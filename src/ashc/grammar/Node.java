@@ -1181,7 +1181,7 @@ public abstract class Node {
 	    }
 	    if (setBlock != null) {
 		Scope.push(new PropertyScope(var));
-		final Variable newVar = new Variable("new", var.type);
+		final Variable newVar = new Variable("newVal", var.type);
 		newVar.localID = var.isStatic() ? 0 : 1;
 		Scope.getScope().addVar(newVar);
 		setBlock.analyse();
@@ -1220,7 +1220,7 @@ public abstract class Node {
 		final GenNodeFunction setFunc = new GenNodeFunction("$set" + id, var.modifiers, var.type.toBytecodeName());
 		setFunc.params.add(var.type);
 		GenNode.addGenNodeFunction(setFunc);
-		addFuncStmt(new GenNodeVar("new", var.type.toBytecodeName(), var.isStatic() ? 0 : 1, null));
+		addFuncStmt(new GenNodeVar("newVal", var.type.toBytecodeName(), var.isStatic() ? 0 : 1, null));
 		setBlock.generate();
 		GenNode.exitGenNodeFunction();
 	    }
@@ -1562,7 +1562,7 @@ public abstract class Node {
 		isSelf = true;
 		final PropertyScope scope = Scope.getPropertyScope();
 		var = scope.field;
-	    } else if (id.equals("new") && Scope.inPropertyScope()) var = Scope.getPropertyScope().vars.get(0);
+	    } else if (id.equals("newVal") && Scope.inPropertyScope()) var = Scope.getPropertyScope().vars.get(0);
 	    else if (prefix == null) {
 		// Check if this is a type name rather than a variable
 		final Optional<Type> typeOpt = Semantics.getType(id);

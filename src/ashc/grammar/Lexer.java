@@ -149,7 +149,7 @@ public class Lexer {
 
 	ID(Lexer.keywordRegex + "([a-zA-Z_](\\d|[a-zA-Z_])*)", "identifier"),
 	EOF("\\Z", "end of file"),
-	ERROR(".*", "error");
+	ERROR(".*", "errored token");
 
 	public String regex, typeName;
 
