@@ -18,6 +18,7 @@ public class Lexer {
     public LinkedList<String> lines = new LinkedList<String>();
     public int line = 1, column = 1, numLines = 0;
     public static final int TAB_SIZE = 4;
+    private static StringBuffer keywordRegex = new StringBuffer("");
 
     public static interface TokenMatcher {
 	public String getName();
@@ -103,40 +104,40 @@ public class Lexer {
 	COMMA(",", "comma"),
 	COLON(":", "colon"),
 
-	VAR("var "),
-	CONST("const "),
-	FUNC("func "),
-	INIT("init"),
-	CONSTRUCT("construct"),
-	MUT("mut "),
-	ALIAS("alias "),
-	CLASS("class "),
-	OPERATOR("operator "),
-	ENUM("enum "),
-	INTERFACE("interface "),
-	INCLUDE("include "),
-	IMPORT("import "),
-	PACKAGE("package "),
-	RETURN("return "),
+	VAR("var", true),
+	CONST("const", true),
+	FUNC("func", true),
+	INIT("init", true),
+	CONSTRUCT("construct", true),
+	MUT("mut", true),
+	ALIAS("alias", true),
+	CLASS("class", true),
+	OPERATOR("operator", true),
+	ENUM("enum", true),
+	INTERFACE("interface", true),
+	INCLUDE("include", true),
+	IMPORT("import", true),
+	PACKAGE("package", true),
+	RETURN("return", true),
 
-	PUBLIC("public"),
-	PRIVATE("private"),
-	PROTECTED("protected"),
-	FINAL("final"),
-	REQUIRED("required"),
-	NATIVE("native"),
-	OVERRIDE("override"),
-	STANDARD("standard"),
-	STATIC("static"),
-	THIS("this"),
-	SUPER("super"),
-	SELF("self "),
-	NULL("null"),
-	AS("as "),
-	IS("is "),
-	GET("get "),
-	SET("set "),
-	NEW("new "),
+	PUBLIC("public", true),
+	PRIVATE("private", true),
+	PROTECTED("protected", true),
+	FINAL("final", true),
+	REQUIRED("required", true),
+	NATIVE("native", true),
+	OVERRIDE("override", true),
+	STANDARD("standard", true),
+	STATIC("static", true),
+	THIS("this", true),
+	SUPER("super", true),
+	SELF("self", true),
+	NULL("null", true),
+	AS("as", true),
+	IS("is", true),
+	GET("get", true),
+	SET("set", true),
+	NEW("new", true),
 	OPTYPE("binary|unary", "operator type"),
 
 	IF("if"),
@@ -146,7 +147,7 @@ public class Lexer {
 	MATCH("match "),
 	IN("in "),
 
-	ID("[a-zA-Z_](\\d|[a-zA-Z_])*", "identifier"),
+	ID(Lexer.keywordRegex + "([a-zA-Z_](\\d|[a-zA-Z_])*)", "identifier"),
 	EOF("\\Z", "end of file"),
 	ERROR(".*", "error");
 
@@ -159,6 +160,14 @@ public class Lexer {
 	TokenType(final String str, final String typeName) {
 	    regex = str;
 	    this.typeName = typeName.trim();
+	}
+	
+	TokenType(String str, boolean isKeyword){
+	    this(str);
+	    if(isKeyword){ 
+		Lexer.keywordRegex.append("(\\\\"+regex+")|");
+	    	regex = "\\b" + regex + "\\b";
+	    }
 	}
 
 	@Override

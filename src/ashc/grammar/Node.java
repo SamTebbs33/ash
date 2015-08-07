@@ -401,25 +401,25 @@ public abstract class Node {
 
 		    if (!typeOpt.isPresent()) semanticError(line, column, TYPE_DOES_NOT_EXIST, typeNode.id);
 		    else {
-			final Type type = typeOpt.get();
-			if (type.type == EnumType.CLASS) {
+			final Type type2 = typeOpt.get();
+			if (type2.type == EnumType.CLASS) {
 			    if (getType() == EnumType.CLASS){
 				if (hasSuperClass) semanticError(this, line, column, CANNOT_EXTEND_MULTIPLE_CLASSES, typeNode.id);
 				else {
-				    type.superClass = type;
+				    type.superClass = type2;
 				    hasSuperClass = true;
 				}
 			    } else semanticError(this, line, column, CANNOT_EXTEND_TYPE, "an", getType().name().toLowerCase(), "a", "class", typeNode.id);
 			    if (BitOp.and(type.modifiers, Modifier.FINAL)) semanticError(this, line, column, CANNOT_EXTEND_FINAL_TYPE, typeNode.id);
-			    if ((type.type == EnumType.ENUM) && (getType() != EnumType.ENUM)) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
-			}else if(type.type == EnumType.INTERFACE){
+			    if ((type2.type == EnumType.ENUM) && (getType() != EnumType.ENUM)) semanticError(this, line, column, CANNOT_EXTEND_TYPE, "a", "class", "an", "enum", typeNode.id);
+			}else if(type2.type == EnumType.INTERFACE){
 			    type.interfaces.add(type);
 			}else{
 			    semanticError(this, line, column, CANNOT_EXTEND_ENUM, typeNode.id);
 			}
 		    }
 		}
-		if (!hasSuperClass) type.superClass = Semantics.getType("Object").get();
+		if (type.superClass == null) type.superClass = Semantics.getType("Object").get();
 		if (superArgs != null) {
 		    // Super-class args are evaluated in the context of the default constructor, so push its scope.
 		    Scope.push(defConstructorScope);
