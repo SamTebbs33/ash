@@ -1,6 +1,7 @@
 operator ?? = type: binary, name: not_null, assoc: none, prec: 120
 operator === = type: binary, name: value_equality, assoc: none, prec: 120
 operator ! = type: prefix, name: bool_not
+operator ** = type: binary, name: pow, assoc: none, prec: 120
 
 func String.toInt() : int -> Integer.parseInt(this)
 func String.toInt(radix : int) : int -> Integer.parseInt(this, radix)
@@ -17,3 +18,5 @@ binary func ===(obj : Object?, obj2 : Object?) : bool {
 binary func ??(objOpt : Object?, obj : Object) : Object -> objOpt != null ? objOpt! : obj
 
 prefix func !(operand : bool) : bool -> operand ? false : true
+
+binary func **(operand : double, exponent : double) : double -> Math.pow(operand, exponent)
