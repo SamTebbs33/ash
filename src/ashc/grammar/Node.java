@@ -2145,7 +2145,7 @@ public abstract class Node {
 	public OperatorDef operator;
 	public boolean prefix;
 	public Function overloadFunc;
-	public TypeI type;
+	public TypeI type, exprType;
 
 	public NodeUnary(final int line, final int column, final IExpression expr, final OperatorDef operator, final boolean prefix) {
 	    super(line, column);
@@ -2167,7 +2167,7 @@ public abstract class Node {
 	@Override
 	public TypeI getExprType() {
 	    if (!((NodeVariable) expr).errored) {
-		final TypeI exprType = expr.getExprType();
+		exprType = expr.getExprType();
 		final Operation op = Semantics.getOperationType(exprType, operator);
 		if (op == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPE, operator.id, exprType);
 		else {
@@ -2191,7 +2191,10 @@ public abstract class Node {
 		final String enclosingType = overloadFunc.enclosingType.qualifiedName.toBytecodeName(), returnType = overloadFunc.returnType.toBytecodeName();
 		final boolean privateFunc = BitOp.and(overloadFunc.modifiers, EnumModifier.PRIVATE.intVal), interfaceFunc = overloadFunc.enclosingType.type == EnumType.INTERFACE;
 		final String name = OperatorDef.filterOperators(operator.id);
-		addFuncStmt(new GenNodeFuncCall(enclosingType, name, "()" + returnType, interfaceFunc, privateFunc, false, false));
+		String params = "(";
+		if(overloadFunc.isGlobal) params += exprType.toBytecodeName();
+		params += ")";
+		addFuncStmt(new GenNodeFuncCall(enclosingType, name, params + returnType, interfaceFunc, privateFunc, overloadFunc.isGlobal, false));
 	    }
 	}
 

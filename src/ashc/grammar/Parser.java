@@ -1154,17 +1154,19 @@ public class Parser {
 	expect("name");
 	expect(TokenType.COLON);
 	final String name = expect(TokenType.ID).data;
-	expect(TokenType.COMMA);
 	String assoc = null;
+	int precedence = 0;
+	// Only binary operators have an associativity and precedence
 	if (type.equals("binary")) {
+	    expect(TokenType.COMMA);
 	    expect("assoc");
 	    expect(TokenType.COLON);
 	    assoc = expect(TokenType.ID).data;
 	    expect(TokenType.COMMA);
+	    expect("prec");
+	    expect(TokenType.COLON);
+	    precedence = Integer.parseInt(expect(TokenType.INT).data);
 	}
-	expect("prec");
-	expect(TokenType.COLON);
-	final int precedence = Integer.parseInt(expect(TokenType.INT).data);
 	return new NodeOperatorDef(id.line, id.columnStart, id.data, name, type, assoc, precedence);
     }
 

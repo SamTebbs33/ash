@@ -294,10 +294,20 @@ public class Semantics {
     }
 
     public static Operation getOperationType(final TypeI type, final OperatorDef operator) {
-	if (type.isNumeric()) return new Operation(null, type);
-	if (type.isArray() || type.isNull() || type.isTuple() || type.isVoid()) return null;
-	final Function func = Semantics.getType(type.shortName).get().getFunc(operator.id, new LinkedList<>(), operator.type);
-	return func != null ? new Operation(func, func.returnType) : null;
+	if (operator instanceof OperatorDefNative) return new Operation(null, type);
+	
+	// Search for an operator overload declared in the type
+	if(!type.isPrimitive()){
+	    Function func = getFunc(operator.id, type, new LinkedList<>(), operator.type);
+	    if(func != null) return new Operation(func, func.returnType);
+	}
+	
+	// Search for a global operator overload
+	LinkedList<TypeI> param = new LinkedList<>();
+	param.add(type);
+	Function func = getFunc(operator.id, param, operator.type);
+	if(func != null) return new Operation(func, func.returnType);
+	else return null;
     }
 
     public static void enterDefFile(final String defFileName) {

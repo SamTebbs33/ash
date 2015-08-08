@@ -28,7 +28,7 @@ public class Lexer {
 
     public static enum TokenTypeGroup implements TokenMatcher {
 	EXPRESSION_STARTER("expression", TokenType.NEW, TokenType.NULL, TokenType.BRACEL, TokenType.ID, TokenType.THIS, TokenType.SELF,
-	// TokenType.UNARYOP,
+		TokenType.OP,
 		TokenType.BRACKETL,
 		TokenType.PARENL,
 		TokenType.OCTINT,
@@ -85,7 +85,7 @@ public class Lexer {
 	STRING("\"[^\"]*\"", "string"),
 	CHAR("\'.\'", "character"),
 	BOOL("true|false", "boolean"),
-	PRIMITIVE("bool|double|float|long|int|short|byte|ubyte|ushort|ulong|uint|char|void", "primitive"),
+	PRIMITIVE("(bool|double|float|long|int|short|byte|ubyte|ushort|ulong|uint|char|void)", "primitive", true),
 	LAMBDAARROW("->", "lambda arrow"),
 
 	COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
@@ -165,12 +165,16 @@ public class Lexer {
 	    this.typeName = typeName.trim();
 	}
 	
-	TokenType(String str, boolean isKeyword){
-	    this(str);
+	TokenType(String str, String name, boolean isKeyword){
+	    this(str, name);
 	    if(isKeyword){ 
 		Lexer.keywordRegex.append("(\\\\"+regex+")|");
 	    	regex = "\\b" + regex + "\\b";
 	    }
+	}
+	
+	TokenType(String str, boolean isKeyword){
+	    this(str, str, isKeyword);
 	}
 
 	@Override
