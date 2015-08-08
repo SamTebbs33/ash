@@ -2066,13 +2066,16 @@ public abstract class Node {
 	public void analyse() {
 	    ((Node) expr1).analyse();
 	    ((Node) expr2).analyse();
-	    if (((Node) expr1).errored || ((Node) expr1).errored) errored = true;
-	    else {
+	    errored = ((Node) expr1).errored || ((Node) expr1).errored;
+	    if(!errored) {
 		exprType1 = expr1.getExprType();
 		exprType2 = expr2.getExprType();
 
 		final Tuple<TypeI, Function> operation = Semantics.getOperationType(exprType1, exprType2, operator);
-		if (operation == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, operator.id, exprType1, exprType2);
+		if (operation == null){
+		    semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPES, operator.id, exprType1, exprType2);
+		    return;
+		}
 		operatorOverloadFunc = operation.b;
 		type = operation.a;
 	    }

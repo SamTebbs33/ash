@@ -8,7 +8,7 @@ func foo() {
 	System.out.println("global func test")
 }
 
-func +-(a : int, b : int) : int {
+binary func +-(a : int, b : int) : int {
 	if(Math.random() < 0.5) return a + b
 	else return a - b
 }

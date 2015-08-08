@@ -340,7 +340,7 @@ public class Parser {
 	if (getNext().type == TokenType.BRACEL) while (getNext().type != TokenType.BRACER) {
 	    rewind();
 	    final LinkedList<NodeModifier> mods = parseMods();
-	    final Token token = expect(TokenType.CONSTRUCT, TokenType.INIT, TokenType.FUNC, TokenType.MUT, TokenType.CONST, TokenType.VAR, TokenType.BRACER);
+	    final Token token = expect(TokenType.CONSTRUCT, TokenType.INIT, TokenType.FUNC, TokenType.OPTYPE, TokenType.MUT, TokenType.CONST, TokenType.VAR, TokenType.BRACER);
 	    switch (token.type) {
 		case CONSTRUCT:
 		    block.addConstructBlock(parseFuncBlock(true, false));
@@ -824,10 +824,10 @@ public class Parser {
 		    expect(TokenType.COLON);
 		    return new NodeTernary(expr, exprTrue, parseExpression());
 		}
-		if (!OperatorDef.operatorDefExists(next.data, EnumOperatorType.POSTFIX)) throw new GrammarException("Undefined postfix operator: " + next.data);
-		final OperatorDef op = OperatorDef.getOperatorDef(next.data, EnumOperatorType.POSTFIX);
-		if (op.type == EnumOperatorType.POSTFIX) return new NodeUnary(next.line, next.columnStart, expr, op, false);
-		else return new NodeBinary(next.line, next.columnStart, expr, op, parseExpression());
+		OperatorDef postfixOp = OperatorDef.getOperatorDef(next.data, EnumOperatorType.POSTFIX), binaryOp = OperatorDef.getOperatorDef(next.data, EnumOperatorType.BINARY);
+		if (postfixOp == null && binaryOp == null) throw new GrammarException("Undefined postfix or binary operator: " + next.data);
+		if (postfixOp != null) return new NodeUnary(next.line, next.columnStart, expr, postfixOp, false);
+		else return new NodeBinary(next.line, next.columnStart, expr, binaryOp, parseExpression());
 	    case BRACKETL:
 		NodeArrayAccess arrayExpr = new NodeArrayAccess(((Node) expr).line, ((Node) expr).column, expr, parseExpression());
 		expect(TokenType.BRACKETR);
@@ -1122,15 +1122,17 @@ public class Parser {
 
     private LinkedList<NodeFuncDec> parseDefFileFuncDecs() throws GrammarException {
 	final LinkedList<NodeFuncDec> decs = new LinkedList<Node.NodeFuncDec>();
-	Token next = getNext();
 	while (true) {
+	    Token next = getNext();
 	    EnumOperatorType opType = null;
 	    if(next.type == TokenType.FUNC) rewind();
 	    else if(next.type == TokenType.OPTYPE) opType = EnumOperatorType.get(next.data);
-	    else break;
+	    else{
+		rewind();
+		break;
+	    }
 	    decs.add(parseFuncDec(true, true, new LinkedList<>(), opType));
 	}
-	rewind();
 	return decs;
     }
 

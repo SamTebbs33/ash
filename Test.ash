@@ -1,12 +1,10 @@
-class Properties {
-	static var name = "" -> {
-		set -> newVal.isEmpty() ? "unnamed" : newVal
+public class OperatorOverloads {
+	public static func main(args : [String]){
+		var person = Person(19)
+		var person2 = person + 1
 	}
-	public static func main(args : [String]) {
-		System.out.println(name)
-		name = "Mark"
-		System.out.println(name)
-		name = ""
-		System.out.println(name)
-	}
+}
+
+class Person(age : int) {
+	public binary func +(operand : int) : Person -> Person(age + operand)
 }

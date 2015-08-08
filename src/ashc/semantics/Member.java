@@ -185,8 +185,11 @@ public class Member {
 	}
 
 	public Function getFunc(final String id, final LinkedList<TypeI> parameters, EnumOperatorType opType) {
-	    if (functions.containsKey(id)) for (final Function func : functions.get(id))
-		if (func.opType == opType && func.paramsAreEqual(parameters)) return func;
+	    if (functions.containsKey(id)) {
+		for (final Function func : functions.get(id)){
+		    if (func.opType == opType && func.paramsAreEqual(parameters)) return func;
+		}
+	    }
 
 	    Function func = null;
 	    for (final Type superType : interfaces)
@@ -234,7 +237,7 @@ public class Member {
 	public Function(final QualifiedName qualifiedName, final int modifiers, final Type enclosing, EnumOperatorType opType) {
 	    super(qualifiedName, modifiers);
 	    enclosingType = enclosing;
-
+	    this.opType = opType;
 	}
 
 	public Function(final MethodNode mNode, final Type type) {
