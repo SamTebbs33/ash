@@ -54,6 +54,7 @@ public class AshError extends Exception {
 	OPERATOR_ALREADY_EXISTS("Operator \"%s\" already exists"),
 	WRONG_NUMBER_OF_PARAMS_FOR_OP("An overload for a %s operator must have %d parameters"),
 	OP_OVERLOADS_CANNOT_HAVE_DEFEXPR("Operator overloads cannot use a default parameter value"),
+	UNDEFINED_OPERATOR("Undefined %s operator \'%s\'"),
 
 	VAR_ALREADY_EXISTS("\'%s\' already exists"),
 	VAR_DOES_NOT_EXIST("\'%s\' does not exist"),

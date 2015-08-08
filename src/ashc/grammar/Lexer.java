@@ -138,7 +138,7 @@ public class Lexer {
 	GET("get", true),
 	SET("set", true),
 	NEW("new", true),
-	OPTYPE("binary|unary", "operator type"),
+	OPTYPE("binary|prefix|postfix", "operator type"),
 
 	IF("if"),
 	ELSE("else"),

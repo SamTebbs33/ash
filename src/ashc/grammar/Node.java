@@ -228,7 +228,7 @@ public abstract class Node {
 
 	@Override
 	public void preAnalyse() {
-	    if (OperatorDef.operatorDefExists(id)) semanticError(this, line, column, OPERATOR_ALREADY_EXISTS, id);
+	    if (OperatorDef.operatorDefExists(id, EnumOperatorType.get(type))) semanticError(this, line, column, OPERATOR_ALREADY_EXISTS, id);
 	    else if (OperatorDef.operatorNameExists(name)) semanticError(this, line, column, OPERATOR_ALREADY_EXISTS, name);
 	    else OperatorDef.addOperatorDef(new OperatorDef(id, name, EnumOperatorType.get(type), precedence, EnumOperatorAssociativity.get(assoc)));
 	}
@@ -364,7 +364,7 @@ public abstract class Node {
 	    // arguments
 	    if (args != null) {
 		hasConstructor = true;
-		defConstructor = new Function(Scope.getNamespace().copy().add(id.data), EnumModifier.PUBLIC.intVal, type);
+		defConstructor = new Function(Scope.getNamespace().copy().add(id.data), EnumModifier.PUBLIC.intVal, type, null);
 		defConstructor.returnType = new TypeI(name.shortName, 0, false);
 		if (generics != null) for (final NodeType generic : generics.types)
 		    defConstructor.generics.add(generic.id);
@@ -426,7 +426,7 @@ public abstract class Node {
 		    superArgs.analyse();
 		    Scope.pop();
 		    final Type superClass = type.getSuperClass();
-		    if (superClass.getFunc(superClass.qualifiedName.shortName, superArgs) == null) semanticError(this, superArgs.line, superArgs.column, CONSTRUCTOR_DOES_NOT_EXIST, superClass.qualifiedName.shortName);
+		    if (superClass.getFunc(superClass.qualifiedName.shortName, superArgs, null) == null) semanticError(this, superArgs.line, superArgs.column, CONSTRUCTOR_DOES_NOT_EXIST, superClass.qualifiedName.shortName);
 		} else {
 		    final Type superClass = type.getSuperClass();
 		    if (superClass.hasNonEmptyConstructor) semanticError(this, line, column, MUST_CALL_SUPER_CONSTRUCTOR, type.qualifiedName.shortName);
@@ -438,7 +438,7 @@ public abstract class Node {
 		for(Type interfc : type.interfaces){
 		    for(LinkedList<Function> funcs : interfc.functions.values()){
 			for(Function func : funcs){
-			    Function implementingFunc = type.getFunc(func.qualifiedName.shortName, func.parameters);
+			    Function implementingFunc = type.getFunc(func.qualifiedName.shortName, func.parameters, func.opType);
 			    if(!func.hasImplementation){
 				if(implementingFunc == null) semanticError(this, line, column, MISSING_FUNC_IMPLEMENTATION, func, interfc.qualifiedName.shortName);
 				else Semantics.checkOverride(implementingFunc, func, this);
@@ -958,6 +958,7 @@ public abstract class Node {
 	public Token extensionType;
 	public NodeFuncBlock block;
 	public NodeTypes generics;
+	public EnumOperatorType opType;
 
 	private TypeI returnType;
 	private Function func;
@@ -966,7 +967,7 @@ public abstract class Node {
 	private FuncScope scope;
 	private Type extType = null;
 
-	public NodeFuncDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String id, final NodeArgs args, final NodeType type, final NodeType throwsType, final NodeFuncBlock block, final NodeTypes types, final Token extensionType2, boolean hasBody) {
+	public NodeFuncDec(final int line, final int column, final LinkedList<NodeModifier> mods, final String id, final NodeArgs args, final NodeType type, final NodeType throwsType, final NodeFuncBlock block, final NodeTypes types, final Token extensionType2, boolean hasBody, EnumOperatorType opType) {
 	    super(line, column);
 	    this.mods = mods;
 	    this.id = id;
@@ -978,16 +979,17 @@ public abstract class Node {
 	    this.block.inFunction = true;
 	    extensionType = extensionType2;
 	    this.hasBody = hasBody;
+	    this.opType = opType;
 	}
 
 	public NodeFuncDec(final int line, final int columnStart, final LinkedList<NodeModifier> mods2, final String data, final NodeArgs args2, final NodeType throwsType2, final NodeFuncBlock block2, final NodeTypes nodeTypes, final boolean isMutFunc, boolean hasBody) {
-	    this(line, columnStart, mods2, data, args2, null, throwsType2, block2, nodeTypes, null, hasBody);
+	    this(line, columnStart, mods2, data, args2, null, throwsType2, block2, nodeTypes, null, hasBody, null);
 	    this.isMutFunc = true;
 	}
 
 	public void preAnalyseGlobal() {
 	    final QualifiedName name = Semantics.getGlobalType().qualifiedName.copy().add(id);
-	    func = new Function(name, EnumModifier.PUBLIC.intVal + EnumModifier.STATIC.intVal, Semantics.getGlobalType());
+	    func = new Function(name, EnumModifier.PUBLIC.intVal + EnumModifier.STATIC.intVal, Semantics.getGlobalType(), opType);
 	    func.isGlobal = true;
 	    isConstructor = false;
 	    isGlobal = true;
@@ -1031,14 +1033,16 @@ public abstract class Node {
 	    if (extensionType == null) {
 		if (!Semantics.funcExists(func)) Semantics.addFunc(func);
 		else semanticError(this, line, column, FUNC_ALREADY_EXISTS, id);
-	    } else if (extType != null) if (extType.getFunc(id, func.parameters) != null) semanticError(this, line, column, FUNC_ALREADY_EXISTS_IN_TYPE, id, extType.qualifiedName);
+	    } else if (extType != null) if (extType.getFunc(id, func.parameters, func.opType) != null) semanticError(this, line, column, FUNC_ALREADY_EXISTS_IN_TYPE, id, extType.qualifiedName);
 	    else extType.addFunction(func);
-
-	    if (OperatorDef.operatorDefExists(id)) {
-		if (args.hasDefExpr) semanticError(this, line, column, OP_OVERLOADS_CANNOT_HAVE_DEFEXPR);
-		final OperatorDef op = OperatorDef.getOperatorDef(id);
-		final int paramsRequired = op.type == EnumOperatorType.UNARY ? (Semantics.inGlobal ? 1 : 0) : (Semantics.inGlobal ? 2 : 1);
-		if (args.args.size() != paramsRequired) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, op.type.name().toLowerCase(), paramsRequired);
+	    
+	    if(opType != null){
+		if (OperatorDef.operatorDefExists(id, opType)) {
+		    if (args.hasDefExpr) semanticError(this, line, column, OP_OVERLOADS_CANNOT_HAVE_DEFEXPR);
+		    final OperatorDef op = OperatorDef.getOperatorDef(id, opType);
+		    final int paramsRequired = (op.type == EnumOperatorType.PREFIX || op.type == EnumOperatorType.POSTFIX) ? (Semantics.inGlobal ? 1 : 0) : (Semantics.inGlobal ? 2 : 1);
+		    if (args.args.size() != paramsRequired) semanticError(this, line, column, WRONG_NUMBER_OF_PARAMS_FOR_OP, op.type.name().toLowerCase(), paramsRequired);
+		}else semanticError(this, line, column, UNDEFINED_OPERATOR, opType.name().toLowerCase(), id);
 	    }
 	  
 	}
@@ -1051,7 +1055,7 @@ public abstract class Node {
 	    for (final NodeModifier mod : mods)
 		if ((mod.asInt() == EnumModifier.STATIC.intVal) && isMutFunc) semanticError(this, line, column, MUT_FUNC_IS_STATIC, id);
 		else modifiers |= mod.asInt();
-	    func = new Function(name, modifiers, Semantics.currentType());
+	    func = new Function(name, modifiers, Semantics.currentType(), opType);
 
 	    isConstructor = id.equals(Semantics.currentType().qualifiedName.shortName);
 	    finishPreAnalysis();
@@ -1070,7 +1074,7 @@ public abstract class Node {
 	    
 	    // Ensure that overriding is handled properly
 	    if(Semantics.currentType().hasSuperClass()){
-		Function superFunc = Semantics.currentType().getSuperClass().getFunc(id, args.toTypeIList());
+		Function superFunc = Semantics.currentType().getSuperClass().getFunc(id, args.toTypeIList(), func.opType);
 		Semantics.checkOverride(func, superFunc, this);
 	    }
 
@@ -1492,10 +1496,10 @@ public abstract class Node {
 	    // type
 	    if (isThisCall) id = Semantics.currentType().qualifiedName.shortName;
 	    else if (isSuperCall) id = Semantics.currentType().getSuperClass().qualifiedName.shortName;
-	    if (prefix == null) func = Semantics.getFunc(id, args);
+	    if (prefix == null) func = Semantics.getFunc(id, args, null);
 	    else {
 		prefixType = prefix.getExprType();
-		func = Semantics.getFunc(id, prefixType, args);
+		func = Semantics.getFunc(id, prefixType, args, null);
 		if ((func != null) && !func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
 	    }
 
@@ -3169,7 +3173,7 @@ public abstract class Node {
 		    // Find an operator overload
 		    final LinkedList<TypeI> params = new LinkedList<TypeI>();
 		    params.add(accessExpr.getExprType());
-		    overloadFunc = Semantics.getType(exprType.shortName).get().getFunc("[]", params);
+		    overloadFunc = Semantics.getType(exprType.shortName).get().getFunc("[]", params, null);
 		    if (overloadFunc == null) semanticError(this, line, column, FUNC_DOES_NOT_EXIST, "[]", exprType);
 		    else if (!overloadFunc.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, "[]");
 		    else return overloadFunc.returnType;

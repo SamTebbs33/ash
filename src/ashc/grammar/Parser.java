@@ -359,7 +359,8 @@ public class Parser {
 		    continue;
 		case FUNC:
 		    rewind();
-		    block.add(parseFuncDec(false, true, mods));
+		case OPTYPE:
+		    block.add(parseFuncDec(false, true, mods, token.type == TokenType.OPTYPE ? EnumOperatorType.get(token.data) : null));
 		    continue;
 		case MUT:
 		    rewind();
@@ -402,7 +403,7 @@ public class Parser {
     /**
      * func id(args?) (: type)?
      */
-    private NodeFuncDec parseFuncDec(final boolean allowExtensionFunc, final boolean needsBody, final LinkedList<NodeModifier> mods) throws GrammarException {
+    private NodeFuncDec parseFuncDec(final boolean allowExtensionFunc, final boolean needsBody, final LinkedList<NodeModifier> mods, EnumOperatorType opType) throws GrammarException {
 	Token id;
 	Token extensionType = null;
 	boolean hasBody = true;
@@ -444,7 +445,7 @@ public class Parser {
 	    }
 	}
 
-	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, type, throwsType, block, types, extensionType, hasBody);
+	return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, type, throwsType, block, types, extensionType, hasBody, opType);
     }
 
     public NodeTypes parseGenericsDecs() throws GrammarException {
@@ -490,10 +491,9 @@ public class Parser {
 		if (stmt instanceof NodeVariable) {
 		    final Token op = expect("=", TokenType.COMPOUNDASSIGNOP, TokenType.OP);
 		    if ((op.type == TokenType.OP) && !op.data.equals("=")) {
-			if (!OperatorDef.operatorDefExists(op.data)) throw new GrammarException("Undefined operator: " + op.data);
-			if (OperatorDef.getOperatorDef(op.data).type != EnumOperatorType.UNARY) throw new GrammarException("The \"" + op.data
-				+ "\" operator is not a unary operator");
-			return new NodeUnary(op.line, op.columnStart, (NodeVariable) stmt, OperatorDef.getOperatorDef(op.data), false);
+			if (!OperatorDef.operatorDefExists(op.data, EnumOperatorType.PREFIX)) throw new GrammarException("Undefined prefix operator: " + op.data);
+			OperatorDef opDef = OperatorDef.getOperatorDef(op.data, EnumOperatorType.PREFIX);
+			return new NodeUnary(op.line, op.columnStart, (NodeVariable) stmt, opDef, false);
 		    }
 		    return new NodeVarAssign(op.line, op.columnStart, (NodeVariable) stmt, op.data, parseExpression());
 		} else return stmt;
@@ -669,9 +669,9 @@ public class Parser {
 		expr = new NodeSelf(next.line, next.columnStart);
 		break;
 	    case OP:
-		if (!OperatorDef.operatorDefExists(next.data)) throw new GrammarException("Undefined operator: " + next.data);
-		final OperatorDef operator = OperatorDef.getOperatorDef(next.data);
-		if (operator.type != EnumOperatorType.UNARY) throw new GrammarException("The \"" + next.data + "\" operator is not a unary operator");
+		if (!OperatorDef.operatorDefExists(next.data, EnumOperatorType.PREFIX)) throw new GrammarException("Undefined prefix operator: " + next.data);
+		final OperatorDef operator = OperatorDef.getOperatorDef(next.data, EnumOperatorType.PREFIX);
+		if (operator.type != EnumOperatorType.PREFIX) throw new GrammarException("The \"" + next.data + "\" operator is not a prefix operator");
 		expr = new NodeUnary(next.line, next.columnStart, parsePrimaryExpression(), operator, true);
 		break;
 	    case BRACEL:
@@ -824,9 +824,9 @@ public class Parser {
 		    expect(TokenType.COLON);
 		    return new NodeTernary(expr, exprTrue, parseExpression());
 		}
-		if (!OperatorDef.operatorDefExists(next.data)) throw new GrammarException("Undefined operator: " + next.data);
-		final OperatorDef op = OperatorDef.getOperatorDef(next.data);
-		if (op.type == EnumOperatorType.UNARY) return new NodeUnary(next.line, next.columnStart, expr, op, false);
+		if (!OperatorDef.operatorDefExists(next.data, EnumOperatorType.POSTFIX)) throw new GrammarException("Undefined postfix operator: " + next.data);
+		final OperatorDef op = OperatorDef.getOperatorDef(next.data, EnumOperatorType.POSTFIX);
+		if (op.type == EnumOperatorType.POSTFIX) return new NodeUnary(next.line, next.columnStart, expr, op, false);
 		else return new NodeBinary(next.line, next.columnStart, expr, op, parseExpression());
 	    case BRACKETL:
 		NodeArrayAccess arrayExpr = new NodeArrayAccess(((Node) expr).line, ((Node) expr).column, expr, parseExpression());
@@ -1122,9 +1122,13 @@ public class Parser {
 
     private LinkedList<NodeFuncDec> parseDefFileFuncDecs() throws GrammarException {
 	final LinkedList<NodeFuncDec> decs = new LinkedList<Node.NodeFuncDec>();
-	while (getNext().type == TokenType.FUNC) {
-	    rewind();
-	    decs.add(parseFuncDec(true, true, new LinkedList<>()));
+	Token next = getNext();
+	while (true) {
+	    EnumOperatorType opType = null;
+	    if(next.type == TokenType.FUNC) rewind();
+	    else if(next.type == TokenType.OPTYPE) opType = EnumOperatorType.get(next.data);
+	    else break;
+	    decs.add(parseFuncDec(true, true, new LinkedList<>(), opType));
 	}
 	rewind();
 	return decs;
@@ -1150,7 +1154,7 @@ public class Parser {
 	final String name = expect(TokenType.ID).data;
 	expect(TokenType.COMMA);
 	String assoc = null;
-	if (!type.equals("unary")) {
+	if (type.equals("binary")) {
 	    expect("assoc");
 	    expect(TokenType.COLON);
 	    assoc = expect(TokenType.ID).data;

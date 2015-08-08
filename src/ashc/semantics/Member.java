@@ -8,6 +8,7 @@ import org.objectweb.asm.tree.*;
 import ashc.grammar.*;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeExprs;
+import ashc.grammar.OperatorDef.EnumOperatorType;
 import ashc.load.*;
 import ashc.semantics.Member.Function;
 import ashc.util.*;
@@ -176,20 +177,20 @@ public class Member {
 	    return false;
 	}
 
-	public Function getFunc(final String id, final NodeExprs args) {
+	public Function getFunc(final String id, final NodeExprs args, EnumOperatorType opType) {
 	    final LinkedList<TypeI> parameters = new LinkedList<TypeI>();
 	    for (final IExpression arg : args.exprs)
 		parameters.add(arg.getExprType());
-	    return getFunc(id, parameters);
+	    return getFunc(id, parameters, opType);
 	}
 
-	public Function getFunc(final String id, final LinkedList<TypeI> parameters) {
+	public Function getFunc(final String id, final LinkedList<TypeI> parameters, EnumOperatorType opType) {
 	    if (functions.containsKey(id)) for (final Function func : functions.get(id))
-		if (func.paramsAreEqual(parameters)) return func;
+		if (func.opType == opType && func.paramsAreEqual(parameters)) return func;
 
 	    Function func = null;
 	    for (final Type superType : interfaces)
-		if ((func = superType.getFunc(id, parameters)) != null) return func;
+		if ((func = superType.getFunc(id, parameters, opType)) != null && func.opType == opType) return func;
 	    return null;
 	}
 
@@ -228,15 +229,16 @@ public class Member {
 	public LinkedList<String> generics = new LinkedList<String>();
 	public IExpression defExpr;
 	public Type extType;
+	public EnumOperatorType opType;
 
-	public Function(final QualifiedName qualifiedName, final int modifiers, final Type enclosing) {
+	public Function(final QualifiedName qualifiedName, final int modifiers, final Type enclosing, EnumOperatorType opType) {
 	    super(qualifiedName, modifiers);
 	    enclosingType = enclosing;
 
 	}
 
 	public Function(final MethodNode mNode, final Type type) {
-	    this(mNode.name.equals("<init>") ? type.qualifiedName.copy().add(type.qualifiedName.shortName) : type.qualifiedName.copy().add(mNode.name), mNode.access, type);
+	    this(mNode.name.equals("<init>") ? type.qualifiedName.copy().add(type.qualifiedName.shortName) : type.qualifiedName.copy().add(mNode.name), mNode.access, type, null);
 	    final boolean isConstructor = mNode.name.equals("<init>");
 	    final String desc = mNode.desc;
 	    final int parenIndex = desc.indexOf(')');

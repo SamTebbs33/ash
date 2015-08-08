@@ -22,7 +22,13 @@ public class OperatorDef {
     public EnumOperatorAssociativity assoc;
 
     public static enum EnumOperatorType {
-	BINARY, UNARY;
+	BINARY('0'), PREFIX('1'), POSTFIX('2');
+	
+	public char opIdPrefix;
+	
+	private EnumOperatorType(char ch){
+	    this.opIdPrefix = ch;
+	}
 
 	public static EnumOperatorType get(final String str) {
 	    for (final EnumOperatorType type : values())
@@ -66,7 +72,8 @@ public class OperatorDef {
 	GREATER_EQUAL,
 	L_SHIFT,
 	R_SHIFT,
-	R_SHIFT_LOGICAL;
+	R_SHIFT_LOGICAL,
+	UNDEFINED;
 
     }
 
@@ -94,7 +101,7 @@ public class OperatorDef {
 
 	addOperatorDef(new OperatorDefNative(EnumOperation.MOD, "%", "mod", EnumOperatorType.BINARY, 100, EnumOperatorAssociativity.LEFT, new NativeOpInfo(Opcodes.IREM, EnumInstructionOperand.BYTE, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IREM, EnumInstructionOperand.CHAR, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IREM, EnumInstructionOperand.SHORT, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IREM, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.LREM, EnumInstructionOperand.LONG, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.DREM, EnumInstructionOperand.DOUBLE, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.FREM, EnumInstructionOperand.FLOAT, EnumInstructionOperand.INT)));
 
-	addOperatorDef(new OperatorDefNative(EnumOperation.NOT, "!", "not", EnumOperatorType.UNARY, 0, EnumOperatorAssociativity.NONE, new NativeOpInfo(-1, EnumInstructionOperand.BOOL)));
+	addOperatorDef(new OperatorDefNative(EnumOperation.UNDEFINED, "!", "optional_unwrap", EnumOperatorType.POSTFIX, 0, EnumOperatorAssociativity.NONE, new NativeOpInfo(-1, EnumInstructionOperand.BOOL)));
 	addOperatorDef(new OperatorDefNative(EnumOperation.OR, "||", "or", EnumOperatorType.BINARY, 10, EnumOperatorAssociativity.LEFT, new NativeOpInfo(-1, EnumInstructionOperand.BOOL)));
 	addOperatorDef(new OperatorDefNative(EnumOperation.AND, "&&", "and", EnumOperatorType.BINARY, 20, EnumOperatorAssociativity.LEFT, new NativeOpInfo(-1, EnumInstructionOperand.BOOL)));
 	addOperatorDef(new OperatorDefNative(EnumOperation.BIT_OR, "|", "bit_or", EnumOperatorType.BINARY, 30, EnumOperatorAssociativity.LEFT, new NativeOpInfo(Opcodes.IOR, EnumInstructionOperand.BYTE, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IOR, EnumInstructionOperand.CHAR, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IOR, EnumInstructionOperand.SHORT, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IOR, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.LOR, EnumInstructionOperand.LONG, EnumInstructionOperand.LONG)));
@@ -130,16 +137,16 @@ public class OperatorDef {
 	this(id, name, unary, 1000, EnumOperatorAssociativity.NONE);
     }
 
-    public static boolean operatorDefExists(final String id) {
-	return operatorDefs.containsKey(id);
+    public static boolean operatorDefExists(final String id, EnumOperatorType type) {
+	return operatorDefs.containsKey(type.opIdPrefix+id);
     }
 
     public static void addOperatorDef(final OperatorDef def) {
-	operatorDefs.put(def.id, def);
+	operatorDefs.put(def.type.opIdPrefix+def.id, def);
     }
 
-    public static OperatorDef getOperatorDef(final String id) {
-	return operatorDefs.containsKey(id) ? operatorDefs.get(id) : null;
+    public static OperatorDef getOperatorDef(final String id, EnumOperatorType type) {
+	return operatorDefs.containsKey(type.opIdPrefix+id) ? operatorDefs.get(type.opIdPrefix+id) : null;
     }
 
     public static class OperatorDefNative extends OperatorDef {
@@ -182,8 +189,10 @@ public class OperatorDef {
     }
 
     public static String filterOperators(final String shortName) {
-	if (!operatorDefExists(shortName)) return shortName;
-	else return "$" + getOperatorDef(shortName).name;
+	for(EnumOperatorType type : EnumOperatorType.values()){
+	    if(operatorDefExists(shortName, type)) return "$" + getOperatorDef(shortName, type).name;
+	}
+	return shortName;
     }
 
 }
