@@ -1075,7 +1075,7 @@ public abstract class Node {
 	    // Ensure that overriding is handled properly
 	    if(Semantics.currentType().hasSuperClass()){
 		Function superFunc = Semantics.currentType().getSuperClass().getFunc(id, args.toTypeIList(), func.opType);
-		Semantics.checkOverride(func, superFunc, this);
+		if(superFunc != null) Semantics.checkOverride(func, superFunc, this);
 	    }
 
 	    Scope.push(scope);

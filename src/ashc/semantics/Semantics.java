@@ -330,7 +330,7 @@ public class Semantics {
 	if(superFunc != null){
 	    if(superFunc.isPrivate()) semanticError(node, node.line, node.column, CANNOT_OVERRIDE_PRIVATE_FUNC);
 	    if(superFunc.isFinal()) semanticError(node, node.line, node.column, CANNOT_OVERRIDE_FINAL_FUNC);
-	    if(!hasOverrideMod) semanticError(node, node.line, node.column, OVERRIDE_KEYWORD_REQUIRED);
+	    if(!hasOverrideMod && !func.isConstructor()) semanticError(node, node.line, node.column, OVERRIDE_KEYWORD_REQUIRED);
 	    if(!func.hasEqualSignature(superFunc)) semanticError(node, node.line, node.column, FUNC_SIGNATURES_DO_NOT_MATCH);
 	}else if(hasOverrideMod) semanticError(node, node.line, node.column, OVERRIDEN_FUNC_DOES_NOT_EXIST);
     }

@@ -331,11 +331,11 @@ public class Parser {
 	    superArgs = supers.b;
 	} else rewind();
 
-	final NodeClassBlock block = parseClassBlock();
+	final NodeClassBlock block = parseClassBlock(true);
 	return new NodeClassDec(id.line, id.columnStart, mods, types, args, id, block, generics, superArgs);
     }
 
-    private NodeClassBlock parseClassBlock() throws GrammarException {
+    private NodeClassBlock parseClassBlock(boolean funcsNeedBody) throws GrammarException {
 	final NodeClassBlock block = new NodeClassBlock();
 	if (getNext().type == TokenType.BRACEL) while (getNext().type != TokenType.BRACER) {
 	    rewind();
@@ -360,7 +360,7 @@ public class Parser {
 		case FUNC:
 		    rewind();
 		case OPTYPE:
-		    block.add(parseFuncDec(false, true, mods, token.type == TokenType.OPTYPE ? EnumOperatorType.get(token.data) : null));
+		    block.add(parseFuncDec(false, funcsNeedBody, mods, token.type == TokenType.OPTYPE ? EnumOperatorType.get(token.data) : null));
 		    continue;
 		case MUT:
 		    rewind();
@@ -417,8 +417,10 @@ public class Parser {
 	final NodeArgs args = parseArgs();
 	NodeType type = null, throwsType = null;
 	NodeFuncBlock block = new NodeFuncBlock();
-	expect(TokenType.COLON, TokenType.ARROW, TokenType.LAMBDAARROW, TokenType.BRACEL);
-	rewind();
+	if(needsBody){
+	    expect(TokenType.COLON, TokenType.ARROW, TokenType.LAMBDAARROW, TokenType.BRACEL);
+	    rewind();
+	}
 
 	if (getNext().type == TokenType.COLON) type = parseType();
 	else {
@@ -429,18 +431,14 @@ public class Parser {
 	if (getNext().type == TokenType.ARROW) throwsType = parseType();
 	else rewind();
 
-	if (needsBody)
-	    block = parseFuncBlock(true, !type.id.equals("void"));
+	if (needsBody) block = parseFuncBlock(true, !type.id.equals("void"));
 	else {
-	    // Parse an optional function block, used for interface bodies
-	    savePointer();
-	    silenceErrors = true;
-	    block = parseFuncBlock(true, !type.id.equals("void"));
-	    silenceErrors = false;
-	    if(block == null){
-		// If there wasn't a function block, then we have to restore the token pointer
+	    Token next = getNext();
+	    rewind();
+	    if(next.type == TokenType.LAMBDAARROW || next.type == TokenType.BRACEL){
+		block = parseFuncBlock(true, !type.id.equals("void"));
+	    }else{
 		hasBody = false;
-		restorePointer();
 		block = new NodeFuncBlock();
 	    }
 	}
@@ -1028,7 +1026,7 @@ public class Parser {
 	while (getNext().type == TokenType.COMMA)
 	    instances.add(parseEnumInstance());
 	rewind();
-	return new NodeEnumBlock(line, column, instances, parseClassBlock());
+	return new NodeEnumBlock(line, column, instances, parseClassBlock(true));
     }
 
     private NodeInterfaceDec parseInterfaceDec(final LinkedList<NodeModifier> mods) throws GrammarException {
@@ -1043,8 +1041,7 @@ public class Parser {
 
 	if (getNext().type == TokenType.COLON) types = parseSuperTypes(false).a;
 	else rewind();
-
-	final NodeClassBlock block = parseClassBlock();
+	final NodeClassBlock block = parseClassBlock(false);
 	return new NodeInterfaceDec(id.line, id.columnStart, mods, types, args, id, block);
     }
 
