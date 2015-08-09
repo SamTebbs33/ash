@@ -7,6 +7,7 @@ This is based on [SamTebbs33/AshLang](https://github.com/SamTebbs33/AshLang), wh
 Ash is a programming language that compiles to Java bytecode, and is interoperable with Java without needing any extra work. A usaeble binary will be released once basic code-gen is implemented.
 
 * Ash's aims and more details: https://github.com/ash-lang/ash/wiki
+* [Subreddit](https://www.reddit.com/r/ash_lang/)
 * [Examples](https://github.com/ash-lang/ash/tree/master/examples) and [tests](https://github.com/ash-lang/ash/tree/master/tests)
 * Syntax, semantics, type compatibility and the differences between the Java language and Ash: https://github.com/ash-lang/ash/wiki
 
