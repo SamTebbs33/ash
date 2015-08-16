@@ -123,6 +123,7 @@ public class Lexer {
 	PACKAGE("package", true),
 	RETURN("return", true),
 	BREAK("break", true),
+	CONTINUE("continue", true),
 
 	PUBLIC("public", true),
 	PRIVATE("private", true),

@@ -3400,7 +3400,22 @@ public abstract class Node {
 	@Override
 	public void analyse() {
 	    if(!Scope.getScope().isLoop()) semanticError(this, line, column, BREAK_USED_OUTSIDE_LOOP);
-	    super.analyse();
+	}
+
+	@Override
+	public void generate() {}
+	
+    }
+    
+    public static class NodeContinue extends Node implements IFuncStmt {
+
+	public NodeContinue(int line, int column) {
+	    super(line, column);
+	}
+
+	@Override
+	public void analyse() {
+	    if(!Scope.getScope().isLoop()) semanticError(this, line, column, CONTINUE_USED_OUTSIDE_LOOP);
 	}
 
 	@Override

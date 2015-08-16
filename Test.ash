@@ -1,8 +1,8 @@
 public class Test {
 	public static func main(args : [String]) {
-		break
+		continue
 		for x in 0..1 {
-			break
+			continue
 		}
 	}
 }

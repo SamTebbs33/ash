@@ -23,6 +23,7 @@ import ashc.grammar.Node.NodeBreak;
 import ashc.grammar.Node.NodeChar;
 import ashc.grammar.Node.NodeClassBlock;
 import ashc.grammar.Node.NodeClassDec;
+import ashc.grammar.Node.NodeContinue;
 import ashc.grammar.Node.NodeDefFile;
 import ashc.grammar.Node.NodeDouble;
 import ashc.grammar.Node.NodeEnumBlock;
@@ -471,10 +472,12 @@ public class Parser {
     }
 
     private IFuncStmt parseFuncStmt() throws GrammarException {
-	final Token token = expect(TokenTypeGroup.FUNC_CALL, TokenTypeGroup.VAR_DEC, TokenTypeGroup.CONTROL_STMT, TokenType.RETURN, TokenType.BREAK);
+	final Token token = expect(TokenTypeGroup.FUNC_CALL, TokenTypeGroup.VAR_DEC, TokenTypeGroup.CONTROL_STMT, TokenType.RETURN, TokenType.BREAK, TokenType.CONTINUE);
 	switch (token.type) {
 	    case BREAK:
 		return new NodeBreak(token.line, token.columnStart);
+	    case CONTINUE:
+		return new NodeContinue(token.line, token.columnStart);
 	    case RETURN:
 		// rewind();
 		silenceErrors = true;
