@@ -3084,7 +3084,8 @@ public abstract class Node {
 
 		switch (type) {
 		    case ARRAY:
-			equalityNode = new GenNodeFuncCall("java/util/Arrays", "equals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z", false, false, true, false);
+			String matchType = matchExpr.getExprType().toBytecodeName();
+			equalityNode = new GenNodeFuncCall("java/util/Arrays", "equals", "("+matchType+matchType+")Z", false, false, true, false);
 			break;
 		    case REFERENCE:
 			if (!isNullExpr) equalityNode = new GenNodeFuncCall("java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false, false, false, false);
@@ -3112,7 +3113,8 @@ public abstract class Node {
 	    }
 	    // Each expression that isn't the last one has to jump here instead so that we can pop off the top stack value
 	    addFuncStmt(new GenNodeLabel(popLabel));
-	    addFuncStmt(new GenNodeOpcode(popOpcode));
+	    System.out.println(popOpcode);
+	    //addFuncStmt(new GenNodeOpcode(popOpcode));
 	    // The last expression jumps here instead
 	    addFuncStmt(new GenNodeLabel(blockLabel));
 	    // If this is not the last case, then we have to pop off the duplicated expression from NodeMatch.generate()

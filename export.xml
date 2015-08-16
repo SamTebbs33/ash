@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_run_jar" name="Create Runnable Jar for Project Ash">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <target name="create_run_jar">
+        <jar destfile="/Users/samtebbs/Documents/GitRepos/ash/ashc.jar" filesetmanifest="mergewithoutmain">
+            <manifest>
+                <attribute name="Main-Class" value="ashc.main.AshMain"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="/Users/samtebbs/Documents/GitRepos/ash/bin"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/samtebbs/Documents/Programming/Java/lib/asm-5.0.4/lib/asm-5.0.4.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/samtebbs/Documents/Programming/Java/lib/asm-5.0.4/lib/asm-util-5.0.4.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/samtebbs/Documents/Programming/Java/lib/asm-5.0.4/lib/asm-commons-5.0.4.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/samtebbs/Documents/Programming/Java/lib/asm-5.0.4/lib/asm-tree-5.0.4.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="/Users/samtebbs/Documents/Programming/Java/lib/asm-5.0.4/lib/asm-analysis-5.0.4.jar"/>
+        </jar>
+    </target>
+</project>

@@ -6,7 +6,7 @@ operator ** = type: binary, name: pow, assoc: none, prec: 120
 func String.toInt() : int -> Integer.parseInt(this)
 func String.toInt(radix : int) : int -> Integer.parseInt(this, radix)
 
-func println(str : Sting) -> System.out.println(str)
+func println(str : String) -> System.out.println(str)
 func println(obj : Object) -> System.out.println(obj)
 func println(b : bool) -> System.out.println(b)
 func println(ch : char) -> System.out.println(ch)
