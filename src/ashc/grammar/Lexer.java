@@ -122,6 +122,7 @@ public class Lexer {
 	IMPORT("import", true),
 	PACKAGE("package", true),
 	RETURN("return", true),
+	BREAK("break", true),
 
 	PUBLIC("public", true),
 	PRIVATE("private", true),

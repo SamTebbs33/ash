@@ -19,6 +19,7 @@ import ashc.grammar.Node.NodeArraySize;
 import ashc.grammar.Node.NodeAs;
 import ashc.grammar.Node.NodeBinary;
 import ashc.grammar.Node.NodeBool;
+import ashc.grammar.Node.NodeBreak;
 import ashc.grammar.Node.NodeChar;
 import ashc.grammar.Node.NodeClassBlock;
 import ashc.grammar.Node.NodeClassDec;
@@ -470,8 +471,10 @@ public class Parser {
     }
 
     private IFuncStmt parseFuncStmt() throws GrammarException {
-	final Token token = expect(TokenTypeGroup.FUNC_CALL, TokenTypeGroup.VAR_DEC, TokenTypeGroup.CONTROL_STMT, TokenType.RETURN);
+	final Token token = expect(TokenTypeGroup.FUNC_CALL, TokenTypeGroup.VAR_DEC, TokenTypeGroup.CONTROL_STMT, TokenType.RETURN, TokenType.BREAK);
 	switch (token.type) {
+	    case BREAK:
+		return new NodeBreak(token.line, token.columnStart);
 	    case RETURN:
 		// rewind();
 		silenceErrors = true;
@@ -687,7 +690,7 @@ public class Parser {
 		    listExpr.addMapVal(parseExpression());
 		} else rewind();
 		// Add the list element as a value
-		listExpr.add(listElement);
+		listExpr.addListVal(listElement);
 		// List elements are separated by commas
 		while (expect(TokenType.COMMA, TokenType.BRACER).type == TokenType.COMMA) {
 		    listElement = parseExpression();

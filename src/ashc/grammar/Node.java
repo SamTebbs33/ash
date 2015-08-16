@@ -2292,7 +2292,7 @@ public abstract class Node {
 	    super(line, column);
 	}
 
-	public void add(final IExpression expr) {
+	public void addListVal(final IExpression expr) {
 	    exprs.add(expr);
 	}
 
@@ -2447,7 +2447,7 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    Scope.push(new Scope());
+	    Scope.push(new Scope(false));
 	    if (expr != null) {
 		((Node) expr).analyse();
 		if (!((Node) expr).errored) {
@@ -2522,7 +2522,7 @@ public abstract class Node {
 		if ((EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL) && !exprType.isArray()) ;
 		else semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
 	    }
-	    Scope.push(new Scope());
+	    Scope.push(new Scope(true));
 	    block.analyse();
 	    Scope.pop();
 	}
@@ -2564,7 +2564,7 @@ public abstract class Node {
 		if (EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL) if (!exprType.isArray()) return;
 		semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
 	    }
-	    Scope.push(new Scope());
+	    Scope.push(new Scope(true));
 	    block.analyse();
 	    Scope.pop();
 	}
@@ -2595,7 +2595,6 @@ public abstract class Node {
 		endStmt.analyse();
 		if (((Node) endStmt).errored) errored = true;
 	    }
-	    block.analyse();
 	    super.analyse();
 	}
 
@@ -2645,7 +2644,7 @@ public abstract class Node {
 		    else varType = list.get(0);
 		} else semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
 	    }
-	    Scope.push(new Scope());
+	    Scope.push(new Scope(true));
 	    var = new Variable(varId, varType);
 	    Scope.getFuncScope().locals += exprType.isArray() ? 3 : 1; // Some local vars are reserved for use in the bytecode
 	    Semantics.addVar(var);
@@ -3386,10 +3385,27 @@ public abstract class Node {
 	}
 
 	@Override
-	public void add(final IExpression listElement) {
+	public void addListVal(final IExpression listElement) {
 	    exprs.add(listElement);
 	}
 
+    }
+    
+    public static class NodeBreak extends Node implements IFuncStmt {
+
+	public NodeBreak(int line, int column) {
+	    super(line, column);
+	}
+
+	@Override
+	public void analyse() {
+	    if(!Scope.getScope().isLoop()) semanticError(this, line, column, BREAK_USED_OUTSIDE_LOOP);
+	    super.analyse();
+	}
+
+	@Override
+	public void generate() {}
+	
     }
 
 }
