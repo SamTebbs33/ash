@@ -479,7 +479,6 @@ public class Parser {
 	    case CONTINUE:
 		return new NodeContinue(token.line, token.columnStart);
 	    case RETURN:
-		// rewind();
 		silenceErrors = true;
 		savePointer();
 		final IExpression expr = parseExpression();
