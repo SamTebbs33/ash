@@ -2535,6 +2535,8 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    final Label lbl0 = new Label(), lbl1 = new Label();
+	    GenNode.loopStartLabel = lbl0;
+	    GenNode.loopEndLabel = lbl1;
 	    addFuncStmt(new GenNodeLabel(lbl1));
 	    addFuncStmt(new GenNodeConditionalJump(expr, lbl0));
 	    block.generate();
@@ -2602,6 +2604,8 @@ public abstract class Node {
 	public void generate() {
 	    if (initStmt != null) initStmt.generate();
 	    final Label lbl0 = new Label(), lbl1 = new Label();
+	    GenNode.loopStartLabel = lbl0;
+	    GenNode.loopEndLabel = lbl1;
 	    addFuncStmt(new GenNodeLabel(lbl0));
 	    addFuncStmt(new GenNodeConditionalJump(expr, lbl1));
 	    block.generate();
@@ -2657,14 +2661,18 @@ public abstract class Node {
 	    addFuncStmt(new GenNodeVar(var.id, var.type.toBytecodeName(), var.localID, null)); // TODO: generics
 	    expr.generate();
 	    final int iteratorVarID = var.localID + 1; // Get the varID that we reserved in analyse()
+	    
+	    final Label lbl0 = new Label(), lbl1 = new Label();
+	    GenNode.loopStartLabel = lbl0;
+	    GenNode.loopEndLabel = lbl1;
 	    if (!exprType.isArray()) {
 		addFuncStmt(new GenNodeVar("iterator", "Ljava/util/Iterator;", iteratorVarID, null));
+		System.out.println(exprType.shortName);
 		final String enclosingType = Semantics.getType(exprType.shortName).get().qualifiedName.toBytecodeName();
 		GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, "iterator", "()Ljava/util/Iterator;", false, false, false, false));
 		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.REFERENCE, iteratorVarID));
 
 		// Check if the iterator has a next value
-		final Label lbl0 = new Label(), lbl1 = new Label();
 		GenNode.addFuncStmt(new GenNodeLabel(lbl0));
 		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.REFERENCE, iteratorVarID));
 		GenNode.addFuncStmt(new GenNodeFuncCall("java/util/Iterator", "hasNext", "()Z", true, false, false, false));
@@ -2694,7 +2702,6 @@ public abstract class Node {
 		GenNode.addFuncStmt(new GenNodeInt(0));
 		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.INT, indexVarID));
 
-		final Label lbl0 = new Label(), lbl1 = new Label();
 		// This is the label to which we will jump when the iteration is
 		// finished
 		GenNode.addFuncStmt(new GenNodeLabel(lbl0));
@@ -3403,7 +3410,9 @@ public abstract class Node {
 	}
 
 	@Override
-	public void generate() {}
+	public void generate() {
+	    addFuncStmt(new GenNodeJump(GenNode.loopEndLabel));
+	}
 	
     }
     
@@ -3419,7 +3428,9 @@ public abstract class Node {
 	}
 
 	@Override
-	public void generate() {}
+	public void generate() {
+	    addFuncStmt(new GenNodeJump(GenNode.loopStartLabel));
+	}
 	
     }
 
