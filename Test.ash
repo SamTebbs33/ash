@@ -1,12 +1,8 @@
-include Test
-
 public class Test {
 	public static func main(args : [String]) {
-		var a = [2]
-		match a {
-			[0], [1] -> println("a")
-			[2], [3] -> println("b")
-			_ -> println("else")
+		for var x = 0, x < 10, x = x + 1 {
+			System.out.println("iteration")
+			//continue
 		}
 	}
 }

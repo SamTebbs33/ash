@@ -98,6 +98,8 @@ public class AshError extends Exception {
 	OPERATOR_CANNOT_BE_APPLIED_TO_TYPE("Operator %s cannot be applied to type %s"),
 
 	MATCH_DOES_NOT_HAVE_DEFAULT("A match statement must have a default case"),
+	BREAK_USED_OUTSIDE_LOOP("A break statement cannot be used outisde of a loop"),
+	CONTINUE_USED_OUTSIDE_LOOP("A continue statement cannot be used outside of a loop"),
 
 	PRIMTIVE_CANNOT_BE_OPTIONAL("A primitive type cannot be optional (%s)"),
 	CANNOT_ASSIGN("Cannot assign %s to %s");

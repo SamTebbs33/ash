@@ -2292,7 +2292,7 @@ public abstract class Node {
 	    super(line, column);
 	}
 
-	public void add(final IExpression expr) {
+	public void addListVal(final IExpression expr) {
 	    exprs.add(expr);
 	}
 
@@ -2447,7 +2447,7 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    Scope.push(new Scope());
+	    Scope.push(new Scope(false));
 	    if (expr != null) {
 		((Node) expr).analyse();
 		if (!((Node) expr).errored) {
@@ -2522,7 +2522,7 @@ public abstract class Node {
 		if ((EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL) && !exprType.isArray()) ;
 		else semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
 	    }
-	    Scope.push(new Scope());
+	    Scope.push(new Scope(true));
 	    block.analyse();
 	    Scope.pop();
 	}
@@ -2535,6 +2535,8 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    final Label lbl0 = new Label(), lbl1 = new Label();
+	    GenNode.loopStartLabel = lbl0;
+	    GenNode.loopEndLabel = lbl1;
 	    addFuncStmt(new GenNodeLabel(lbl1));
 	    addFuncStmt(new GenNodeConditionalJump(expr, lbl0));
 	    block.generate();
@@ -2561,10 +2563,9 @@ public abstract class Node {
 	    ((Node) expr).analyse();
 	    if (!((Node) expr).errored) {
 		exprType = expr.getExprType();
-		if (EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL) if (!exprType.isArray()) return;
-		semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
+		if (exprType.getPrimitive() != EnumPrimitive.BOOL) semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
 	    }
-	    Scope.push(new Scope());
+	    Scope.push(new Scope(true));
 	    block.analyse();
 	    Scope.pop();
 	}
@@ -2595,7 +2596,6 @@ public abstract class Node {
 		endStmt.analyse();
 		if (((Node) endStmt).errored) errored = true;
 	    }
-	    block.analyse();
 	    super.analyse();
 	}
 
@@ -2603,6 +2603,8 @@ public abstract class Node {
 	public void generate() {
 	    if (initStmt != null) initStmt.generate();
 	    final Label lbl0 = new Label(), lbl1 = new Label();
+	    GenNode.loopStartLabel = lbl0;
+	    GenNode.loopEndLabel = lbl1;
 	    addFuncStmt(new GenNodeLabel(lbl0));
 	    addFuncStmt(new GenNodeConditionalJump(expr, lbl1));
 	    block.generate();
@@ -2627,6 +2629,7 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
+	    System.out.println("node for-in analyse");
 	    expr.analyse();
 	    // The only types that can be iterated over are arrays and those
 	    // that implement java.lang.Iterable
@@ -2645,10 +2648,11 @@ public abstract class Node {
 		    else varType = list.get(0);
 		} else semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
 	    }
-	    Scope.push(new Scope());
+	    Scope.push(new Scope(true));
 	    var = new Variable(varId, varType);
 	    Scope.getFuncScope().locals += exprType.isArray() ? 3 : 1; // Some local vars are reserved for use in the bytecode
 	    Semantics.addVar(var);
+	    System.out.println("for-in block analyse");
 	    block.analyse();
 	    Scope.pop();
 	}
@@ -2658,6 +2662,10 @@ public abstract class Node {
 	    addFuncStmt(new GenNodeVar(var.id, var.type.toBytecodeName(), var.localID, null)); // TODO: generics
 	    expr.generate();
 	    final int iteratorVarID = var.localID + 1; // Get the varID that we reserved in analyse()
+	    
+	    final Label lbl0 = new Label(), lbl1 = new Label();
+	    GenNode.loopStartLabel = lbl0;
+	    GenNode.loopEndLabel = lbl1;
 	    if (!exprType.isArray()) {
 		addFuncStmt(new GenNodeVar("iterator", "Ljava/util/Iterator;", iteratorVarID, null));
 		final String enclosingType = Semantics.getType(exprType.shortName).get().qualifiedName.toBytecodeName();
@@ -2665,7 +2673,6 @@ public abstract class Node {
 		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.REFERENCE, iteratorVarID));
 
 		// Check if the iterator has a next value
-		final Label lbl0 = new Label(), lbl1 = new Label();
 		GenNode.addFuncStmt(new GenNodeLabel(lbl0));
 		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.REFERENCE, iteratorVarID));
 		GenNode.addFuncStmt(new GenNodeFuncCall("java/util/Iterator", "hasNext", "()Z", true, false, false, false));
@@ -2673,6 +2680,7 @@ public abstract class Node {
 
 		// Get the iterator's next value and jump to the conditional
 		// branch
+		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.REFERENCE, iteratorVarID));
 		GenNode.addFuncStmt(new GenNodeFuncCall("java/util/Iterator", "next", "()Ljava/lang/Object;", true, false, false, false));
 		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.REFERENCE, var.localID));
 		block.generate();
@@ -2695,7 +2703,6 @@ public abstract class Node {
 		GenNode.addFuncStmt(new GenNodeInt(0));
 		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.INT, indexVarID));
 
-		final Label lbl0 = new Label(), lbl1 = new Label();
 		// This is the label to which we will jump when the iteration is
 		// finished
 		GenNode.addFuncStmt(new GenNodeLabel(lbl0));
@@ -2929,12 +2936,12 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    // Create a new Range object
-	    addFuncStmt(new GenNodeNew("ash.lang.Range"));
+	    addFuncStmt(new GenNodeNew("ash/lang/Range"));
 	    addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 	    // Call Range's constructor
 	    start.generate();
 	    end.generate();
-	    addFuncStmt(new GenNodeFuncCall("java.lang.Range", "<init>", "(II)V", false, false, false, true));
+	    addFuncStmt(new GenNodeFuncCall("ash/lang/Range", "<init>", "(II)V", false, false, false, true));
 	}
 
     }
@@ -3386,10 +3393,48 @@ public abstract class Node {
 	}
 
 	@Override
-	public void add(final IExpression listElement) {
+	public void addListVal(final IExpression listElement) {
 	    exprs.add(listElement);
 	}
 
+    }
+    
+    public static class NodeBreak extends Node implements IFuncStmt {
+
+	public NodeBreak(int line, int column) {
+	    super(line, column);
+	}
+
+	@Override
+	public void analyse() {
+	    if(!Scope.getScope().isLoop()) semanticError(this, line, column, BREAK_USED_OUTSIDE_LOOP);
+	}
+
+	@Override
+	public void generate() {
+	    addFuncStmt(new GenNodeJump(GenNode.loopEndLabel));
+	    addFuncStmt(new GenNodeOpcode(Opcodes.NOP));
+	}
+	
+    }
+    
+    public static class NodeContinue extends Node implements IFuncStmt {
+
+	public NodeContinue(int line, int column) {
+	    super(line, column);
+	}
+
+	@Override
+	public void analyse() {
+	    if(!Scope.getScope().isLoop()) semanticError(this, line, column, CONTINUE_USED_OUTSIDE_LOOP);
+	}
+
+	@Override
+	public void generate() {
+	    System.out.println("cont label: " + GenNode.loopStartLabel);
+	    addFuncStmt(new GenNodeJump(GenNode.loopStartLabel));
+	}
+	
     }
 
 }

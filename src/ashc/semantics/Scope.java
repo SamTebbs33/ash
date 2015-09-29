@@ -23,7 +23,7 @@ public class Scope {
 	public Type extensionType;
 
 	public FuncScope(final TypeI typeI, final boolean isMutFunc, final boolean isStatic, final boolean isGlobal, final Type extensionType) {
-	    super();
+	    super(false);
 	    returnType = typeI;
 	    this.isMutFunc = isMutFunc;
 	    this.isStatic = isStatic;
@@ -49,7 +49,8 @@ public class Scope {
 
     private static QualifiedName namespace = new QualifiedName("");
 
-    public Scope() {
+    public Scope(boolean isLoopScope) {
+	this.isLoopScope = isLoopScope;
 	if (!scopeStack.isEmpty()) parent = scopeStack.peek();
     }
 
@@ -57,6 +58,7 @@ public class Scope {
     public Scope parent;
     public HashSet<Field> nullChecks = new HashSet<Field>();
     public HashMap<Field, Type> castChecks = new HashMap<Field, Type>();
+    private boolean isLoopScope;
 
     public static Scope getScope() {
 	return scopeStack.size() > 0 ? scopeStack.peek() : null;
@@ -123,6 +125,10 @@ public class Scope {
 
     public static boolean inPropertyScope() {
 	return getPropertyScope() != null;
+    }
+
+    public boolean isLoop() {
+	return getScope().isLoopScope;
     }
 
 }
