@@ -2563,8 +2563,7 @@ public abstract class Node {
 	    ((Node) expr).analyse();
 	    if (!((Node) expr).errored) {
 		exprType = expr.getExprType();
-		if (EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL) if (!exprType.isArray()) return;
-		semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
+		if (exprType.getPrimitive() != EnumPrimitive.BOOL) semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
 	    }
 	    Scope.push(new Scope(true));
 	    block.analyse();
@@ -2630,6 +2629,7 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
+	    System.out.println("node for-in analyse");
 	    expr.analyse();
 	    // The only types that can be iterated over are arrays and those
 	    // that implement java.lang.Iterable
@@ -2652,6 +2652,7 @@ public abstract class Node {
 	    var = new Variable(varId, varType);
 	    Scope.getFuncScope().locals += exprType.isArray() ? 3 : 1; // Some local vars are reserved for use in the bytecode
 	    Semantics.addVar(var);
+	    System.out.println("for-in block analyse");
 	    block.analyse();
 	    Scope.pop();
 	}
@@ -2667,7 +2668,6 @@ public abstract class Node {
 	    GenNode.loopEndLabel = lbl1;
 	    if (!exprType.isArray()) {
 		addFuncStmt(new GenNodeVar("iterator", "Ljava/util/Iterator;", iteratorVarID, null));
-		System.out.println(exprType.shortName);
 		final String enclosingType = Semantics.getType(exprType.shortName).get().qualifiedName.toBytecodeName();
 		GenNode.addFuncStmt(new GenNodeFuncCall(enclosingType, "iterator", "()Ljava/util/Iterator;", false, false, false, false));
 		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.REFERENCE, iteratorVarID));
@@ -2680,6 +2680,7 @@ public abstract class Node {
 
 		// Get the iterator's next value and jump to the conditional
 		// branch
+		GenNode.addFuncStmt(new GenNodeVarLoad(EnumInstructionOperand.REFERENCE, iteratorVarID));
 		GenNode.addFuncStmt(new GenNodeFuncCall("java/util/Iterator", "next", "()Ljava/lang/Object;", true, false, false, false));
 		GenNode.addFuncStmt(new GenNodeVarStore(EnumInstructionOperand.REFERENCE, var.localID));
 		block.generate();
@@ -2935,12 +2936,12 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    // Create a new Range object
-	    addFuncStmt(new GenNodeNew("ash.lang.Range"));
+	    addFuncStmt(new GenNodeNew("ash/lang/Range"));
 	    addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
 	    // Call Range's constructor
 	    start.generate();
 	    end.generate();
-	    addFuncStmt(new GenNodeFuncCall("java.lang.Range", "<init>", "(II)V", false, false, false, true));
+	    addFuncStmt(new GenNodeFuncCall("ash/lang/Range", "<init>", "(II)V", false, false, false, true));
 	}
 
     }
@@ -3412,6 +3413,7 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    addFuncStmt(new GenNodeJump(GenNode.loopEndLabel));
+	    addFuncStmt(new GenNodeOpcode(Opcodes.NOP));
 	}
 	
     }
@@ -3429,6 +3431,7 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
+	    System.out.println("cont label: " + GenNode.loopStartLabel);
 	    addFuncStmt(new GenNodeJump(GenNode.loopStartLabel));
 	}
 	

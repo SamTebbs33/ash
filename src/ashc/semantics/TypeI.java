@@ -350,4 +350,8 @@ public class TypeI {
 	    result = TypeI.getPrecedentType(result, exprs.get(i).getExprType());
 	return result;
     }
+
+    public EnumPrimitive getPrimitive() {
+	return EnumPrimitive.getPrimitive(shortName);
+    }
 }
