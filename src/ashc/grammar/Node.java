@@ -3413,6 +3413,7 @@ public abstract class Node {
 	@Override
 	public void generate() {
 	    addFuncStmt(new GenNodeJump(GenNode.loopEndLabel));
+	    // There must be an instruction here, so just add a NOP
 	    addFuncStmt(new GenNodeOpcode(Opcodes.NOP));
 	}
 	
