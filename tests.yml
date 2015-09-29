@@ -72,6 +72,11 @@ definition files:
   path: DefinitionFiles
   pass: yes
   run: yes
+
+break statement:
+  path: Break
+  pass: yes
+  run: yes
   
 #match statement:
 #  path: MatchStatement
