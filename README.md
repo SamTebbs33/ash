@@ -10,6 +10,7 @@ Ash is a programming language that compiles to Java bytecode, and is interoperab
 * [Subreddit](https://www.reddit.com/r/ash_lang/)
 * [Examples](https://github.com/ash-lang/ash/tree/master/examples) and [tests](https://github.com/ash-lang/ash/tree/master/tests)
 * Syntax, semantics, type compatibility and the differences between the Java language and Ash: https://github.com/ash-lang/ash/wiki
+* [Travis builds](https://travis-ci.org/ash-lang/ash)
 
 The language itself will soon be ready for a useable release, more details will be posted when that time comes.
 
