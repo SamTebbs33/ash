@@ -30,19 +30,9 @@ func print(f : float) = System.out.println(f)
 func print(d : double) = System.out.println(d)
 func print(l : long) = System.out.println(l)
 
-binary func ===(obj : Object, obj2 : Object) -> bool = obj.equals(obj2)
-//binary func ===(obj : Object?, obj2 : Object) -> bool = (obj != null) && obj.equals(obj2)
-//binary func ===(obj : Object, obj2 : Object?) -> bool = (obj2 != null) && obj2.equals(obj)
-/*binary func ===(obj : Object?, obj2 : Object?) -> bool {
-    if ((obj == null) ^ (obj2 == null)) return false
-    else if ((obj == null) && (obj2 == null)) return true
-    return obj.equals(obj2)
-}*/
-
 binary func ??(objOpt : Object?, obj : Object) -> Object = (objOpt != null) ? objOpt! : obj
 prefix func !(operand : bool) -> bool = operand ? false : true
 //binary func **(operand : double, exponent : double) -> double = Math.pow(operand, exponent)
-binary func ^(op1 : bool, op2 : bool) -> bool = (op1 || op2) && !(op1 && op2)
 prefix func ^(operand : int) -> Integer = Integer.valueOf(operand)!
 prefix func ^(operand : Integer) -> int = operand.intValue()
 prefix func ^(operand : bool) -> Boolean = Boolean.valueOf(operand)!

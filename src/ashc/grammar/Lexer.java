@@ -228,22 +228,22 @@ public class Lexer {
 	public Token token;
 
 	public UnexpectedTokenException(final Token found, final TokenMatcher... t) {
-	    super(String.format("Expected %s, found %s", asString(t), found.type.typeName));
+	    super(String.format("Expected %s, found %s", asString(t), found.type.typeName), found.line, found.columnStart);
 	    token = found;
 	}
 
 	public UnexpectedTokenException(final Token t) {
-	    super(String.format("Unexpected %s", t.type.typeName));
+	    super(String.format("Unexpected %s", t.type.typeName), t.line, t.columnStart);
 	    token = t;
 	}
 
 	public UnexpectedTokenException(final Token next, final String tokenData) {
-	    super(String.format("Unexpected %s, expected %s", next.type.typeName, tokenData));
+	    super(String.format("Unexpected %s, expected %s", next.type.typeName, tokenData), next.line, next.columnStart);
 	    token = next;
 	}
 
 	public UnexpectedTokenException(final Token next, final String data, final TokenMatcher[] matchers) {
-	    super(String.format("Unexpected %s, expected %s, %s", next.type.typeName, data, asString(matchers)));
+	    super(String.format("Unexpected %s, expected %s, %s", next.type.typeName, data, asString(matchers)), next.line, next.columnStart);
 	    token = next;
 	}
 

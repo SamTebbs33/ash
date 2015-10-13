@@ -43,6 +43,7 @@ import ashc.codegen.GenNode.GenNodeVar;
 import ashc.codegen.GenNode.GenNodeVarLoad;
 import ashc.codegen.GenNode.GenNodeVarStore;
 import ashc.grammar.Lexer.Token;
+import ashc.grammar.Node.NodePackage;
 import ashc.grammar.OperatorDef.EnumOperatorAssociativity;
 import ashc.grammar.OperatorDef.EnumOperatorType;
 import ashc.grammar.Parser.GrammarException;
@@ -130,15 +131,7 @@ public abstract class Node {
 	@Override
 	public void preAnalyse() {
 	    final QualifiedName name = new QualifiedName("");
-	    String packagePath = "";
-	    if (pkg != null) {
-		pkg.preAnalyse();
-		final NodeQualifiedName pkgName = pkg.qualifiedName;
-		for (final String section : pkgName.paths)
-		    name.add(section);
-		packagePath = name.toString().replace('.', File.separatorChar);
-	    }
-	    if (!AshCompiler.get().parentPath.equals(packagePath)) semanticError(this, -1, -1, PATH_DOES_NOT_MATCH_PACKAGE, packagePath);
+	    if(pkg != null) pkg.preAnalyse();
 	    Scope.setNamespace(name);
 	    if (includes != null) for (final NodeInclude i : includes)
 		i.preAnalyse();
@@ -170,10 +163,12 @@ public abstract class Node {
 	public LinkedList<NodeInclude> includes;
 	public LinkedList<NodeOperatorDef> operatorDefs;
 	public LinkedList<NodeFuncDec> funcs;
+	public NodePackage pkg;
 
 	@Override
 	public void preAnalyse() {
 	    Semantics.enterDefFile("$Global" + AshCompiler.get().fileName);
+	    pkg.preAnalyse();
 	    for (final NodeImport i : imports)
 		i.preAnalyse();
 	    for (final NodeInclude i : includes)
@@ -224,10 +219,7 @@ public abstract class Node {
 	    this.type = type;
 	    this.assoc = assoc;
 	    this.precedence = precedence;
-	}
-
-	@Override
-	public void preAnalyse() {
+	    
 	    if (OperatorDef.operatorDefExists(id, EnumOperatorType.get(type))) semanticError(this, line, column, OPERATOR_ALREADY_EXISTS, id);
 	    else if (OperatorDef.operatorNameExists(name)) semanticError(this, line, column, OPERATOR_ALREADY_EXISTS, name);
 	    else OperatorDef.addOperatorDef(new OperatorDef(id, name, EnumOperatorType.get(type), precedence, EnumOperatorAssociativity.get(assoc)));
@@ -248,7 +240,10 @@ public abstract class Node {
 	}
 
 	@Override
-	public void preAnalyse() {}
+	public void preAnalyse() {
+		String packagePath = qualifiedName.toDirString();
+		if (!AshCompiler.get().parentPath.equals(packagePath)) semanticError(this, -1, -1, PATH_DOES_NOT_MATCH_PACKAGE, AshCompiler.get().parentPath, packagePath);
+	}
 
 	@Override
 	public void generate() {}
@@ -1411,6 +1406,16 @@ public abstract class Node {
 	    for (final IExpression expr : exprs)
 		expr.generate();
 	}
+	
+	@Override
+	public String toString() {
+	    StringBuffer sb = new StringBuffer("");
+	    for(int  i = 0; i < exprs.size(); i++){
+		sb.append(exprs.get(i).getExprType().toString());
+		if(i < exprs.size() - 1) sb.append(", ");
+	    }
+	    return sb.toString();
+	}
 
     }
 
@@ -1505,7 +1510,7 @@ public abstract class Node {
 
 	    if (func == null) {
 		if (prefixType == null) semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id);
-		else semanticError(this, line, column, FUNC_DOES_NOT_EXIST_IN_TYPE, id, prefixType);
+		else semanticError(this, line, column, FUNC_DOES_NOT_EXIST_IN_TYPE, id, args.toString(), prefixType);
 	    } else {
 		if (prefix == null) if (Scope.inFuncScope() && Scope.getFuncScope().isStatic && !func.isStatic() && !func.isConstructor()) semanticError(line, column, NON_STATIC_FUNC_USED_IN_STATIC_CONTEXT, func.qualifiedName.shortName);
 		if (!func.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
@@ -2166,7 +2171,7 @@ public abstract class Node {
 
 	@Override
 	public TypeI getExprType() {
-	    if (!((NodeVariable) expr).errored) {
+	    if (!((Node)expr).errored) {
 		exprType = expr.getExprType();
 		final Operation op = Semantics.getOperationType(exprType, operator);
 		if (op == null) semanticError(this, line, column, OPERATOR_CANNOT_BE_APPLIED_TO_TYPE, operator.id, exprType);
@@ -2629,7 +2634,6 @@ public abstract class Node {
 
 	@Override
 	public void analyse() {
-	    System.out.println("node for-in analyse");
 	    expr.analyse();
 	    // The only types that can be iterated over are arrays and those
 	    // that implement java.lang.Iterable
@@ -2652,7 +2656,6 @@ public abstract class Node {
 	    var = new Variable(varId, varType);
 	    Scope.getFuncScope().locals += exprType.isArray() ? 3 : 1; // Some local vars are reserved for use in the bytecode
 	    Semantics.addVar(var);
-	    System.out.println("for-in block analyse");
 	    block.analyse();
 	    Scope.pop();
 	}
@@ -3120,7 +3123,6 @@ public abstract class Node {
 	    }
 	    // Each expression that isn't the last one has to jump here instead so that we can pop off the top stack value
 	    addFuncStmt(new GenNodeLabel(popLabel));
-	    System.out.println(popOpcode);
 	    //addFuncStmt(new GenNodeOpcode(popOpcode));
 	    // The last expression jumps here instead
 	    addFuncStmt(new GenNodeLabel(blockLabel));
@@ -3432,7 +3434,6 @@ public abstract class Node {
 
 	@Override
 	public void generate() {
-	    System.out.println("cont label: " + GenNode.loopStartLabel);
 	    addFuncStmt(new GenNodeJump(GenNode.loopStartLabel));
 	}
 	
