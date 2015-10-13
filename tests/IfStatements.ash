@@ -8,5 +8,5 @@ public class IfStatements {
 		}else print("Hmmm...")
 		
 	}
-	public static func print(msg : String) -> System.out.println(msg)
+	public static func print(msg : String) = System.out.println(msg)
 }

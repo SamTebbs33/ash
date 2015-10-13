@@ -6,5 +6,5 @@ public class OperatorOverloads {
 }
 
 class Person(age : int) {
-	public binary func +(operand : int) : Person -> Person(age + operand)
+	public binary func +(operand : int) -> Person = Person(age + operand)
 }
