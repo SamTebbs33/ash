@@ -1,5 +1,5 @@
 class Properties {
-	static var name = "" -> {
+	static var name = "" {
 		set = newVal.isEmpty() ? "unnamed" : newVal
 	}
 	public static func main(args : [String]) {

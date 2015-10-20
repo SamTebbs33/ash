@@ -862,8 +862,7 @@ public class Parser {
 	} else varDec = new NodeVarDecImplicit(id.line, id.columnStart, mods, keyword.data, id.data, parseExpression());
 
 	// Parse a property block
-	if (getNext().type == TokenType.LAMBDAARROW) {
-	    expect(TokenType.BRACEL);
+	if (getNext().type == TokenType.BRACEL) {
 	    NodeFuncBlock getBlock = null, setBlock = null;
 	    // A right brace ends the property block
 	    while (getNext().type != TokenType.BRACER) {
