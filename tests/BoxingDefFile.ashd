@@ -1,0 +1,18 @@
+operator ^ = type: prefix, name: boxing
+
+prefix func ^(operand : int) -> Integer = Integer.valueOf(operand)!
+prefix func ^(operand : Integer) -> int = operand.intValue()
+prefix func ^(operand : bool) -> Boolean = Boolean.valueOf(operand)!
+prefix func ^(operand : Boolean) -> bool = operand.booleanValue()
+prefix func ^(operand : char) -> Character = Character.valueOf(operand)!
+prefix func ^(operand : Character) -> char = operand.charValue()
+prefix func ^(operand : float) -> Float = Float.valueOf(operand)!
+prefix func ^(operand : Float) -> float = operand.floatValue()
+prefix func ^(operand : double) -> Double = Double.valueOf(operand)!
+prefix func ^(operand : Double) -> double = operand.doubleValue()
+prefix func ^(operand : byte) -> Byte = Byte.valueOf(operand)!
+prefix func ^(operand : Byte) -> byte = operand.byteValue()
+prefix func ^(operand : short) -> Short = Short.valueOf(operand)!
+prefix func ^(operand : Short) -> short = operand.shortValue()
+prefix func ^(operand : long) -> Long = Long.valueOf(operand)!
+prefix func ^(operand : Long) -> long = operand.longValue()

@@ -494,7 +494,8 @@ public class Parser {
 		if (stmt instanceof NodeVariable) {
 		    final Token op = expect("=", TokenType.COMPOUNDASSIGNOP, TokenType.OP);
 		    if ((op.type == TokenType.OP) && !op.data.equals("=")) {
-			if (!OperatorDef.operatorDefExists(op.data, EnumOperatorType.PREFIX)) throw new GrammarException("1. Undefined prefix operator: " + op.data, op.line, op.columnStart);
+			if (!OperatorDef.operatorDefExists(op.data, EnumOperatorType.PREFIX)) throw new GrammarException("1. "
+				+ " operator: " + op.data, op.line, op.columnStart);
 			OperatorDef opDef = OperatorDef.getOperatorDef(op.data, EnumOperatorType.PREFIX);
 			return new NodeUnary(op.line, op.columnStart, (NodeVariable) stmt, opDef, false);
 		    }
@@ -673,7 +674,6 @@ public class Parser {
 		break;
 	    case OP:
 		if (!OperatorDef.operatorDefExists(next.data, EnumOperatorType.PREFIX)){
-		    System.out.println(OperatorDef.operatorDefs.values());
 		    throw new GrammarException("Undefined prefix operator: " + next.data, next.line, next.columnStart);
 		}
 		final OperatorDef operator = OperatorDef.getOperatorDef(next.data, EnumOperatorType.PREFIX);

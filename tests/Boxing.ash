@@ -1,4 +1,4 @@
-include stdlib.Lang
+include BoxingDefFile
 public class Boxing {
 	public static func main(args : [String]) {
 		var a : Integer = ^3
