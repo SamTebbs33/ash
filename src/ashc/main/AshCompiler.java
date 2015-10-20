@@ -23,6 +23,7 @@ public class AshCompiler {
     public String relFilePath, parentPath;
     public int errors;
     public String fileName;
+    private boolean defFile = false;
 
     public static Stack<AshCompiler> compilers = new Stack<AshCompiler>();
 
@@ -39,6 +40,7 @@ public class AshCompiler {
 
     public void parseSourceFile() {
 	try {
+	    defFile = false;
 	    fileNode = parser.parseFile();
 	} catch (final GrammarException e) {
 	    parser.handleException(e);
@@ -46,20 +48,24 @@ public class AshCompiler {
     }
 
     public void preAnalyse() {
-	if (fileNode != null) fileNode.preAnalyse();
-	else if (defFileNode != null) defFileNode.preAnalyse();
+	if (defFile){
+	    defFileNode.preAnalyse();
+	}
+	else {
+	    fileNode.preAnalyse();
+	}
     }
 
     public void analyse() {
-	if (fileNode != null) fileNode.analyse();
-	else if (defFileNode != null) defFileNode.analyse();
+	if (!defFile) fileNode.analyse();
+	else defFileNode.analyse();
     }
 
     public void generate() {
-	if (fileNode != null) {
+	if (!defFile) {
 	    fileNode.generate();
 	    GenNode.generate();
-	} else if (defFileNode != null) {
+	} else {
 	    defFileNode.generate();
 	    GenNode.generate();
 	}
@@ -71,6 +77,7 @@ public class AshCompiler {
 
     public void parseDefFile() {
 	try {
+	    defFile = true;
 	    defFileNode = parser.parseDefFile();
 	} catch (final GrammarException e) {
 	    parser.handleException(e);

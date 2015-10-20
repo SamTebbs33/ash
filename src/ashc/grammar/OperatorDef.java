@@ -79,13 +79,15 @@ public class OperatorDef {
 
     static {
 
-	final NativeOpInfo[] equalityOpInfo = new NativeOpInfo[] { new NativeOpInfo(-1, EnumInstructionOperand.BYTE, EnumInstructionOperand.BOOL),
+	final NativeOpInfo[] relationalOpInfo = new NativeOpInfo[] { new NativeOpInfo(-1, EnumInstructionOperand.BYTE, EnumInstructionOperand.BOOL),
 		new NativeOpInfo(-1, EnumInstructionOperand.CHAR, EnumInstructionOperand.BOOL),
 		new NativeOpInfo(-1, EnumInstructionOperand.SHORT, EnumInstructionOperand.BOOL),
 		new NativeOpInfo(-1, EnumInstructionOperand.INT, EnumInstructionOperand.BOOL),
 		new NativeOpInfo(-1, EnumInstructionOperand.FLOAT, EnumInstructionOperand.BOOL),
 		new NativeOpInfo(-1, EnumInstructionOperand.DOUBLE, EnumInstructionOperand.BOOL),
 		new NativeOpInfo(-1, EnumInstructionOperand.LONG, EnumInstructionOperand.LONG) };
+	
+	final NativeOpInfo[] equalityOpInfo = new NativeOpInfo[]{ new NativeOpInfo(-1, EnumInstructionOperand.BYTE, EnumInstructionOperand.BOOL), new NativeOpInfo(-1, EnumInstructionOperand.CHAR, EnumInstructionOperand.BOOL), new NativeOpInfo(-1, EnumInstructionOperand.SHORT, EnumInstructionOperand.BOOL), new NativeOpInfo(-1, EnumInstructionOperand.INT, EnumInstructionOperand.BOOL), new NativeOpInfo(-1, EnumInstructionOperand.FLOAT, EnumInstructionOperand.BOOL), new NativeOpInfo(-1, EnumInstructionOperand.DOUBLE, EnumInstructionOperand.BOOL), new NativeOpInfo(-1, EnumInstructionOperand.LONG, EnumInstructionOperand.LONG), new NativeOpInfo(-1, EnumInstructionOperand.ARRAY, EnumInstructionOperand.BOOL), new NativeOpInfo(-1, EnumInstructionOperand.REFERENCE, EnumInstructionOperand.BOOL)};
 
 	addOperatorDef(new OperatorDef("?", "ternary", EnumOperatorType.BINARY));
 
@@ -101,20 +103,20 @@ public class OperatorDef {
 
 	addOperatorDef(new OperatorDefNative(EnumOperation.UNDEFINED, "!", "optional_unwrap", EnumOperatorType.POSTFIX, 0, EnumOperatorAssociativity.NONE));
 	addOperatorDef(new OperatorDefNative(EnumOperation.OR, "||", "or", EnumOperatorType.BINARY, 10, EnumOperatorAssociativity.LEFT, new NativeOpInfo(-1, EnumInstructionOperand.BOOL)));
-	addOperatorDef(new OperatorDefNative(EnumOperation.AND, "&&", "and", EnumOperatorType.BINARY, 20, EnumOperatorAssociativity.LEFT, new NativeOpInfo(-1, EnumInstructionOperand.BOOL)));
+	addOperatorDef(new OperatorDefNative(EnumOperation.AND, "&&", "and", EnumOperatorType.BINARY, 20, EnumOperatorAssociativity.NONE, new NativeOpInfo(-1, EnumInstructionOperand.BOOL)));
 	addOperatorDef(new OperatorDefNative(EnumOperation.BIT_OR, "|", "bit_or", EnumOperatorType.BINARY, 30, EnumOperatorAssociativity.LEFT, new NativeOpInfo(Opcodes.IOR, EnumInstructionOperand.BYTE, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IOR, EnumInstructionOperand.CHAR, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IOR, EnumInstructionOperand.SHORT, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IOR, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.LOR, EnumInstructionOperand.LONG, EnumInstructionOperand.LONG)));
 
 	addOperatorDef(new OperatorDefNative(EnumOperation.XOR, "^", "bit_xor", EnumOperatorType.BINARY, 40, EnumOperatorAssociativity.LEFT, new NativeOpInfo(Opcodes.IXOR, EnumInstructionOperand.BYTE, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IXOR, EnumInstructionOperand.CHAR, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IXOR, EnumInstructionOperand.SHORT, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IXOR, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.LXOR, EnumInstructionOperand.LONG, EnumInstructionOperand.LONG)));
 
 	addOperatorDef(new OperatorDefNative(EnumOperation.BIT_AND, "&", "bit_and", EnumOperatorType.BINARY, 50, EnumOperatorAssociativity.LEFT, new NativeOpInfo(Opcodes.IAND, EnumInstructionOperand.BYTE, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IAND, EnumInstructionOperand.CHAR, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IAND, EnumInstructionOperand.SHORT, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.IAND, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.LAND, EnumInstructionOperand.LONG, EnumInstructionOperand.LONG)));
 
-	addOperatorDef(new OperatorDefNative(EnumOperation.EQUAL, "==", "equal", EnumOperatorType.BINARY, 60, EnumOperatorAssociativity.NONE, new NativeOpInfo(-1, EnumInstructionOperand.BYTE, EnumInstructionOperand.BOOL), new NativeOpInfo(-1, EnumInstructionOperand.CHAR, EnumInstructionOperand.BOOL), new NativeOpInfo(-1, EnumInstructionOperand.SHORT, EnumInstructionOperand.BOOL), new NativeOpInfo(-1, EnumInstructionOperand.INT, EnumInstructionOperand.BOOL), new NativeOpInfo(-1, EnumInstructionOperand.FLOAT, EnumInstructionOperand.BOOL), new NativeOpInfo(-1, EnumInstructionOperand.DOUBLE, EnumInstructionOperand.BOOL), new NativeOpInfo(-1, EnumInstructionOperand.LONG, EnumInstructionOperand.LONG), new NativeOpInfo(-1, EnumInstructionOperand.ARRAY, EnumInstructionOperand.BOOL), new NativeOpInfo(-1, EnumInstructionOperand.REFERENCE, EnumInstructionOperand.BOOL)));
+	addOperatorDef(new OperatorDefNative(EnumOperation.EQUAL, "==", "equal", EnumOperatorType.BINARY, 60, EnumOperatorAssociativity.NONE, equalityOpInfo));
 
-	addOperatorDef(new OperatorDefNative(EnumOperation.NOT_EQUAL, "!=", "not_equal", EnumOperatorType.BINARY, 60, EnumOperatorAssociativity.LEFT, equalityOpInfo));
-	addOperatorDef(new OperatorDefNative(EnumOperation.LESS, "<", "less", EnumOperatorType.BINARY, 70, EnumOperatorAssociativity.LEFT, equalityOpInfo));
-	addOperatorDef(new OperatorDefNative(EnumOperation.GREATER, ">", "greater", EnumOperatorType.BINARY, 70, EnumOperatorAssociativity.LEFT, equalityOpInfo));
-	addOperatorDef(new OperatorDefNative(EnumOperation.LESS_EQUAL, "<=", "less_equal", EnumOperatorType.BINARY, 70, EnumOperatorAssociativity.LEFT, equalityOpInfo));
-	addOperatorDef(new OperatorDefNative(EnumOperation.GREATER_EQUAL, ">=", "greater_equal", EnumOperatorType.BINARY, 70, EnumOperatorAssociativity.LEFT, equalityOpInfo));
+	addOperatorDef(new OperatorDefNative(EnumOperation.NOT_EQUAL, "!=", "not_equal", EnumOperatorType.BINARY, 60, EnumOperatorAssociativity.NONE, equalityOpInfo));
+	addOperatorDef(new OperatorDefNative(EnumOperation.LESS, "<", "less", EnumOperatorType.BINARY, 70, EnumOperatorAssociativity.LEFT, relationalOpInfo));
+	addOperatorDef(new OperatorDefNative(EnumOperation.GREATER, ">", "greater", EnumOperatorType.BINARY, 70, EnumOperatorAssociativity.LEFT, relationalOpInfo));
+	addOperatorDef(new OperatorDefNative(EnumOperation.LESS_EQUAL, "<=", "less_equal", EnumOperatorType.BINARY, 70, EnumOperatorAssociativity.LEFT, relationalOpInfo));
+	addOperatorDef(new OperatorDefNative(EnumOperation.GREATER_EQUAL, ">=", "greater_equal", EnumOperatorType.BINARY, 70, EnumOperatorAssociativity.LEFT, relationalOpInfo));
 
 	addOperatorDef(new OperatorDefNative(EnumOperation.L_SHIFT, "<<", "left_shift", EnumOperatorType.BINARY, 100, EnumOperatorAssociativity.LEFT, new NativeOpInfo(Opcodes.ISHL, EnumInstructionOperand.INT), new NativeOpInfo(Opcodes.ISHL, EnumInstructionOperand.BYTE, EnumInstructionOperand.INT, EnumInstructionOperand.BYTE), new NativeOpInfo(Opcodes.ISHL, EnumInstructionOperand.CHAR, EnumInstructionOperand.INT, EnumInstructionOperand.CHAR), new NativeOpInfo(Opcodes.ISHL, EnumInstructionOperand.SHORT, EnumInstructionOperand.INT, EnumInstructionOperand.SHORT), new NativeOpInfo(Opcodes.LSHL, EnumInstructionOperand.LONG, EnumInstructionOperand.INT, EnumInstructionOperand.LONG)));
 
@@ -145,6 +147,11 @@ public class OperatorDef {
 
     public static OperatorDef getOperatorDef(final String id, EnumOperatorType type) {
 	return operatorDefs.containsKey(type.opIdPrefix+id) ? operatorDefs.get(type.opIdPrefix+id) : null;
+    }
+    
+    @Override
+    public String toString() {
+        return this.id + ":" +  this.name + ":" + this.type.name().toLowerCase();
     }
 
     public static class OperatorDefNative extends OperatorDef {

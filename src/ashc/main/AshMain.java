@@ -27,6 +27,13 @@ public class AshMain {
 	Semantics.addType(new Type(new QualifiedName("ash.lang.Range"), EnumModifier.PUBLIC.intVal, EnumType.CLASS), false);
 	TypeImporter.loadClass("java.lang.String", "String");
 	TypeImporter.loadClass("java.lang.Integer", "Integer");
+	TypeImporter.loadClass("java.lang.Boolean", "Boolean");
+	TypeImporter.loadClass("java.lang.Character", "Character");
+	TypeImporter.loadClass("java.lang.Float", "Float");
+	TypeImporter.loadClass("java.lang.Double", "Double");
+	TypeImporter.loadClass("java.lang.Short", "Short");
+	TypeImporter.loadClass("java.lang.Long", "Long");
+	TypeImporter.loadClass("java.lang.Byte", "Byte");
 	TypeImporter.loadClass("java.lang.Object", "Object");
 	TypeImporter.loadClass("java.lang.System", "System");
 	TypeImporter.loadClass("java.lang.Iterable", "Iterable");

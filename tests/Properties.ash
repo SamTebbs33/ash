@@ -1,6 +1,6 @@
 class Properties {
 	static var name = "" -> {
-		set -> newVal.isEmpty() ? "unnamed" : newVal
+		set = newVal.isEmpty() ? "unnamed" : newVal
 	}
 	public static func main(args : [String]) {
 		System.out.println(name)

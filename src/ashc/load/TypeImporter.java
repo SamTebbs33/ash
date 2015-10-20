@@ -106,6 +106,7 @@ public class TypeImporter {
 	    if (compiler.errors == 0) compiler.generate();
 	    GenNode.types.clear();
 	    GenNode.typeStack.clear();
+	    AshCompiler.compilers.pop();
 	} catch (final IOException e) {
 	    AshError.compilerError("Cannot find definition file: " + defFile.toString());
 	}

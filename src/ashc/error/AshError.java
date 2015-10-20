@@ -24,12 +24,12 @@ public class AshError extends Exception {
 	TYPE_DOES_NOT_EXTEND("Type (%s) does not extend %s"),
 
 	EXPECTED_STRING_INTERP_TERMINATOR("Expected terminating } for string interpolated expression"),
-	PATH_DOES_NOT_MATCH_PACKAGE("The relative path to this file does not match the package structure (%s)"),
+	PATH_DOES_NOT_MATCH_PACKAGE("The relative path to this file (%s) does not match the package structure (%s)"),
 	CANNOT_FIND_CLASS("Cannot find class file or source file \"%s\""),
 
 	FUNC_ALREADY_EXISTS("The function \'%s\' already exists"),
 	FUNC_ALREADY_EXISTS_IN_TYPE("The function \'%s\' already exists in type %s"),
-	FUNC_DOES_NOT_EXIST_IN_TYPE("The function \'%s\' with the given arguments doesn't exist in type %s"),
+	FUNC_DOES_NOT_EXIST_IN_TYPE("The function \'%s\' with the given arguments (%s) doesn't exist in type %s"),
 	FUNC_DOES_NOT_EXIST("The function \'%s\' with the given arguments doesn't exist"),
 	FUNC_IS_NOT_VISIBLE("The function \'%s\' is not visible from the current context"),
 	CONSTRUCTOR_DOES_NOT_EXIST("The constructor with given arguments does not exist in type %s"),

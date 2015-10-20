@@ -1,44 +1,51 @@
+package stdlib
 operator ?? = type: binary, name: not_null, assoc: none, prec: 120
 operator === = type: binary, name: value_equality, assoc: none, prec: 120
 operator ! = type: prefix, name: bool_not
 operator ** = type: binary, name: pow, assoc: none, prec: 120
+operator ^ = type: prefix, name: boxing
 
-func String.toInt() : int -> Integer.parseInt(this)
-func String.toInt(radix : int) : int -> Integer.parseInt(this, radix)
+func String.toInt() -> int = Integer.parseInt(this)
+//func String.toInt(radix : int) -> int = Integer.parseInt(this, radix)
 
-func println(str : String) -> System.out.println(str)
-func println(obj : Object) -> System.out.println(obj)
-func println(b : bool) -> System.out.println(b)
-func println(ch : char) -> System.out.println(ch)
-func println(i : int) -> System.out.println(i)
-func println(i : uint) -> System.out.println(i)
-func println(chs : [char]) -> System.out.println(chs)
-func println(f : float) -> System.out.println(f)
-func println(d : double) -> System.out.println(d)
-func println(l : long) -> System.out.println(l)
+func println(str : String) = System.out.println(str)
+func println(obj : Object) = System.out.println(obj)
+func println(b : bool) = System.out.println(b)
+func println(ch : char) = System.out.println(ch)
+func println(i : int) = System.out.println(i)
+//func println(i : uint) = System.out.println(i)
+func println(chs : [char]) = System.out.println(chs)
+func println(f : float) = System.out.println(f)
+func println(d : double) = System.out.println(d)
+func println(l : long) = System.out.println(l)
 
-func print(str : Sting) -> System.out.println(str)
-func print(obj : Object) -> System.out.println(obj)
-func print(b : bool) -> System.out.println(b)
-func print(ch : char) -> System.out.println(ch)
-func print(i : int) -> System.out.println(i)
-func print(i : uint) -> System.out.println(i)
-func print(chs : [char]) -> System.out.println(chs)
-func print(f : float) -> System.out.println(f)
-func print(d : double) -> System.out.println(d)
-func print(l : long) -> System.out.println(l)
+func print(str : String) = System.out.println(str)
+func print(obj : Object) = System.out.println(obj)
+func print(b : bool) = System.out.println(b)
+func print(ch : char) = System.out.println(ch)
+func print(i : int) = System.out.println(i)
+//func print(i : uint) = System.out.println(i)
+func print(chs : [char]) = System.out.println(chs)
+func print(f : float) = System.out.println(f)
+func print(d : double) = System.out.println(d)
+func print(l : long) = System.out.println(l)
 
-binary func ===(obj : Object, obj2 : Object) : bool -> obj.equals(obj2)
-binary func ===(obj : Object?, obj2 : Object) : bool -> obj != null && obj.equals(obj2)
-binary func ===(obj : Object, obj2 : Object?) : bool -> obj2 != null && obj2.equals(obj)
-binary func ===(obj : Object?, obj2 : Object?) : bool {
-    if (obj == null ^ obj2 == null) return false
-    else if (obj == null && obj2 == null) return true
-    return obj.equals(obj2)
-}
-
-binary func ??(objOpt : Object?, obj : Object) : Object -> objOpt != null ? objOpt! : obj
-
-prefix func !(operand : bool) : bool -> operand ? false : true
-
-binary func **(operand : double, exponent : double) : double -> Math.pow(operand, exponent)
+binary func ??(objOpt : Object?, obj : Object) -> Object = (objOpt != null) ? objOpt! : obj
+prefix func !(operand : bool) -> bool = operand ? false : true
+//binary func **(operand : double, exponent : double) -> double = Math.pow(operand, exponent)
+prefix func ^(operand : int) -> Integer = Integer.valueOf(operand)!
+prefix func ^(operand : Integer) -> int = operand.intValue()
+prefix func ^(operand : bool) -> Boolean = Boolean.valueOf(operand)!
+prefix func ^(operand : Boolean) -> bool = operand.booleanValue()
+prefix func ^(operand : char) -> Character = Character.valueOf(operand)!
+prefix func ^(operand : Character) -> char = operand.charValue()
+prefix func ^(operand : float) -> Float = Float.valueOf(operand)!
+prefix func ^(operand : Float) -> float = operand.floatValue()
+prefix func ^(operand : double) -> Double = Double.valueOf(operand)!
+prefix func ^(operand : Double) -> double = operand.doubleValue()
+prefix func ^(operand : byte) -> Byte = Byte.valueOf(operand)!
+prefix func ^(operand : Byte) -> byte = operand.byteValue()
+prefix func ^(operand : short) -> Short = Short.valueOf(operand)!
+prefix func ^(operand : Short) -> short = operand.shortValue()
+prefix func ^(operand : long) -> Long = Long.valueOf(operand)!
+prefix func ^(operand : Long) -> long = operand.longValue()

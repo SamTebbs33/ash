@@ -91,8 +91,8 @@ public class Parser {
 
     public static class GrammarException extends Exception {
 
-	public GrammarException(final String arg0) {
-	    super(arg0);
+	public GrammarException(final String arg0, int line, int col) {
+	    super("Error [" + line + ":" + col + "] " + arg0);
 	}
 
 	public void print(final int lineOffset, final int columnOffset, final Lexer lexer) {
@@ -420,11 +420,11 @@ public class Parser {
 	NodeType type = null, throwsType = null;
 	NodeFuncBlock block = new NodeFuncBlock();
 	if(needsBody){
-	    expect(TokenType.COLON, TokenType.ARROW, TokenType.LAMBDAARROW, TokenType.BRACEL);
+	    expect("=", TokenType.ARROW, TokenType.LAMBDAARROW, TokenType.BRACEL);
 	    rewind();
 	}
 
-	if (getNext().type == TokenType.COLON) type = parseType();
+	if (getNext().type == TokenType.LAMBDAARROW) type = parseType();
 	else {
 	    type = new NodeType(id.line, id.columnStart, "void");
 	    rewind();
@@ -437,7 +437,7 @@ public class Parser {
 	else {
 	    Token next = getNext();
 	    rewind();
-	    if(next.type == TokenType.LAMBDAARROW || next.type == TokenType.BRACEL){
+	    if(next.data.equals("=") || next.type == TokenType.BRACEL){
 		block = parseFuncBlock(true, !type.id.equals("void"));
 	    }else{
 		hasBody = false;
@@ -460,7 +460,7 @@ public class Parser {
     private NodeFuncBlock parseFuncBlock(final boolean allowSingleLine, final boolean singleLineExpression) throws GrammarException {
 	final NodeFuncBlock block = new NodeFuncBlock();
 	Token token = null;
-	if (allowSingleLine) token = expect(TokenType.LAMBDAARROW, TokenType.BRACEL);
+	if (allowSingleLine) token = expect("=", TokenType.BRACEL);
 	else token = expect(TokenType.BRACEL);
 	if (token.type == TokenType.BRACEL) while (getNext().type != TokenType.BRACER) {
 	    rewind();
@@ -494,7 +494,8 @@ public class Parser {
 		if (stmt instanceof NodeVariable) {
 		    final Token op = expect("=", TokenType.COMPOUNDASSIGNOP, TokenType.OP);
 		    if ((op.type == TokenType.OP) && !op.data.equals("=")) {
-			if (!OperatorDef.operatorDefExists(op.data, EnumOperatorType.PREFIX)) throw new GrammarException("Undefined prefix operator: " + op.data);
+			if (!OperatorDef.operatorDefExists(op.data, EnumOperatorType.PREFIX)) throw new GrammarException("1. "
+				+ " operator: " + op.data, op.line, op.columnStart);
 			OperatorDef opDef = OperatorDef.getOperatorDef(op.data, EnumOperatorType.PREFIX);
 			return new NodeUnary(op.line, op.columnStart, (NodeVariable) stmt, opDef, false);
 		    }
@@ -672,9 +673,10 @@ public class Parser {
 		expr = new NodeSelf(next.line, next.columnStart);
 		break;
 	    case OP:
-		if (!OperatorDef.operatorDefExists(next.data, EnumOperatorType.PREFIX)) throw new GrammarException("Undefined prefix operator: " + next.data);
+		if (!OperatorDef.operatorDefExists(next.data, EnumOperatorType.PREFIX)){
+		    throw new GrammarException("Undefined prefix operator: " + next.data, next.line, next.columnStart);
+		}
 		final OperatorDef operator = OperatorDef.getOperatorDef(next.data, EnumOperatorType.PREFIX);
-		if (operator.type != EnumOperatorType.PREFIX) throw new GrammarException("The \"" + next.data + "\" operator is not a prefix operator");
 		expr = new NodeUnary(next.line, next.columnStart, parsePrimaryExpression(), operator, true);
 		break;
 	    case BRACEL:
@@ -828,7 +830,7 @@ public class Parser {
 		    return new NodeTernary(expr, exprTrue, parseExpression());
 		}
 		OperatorDef postfixOp = OperatorDef.getOperatorDef(next.data, EnumOperatorType.POSTFIX), binaryOp = OperatorDef.getOperatorDef(next.data, EnumOperatorType.BINARY);
-		if (postfixOp == null && binaryOp == null) throw new GrammarException("Undefined postfix or binary operator: " + next.data);
+		if (postfixOp == null && binaryOp == null) throw new GrammarException("Undefined postfix or binary operator: " + next.data, next.line, next.columnStart);
 		if (postfixOp != null) return new NodeUnary(next.line, next.columnStart, expr, postfixOp, false);
 		else return new NodeBinary(next.line, next.columnStart, expr, binaryOp, parseExpression());
 	    case BRACKETL:
@@ -1115,6 +1117,7 @@ public class Parser {
 
     public NodeDefFile parseDefFile() throws GrammarException {
 	final NodeDefFile defFile = new NodeDefFile();
+	defFile.pkg = parsePackage();
 	defFile.includes = parseIncludes();
 	defFile.imports = parseImports();
 	defFile.operatorDefs = parseOperatorDefs();
@@ -1140,8 +1143,9 @@ public class Parser {
 
     private LinkedList<NodeOperatorDef> parseOperatorDefs() throws GrammarException {
 	final LinkedList<NodeOperatorDef> operatorDefs = new LinkedList<>();
-	while ((getNext()).type == TokenType.OPERATOR)
+	while ((getNext()).type == TokenType.OPERATOR){
 	    operatorDefs.add(parseOperatorDef());
+	}
 	rewind();
 	return operatorDefs;
     }

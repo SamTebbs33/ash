@@ -78,6 +78,11 @@ break statement:
   pass: yes
   run: yes
   
+boxing:
+  path: Boxing
+  pass: yes
+  run: yes
+  
 #match statement:
 #  path: MatchStatement
 #  pass: yes

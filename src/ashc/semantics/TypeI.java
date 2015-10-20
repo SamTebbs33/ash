@@ -164,6 +164,7 @@ public class TypeI {
 	// Optionals can be assigned to non-optionals, but not the other way
 	// around
 	if (!optional && exprType.optional) return false;
+	
 	// If they are both numeric and the array dimensions are 0
 	// if (EnumPrimitive.isNumeric(shortName) && EnumPrimitive.isNumeric(exprType.shortName) && (arrDims == exprType.arrDims)) return true;
 	return (exprType.arrDims == arrDims)
