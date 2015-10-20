@@ -168,7 +168,7 @@ public abstract class Node {
 	@Override
 	public void preAnalyse() {
 	    Semantics.enterDefFile("$Global" + AshCompiler.get().fileName);
-	    pkg.preAnalyse();
+	    if(pkg != null) pkg.preAnalyse();
 	    for (final NodeImport i : imports)
 		i.preAnalyse();
 	    for (final NodeInclude i : includes)
