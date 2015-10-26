@@ -2,77 +2,8 @@ package ashc.grammar;
 
 import java.util.*;
 
-import ashc.grammar.Lexer.InvalidTokenException;
-import ashc.grammar.Lexer.Token;
-import ashc.grammar.Lexer.TokenMatcher;
-import ashc.grammar.Lexer.TokenType;
-import ashc.grammar.Lexer.TokenTypeGroup;
-import ashc.grammar.Lexer.UnexpectedTokenException;
-import ashc.grammar.Node.IExpression;
-import ashc.grammar.Node.IFuncStmt;
-import ashc.grammar.Node.NodeAlias;
-import ashc.grammar.Node.NodeArg;
-import ashc.grammar.Node.NodeArgs;
-import ashc.grammar.Node.NodeArray;
-import ashc.grammar.Node.NodeArrayAccess;
-import ashc.grammar.Node.NodeArraySize;
-import ashc.grammar.Node.NodeAs;
-import ashc.grammar.Node.NodeBinary;
-import ashc.grammar.Node.NodeBool;
-import ashc.grammar.Node.NodeBreak;
-import ashc.grammar.Node.NodeChar;
-import ashc.grammar.Node.NodeClassBlock;
-import ashc.grammar.Node.NodeClassDec;
-import ashc.grammar.Node.NodeContinue;
-import ashc.grammar.Node.NodeDefFile;
-import ashc.grammar.Node.NodeDouble;
-import ashc.grammar.Node.NodeEnumBlock;
-import ashc.grammar.Node.NodeEnumDec;
-import ashc.grammar.Node.NodeEnumInstance;
-import ashc.grammar.Node.NodeExprs;
-import ashc.grammar.Node.NodeFile;
-import ashc.grammar.Node.NodeFloat;
-import ashc.grammar.Node.NodeForIn;
-import ashc.grammar.Node.NodeForNormal;
-import ashc.grammar.Node.NodeFuncBlock;
-import ashc.grammar.Node.NodeFuncCall;
-import ashc.grammar.Node.NodeFuncDec;
-import ashc.grammar.Node.NodeIf;
-import ashc.grammar.Node.NodeImport;
-import ashc.grammar.Node.NodeInclude;
-import ashc.grammar.Node.NodeInteger;
-import ashc.grammar.Node.NodeInterfaceDec;
-import ashc.grammar.Node.NodeIs;
-import ashc.grammar.Node.NodeList;
-import ashc.grammar.Node.NodeListSize;
-import ashc.grammar.Node.NodeLong;
-import ashc.grammar.Node.NodeMatch;
-import ashc.grammar.Node.NodeMatchCase;
-import ashc.grammar.Node.NodeModifier;
-import ashc.grammar.Node.NodeNull;
-import ashc.grammar.Node.NodeOperatorDef;
-import ashc.grammar.Node.NodePackage;
-import ashc.grammar.Node.NodePrefix;
-import ashc.grammar.Node.NodeQualifiedName;
-import ashc.grammar.Node.NodeRange;
-import ashc.grammar.Node.NodeReturn;
-import ashc.grammar.Node.NodeSelf;
-import ashc.grammar.Node.NodeString;
-import ashc.grammar.Node.NodeTernary;
-import ashc.grammar.Node.NodeThis;
-import ashc.grammar.Node.NodeTupleExpr;
-import ashc.grammar.Node.NodeTupleExprArg;
-import ashc.grammar.Node.NodeType;
-import ashc.grammar.Node.NodeTypeDec;
-import ashc.grammar.Node.NodeTypes;
-import ashc.grammar.Node.NodeUnary;
-import ashc.grammar.Node.NodeUnwrapOptional;
-import ashc.grammar.Node.NodeVarAssign;
-import ashc.grammar.Node.NodeVarDec;
-import ashc.grammar.Node.NodeVarDecExplicit;
-import ashc.grammar.Node.NodeVarDecImplicit;
-import ashc.grammar.Node.NodeVariable;
-import ashc.grammar.Node.NodeWhile;
+import ashc.grammar.Lexer.*;
+import ashc.grammar.Node.*;
 import ashc.grammar.OperatorDef.EnumOperatorType;
 import ashc.util.*;
 
@@ -140,6 +71,12 @@ public class Parser {
 	    return t;
 	}
 	return null;
+    }
+    
+    private Token current() {
+	Token t = getNext();
+	rewind();
+	return t;
     }
 
     /**
@@ -646,7 +583,6 @@ public class Parser {
 
 	do {
 	    final IExpression expr = parseExpression();
-	    // System.out.println(expr);
 	    exprs.add(expr);
 	    next = getNext();
 	} while (next.type == TokenType.COMMA);
@@ -659,6 +595,9 @@ public class Parser {
 	final Token next = expect(Lexer.TokenTypeGroup.EXPRESSION_STARTER);
 	IExpression expr = null;
 	switch (next.type) {
+	    case FUNC:
+		expr = parseClosure(next.line, next.columnStart);
+		break;
 	    case NULL:
 		expr = new NodeNull();
 		break;
@@ -778,6 +717,15 @@ public class Parser {
 	 * parsePrimaryExpression()); default: rewind(); } }
 	 */
 	return expr;
+    }
+
+    private NodeClosure parseClosure(int line, int col) throws GrammarException {
+	expect(TokenType.BRACEL);
+	NodeClosure closure = new NodeClosure(line, col);
+	if(current().type != TokenType.UNDERSCORE) closure.args = parseArgs();
+	if(current().type == TokenType.LAMBDAARROW) closure.type = parseType();
+	closure.body = parseFuncBlock(true, closure.type != null);
+	return closure;
     }
 
     private LinkedList<NodeTupleExprArg> parseTupleExpr() throws GrammarException {

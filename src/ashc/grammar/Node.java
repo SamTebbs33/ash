@@ -43,7 +43,10 @@ import ashc.codegen.GenNode.GenNodeVar;
 import ashc.codegen.GenNode.GenNodeVarLoad;
 import ashc.codegen.GenNode.GenNodeVarStore;
 import ashc.grammar.Lexer.Token;
+import ashc.grammar.Node.NodeArgs;
+import ashc.grammar.Node.NodeFuncBlock;
 import ashc.grammar.Node.NodePackage;
+import ashc.grammar.Node.NodeType;
 import ashc.grammar.OperatorDef.EnumOperatorAssociativity;
 import ashc.grammar.OperatorDef.EnumOperatorType;
 import ashc.grammar.Parser.GrammarException;
@@ -3436,6 +3439,34 @@ public abstract class Node {
 	public void generate() {
 	    addFuncStmt(new GenNodeJump(GenNode.loopStartLabel));
 	}
+	
+    }
+    
+    public static class NodeClosure extends Node implements IExpression {
+
+	public NodeArgs args;
+	public NodeType type;
+	public NodeFuncBlock body;
+
+	public NodeClosure(int line, int column) {
+	    super(line, column);
+	}
+
+	@Override
+	public TypeI getExprType() {
+	    return null;
+	}
+
+	@Override
+	public void registerScopedChecks() {}
+
+	@Override
+	public void analyse() {
+	    super.analyse();
+	}
+
+	@Override
+	public void generate() {}
 	
     }
 
