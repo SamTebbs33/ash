@@ -145,12 +145,12 @@ public class Lexer {
 	NEW("new", true),
 	OPTYPE("binary|prefix|postfix", "operator type"),
 
-	IF("if"),
-	ELSE("else"),
-	WHILE("while"),
-	FOR("for"),
-	MATCH("match "),
-	IN("in "),
+	IF("if", true),
+	ELSE("else", true),
+	WHILE("while", true),
+	FOR("for", true),
+	MATCH("match ", true),
+	IN("in", true),
 
 	ID(Lexer.keywordRegex + "([a-zA-Z_](\\d|[a-zA-Z_])*)", "identifier"),
 	EOF("\\Z", "end of file"),

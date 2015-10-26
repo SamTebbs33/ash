@@ -4,6 +4,7 @@ operator === = type: binary, name: value_equality, assoc: none, prec: 120
 operator ! = type: prefix, name: bool_not
 operator ** = type: binary, name: pow, assoc: none, prec: 120
 operator ^ = type: prefix, name: boxing
+opeartor >> = type: postfix, name: collection_stream
 
 func String.toInt() -> int = Integer.parseInt(this)
 //func String.toInt(radix : int) -> int = Integer.parseInt(this, radix)
@@ -30,6 +31,8 @@ func print(f : float) = System.out.println(f)
 func print(d : double) = System.out.println(d)
 func print(l : long) = System.out.println(l)
 
+//postfix func >>(collection : Collection) -> Stream = collection.stream()
+binary func %(fmt : String, args : [String]) -> String = String.format(fmt, args)
 binary func ??(objOpt : Object?, obj : Object) -> Object = (objOpt != null) ? objOpt! : obj
 prefix func !(operand : bool) -> bool = operand ? false : true
 //binary func **(operand : double, exponent : double) -> double = Math.pow(operand, exponent)
