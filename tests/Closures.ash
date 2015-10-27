@@ -1,4 +1,4 @@
-public class Test {
+public class Closures {
 
     public static func main(args : [String]) {
 

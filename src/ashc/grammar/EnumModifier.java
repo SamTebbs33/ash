@@ -17,16 +17,16 @@ public enum EnumModifier {
 
     public int intVal;
 
-    private EnumModifier(final int intVal) {
-	this.intVal = intVal;
+    EnumModifier(final int intVal) {
+        this.intVal = intVal;
     }
 
     public static int stripOverridingModifiers(int modifiers) {
-	modifiers = BitOp.clearPow2(modifiers, OVERRIDE.intVal);
-	modifiers = BitOp.clearPow2(modifiers, FINAL.intVal);
-	modifiers = BitOp.clearPow2(modifiers, REQUIRED.intVal);
-	modifiers = BitOp.clearPow2(modifiers, PUBLIC.intVal);
-	return modifiers;
+        modifiers = BitOp.clearPow2(modifiers, OVERRIDE.intVal);
+        modifiers = BitOp.clearPow2(modifiers, FINAL.intVal);
+        modifiers = BitOp.clearPow2(modifiers, REQUIRED.intVal);
+        modifiers = BitOp.clearPow2(modifiers, PUBLIC.intVal);
+        return modifiers;
     }
 
 }
