@@ -3599,6 +3599,14 @@ public abstract class Node {
             GenNode.addGenNodeFunction(func);
             body.generate();
             GenNode.exitGenNodeFunction();
+
+            // Generate the class' constructor
+            GenNode.addGenNodeFunction(new GenNodeFunction("<init>", EnumModifier.PUBLIC.intVal, "V"));
+            addFuncStmt(new GenNodeThis());
+            addFuncStmt(new GenNodeFuncCall("java/lang/Object", "<init>", "()V", false, false, false, true));
+            addFuncStmt(new GenNodeReturn());
+            GenNode.exitGenNodeFunction();
+
             GenNode.exitGenNodeType();
 
             addFuncStmt(new GenNodeNew(name));
