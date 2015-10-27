@@ -82,6 +82,11 @@ boxing:
   path: Boxing
   pass: yes
   run: yes
+
+closures:
+  path: Closures
+  pass: yes
+  run: yes
   
 #match statement:
 #  path: MatchStatement

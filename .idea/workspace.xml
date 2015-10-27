@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="bb712bcf-5add-4d8c-8f97-6a1b9719dea6" name="Default" comment="Fixed analysis of closure calls as expressions">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ashc/codegen/GenNode.java" afterPath="$PROJECT_DIR$/src/ashc/codegen/GenNode.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ashc/grammar/Node.java" afterPath="$PROJECT_DIR$/src/ashc/grammar/Node.java" />
+    <list default="true" id="bb712bcf-5add-4d8c-8f97-6a1b9719dea6" name="Default" comment="Added assignment checking to closure types">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Test.ash" afterPath="$PROJECT_DIR$/Test.ash" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ashc/semantics/TypeI.java" afterPath="$PROJECT_DIR$/src/ashc/semantics/TypeI.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tests.yml" afterPath="$PROJECT_DIR$/tests.yml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="ash.iws" />
@@ -50,11 +48,31 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Test.ash" pinned="false" current-in-tab="true">
+      <file leaf-file-name="Test.ash" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Test.ash">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.15734266">
-              <caret line="6" column="10" selection-start-line="6" selection-start-column="10" selection-end-line="6" selection-end-column="10" />
+            <state vertical-scroll-proportion="0.0">
+              <caret line="12" column="0" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Closures.ash" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/tests/Closures.ash">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0">
+              <caret line="9" column="0" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="tests.yml" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/tests.yml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="2.2027972">
+              <caret line="84" column="0" selection-start-line="84" selection-start-column="0" selection-end-line="84" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -64,7 +82,7 @@
         <entry file="file://$PROJECT_DIR$/Test.class">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="12" column="0" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
+              <caret line="16" column="0" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -119,7 +137,9 @@
         <option value="$PROJECT_DIR$/src/ashc/semantics/TypeI.java" />
         <option value="$PROJECT_DIR$/src/ashc/codegen/GenNode.java" />
         <option value="$PROJECT_DIR$/src/ashc/grammar/Node.java" />
+        <option value="$PROJECT_DIR$/tests/Closures.ash" />
         <option value="$PROJECT_DIR$/Test.ash" />
+        <option value="$PROJECT_DIR$/tests.yml" />
       </list>
     </option>
   </component>
@@ -256,6 +276,20 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="ash" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ash" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ash" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="tests" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -587,12 +621,18 @@
       <option name="project" value="LOCAL" />
       <updated>1445989088989</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Added assignment checking to closure types">
+      <created>1445989405711</created>
+      <option name="number" value="00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1445989405711</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -602,7 +642,7 @@
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934928" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.20318726" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.20318726" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.24609375" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
@@ -639,7 +679,8 @@
     <MESSAGE value="Added generation of closure class constructor" />
     <MESSAGE value="Added generation of closure calls" />
     <MESSAGE value="Fixed analysis of closure calls as expressions" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixed analysis of closure calls as expressions" />
+    <MESSAGE value="Added assignment checking to closure types" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added assignment checking to closure types" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
   <component name="XDebuggerManager">
@@ -696,30 +737,30 @@
           <caret line="29" column="0" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
           <folding>
             <element signature="imports" expanded="false" />
-            <element signature="e#6319#6320#0" expanded="false" />
-            <element signature="e#6387#6388#0" expanded="false" />
-            <element signature="e#8263#8264#0" expanded="false" />
-            <element signature="e#8331#8332#0" expanded="false" />
-            <element signature="e#8363#8364#0" expanded="false" />
-            <element signature="e#8433#8434#0" expanded="false" />
-            <element signature="e#8474#8475#0" expanded="false" />
-            <element signature="e#8505#8506#0" expanded="false" />
-            <element signature="e#8537#8538#0" expanded="false" />
-            <element signature="e#8571#8572#0" expanded="false" />
-            <element signature="e#8598#8599#0" expanded="false" />
-            <element signature="e#8660#8661#0" expanded="false" />
-            <element signature="e#8703#8704#0" expanded="false" />
-            <element signature="e#8736#8737#0" expanded="false" />
-            <element signature="e#8960#8961#0" expanded="false" />
-            <element signature="e#9035#9036#0" expanded="false" />
-            <element signature="e#9078#9079#0" expanded="false" />
-            <element signature="e#9111#9112#0" expanded="false" />
-            <element signature="e#9147#9148#0" expanded="false" />
-            <element signature="e#9220#9221#0" expanded="false" />
-            <element signature="e#9252#9253#0" expanded="false" />
-            <element signature="e#9323#9324#0" expanded="false" />
-            <element signature="e#15665#15666#0" expanded="false" />
-            <element signature="e#15725#15726#0" expanded="false" />
+            <element signature="e#6328#6329#0" expanded="false" />
+            <element signature="e#6396#6397#0" expanded="false" />
+            <element signature="e#8272#8273#0" expanded="false" />
+            <element signature="e#8340#8341#0" expanded="false" />
+            <element signature="e#8372#8373#0" expanded="false" />
+            <element signature="e#8442#8443#0" expanded="false" />
+            <element signature="e#8483#8484#0" expanded="false" />
+            <element signature="e#8514#8515#0" expanded="false" />
+            <element signature="e#8546#8547#0" expanded="false" />
+            <element signature="e#8580#8581#0" expanded="false" />
+            <element signature="e#8607#8608#0" expanded="false" />
+            <element signature="e#8669#8670#0" expanded="false" />
+            <element signature="e#8712#8713#0" expanded="false" />
+            <element signature="e#8745#8746#0" expanded="false" />
+            <element signature="e#8969#8970#0" expanded="false" />
+            <element signature="e#9044#9045#0" expanded="false" />
+            <element signature="e#9087#9088#0" expanded="false" />
+            <element signature="e#9120#9121#0" expanded="false" />
+            <element signature="e#9156#9157#0" expanded="false" />
+            <element signature="e#9229#9230#0" expanded="false" />
+            <element signature="e#9261#9262#0" expanded="false" />
+            <element signature="e#9332#9333#0" expanded="false" />
+            <element signature="e#15674#15675#0" expanded="false" />
+            <element signature="e#15734#15735#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -928,7 +969,7 @@
     <entry file="file://$PROJECT_DIR$/Test.class">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="12" column="0" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
+          <caret line="16" column="0" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
           <folding />
         </state>
       </provider>
@@ -961,8 +1002,24 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Test.ash">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.15734266">
-          <caret line="6" column="10" selection-start-line="6" selection-start-column="10" selection-end-line="6" selection-end-column="10" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="12" column="0" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tests/Closures.ash">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="9" column="0" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tests.yml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="2.2027972">
+          <caret line="84" column="0" selection-start-line="84" selection-start-column="0" selection-end-line="84" selection-end-column="0" />
           <folding />
         </state>
       </provider>
