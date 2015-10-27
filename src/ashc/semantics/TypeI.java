@@ -52,6 +52,20 @@ public class TypeI {
             this.args = args;
         }
 
+        @Override
+        public boolean canBeAssignedTo(TypeI type) {
+            if (type instanceof FunctionTypeI) {
+                FunctionTypeI funcType = (FunctionTypeI) type;
+                if (type.canBeAssignedTo(funcType.type)) {
+                    int i = 0;
+                    if (funcType.args.size() != args.size()) return false;
+                    for (TypeI t : funcType.args) if (!args.get(i++).canBeAssignedTo(t)) return false;
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public String toClassName() {
             return "$Closure" + closureID;
         }

@@ -1637,7 +1637,6 @@ public abstract class Node {
                     expr.generate();
                 if (func.hasDefExpr && (args.exprs.size() < func.parameters.size())) func.defExpr.generate();
                 final String name = func.isConstructor() ? "<init>" : OperatorDef.filterOperators(func.qualifiedName.shortName);
-                System.out.println("-> " + func.enclosingType.qualifiedName.toBytecodeName());
                 addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), name, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
             }
         }
