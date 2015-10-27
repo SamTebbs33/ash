@@ -2,6 +2,7 @@ include stdlib.Lang
 
 public class Test {
 	public static func main(args : [String]) {
-		var function = func (x : int, y : int) -> int = x + y
+		var f = func (str : String) = System.out.println(str)
+		f("hello")
 	}
 }

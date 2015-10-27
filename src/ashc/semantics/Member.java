@@ -165,7 +165,7 @@ public class Member {
             for (final IExpression arg : args.exprs)
                 parameters.add(arg.getExprType());
             if (functions.containsKey(id)) for (final Function func : functions.get(id))
-                if (func.paramsAreEqual(parameters)) return func.returnType;
+                if (Semantics.paramsAreEqual(func.hasDefExpr, func.parameters, parameters)) return func.returnType;
             return null;
         }
 
@@ -186,7 +186,8 @@ public class Member {
         public Function getFunc(final String id, final LinkedList<TypeI> parameters, EnumOperatorType opType) {
             if (functions.containsKey(id)) {
                 for (final Function func : functions.get(id)) {
-                    if (func.opType == opType && func.paramsAreEqual(parameters)) return func;
+                    if (func.opType == opType && Semantics.paramsAreEqual(func.hasDefExpr, func.parameters, parameters))
+                        return func;
                 }
             }
 
@@ -286,24 +287,9 @@ public class Member {
         public boolean equals(final Object obj) {
             if (obj instanceof Function) {
                 final Function func = (Function) obj;
-                return qualifiedName.equals(func.qualifiedName) && paramsAreEqual(func.parameters);
+                return qualifiedName.equals(func.qualifiedName) && Semantics.paramsAreEqual(this.hasDefExpr, this.parameters, func.parameters);
             }
             return false;
-        }
-
-        private boolean paramsAreEqual(final LinkedList<TypeI> params2) {
-            if ((parameters.size() == 0) && (params2.size() == 0)) return true;
-            // If the function has a default parameter expression and the size
-            // of parmas2 is 1 less than params then allow it
-            if ((parameters.size() != params2.size()) && !(hasDefExpr && (parameters.size() == (params2.size() + 1))))
-                return false;
-            final int len = Math.min(parameters.size(), params2.size());
-            for (int i = 0; i < len; i++) {
-                // If it is a generic, continue
-                if (generics.contains(parameters.get(i).shortName)) continue;
-                if (!parameters.get(i).canBeAssignedTo(params2.get(i))) return false;
-            }
-            return true;
         }
 
         @Override

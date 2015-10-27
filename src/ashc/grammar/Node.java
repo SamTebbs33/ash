@@ -1471,6 +1471,12 @@ public abstract class Node {
             return sb.toString();
         }
 
+        public LinkedList<TypeI> toTypeIList() {
+            LinkedList<TypeI> list = new LinkedList();
+            for (IExpression expr : exprs) list.add(expr.getExprType());
+            return list;
+        }
+
     }
 
     public static class NodeFuncCall extends NodePrefix {
@@ -1483,6 +1489,7 @@ public abstract class Node {
 
         public Function func;
         public TypeI prefixType;
+        private Field closureVar;
 
         public NodeFuncCall(final int line, final int column, final String id, final NodeExprs args, final NodePrefix prefix, final boolean unwrapped, final boolean isThisCall, final boolean isSuperCall, final NodeTypes generics) {
             super(line, column);
@@ -1556,7 +1563,17 @@ public abstract class Node {
             // type
             if (isThisCall) id = Semantics.currentType().qualifiedName.shortName;
             else if (isSuperCall) id = Semantics.currentType().getSuperClass().qualifiedName.shortName;
-            if (prefix == null) func = Semantics.getFunc(id, args, null);
+            if (prefix == null) {
+                func = Semantics.getFunc(id, args, null);
+                if (func == null) {
+                    closureVar = Semantics.getVar(id);
+                    if (closureVar.type instanceof FunctionTypeI) {
+                        FunctionTypeI closureType = (FunctionTypeI) closureVar.type;
+                        if (!Semantics.paramsAreEqual(closureType.hasDefExpr, closureType.args, args.toTypeIList()))
+                            closureVar = null;
+                    } else closureVar = null;
+                }
+            }
             else {
                 prefixType = prefix.getExprType();
                 func = Semantics.getFunc(id, prefixType, args, null);
@@ -1564,37 +1581,61 @@ public abstract class Node {
                     semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
             }
 
-            if (func == null) {
+            if (func == null && closureVar == null) {
                 if (prefixType == null) semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id);
                 else semanticError(this, line, column, FUNC_DOES_NOT_EXIST_IN_TYPE, id, args.toString(), prefixType);
             } else {
-                if (prefix == null)
+                if (prefix == null && func != null)
                     if (Scope.inFuncScope() && Scope.getFuncScope().isStatic && !func.isStatic() && !func.isConstructor())
                         semanticError(line, column, NON_STATIC_FUNC_USED_IN_STATIC_CONTEXT, func.qualifiedName.shortName);
-                if (!func.isVisible())
+                if (func != null && !func.isVisible())
                     semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, func.qualifiedName.shortName);
             }
         }
 
         @Override
         public void generate() {
-            final StringBuffer sb = new StringBuffer("(");
-            if (func.extType != null) sb.append("L" + func.extType.qualifiedName.toBytecodeName() + ";");
-            for (final TypeI type : func.parameters)
-                sb.append(type.toBytecodeName());
-            sb.append(")" + (func.isConstructor() ? "V" : func.returnType.toBytecodeName()));
-            // Create a new object for cosntructor calls
-            // However, don't do this if we're calling "this" or "super"
-            if (func.isConstructor() && !isThisCall && !isSuperCall) {
-                addFuncStmt(new GenNodeNew(func.enclosingType.qualifiedName.toBytecodeName()));
-                addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
-            } else if ((prefix == null) && !func.isStatic()) addFuncStmt(new GenNodeThis());
-            else if (prefix != null) prefix.generate();
-            for (final IExpression expr : args.exprs)
-                expr.generate();
-            if (func.hasDefExpr && (args.exprs.size() < func.parameters.size())) func.defExpr.generate();
-            final String name = func.isConstructor() ? "<init>" : OperatorDef.filterOperators(func.qualifiedName.shortName);
-            addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), name, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
+            if (closureVar != null) {
+                // We are calling a closure
+                FunctionTypeI closureType = (FunctionTypeI) closureVar.type;
+                String returnType = closureType.type.toBytecodeName();
+                // Load the variable on which the function is called
+                if (closureVar.isLocal)
+                    addFuncStmt(new GenNodeVarLoad(closureType.getInstructionType(), closureVar.localID));
+                else addFuncStmt(new GenNodeFieldLoad(closureVar.id, closureType.toBytecodeName(), returnType, false));
+
+                final StringBuffer sb = new StringBuffer("(");
+                for (final TypeI type : closureType.args)
+                    sb.append(type.toBytecodeName());
+                sb.append(")" + returnType);
+
+                // Call the closure function with the arguments
+                for (final IExpression expr : args.exprs)
+                    expr.generate();
+
+                if (closureType.hasDefExpr && (args.exprs.size() < closureType.args.size()))
+                    closureType.defExpr.generate();
+                addFuncStmt(new GenNodeFuncCall(closureType.toClassName(), "do", sb.toString(), false, false, false, false));
+            } else {
+                final StringBuffer sb = new StringBuffer("(");
+                if (func.extType != null) sb.append("L" + func.extType.qualifiedName.toBytecodeName() + ";");
+                for (final TypeI type : func.parameters)
+                    sb.append(type.toBytecodeName());
+                sb.append(")" + (func.isConstructor() ? "V" : func.returnType.toBytecodeName()));
+                // Create a new object for constructor calls
+                // However, don't do this if we're calling "this" or "super"
+                if (func.isConstructor() && !isThisCall && !isSuperCall) {
+                    addFuncStmt(new GenNodeNew(func.enclosingType.qualifiedName.toBytecodeName()));
+                    addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
+                } else if ((prefix == null) && !func.isStatic()) addFuncStmt(new GenNodeThis());
+                else if (prefix != null) prefix.generate();
+                for (final IExpression expr : args.exprs)
+                    expr.generate();
+                if (func.hasDefExpr && (args.exprs.size() < func.parameters.size())) func.defExpr.generate();
+                final String name = func.isConstructor() ? "<init>" : OperatorDef.filterOperators(func.qualifiedName.shortName);
+                System.out.println("-> " + func.enclosingType.qualifiedName.toBytecodeName());
+                addFuncStmt(new GenNodeFuncCall(func.enclosingType.qualifiedName.toBytecodeName(), name, sb.toString(), func.enclosingType.type == EnumType.INTERFACE, BitOp.and(func.modifiers, EnumModifier.PRIVATE.intVal), BitOp.and(func.modifiers, EnumModifier.STATIC.intVal), func.isConstructor()));
+            }
         }
 
     }
@@ -3555,6 +3596,7 @@ public abstract class Node {
         public NodeArgs args;
         public NodeType type;
         public TypeI typeI;
+        public FunctionTypeI functionType;
         public LinkedList<TypeI> argTypes;
         public NodeFuncBlock body;
 
@@ -3564,7 +3606,7 @@ public abstract class Node {
 
         @Override
         public TypeI getExprType() {
-            return new FunctionTypeI(typeI, argTypes);
+            return (functionType = new FunctionTypeI(typeI, argTypes, args.defExpr));
         }
 
         @Override
@@ -3587,7 +3629,7 @@ public abstract class Node {
 
         @Override
         public void generate() {
-            String name = "Closure$" + ++GenNode.numClosureClasses;
+            String name = functionType.toClassName();
             GenNode.addGenNodeType(new GenNodeType(name, name, "java/lang/Object", new String[0], EnumModifier.PUBLIC.intVal));
             GenNodeFunction func = new GenNodeFunction("do", EnumModifier.PUBLIC.intVal, typeI.toBytecodeName());
             int i = 1;

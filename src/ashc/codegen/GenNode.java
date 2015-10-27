@@ -461,6 +461,7 @@ public abstract class GenNode {
             // INVOKESPECIAL for constructors and private methods,
             // INVOKEINTERFACE for methods overriden from interfaces and
             // INVOKEVIRTUAL for others
+            System.out.println("call gen: " + enclosingType + ", " + name + ", " + signature);
             mv.visitMethodInsn(opcode, enclosingType, name, signature, interfaceFunc);
         }
 

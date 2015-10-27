@@ -340,4 +340,18 @@ public class Semantics {
         } else if (hasOverrideMod) semanticError(node, node.line, node.column, OVERRIDEN_FUNC_DOES_NOT_EXIST);
     }
 
+    public static boolean paramsAreEqual(boolean params1DefExpr, final LinkedList<TypeI> params, final LinkedList<TypeI> params2) {
+        if ((params.size() == 0) && (params2.size() == 0)) return true;
+        // If the function has a default parameter expression and the size
+        // of parmas2 is 1 less than params then allow it
+        if ((params.size() != params2.size()) && !(params1DefExpr && (params.size() == (params2.size() + 1))))
+            return false;
+        final int len = Math.min(params.size(), params2.size());
+        for (int i = 0; i < len; i++) {
+            // If it is a generic, continue
+            if (!params.get(i).canBeAssignedTo(params2.get(i))) return false;
+        }
+        return true;
+    }
+
 }

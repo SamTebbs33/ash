@@ -39,11 +39,26 @@ public class TypeI {
 
         public TypeI type;
         public LinkedList<TypeI> args;
+        public boolean hasDefExpr;
+        public IExpression defExpr;
+        public int closureID = ++numClosures;
+        public static int numClosures = 0;
 
-        public FunctionTypeI(TypeI type, LinkedList<TypeI> args) {
+        public FunctionTypeI(TypeI type, LinkedList<TypeI> args, IExpression defExpr) {
             super("func", 0, false);
             this.type = type;
+            this.hasDefExpr = defExpr != null;
+            this.defExpr = defExpr;
             this.args = args;
+        }
+
+        public String toClassName() {
+            return "$Closure" + closureID;
+        }
+
+        @Override
+        public String toBytecodeName() {
+            return "LClosure" + closureID + ";";
         }
 
         @Override
