@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="bb712bcf-5add-4d8c-8f97-6a1b9719dea6" name="Default" comment="Added generation of closure class constructor">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ashc/codegen/GenNode.java" afterPath="$PROJECT_DIR$/src/ashc/codegen/GenNode.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ashc/semantics/Member.java" afterPath="$PROJECT_DIR$/src/ashc/semantics/Member.java" />
+    <list default="true" id="bb712bcf-5add-4d8c-8f97-6a1b9719dea6" name="Default" comment="Added generation of closure calls">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ashc/grammar/Node.java" afterPath="$PROJECT_DIR$/src/ashc/grammar/Node.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ashc/semantics/Semantics.java" afterPath="$PROJECT_DIR$/src/ashc/semantics/Semantics.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Test.ash" afterPath="$PROJECT_DIR$/Test.ash" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/ashc/semantics/TypeI.java" afterPath="$PROJECT_DIR$/src/ashc/semantics/TypeI.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="ash.iws" />
@@ -30,21 +26,33 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="Test.ash" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Test.ash">
+      <file leaf-file-name="Node.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/ashc/grammar/Node.java">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="7" column="1" selection-start-line="7" selection-start-column="1" selection-end-line="7" selection-end-column="1" />
+              <caret line="1508" column="0" selection-start-line="1508" selection-start-column="0" selection-end-line="1508" selection-end-column="0" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Test.ash" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/Test.ash">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.15734266">
+              <caret line="6" column="18" selection-start-line="6" selection-start-column="18" selection-end-line="6" selection-end-column="18" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Test.class" pinned="false" current-in-tab="true">
+      <file leaf-file-name="Test.class" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Test.class">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.026223777">
-              <caret line="4" column="0" selection-start-line="4" selection-start-column="0" selection-end-line="4" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.0">
+              <caret line="12" column="0" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -86,10 +94,10 @@
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/src/ashc/semantics/Semantics.java" />
         <option value="$PROJECT_DIR$/src/ashc/semantics/Member.java" />
-        <option value="$PROJECT_DIR$/Test.ash" />
         <option value="$PROJECT_DIR$/src/ashc/semantics/TypeI.java" />
-        <option value="$PROJECT_DIR$/src/ashc/grammar/Node.java" />
         <option value="$PROJECT_DIR$/src/ashc/codegen/GenNode.java" />
+        <option value="$PROJECT_DIR$/Test.ash" />
+        <option value="$PROJECT_DIR$/src/ashc/grammar/Node.java" />
       </list>
     </option>
   </component>
@@ -523,7 +531,13 @@
       <option name="project" value="LOCAL" />
       <updated>1445979226355</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Added generation of closure calls">
+      <created>1445988861655</created>
+      <option name="number" value="00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1445988861655</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -573,7 +587,8 @@
     <MESSAGE value="Removed some unnecessary files and fixed generation of closure classes" />
     <MESSAGE value="Updated .gitignore" />
     <MESSAGE value="Added generation of closure class constructor" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added generation of closure class constructor" />
+    <MESSAGE value="Added generation of closure calls" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added generation of closure calls" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
   <component name="XDebuggerManager">
@@ -591,8 +606,6 @@
           <caret line="3596" column="9" selection-start-line="3596" selection-start-column="9" selection-end-line="3596" selection-end-column="9" />
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="e#143947#143948#0" expanded="true" />
-            <element signature="e#144043#144044#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -632,30 +645,30 @@
           <caret line="29" column="0" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
           <folding>
             <element signature="imports" expanded="false" />
-            <element signature="e#5754#5755#0" expanded="false" />
-            <element signature="e#5822#5823#0" expanded="false" />
-            <element signature="e#7698#7699#0" expanded="false" />
-            <element signature="e#7766#7767#0" expanded="false" />
-            <element signature="e#7798#7799#0" expanded="false" />
-            <element signature="e#7868#7869#0" expanded="false" />
-            <element signature="e#7909#7910#0" expanded="false" />
-            <element signature="e#7940#7941#0" expanded="false" />
-            <element signature="e#7972#7973#0" expanded="false" />
-            <element signature="e#8006#8007#0" expanded="false" />
-            <element signature="e#8033#8034#0" expanded="false" />
-            <element signature="e#8095#8096#0" expanded="false" />
-            <element signature="e#8138#8139#0" expanded="false" />
-            <element signature="e#8171#8172#0" expanded="false" />
-            <element signature="e#8395#8396#0" expanded="false" />
-            <element signature="e#8470#8471#0" expanded="false" />
-            <element signature="e#8513#8514#0" expanded="false" />
-            <element signature="e#8546#8547#0" expanded="false" />
-            <element signature="e#8582#8583#0" expanded="false" />
-            <element signature="e#8655#8656#0" expanded="false" />
-            <element signature="e#8687#8688#0" expanded="false" />
-            <element signature="e#8758#8759#0" expanded="false" />
-            <element signature="e#15100#15101#0" expanded="false" />
-            <element signature="e#15160#15161#0" expanded="false" />
+            <element signature="e#5775#5776#0" expanded="false" />
+            <element signature="e#5843#5844#0" expanded="false" />
+            <element signature="e#7719#7720#0" expanded="false" />
+            <element signature="e#7787#7788#0" expanded="false" />
+            <element signature="e#7819#7820#0" expanded="false" />
+            <element signature="e#7889#7890#0" expanded="false" />
+            <element signature="e#7930#7931#0" expanded="false" />
+            <element signature="e#7961#7962#0" expanded="false" />
+            <element signature="e#7993#7994#0" expanded="false" />
+            <element signature="e#8027#8028#0" expanded="false" />
+            <element signature="e#8054#8055#0" expanded="false" />
+            <element signature="e#8116#8117#0" expanded="false" />
+            <element signature="e#8159#8160#0" expanded="false" />
+            <element signature="e#8192#8193#0" expanded="false" />
+            <element signature="e#8416#8417#0" expanded="false" />
+            <element signature="e#8491#8492#0" expanded="false" />
+            <element signature="e#8534#8535#0" expanded="false" />
+            <element signature="e#8567#8568#0" expanded="false" />
+            <element signature="e#8603#8604#0" expanded="false" />
+            <element signature="e#8676#8677#0" expanded="false" />
+            <element signature="e#8708#8709#0" expanded="false" />
+            <element signature="e#8779#8780#0" expanded="false" />
+            <element signature="e#15121#15122#0" expanded="false" />
+            <element signature="e#15181#15182#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -674,8 +687,6 @@
           <caret line="3550" column="0" selection-start-line="3550" selection-start-column="0" selection-end-line="3550" selection-end-column="0" />
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="e#143947#143948#0" expanded="true" />
-            <element signature="e#144043#144044#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -845,31 +856,11 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Test.ash">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="7" column="1" selection-start-line="7" selection-start-column="1" selection-end-line="7" selection-end-column="1" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/ashc/semantics/TypeI.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="54" column="33" selection-start-line="54" selection-start-column="22" selection-end-line="54" selection-end-column="33" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/ashc/grammar/Node.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-12.814815">
-          <caret line="1612" column="0" selection-start-line="1612" selection-start-column="0" selection-end-line="1612" selection-end-column="0" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#143947#143948#0" expanded="true" />
-            <element signature="e#144043#144044#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -901,8 +892,26 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Test.class">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.026223777">
-          <caret line="4" column="0" selection-start-line="4" selection-start-column="0" selection-end-line="4" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="12" column="0" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ashc/grammar/Node.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="1508" column="0" selection-start-line="1508" selection-start-column="0" selection-end-line="1508" selection-end-column="0" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Test.ash">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.15734266">
+          <caret line="6" column="18" selection-start-line="6" selection-start-column="18" selection-end-line="6" selection-end-column="18" />
           <folding />
         </state>
       </provider>

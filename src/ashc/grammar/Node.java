@@ -1511,26 +1511,30 @@ public abstract class Node {
         public TypeI getExprType() {
             TypeI result;
             if (prefix == null) {
-                final TypeI funcType = func.returnType.copy();
-                if (func.isConstructor() && (generics != null)) {
-                    final int genericsRequired = func.enclosingType.generics.size();
-                    for (final NodeType generic : generics.types)
-                        funcType.genericTypes.add(new TypeI(generic));
-                    for (int i = funcType.genericTypes.size(); i < genericsRequired; i++)
-                        funcType.genericTypes.add(TypeI.getObjectType());
-                }
-                // Fill in the function's generics based on the arguments
-                int i = 0;
-                for (final String g : func.generics) {
-                    int paramIndex = 0;
-                    for (final TypeI t : func.parameters) {
-                        if (t.shortName.equals(g)) {
-                            funcType.genericTypes.set(i, args.exprs.get(paramIndex).getExprType());
-                            break;
-                        }
-                        paramIndex++;
+                TypeI funcType = null;
+                if (closureVar != null) funcType = ((FunctionTypeI) closureVar.type).type;
+                else {
+                    funcType = func.returnType.copy();
+                    if (func.isConstructor() && (generics != null)) {
+                        final int genericsRequired = func.enclosingType.generics.size();
+                        for (final NodeType generic : generics.types)
+                            funcType.genericTypes.add(new TypeI(generic));
+                        for (int i = funcType.genericTypes.size(); i < genericsRequired; i++)
+                            funcType.genericTypes.add(TypeI.getObjectType());
                     }
-                    i++;
+                    // Fill in the function's generics based on the arguments
+                    int i = 0;
+                    for (final String g : func.generics) {
+                        int paramIndex = 0;
+                        for (final TypeI t : func.parameters) {
+                            if (t.shortName.equals(g)) {
+                                funcType.genericTypes.set(i, args.exprs.get(paramIndex).getExprType());
+                                break;
+                            }
+                            paramIndex++;
+                        }
+                        i++;
+                    }
                 }
                 result = funcType;
             } else {
