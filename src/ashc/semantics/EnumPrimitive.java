@@ -27,53 +27,53 @@ public enum EnumPrimitive {
     public boolean validForArrayIndex, isNumeric;
     public EnumInstructionOperand instructionType;
 
-    private EnumPrimitive(final String ashName, final String javaName, final char bytecodeChar, final boolean isNumeric, final EnumInstructionOperand type, final boolean wholeNumber) {
-	this.ashName = ashName;
-	this.javaName = javaName;
-	this.bytecodeChar = bytecodeChar;
-	this.isNumeric = isNumeric;
-	instructionType = type;
-	validForArrayIndex = wholeNumber;
+    EnumPrimitive(final String ashName, final String javaName, final char bytecodeChar, final boolean isNumeric, final EnumInstructionOperand type, final boolean wholeNumber) {
+        this.ashName = ashName;
+        this.javaName = javaName;
+        this.bytecodeChar = bytecodeChar;
+        this.isNumeric = isNumeric;
+        instructionType = type;
+        validForArrayIndex = wholeNumber;
     }
 
     public static boolean isPrimitive(final String typeName) {
-	for (final EnumPrimitive p : EnumPrimitive.values())
-	    if (p.ashName.equals(typeName)) return true;
-	return false;
+        for (final EnumPrimitive p : EnumPrimitive.values())
+            if (p.ashName.equals(typeName)) return true;
+        return false;
     }
 
     public static EnumPrimitive getPrimitive(final String name) {
-	for (final EnumPrimitive p : EnumPrimitive.values())
-	    if (p.ashName.equals(name)) return p;
-	return null;
+        for (final EnumPrimitive p : EnumPrimitive.values())
+            if (p.ashName.equals(name)) return p;
+        return null;
     }
 
     public static boolean validForArrayIndex(final TypeI indexType) {
-	return isPrimitive(indexType.shortName) && (indexType.arrDims == 0) && getPrimitive(indexType.shortName).validForArrayIndex;
+        return isPrimitive(indexType.shortName) && (indexType.arrDims == 0) && getPrimitive(indexType.shortName).validForArrayIndex;
     }
 
     public static boolean isNumeric(final String shortName) {
-	final EnumPrimitive p = getPrimitive(shortName);
-	if (p != null) return p.isNumeric;
-	return false;
+        final EnumPrimitive p = getPrimitive(shortName);
+        if (p != null) return p.isNumeric;
+        return false;
     }
 
     public static boolean isJavaPrimitive(final String typeName) {
-	for (final EnumPrimitive p : EnumPrimitive.values())
-	    if (p.javaName.equals(typeName)) return true;
-	return false;
+        for (final EnumPrimitive p : EnumPrimitive.values())
+            if (p.javaName.equals(typeName)) return true;
+        return false;
     }
 
     public static EnumPrimitive getFromJavaPrimitive(final String clsName) {
-	for (final EnumPrimitive p : EnumPrimitive.values())
-	    if (p.javaName.equals(clsName)) return p;
-	return null;
+        for (final EnumPrimitive p : EnumPrimitive.values())
+            if (p.javaName.equals(clsName)) return p;
+        return null;
     }
 
     public static EnumPrimitive getFromBytecodePrimitive(final char ch) {
-	for (final EnumPrimitive p : EnumPrimitive.values())
-	    if (p.bytecodeChar == ch) return p;
-	return null;
+        for (final EnumPrimitive p : EnumPrimitive.values())
+            if (p.bytecodeChar == ch) return p;
+        return null;
     }
 
 }

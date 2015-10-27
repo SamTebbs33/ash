@@ -10,7 +10,7 @@ public class Tuple<T, E> {
     public E b;
 
     public Tuple(final T a, final E b) {
-	this.a = a;
-	this.b = b;
+        this.a = a;
+        this.b = b;
     }
 }

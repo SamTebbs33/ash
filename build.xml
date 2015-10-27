@@ -1,28 +1,28 @@
 <project>
-	
-	<target name="clean">
-		<delete dir="build"/>
-		<delete dir="classes"/>
-	</target>
-	
-	<path id="build-classpath">
-		<fileset dir="lib/">
-			<include name="*.jar"/>
-		</fileset>
-	</path>
-	
-	<target name="compile">
-		<mkdir dir="build"/>
-		<mkdir dir="classes"/>
-		<javac srcdir="src" destdir="build">
-			<classpath refid="build-classpath"/>
-		</javac>
-	</target>
-	
-	<target name="test">
-		<exec executable="python" failonerror="true">
-			<arg value="test.py"/>
-		</exec>
-	</target>
+
+    <target name="clean">
+        <delete dir="build"/>
+        <delete dir="classes"/>
+    </target>
+
+    <path id="build-classpath">
+        <fileset dir="lib/">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <target name="compile">
+        <mkdir dir="build"/>
+        <mkdir dir="classes"/>
+        <javac srcdir="src" destdir="build">
+            <classpath refid="build-classpath"/>
+        </javac>
+    </target>
+
+    <target name="test">
+        <exec executable="python" failonerror="true">
+            <arg value="test.py"/>
+        </exec>
+    </target>
 
 </project>
