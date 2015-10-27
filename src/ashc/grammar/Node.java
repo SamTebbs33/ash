@@ -63,6 +63,7 @@ import ashc.semantics.Scope.PropertyScope;
 import ashc.semantics.Semantics.Operation;
 import ashc.semantics.Member.Type;
 import ashc.util.*;
+import ashc.semantics.TypeI.FunctionTypeI;
 
 /**
  * Ash
@@ -3553,6 +3554,8 @@ public abstract class Node {
 
         public NodeArgs args;
         public NodeType type;
+        public TypeI typeI;
+        public LinkedList<TypeI> argTypes;
         public NodeFuncBlock body;
 
         public NodeClosure(int line, int column) {
@@ -3561,7 +3564,7 @@ public abstract class Node {
 
         @Override
         public TypeI getExprType() {
-            return null;
+            return new FunctionTypeI(typeI, argTypes);
         }
 
         @Override
@@ -3570,11 +3573,37 @@ public abstract class Node {
 
         @Override
         public void analyse() {
-            super.analyse();
+            body.inFunction = true;
+            args.analyse();
+            if (type != null) type.analyse();
+            typeI = type == null ? TypeI.getVoidType() : new TypeI(type);
+            argTypes = args.toTypeIList();
+            Scope.push(new FuncScope(typeI, false, false, false));
+            int i = 0;
+            for (TypeI arg : argTypes) Scope.getScope().addVar(new Variable(args.args.get(i++).id, arg));
+            body.analyse();
+            Scope.pop();
         }
 
         @Override
         public void generate() {
+            String name = "Closure$" + ++GenNode.numClosureClasses;
+            GenNode.addGenNodeType(new GenNodeType(name, name, "java/lang/Object", new String[0], EnumModifier.PUBLIC.intVal));
+            GenNodeFunction func = new GenNodeFunction("do", EnumModifier.PUBLIC.intVal, typeI.toBytecodeName());
+            int i = 1;
+            for (TypeI arg : argTypes) {
+                func.params.add(arg);
+                func.addLocal(new GenNodeFunction.LocalVariable(args.args.get(i - 1).id, arg.toBytecodeName(), i));
+                i++;
+            }
+            GenNode.addGenNodeFunction(func);
+            body.generate();
+            GenNode.exitGenNodeFunction();
+            GenNode.exitGenNodeType();
+
+            addFuncStmt(new GenNodeNew(name));
+            addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
+            addFuncStmt(new GenNodeFuncCall(name, "<init>", "()V", false, false, false, true));
         }
 
     }

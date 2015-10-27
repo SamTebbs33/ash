@@ -35,6 +35,23 @@ public class TypeI {
     public LinkedList<TypeI> tupleTypes, genericTypes;
     public QualifiedName qualifiedName;
 
+    public static class FunctionTypeI extends TypeI {
+
+        public TypeI type;
+        public LinkedList<TypeI> args;
+
+        public FunctionTypeI(TypeI type, LinkedList<TypeI> args) {
+            super("func", 0, false);
+            this.type = type;
+            this.args = args;
+        }
+
+        @Override
+        public String toString() {
+            return "func (" + args.toString() + ") -> " + type.toString();
+        }
+    }
+
     public TypeI(final String shortName, final int arrDims, final boolean optional) {
         this.shortName = shortName;
         this.arrDims = arrDims;

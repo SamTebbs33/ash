@@ -32,6 +32,7 @@ public abstract class GenNode {
     public static HashSet<String> generatedTupleClasses = new HashSet<String>();
     private static Stack<GenNodeFunction> functionStack = new Stack<GenNodeFunction>();
     public static Label loopStartLabel, loopEndLabel;
+    public static int numClosureClasses = 0;
 
     public abstract void generate(Object visitor);
 

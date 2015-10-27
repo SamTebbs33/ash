@@ -157,7 +157,7 @@ public class Member {
         public Field getField(final String id) {
             for (final Field field : fields)
                 if (field.qualifiedName.shortName.equals(id)) return field;
-            return superClass.getField(id);
+            return superClass != null ? superClass.getField(id) : null;
         }
 
         public TypeI getFuncType(final String id, final NodeExprs args) {
