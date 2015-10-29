@@ -384,9 +384,15 @@ public class Parser {
     }
 
     private NodeFuncBlock parseFuncBlock(final boolean allowSingleLine, final boolean singleLineExpression) throws GrammarException {
+        return parseFuncBlock(allowSingleLine, singleLineExpression, null);
+    }
+
+
+    private NodeFuncBlock parseFuncBlock(final boolean allowSingleLine, final boolean singleLineExpression, final TokenMatcher singleLineToken) throws GrammarException {
         final NodeFuncBlock block = new NodeFuncBlock();
         Token token = null;
-        if (allowSingleLine) token = expect("=", TokenType.BRACEL);
+        if (allowSingleLine)
+            token = (singleLineToken == null) ? expect("=", TokenType.BRACEL) : expect(singleLineToken, TokenType.BRACEL);
         else token = expect(TokenType.BRACEL);
         if (token.type == TokenType.BRACEL) while (getNext().type != TokenType.BRACER) {
             rewind();
@@ -462,14 +468,14 @@ public class Parser {
     private NodeMatchCase parseMatchCase() throws GrammarException {
         Token next;
         if ((next = getNext()).type == TokenType.UNDERSCORE)
-            return new NodeMatchCase(next.line, next.columnStart, null, parseFuncBlock(true, false));
+            return new NodeMatchCase(next.line, next.columnStart, null, parseFuncBlock(true, false, TokenType.LAMBDAARROW));
         else rewind();
         final IExpression expr = parseExpression();
         final NodeMatchCase matchCase = new NodeMatchCase(((Node) expr).line, ((Node) expr).column, expr, null);
         while (getNext().type == TokenType.COMMA)
             matchCase.exprs.add(parseExpression());
         rewind();
-        matchCase.block = parseFuncBlock(true, false);
+        matchCase.block = parseFuncBlock(true, false, TokenType.LAMBDAARROW);
         matchCase.block.inFunction = false;
         return matchCase;
     }
