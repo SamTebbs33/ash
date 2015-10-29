@@ -16,7 +16,7 @@ Ash is a programming language that compiles to Java bytecode, and is interoperab
 
 The language itself will soon be ready for a useable release, more details will be posted when that time comes.
 
-If you'd like to contribute (such as adding test files or proposing ideas), please take a look at the [Contirbuting](CONTRIBUTING.md) page.
+If you'd like to contribute (such as adding test files or proposing ideas), please take a look at the [Contributing](CONTRIBUTING.md) page.
 
 This repo uses the [GitHub flow](https://guides.github.com/introduction/flow/) workflow.
 
