@@ -2149,57 +2149,6 @@ public abstract class Node {
 
     }
 
-    public static class NodeElvis extends Node implements IExpression {
-
-        public IExpression exprOptional, exprNotNull;
-
-        public NodeElvis(final int line, final int column, final IExpression exprOptional, final IExpression exprNotNull) {
-            super(line, column);
-            this.exprOptional = exprOptional;
-            this.exprNotNull = exprNotNull;
-        }
-
-        @Override
-        public void analyse() {
-            exprOptional.analyse();
-            exprNotNull.analyse();
-        }
-
-        @Override
-        public TypeI getExprType() {
-            final TypeI exprOptionalType = exprOptional.getExprType(), exprNotNullType = exprNotNull.getExprType();
-            if (!exprOptionalType.optional)
-                semanticError(this, line, column, ELVIS_EXPR_NOT_OPTIONAL, exprOptionalType.toString());
-            if (exprNotNullType.optional)
-                semanticError(this, line, column, ELVIS_EXPR_IS_OPTIONAL, exprNotNullType.toString());
-            if (EnumPrimitive.isPrimitive(exprOptionalType.shortName))
-                semanticError(this, line, column, ELVIS_EXPR_IS_PRIMITIVE, exprOptional);
-            // Set the types as not optional to stop incompatibility errors
-            // thrown by the next method call
-            exprOptionalType.copy().optional = false;
-            exprNotNullType.copy().optional = false;
-            final TypeI type = TypeI.getPrecedentType(exprOptionalType, exprNotNullType).setOptional(false);
-            return type;
-        }
-
-        @Override
-        public void registerScopedChecks() {
-        }
-
-        @Override
-        public void generate() {
-            exprOptional.generate();
-            final Label lbl = new Label(), lbl2 = new Label();
-            addFuncStmt(new GenNodeConditionalJump(Opcodes.IFNONNULL, lbl));
-            exprOptional.generate();
-            addFuncStmt(new GenNodeJump(lbl2));
-            addFuncStmt(new GenNodeLabel(lbl));
-            exprNotNull.generate();
-            addFuncStmt(new GenNodeLabel(lbl2));
-        }
-
-    }
-
     public static class NodeBinary extends Node implements IExpression {
         public IExpression expr1, expr2;
         public OperatorDef operator;

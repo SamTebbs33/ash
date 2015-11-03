@@ -91,9 +91,6 @@ public class AshError extends Exception {
         DUPLICATE_TYPES("Duplicate types (%s)"),
         PARAM_DEF_EXPR_NOT_LAST("Only the last parameter can have a default value"),
 
-        ELVIS_EXPR_NOT_OPTIONAL("The first expression in an elvis expression must be optional (%s)"),
-        ELVIS_EXPR_IS_OPTIONAL("The second expression in an elvis expression cannot be optional (%s)"),
-        ELVIS_EXPR_IS_PRIMITIVE("The first expression in an elvis expression cannot be a primitive (%s)"),
         OPERATOR_CANNOT_BE_APPLIED_TO_TYPES("Operator %s cannot be applied to types %s and %s"),
         OPERATOR_CANNOT_BE_APPLIED_TO_TYPE("Operator %s cannot be applied to type %s"),
 

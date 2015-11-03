@@ -710,12 +710,11 @@ public class Parser {
                 expr = new NodeBool(next.line, next.columnStart, next.data.equals("true"));
                 break;
         }
-        e, next.columnStart
         return expr;
     }
 
     private NodeClosure parseClosure(Token closureKeyword) throws GrammarException {
-        NodeClosure closure = closureKeyword.type == TokenType.FUNC ? new NodFunceClosure(closureKeyword.line, closureKeyword.columnStart) : new NodeInterfaceClosure(closureKeyword.line, closureKeyword.columnStart);
+        NodeClosure closure = ((closureKeyword.type == TokenType.FUNC) ? new NodeFuncClosure(closureKeyword.line, closureKeyword.columnStart) : new NodeInterfaceClosure(closureKeyword.line, closureKeyword.columnStart));
         closure.args = parseArgs(TokenType.PARENL, TokenType.PARENR);
         if (getNext().type == TokenType.LAMBDAARROW) {
             closure.type = parseType();
