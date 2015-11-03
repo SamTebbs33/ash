@@ -102,7 +102,8 @@ public class AshError extends Exception {
         CONTINUE_USED_OUTSIDE_LOOP("A continue statement cannot be used outside of a loop"),
 
         PRIMTIVE_CANNOT_BE_OPTIONAL("A primitive type cannot be optional (%s)"),
-        CANNOT_ASSIGN("Cannot assign %s to %s");
+        CANNOT_ASSIGN("Cannot assign %s to %s"),
+        NO_INTERFACE_FOR_CLOSURE_FOUND("None of the imported interfaces have a function that is applicable to the given arguments");
 
         public String format;
 

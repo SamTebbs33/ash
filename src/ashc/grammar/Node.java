@@ -364,7 +364,7 @@ public abstract class Node {
             if (types != null) for (final NodeType nodeType : types.types) {
                 if (nodeType.optional) semanticError(this, line, column, CANNOT_EXTEND_OPTIONAL_TYPE, nodeType.id);
                 if (generics != null) for (final NodeType generic : nodeType.generics.types)
-                    type.addGeneric(nodeType.id, new TypeI(generic));
+                    type.addGeneric(nodeType.id, generic.toTypeI());
             }
             if (generics != null) for (final NodeType generic : generics.types)
                 type.generics.add(generic.id);
@@ -384,7 +384,7 @@ public abstract class Node {
                 for (final NodeArg arg : args.args) {
                     arg.preAnalyse();
                     if (!arg.errored) {
-                        final TypeI argType = new TypeI(arg.type);
+                        final TypeI argType = arg.type.toTypeI();
                         final Variable local = new Variable(arg.id, argType);
                         local.isLocal = true;
                         defConstructorScope.addVar(local);
@@ -736,7 +736,7 @@ public abstract class Node {
 
         public LinkedList<TypeI> toTypeIList() {
             LinkedList<TypeI> result = new LinkedList<>();
-            for (NodeArg arg : args) result.add(new TypeI(arg.type));
+            for (NodeArg arg : args) result.add(arg.type.toTypeI());
             return result;
         }
     }
@@ -891,6 +891,8 @@ public abstract class Node {
         public int arrDims;
         public boolean optional;
         public LinkedList<NodeType> tupleTypes = new LinkedList<NodeType>();
+        public LinkedList<NodeType> funcTypeArgs = new LinkedList<>();
+        public NodeType funcTypeReturn;
         public NodeTypes generics = new NodeTypes();
 
         public NodeType(final int line, final int column, final String data) {
@@ -901,8 +903,30 @@ public abstract class Node {
         public NodeType() {
         }
 
+        public TypeI toTypeI(){
+            TypeI type;
+            if(funcTypeArgs.size() > 0){
+                type = new FunctionTypeI(funcTypeReturn == null ? TypeI.getVoidType() : funcTypeReturn.toTypeI(), new LinkedList<>(), null);
+                for(NodeType t : funcTypeArgs) ((FunctionTypeI)type).args.add(t.toTypeI());
+            }else{
+                type = new TypeI(id, arrDims, optional);
+                //final int requiredGenerics = Semantics.getNumGenericsForType(type.id);
+                //if (type.generics != null) for (final NodeType nodeType : type.generics.types)
+                    //genericTypes.add(new TypeI(nodeType));
+                //for (int i = genericTypes.size(); i < requiredGenerics; i++)
+                    //genericTypes.add(objectType);
+                for (final NodeType nodeType : tupleTypes)
+                    type.tupleTypes.add(nodeType.toTypeI());
+            }
+            return type;
+        }
+
         @Override
         public void analyse() {
+            if(funcTypeArgs.size() > 0){
+                for(NodeType t : funcTypeArgs) t.analyse();
+                if(funcTypeReturn != null) funcTypeReturn.analyse();
+            }
             if (tupleTypes.size() == 0) {
                 if (!Semantics.typeExists(id)) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
                 else if (!id.equals("void")) {
@@ -1049,10 +1073,10 @@ public abstract class Node {
             scope = new FuncScope(returnType, isMutFunc, isGlobal || func.isStatic(), isGlobal, extType);
             Scope.push(scope);
             for (final NodeArg arg : args.args)
-                Semantics.addVar(new Variable(arg.id, new TypeI(arg.type)));
+                Semantics.addVar(new Variable(arg.id, arg.type.toTypeI()));
 
             if (!isMutFunc && !isConstructor) {
-                if (!type.id.equals("void")) returnType = new TypeI(type);
+                if (!type.id.equals("void")) returnType = type.toTypeI();
                 else returnType = TypeI.getVoidType();
                 returnType = Semantics.filterNullType(returnType);
             } else returnType = new TypeI(Semantics.currentType().qualifiedName.shortName, 0, false);
@@ -1062,7 +1086,7 @@ public abstract class Node {
             Scope.pop();
 
             for (final NodeArg arg : args.args)
-                func.parameters.add(new TypeI(arg.type));
+                func.parameters.add(arg.type.toTypeI());
 
             if (extensionType == null) {
                 if (!Semantics.funcExists(func)) Semantics.addFunc(func);
@@ -1291,7 +1315,7 @@ public abstract class Node {
                 if (mod.asInt() == EnumModifier.STATIC.intVal) isStatic = true;
                 modifiers |= mod.asInt();
             }
-            var = new Field(name, modifiers, new TypeI(type), setBlock != null, getBlock != null, Semantics.currentType());
+            var = new Field(name, modifiers, type.toTypeI(), setBlock != null, getBlock != null, Semantics.currentType());
             if (!Semantics.fieldExists(var)) Semantics.addField(var);
             else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
         }
@@ -1301,7 +1325,7 @@ public abstract class Node {
             super.analyse();
             type.analyse();
             if (expr != null) expr.analyse();
-            typeI = new TypeI(type);
+            typeI = type.toTypeI();
             if (expr == null) {
                 if (!type.optional && !(EnumPrimitive.isPrimitive(type.id) && (type.arrDims == 0)))
                     semanticError(this, line, column, MISSING_ASSIGNMENT);
@@ -1518,7 +1542,7 @@ public abstract class Node {
                     if (func.isConstructor() && (generics != null)) {
                         final int genericsRequired = func.enclosingType.generics.size();
                         for (final NodeType generic : generics.types)
-                            funcType.genericTypes.add(new TypeI(generic));
+                            funcType.genericTypes.add(generic.toTypeI());
                         for (int i = funcType.genericTypes.size(); i < genericsRequired; i++)
                             funcType.genericTypes.add(TypeI.getObjectType());
                     }
@@ -2987,7 +3011,7 @@ public abstract class Node {
 
         @Override
         public TypeI getExprType() {
-            return new TypeI(nodeType);
+            return nodeType.toTypeI();
         }
 
         @Override
@@ -3382,7 +3406,7 @@ public abstract class Node {
         @Override
         public void analyse() {
             elementType.analyse();
-            elementTypeI = new TypeI(elementType);
+            elementTypeI = elementType.toTypeI();
             final boolean isNumeric = elementTypeI.isNumeric();
             // Types that aren't primitives must be optional, as the array with be filled with null references
             if (!elementType.optional && !isNumeric)
@@ -3400,7 +3424,7 @@ public abstract class Node {
 
         @Override
         public TypeI getExprType() {
-            type = new TypeI(elementType).setArrDims(arrDims.size());
+            type = elementType.toTypeI().setArrDims(arrDims.size());
             return type;
         }
 
@@ -3469,7 +3493,7 @@ public abstract class Node {
         public TypeI getExprType() {
             final boolean isArrayList = arrDims.size() > 0;
             type = new TypeI(isArrayList ? "ArrayList" : "LinkedList", 0, false);
-            type.genericTypes.add(new TypeI(elementType));
+            type.genericTypes.add(elementType.toTypeI());
             type.qualifiedName = new QualifiedName(isArrayList ? "java/util/ArrayList" : "java/util/LinkedList");
             return type;
         }
@@ -3621,7 +3645,7 @@ public abstract class Node {
             body.inFunction = true;
             args.analyse();
             if (type != null) type.analyse();
-            typeI = type == null ? TypeI.getVoidType() : new TypeI(type);
+            typeI = type == null ? TypeI.getVoidType() : type.toTypeI();
             argTypes = args.toTypeIList();
             Scope.push(new FuncScope(typeI, false, false, false));
             int i = 0;
@@ -3659,6 +3683,38 @@ public abstract class Node {
             addFuncStmt(new GenNodeFuncCall(name, "<init>", "()V", false, false, false, true));
         }
 
+    }
+
+    public static class NodeFuncClosure extends NodeClosure {
+
+    }
+
+    public static class NodeInterfaceClosure extends NodeClosure {
+
+        public Function interfaceFunc;
+
+        public NodeInterfaceClosure(int line, int col){
+            super(line, col);
+        }
+
+        @Override
+        public void analyse() {
+            super.analyse();
+            // Check if any of the known interfaces have a function that is compatible with this closure.
+            for(Type t : Semantics.types.values()){
+                if(t.type == EnumType.INTERFACE){
+                    for(LinkedList<Function> list : t.functions.values()){
+                        for(Function f : list) {
+                            if (f.parameters.equals(argTypes) && f.returnType.equals(typeI)) {
+                                interfaceFunc = f;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if(interfaceFunc == null) semanticError(this, args.line, args.column, NO_INTERFACE_FOR_CLOSURE_FOUND);
+        }
     }
 
 }
