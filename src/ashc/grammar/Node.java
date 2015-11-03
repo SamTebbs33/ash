@@ -3618,22 +3618,16 @@ public abstract class Node {
 
     }
 
-    public static class NodeClosure extends Node implements IExpression {
+    public static abstract class NodeClosure extends Node implements IExpression {
 
         public NodeArgs args;
         public NodeType type;
         public TypeI typeI;
-        public FunctionTypeI functionType;
         public LinkedList<TypeI> argTypes;
         public NodeFuncBlock body;
 
         public NodeClosure(int line, int column) {
             super(line, column);
-        }
-
-        @Override
-        public TypeI getExprType() {
-            return (functionType = new FunctionTypeI(typeI, argTypes, args.defExpr));
         }
 
         @Override
@@ -3652,6 +3646,21 @@ public abstract class Node {
             for (TypeI arg : argTypes) Scope.getScope().addVar(new Variable(args.args.get(i++).id, arg));
             body.analyse();
             Scope.pop();
+        }
+
+    }
+
+    public static class NodeFuncClosure extends NodeClosure {
+
+        public FunctionTypeI functionType;
+
+        public NodeFuncClosure(int line, int col){
+            super(line, col);
+        }
+
+        @Override
+        public TypeI getExprType() {
+            return (functionType = new FunctionTypeI(typeI, argTypes, args.defExpr));
         }
 
         @Override
@@ -3685,10 +3694,6 @@ public abstract class Node {
 
     }
 
-    public static class NodeFuncClosure extends NodeClosure {
-
-    }
-
     public static class NodeInterfaceClosure extends NodeClosure {
 
         public Function interfaceFunc;
@@ -3698,13 +3703,21 @@ public abstract class Node {
         }
 
         @Override
+        public TypeI getExprType(){
+            return new TypeI(interfaceFunc.enclosingType);
+        }
+
+        @Override
         public void analyse() {
             super.analyse();
             // Check if any of the known interfaces have a function that is compatible with this closure.
             for(Type t : Semantics.types.values()){
+                // Ensure the type is an interface
                 if(t.type == EnumType.INTERFACE){
+                    // Loop through each of the interface's functions
                     for(LinkedList<Function> list : t.functions.values()){
                         for(Function f : list) {
+                            // Check if the function's args and return type are identical to this closure's
                             if (f.parameters.equals(argTypes) && f.returnType.equals(typeI)) {
                                 interfaceFunc = f;
                                 break;
@@ -3714,6 +3727,11 @@ public abstract class Node {
                 }
             }
             if(interfaceFunc == null) semanticError(this, args.line, args.column, NO_INTERFACE_FOR_CLOSURE_FOUND);
+        }
+
+        @Override
+        public void generate() {
+
         }
     }
 
