@@ -88,10 +88,10 @@ closures:
   pass: yes
   run: yes
 
-lambda expressions:
-  path: LambdaExpressions
-  pass: yes
-  run: yes
+#lambda expressions:
+#  path: LambdaExpressions
+#  pass: yes
+#  run: yes
   
 #match statement:
 #  path: MatchStatement
