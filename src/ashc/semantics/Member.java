@@ -79,6 +79,7 @@ public class Member {
         public boolean hasNonEmptyConstructor, isGlobalType;
         public Type superClass;
         public LinkedList<Type> interfaces = new LinkedList<>();
+        public int interfaceClosures;
 
         public Type(final QualifiedName qualifiedName, final int modifiers, final EnumType type) {
             super(qualifiedName, modifiers);

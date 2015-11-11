@@ -593,7 +593,8 @@ public class Parser {
         IExpression expr = null;
         switch (next.type) {
             case FUNC:
-                expr = parseClosure(next.line, next.columnStart);
+            case INTERFACE:
+                expr = parseClosure(next);
                 break;
             case NULL:
                 expr = new NodeNull();
@@ -709,15 +710,11 @@ public class Parser {
                 expr = new NodeBool(next.line, next.columnStart, next.data.equals("true"));
                 break;
         }
-    /*
-     * if (expr != null) { next = getNext(); switch (next.type) { case OP: return new NodeBinary(next.line, next.columnStart, expr, next.data,
-	 * parsePrimaryExpression()); default: rewind(); } }
-	 */
         return expr;
     }
 
-    private NodeClosure parseClosure(int line, int col) throws GrammarException {
-        NodeClosure closure = new NodeClosure(line, col);
+    private NodeClosure parseClosure(Token closureKeyword) throws GrammarException {
+        NodeClosure closure = ((closureKeyword.type == TokenType.FUNC) ? new NodeFuncClosure(closureKeyword.line, closureKeyword.columnStart) : new NodeInterfaceClosure(closureKeyword.line, closureKeyword.columnStart));
         closure.args = parseArgs(TokenType.PARENL, TokenType.PARENR);
         if (getNext().type == TokenType.LAMBDAARROW) {
             closure.type = parseType();
@@ -927,8 +924,22 @@ public class Parser {
         // Parse opening brackets
         while (getNext().type == TokenType.BRACKETL) type.arrDims++;
         rewind();
-        // Parse tuple types
-        if (getNext().type == TokenType.PARENL) {
+        TokenType tokenType = getNext().type;
+        if(tokenType == TokenType.FUNC) {
+            // Parse a function type
+            expect(TokenType.PARENL);
+            if(getNext().type != TokenType.PARENR){
+                rewind();
+                do{
+                    type.funcTypeArgs.add(parseType());
+                }while (getNext().type == TokenType.COMMA);
+                rewind();
+                expect(TokenType.PARENR);
+            }
+            if(getNext().type == TokenType.LAMBDAARROW) type.funcTypeReturn = parseType();
+            else rewind();
+        }else if (tokenType == TokenType.PARENL) {
+            // Parse a tuple
             // Tuple types must have more then one type to avoid clashes between tuple expressions and bracketed expressions
             type.tupleTypes.add(parseType());
             expect(TokenType.COMMA);

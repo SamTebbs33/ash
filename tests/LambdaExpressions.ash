@@ -1,7 +1,7 @@
 import java.util.Comparator
 import TestInterface
 
-public class Test {
+public class LambdaExpressions {
 
     public static func main(args : [String]) {
 

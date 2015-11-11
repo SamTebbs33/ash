@@ -89,31 +89,12 @@ public class TypeI {
         genericTypes = new LinkedList<TypeI>();
     }
 
-    public TypeI(final NodeType type) {
-        this(type.id, type.arrDims, type.optional);
-        final int requiredGenerics = Semantics.getNumGenericsForType(type.id);
-        if (type.generics != null) for (final NodeType nodeType : type.generics.types)
-            genericTypes.add(new TypeI(nodeType));
-        for (int i = genericTypes.size(); i < requiredGenerics; i++)
-            genericTypes.add(objectType);
-        for (final NodeType nodeType : type.tupleTypes)
-            tupleTypes.add(new TypeI(nodeType));
-    }
-
     public TypeI(final EnumPrimitive primitive) {
         this(primitive.ashName, 0, false);
     }
 
     public TypeI(final EnumPrimitive primitive, final int arrDims) {
         this(primitive.ashName, arrDims, false);
-    }
-
-    public TypeI(final NodeTupleType nodeType) {
-        this(nodeType.type);
-        tupleName = nodeType.name;
-
-        for (final NodeType t : nodeType.type.generics.types)
-            genericTypes.add(new TypeI(t));
     }
 
     public TypeI(final Type type) {
@@ -277,7 +258,7 @@ public class TypeI {
             // fields
             final String tupleClassName = "Tuple" + tupleTypes.size();
             if (!GenNode.generatedTupleClasses.contains(tupleClassName)) {
-                final GenNodeType tupleClass = new GenNodeType(tupleClassName, tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC);
+                final GenNodeType tupleClass = new GenNodeType(tupleClassName, tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC, false);
                 GenNode.addGenNodeType(tupleClass);
                 final GenNodeFunction tupleConstructor = new GenNodeFunction("<init>", Opcodes.ACC_PUBLIC, "V");
                 GenNode.addGenNodeFunction(tupleConstructor);

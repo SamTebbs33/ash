@@ -112,12 +112,14 @@ public abstract class GenNode {
         private final LinkedList<GenNodeField> fields = new LinkedList<GenNodeField>();
         private final LinkedList<GenNodeFunction> functions = new LinkedList<GenNodeFunction>();
         public final LinkedList<String> generics = new LinkedList<String>();
+        public boolean isInterface;
 
-        public GenNodeType(final String name, final String shortName, final String superclass, final String[] interfaces, final int modifiers) {
+        public GenNodeType(final String name, final String shortName, final String superclass, final String[] interfaces, final int modifiers, boolean isInterface) {
             this.name = name;
             this.superclass = superclass;
             this.interfaces = interfaces;
             this.modifiers = modifiers;
+            this.isInterface = isInterface;
         }
 
         public void addField(final GenNodeField field) {
@@ -135,7 +137,7 @@ public abstract class GenNode {
                     genericsSignature.append(g + ":" + "Ljava/lang/Object;");
                 genericsSignature.append(">Ljava/lang/Object;");
             }
-            cw.visit(52, modifiers | Opcodes.ACC_SUPER, name, genericsSignature != null ? genericsSignature.toString() : null, superclass, interfaces);
+            cw.visit(52, modifiers | (isInterface ? Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT : Opcodes.ACC_SUPER), name, genericsSignature != null ? genericsSignature.toString() : null, superclass, interfaces);
             // I can't split by escape character, for some reason...
             final String[] folders = name.split("/");
             int i = 0;
@@ -155,7 +157,7 @@ public abstract class GenNode {
 
             cw.visitEnd();
 
-            verifyClassBytecode(cw);
+            //verifyClassBytecode(cw);
 
             final File classFile = new File(dirSb.toString() + shortName + ".class");
             if (classFile.exists()) classFile.delete();
