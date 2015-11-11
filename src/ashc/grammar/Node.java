@@ -205,7 +205,7 @@ public abstract class Node {
             final QualifiedName name = new QualifiedName(AshCompiler.get().parentPath.replace('.', '/'));
             name.pop(); // Remove the last section (the file extension ".ash")
             name.setLast("$Global" + AshCompiler.get().fileName);
-            GenNode.addGenNodeType(new GenNodeType(name.toBytecodeName(), name.shortName, "java/lang/Object", null, Opcodes.ACC_PUBLIC));
+            GenNode.addGenNodeType(new GenNodeType(name.toBytecodeName(), name.shortName, "java/lang/Object", null, Opcodes.ACC_PUBLIC, false));
             for (final NodeFuncDec dec : funcs)
                 dec.generate();
             GenNode.exitGenNodeType();
@@ -481,7 +481,7 @@ public abstract class Node {
                     interfaces[i++] = interfc.qualifiedName.toString();
                 }
             }
-            genNodeType = new GenNodeType(name, type.qualifiedName.shortName, superClass, interfaces, type.modifiers);
+            genNodeType = new GenNodeType(name, type.qualifiedName.shortName, superClass, interfaces, type.modifiers, false);
             GenNode.addGenNodeType(genNodeType);
 
             // Build the costructor
@@ -3597,26 +3597,9 @@ public abstract class Node {
             Scope.pop();
         }
 
-    }
-
-    public static class NodeFuncClosure extends NodeClosure {
-
-        public FunctionTypeI functionType;
-
-        public NodeFuncClosure(int line, int col){
-            super(line, col);
-        }
-
-        @Override
-        public TypeI getExprType() {
-            return (functionType = new FunctionTypeI(typeI, argTypes, args.defExpr));
-        }
-
-        @Override
-        public void generate() {
-            String name = functionType.toClassName();
-            GenNode.addGenNodeType(new GenNodeType(name, name, "java/lang/Object", new String[0], EnumModifier.PUBLIC.intVal));
-            GenNodeFunction func = new GenNodeFunction("do", EnumModifier.PUBLIC.intVal, typeI.toBytecodeName());
+        public void generate(String shortName, String qualifiedName, String[] interfaces, String funcName, int mods, TypeI retType, boolean isInterface) {
+            GenNode.addGenNodeType(new GenNodeType(qualifiedName, shortName, "java/lang/Object", interfaces, EnumModifier.PUBLIC.intVal, isInterface));
+            GenNodeFunction func = new GenNodeFunction(funcName, mods, retType.toBytecodeName());
             int i = 1;
             for (TypeI arg : argTypes) {
                 func.params.add(arg);
@@ -3636,9 +3619,30 @@ public abstract class Node {
 
             GenNode.exitGenNodeType();
 
-            addFuncStmt(new GenNodeNew(name));
+            addFuncStmt(new GenNodeNew(qualifiedName));
             addFuncStmt(new GenNodeOpcode(Opcodes.DUP));
-            addFuncStmt(new GenNodeFuncCall(name, "<init>", "()V", false, false, false, true));
+            addFuncStmt(new GenNodeFuncCall(qualifiedName, "<init>", "()V", false, false, false, true));
+        }
+
+    }
+
+    public static class NodeFuncClosure extends NodeClosure {
+
+        public FunctionTypeI functionType;
+
+        public NodeFuncClosure(int line, int col){
+            super(line, col);
+        }
+
+        @Override
+        public TypeI getExprType() {
+            return (functionType = new FunctionTypeI(typeI, argTypes, args.defExpr));
+        }
+
+        @Override
+        public void generate() {
+            String name = functionType.toClassName();
+            super.generate(name, name, new String[0], "do", EnumModifier.PUBLIC.intVal, typeI, false);
         }
 
     }
@@ -3646,6 +3650,7 @@ public abstract class Node {
     public static class NodeInterfaceClosure extends NodeClosure {
 
         public Function interfaceFunc;
+        public int id;
 
         public NodeInterfaceClosure(int line, int col){
             super(line, col);
@@ -3659,7 +3664,7 @@ public abstract class Node {
         @Override
         public void analyse() {
             super.analyse();
-            // Check if any of the known interfaces have a function that is compatible with this closure.
+            // Check if any of the known interfaces has a function that is compatible with this closure.
             for(Type t : Semantics.types.values()){
                 // Ensure the type is an interface
                 if(t.type == EnumType.INTERFACE){
@@ -3668,6 +3673,7 @@ public abstract class Node {
                         for(Function f : list) {
                             // Check if the function's args and return type are identical to this closure's
                             if (f.parameters.equals(argTypes) && f.returnType.equals(typeI)) {
+                                id = t.interfaceClosures++;
                                 interfaceFunc = f;
                                 break;
                             }
@@ -3680,7 +3686,12 @@ public abstract class Node {
 
         @Override
         public void generate() {
-
+            Type interfaceType = interfaceFunc.enclosingType;
+            String name = "$" + interfaceType.qualifiedName.shortName + id;
+            // Strip the "abstract" modifier from the function, as this is used in the interface but not the class
+            int log2 = (int) (Math.log(Modifier.ABSTRACT) / Math.log(2));
+            int mods = interfaceFunc.modifiers & ~(1 << log2);
+            super.generate(name, name, new String[] {interfaceType.qualifiedName.toBytecodeName()}, interfaceFunc.qualifiedName.shortName, mods, interfaceFunc.returnType, false);
         }
     }
 

@@ -258,7 +258,7 @@ public class TypeI {
             // fields
             final String tupleClassName = "Tuple" + tupleTypes.size();
             if (!GenNode.generatedTupleClasses.contains(tupleClassName)) {
-                final GenNodeType tupleClass = new GenNodeType(tupleClassName, tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC);
+                final GenNodeType tupleClass = new GenNodeType(tupleClassName, tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC, false);
                 GenNode.addGenNodeType(tupleClass);
                 final GenNodeFunction tupleConstructor = new GenNodeFunction("<init>", Opcodes.ACC_PUBLIC, "V");
                 GenNode.addGenNodeFunction(tupleConstructor);

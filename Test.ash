@@ -1,17 +1,13 @@
+import java.util.Comparator
+import TestInterface
+
 public class Test {
 
     public static func main(args : [String]) {
 
-        test(func (x : int, y : int) -> int {
-                if(x == y) return 0
-                else if(x < y) return -1
-                else return 1
-            }
-        )
-    }
+        var comp = interface (a : int, b : int) -> bool = true
+        System.out.println(comp.test(1, 2))
 
-    public func test(f : func (int, int) -> int) {
-        System.out.println(f(1, 2))
     }
 
 }
