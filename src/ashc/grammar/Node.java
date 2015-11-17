@@ -2161,6 +2161,33 @@ public abstract class Node {
             this.expr1 = expr1;
             this.expr2 = expr2;
             operator = op;
+
+            // Re-arrange the expression if the sub-expression operator's precedence is greater than this expression's operator
+            if(expr2 instanceof NodeBinary) {
+                NodeBinary e2 = (NodeBinary) expr2;
+                if(e2.operator.precedence < operator.precedence) {
+
+                    // Swap expr1 an expr2.expr1
+                    IExpression temp = this.expr1;
+                    this.expr1 = e2.expr1;
+                    e2.expr1 = temp;
+
+                    // Swap expr2.expr2 and expr1
+                    temp = e2.expr2;
+                    e2.expr2 = this.expr1;
+                    this.expr1 = temp;
+
+                    // Swap expr1 and expr2
+                    temp = this.expr1;
+                    this.expr1 = this.expr2;
+                    this.expr2 = temp;
+
+                    // Swap the operators
+                    OperatorDef opTemp = operator;
+                    this.operator = e2.operator;
+                    e2.operator = opTemp;
+                }
+            }
         }
 
         @Override
