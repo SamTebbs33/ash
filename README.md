@@ -1,4 +1,4 @@
-# Ash [![Build Status](https://travis-ci.org/ash-lang/ash.svg?branch=master)](https://travis-ci.org/ash-lang/ash) [![Join the chat at https://gitter.im/ash-lang/ash](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ash-lang/ash?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+# Ash [![Build Status](https://travis-ci.org/ash-lang/ash.svg?branch=master)](https://travis-ci.org/ash-lang/ash) [![Join the chat at https://gitter.im/ash-lang/ash](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ash-lang/ash?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Stories in Ready](https://badge.waffle.io/ash-lang/ash.png?label=ready&title=Ready)](http://waffle.io/ash-lang/ash)
 
 The Ash programming language
 
