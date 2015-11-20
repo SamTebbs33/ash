@@ -1,13 +1,16 @@
 package stdlib
-operator ?? = type: binary, name: not_null, assoc: none, prec: 120
+operator ?? = type: binary, name: elvis, assoc: none, prec: 120
 operator === = type: binary, name: value_equality, assoc: none, prec: 120
 operator ! = type: prefix, name: bool_not
 operator ** = type: binary, name: pow, assoc: none, prec: 120
 operator ^ = type: prefix, name: boxing
-opeartor >> = type: postfix, name: collection_stream
+operator >> = type: postfix, name: collection_stream
+operator ? = type: prefix, name: not_null
 
 func String.toInt() -> int = Integer.parseInt(this)
 //func String.toInt(radix : int) -> int = Integer.parseInt(this, radix)
+
+func ?(obj : Object?) -> bool = obj != null
 
 func println(str : String) = System.out.println(str)
 func println(obj : Object) = System.out.println(obj)
