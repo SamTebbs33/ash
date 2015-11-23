@@ -77,7 +77,10 @@ public class TypeI {
 
         @Override
         public String toString() {
-            return "func (" + args.toString() + ") -> " + type.toString();
+            StrignBuffer sb = new StringBuffer();
+            int c = 0;
+            for(TypeI argType : args) sb.append(argType.toString() + (c < args.size() - 1 ? ", " : ""));
+            return "func (" + sb.toString() + ") -> " + type.toString();
         }
     }
 
