@@ -77,10 +77,10 @@ public class TypeI {
 
         @Override
         public String toString() {
-            StrignBuffer sb = new StringBuffer();
+            StringBuffer sb = new StringBuffer();
             int c = 0;
             for(TypeI argType : args) sb.append(argType.toString() + (c < args.size() - 1 ? ", " : ""));
-            return "func (" + sb.toString() + ") -> " + type.toString();
+            return "(" + sb.toString() + ") -> " + type.toString();
         }
     }
 
@@ -143,9 +143,6 @@ public class TypeI {
     @Override
     public String toString() {
         if (isNull() || isVoid()) return shortName;
-        final StringBuffer arrBuffer = new StringBuffer();
-        for (int i = 0; i < arrDims; i++)
-            arrBuffer.append("[]");
         String id = shortName;
         if (tupleName != null) id = tupleName + " : " + id;
         if (isTuple()) {
@@ -154,13 +151,7 @@ public class TypeI {
                 id += tupleTypes.get(i).toString() + (i < (tupleTypes.size() - 1) ? ", " : "");
             id += ")";
         }
-        if (genericTypes.size() > 0) {
-            id += "<";
-            for (int i = 0; i < (genericTypes.size() - 1); i++)
-                id += genericTypes.get(i).toString() + ", ";
-            id += genericTypes.getLast().toString() + ">";
-        }
-        return String.format("%s%s%s", id, arrBuffer.toString(), optional ? "?" : "");
+        return String.format("%s%s%s%s", String.join("", Collections.nCopies(arrDims, "[")), id, String.join("", Collections.nCopies(arrDims, "]")), optional ? "?" : "");
     }
 
     public boolean isVoid() {

@@ -27,7 +27,7 @@ public class Lexer {
     }
 
     public enum TokenTypeGroup implements TokenMatcher {
-        EXPRESSION_STARTER("expression", TokenType.NEW, TokenType.NULL, TokenType.BRACEL, TokenType.ID, TokenType.THIS, TokenType.SELF,
+        EXPRESSION_STARTER("expression", TokenType.MATCH, TokenType.NEW, TokenType.NULL, TokenType.BRACEL, TokenType.ID, TokenType.THIS, TokenType.SELF,
                 TokenType.FUNC,
                 TokenType.INTERFACE,
                 TokenType.OP,
