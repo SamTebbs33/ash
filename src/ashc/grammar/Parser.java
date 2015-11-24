@@ -441,7 +441,7 @@ public class Parser {
             case FOR:
                 return parseForStmt();
             case MATCH:
-                return parseMatchStmt();
+                return parseMatchStmt(false);
             case VAR:
             case CONST:
                 return parseVarDec(null, token, false);
@@ -449,13 +449,14 @@ public class Parser {
         return null;
     }
 
-    private IFuncStmt parseMatchStmt() throws GrammarException {
+    private NodeMatch parseMatchStmt(boolean exprMode) throws GrammarException {
         final IExpression expr = parseExpression();
         expect(TokenType.BRACEL);
         final NodeMatch match = new NodeMatch(((Node) expr).line, ((Node) expr).column, expr);
+        match.inExprMode = exprMode;
         while (getNext().type != TokenType.BRACER) {
             rewind();
-            final NodeMatchCase matchCase = parseMatchCase();
+            final NodeMatchCase matchCase = parseMatchCase(exprMode);
             match.add(matchCase);
             if (matchCase.isDefaultCase) {
                 expect(TokenType.BRACER);
@@ -465,17 +466,17 @@ public class Parser {
         return match;
     }
 
-    private NodeMatchCase parseMatchCase() throws GrammarException {
+    private NodeMatchCase parseMatchCase(boolean exprMode) throws GrammarException {
         Token next;
         if ((next = getNext()).type == TokenType.UNDERSCORE)
-            return new NodeMatchCase(next.line, next.columnStart, null, parseFuncBlock(true, false, TokenType.LAMBDAARROW));
+            return new NodeMatchCase(next.line, next.columnStart, null, parseFuncBlock(true, exprMode, TokenType.LAMBDAARROW));
         else rewind();
         final IExpression expr = parseExpression();
         final NodeMatchCase matchCase = new NodeMatchCase(((Node) expr).line, ((Node) expr).column, expr, null);
         while (getNext().type == TokenType.COMMA)
             matchCase.exprs.add(parseExpression());
         rewind();
-        matchCase.block = parseFuncBlock(true, false, TokenType.LAMBDAARROW);
+        matchCase.block = parseFuncBlock(true, exprMode, TokenType.LAMBDAARROW);
         matchCase.block.inFunction = false;
         return matchCase;
     }
@@ -592,6 +593,9 @@ public class Parser {
         final Token next = expect(Lexer.TokenTypeGroup.EXPRESSION_STARTER);
         IExpression expr = null;
         switch (next.type) {
+            case MATCH:
+                expr = parseMatchStmt(true);
+                break;
             case FUNC:
             case INTERFACE:
                 expr = parseClosure(next);

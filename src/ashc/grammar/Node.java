@@ -1411,7 +1411,11 @@ public abstract class Node {
                 if (scope.returnType.isVoid())
                     semanticError(this, ((Node) singleLineExpr).line, ((Node) singleLineExpr).column, RETURN_EXPR_IN_VOID_FUNC);
                 else if (!scope.returnType.canBeAssignedTo(singleLineExprType))
-                    semanticError(this, ((Node) singleLineExpr).line, ((Node) singleLineExpr).column, CANNOT_ASSIGN, scope.returnType.toString(), singleLineExprType.toString());
+                    semanticError(this,
+                            ((Node) singleLineExpr).line,
+                            ((Node) singleLineExpr).column, CANNOT_ASSIGN,
+                            scope.returnType.toString(),
+                            singleLineExprType.toString());
             } else if (singleLineStmt != null) singleLineStmt.analyse();
             else for (final IFuncStmt stmt : stmts) {
                     stmt.analyse();
@@ -3092,16 +3096,27 @@ public abstract class Node {
 
     }
 
-    public static class NodeMatch extends Node implements IFuncStmt {
+    public static class NodeMatch extends Node implements IFuncStmt, IExpression {
         public IExpression expr;
         public LinkedList<NodeMatchCase> matchCases = new LinkedList<NodeMatchCase>();
+        public boolean inExprMode;
 
-        public TypeI exprType;
+        public TypeI exprType, caseType;
         public boolean hasDefaultCase;
 
         public NodeMatch(final int line, final int column, final IExpression expr) {
             super(line, column);
             this.expr = expr;
+        }
+
+        @Override
+        public TypeI getExprType() {
+            return caseType;
+        }
+
+        @Override
+        public void registerScopedChecks() {
+
         }
 
         @Override
@@ -3113,11 +3128,21 @@ public abstract class Node {
                 for (final NodeMatchCase matchCase : matchCases) {
                     matchCase.analyse();
                     if (!matchCase.isDefaultCase && !matchCase.errored) for (final IExpression expr : matchCase.exprs) {
-                        TypeI caseType = expr.getExprType();
+                        TypeI t = expr.getExprType();
                         // The generic used for ranges must be extracted
-                        if (caseType.isRange()) caseType = caseType.genericTypes.get(0);
-                        if (!exprType.canBeAssignedTo(caseType))
-                            semanticError(this, matchCase.line, matchCase.column, INCOMPATIBLE_TYPES, exprType, caseType);
+                        if (t.isRange()) t = t.genericTypes.get(0);
+                        if (!exprType.canBeAssignedTo(t))
+                            semanticError(this, matchCase.line, matchCase.column, INCOMPATIBLE_TYPES, exprType, t);
+                    }
+                    // Get the most precedent type of all match case expressions
+                    if(inExprMode) {
+                        TypeI t = matchCase.block.singleLineExpr.getExprType();
+                        if(caseType == null) caseType = t;
+                        else {
+                            TypeI t2 = TypeI.getPrecedentType(t, caseType);
+                            if(t2 == null) semanticError(this, matchCase.block.line, matchCase.block.column, EnumError.INCOMPATIBLE_TYPES, caseType, t2);
+                            else caseType = t2;
+                        }
                     }
                 }
             }

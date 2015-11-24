@@ -10,7 +10,7 @@ import ashc.grammar.Node.NodeFile;
 import ashc.grammar.Parser.GrammarException;
 
 /**
- * Ash
+ * AshCompiler
  *
  * @author samtebbs, 15:14:41 - 23 May 2015
  */

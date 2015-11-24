@@ -12,7 +12,7 @@ import ashc.semantics.Member.EnumType;
 import ashc.semantics.Member.Type;
 
 /**
- * Grammar
+ * AshMain
  *
  * @author samtebbs, 19:52:26 - 20 May 2015
  */
