@@ -43,10 +43,6 @@ import ashc.codegen.GenNode.GenNodeVar;
 import ashc.codegen.GenNode.GenNodeVarLoad;
 import ashc.codegen.GenNode.GenNodeVarStore;
 import ashc.grammar.Lexer.Token;
-import ashc.grammar.Node.NodeArgs;
-import ashc.grammar.Node.NodeFuncBlock;
-import ashc.grammar.Node.NodePackage;
-import ashc.grammar.Node.NodeType;
 import ashc.grammar.OperatorDef.EnumOperatorAssociativity;
 import ashc.grammar.OperatorDef.EnumOperatorType;
 import ashc.grammar.Parser.GrammarException;
@@ -61,7 +57,6 @@ import ashc.semantics.Member.Variable;
 import ashc.semantics.Scope.FuncScope;
 import ashc.semantics.Scope.PropertyScope;
 import ashc.semantics.Semantics.Operation;
-import ashc.semantics.Member.Type;
 import ashc.util.*;
 import ashc.semantics.TypeI.FunctionTypeI;
 
@@ -1035,6 +1030,7 @@ public abstract class Node {
             this.block = block;
             generics = types;
             this.block.inFunction = true;
+            this.block.ignoreFuncReturn = false;
             extensionType = extensionType2;
             this.hasBody = hasBody;
             this.opType = opType;
@@ -1387,7 +1383,7 @@ public abstract class Node {
         public TypeI funcReturnType;
         LinkedList<IFuncStmt> stmts = new LinkedList<IFuncStmt>();
         public IFuncStmt singleLineStmt;
-        public boolean inFunction = false, hasThisCall;
+        public boolean inFunction = false, hasThisCall, ignoreFuncReturn = true;
 
         public void add(final IFuncStmt funcStmt) {
             stmts.add(funcStmt);
@@ -1408,14 +1404,16 @@ public abstract class Node {
                 singleLineExpr.analyse();
                 final FuncScope scope = Scope.getFuncScope();
                 final TypeI singleLineExprType = singleLineExpr.getExprType();
-                if (scope.returnType.isVoid())
-                    semanticError(this, ((Node) singleLineExpr).line, ((Node) singleLineExpr).column, RETURN_EXPR_IN_VOID_FUNC);
-                else if (!scope.returnType.canBeAssignedTo(singleLineExprType))
-                    semanticError(this,
-                            ((Node) singleLineExpr).line,
-                            ((Node) singleLineExpr).column, CANNOT_ASSIGN,
-                            scope.returnType.toString(),
-                            singleLineExprType.toString());
+                if(!ignoreFuncReturn) {
+                    if (scope.returnType.isVoid())
+                        semanticError(this, ((Node) singleLineExpr).line, ((Node) singleLineExpr).column, RETURN_EXPR_IN_VOID_FUNC);
+                    else if (!scope.returnType.canBeAssignedTo(singleLineExprType))
+                        semanticError(this,
+                                ((Node) singleLineExpr).line,
+                                ((Node) singleLineExpr).column, CANNOT_ASSIGN,
+                                scope.returnType.toString(),
+                                singleLineExprType.toString());
+                }
             } else if (singleLineStmt != null) singleLineStmt.analyse();
             else for (final IFuncStmt stmt : stmts) {
                     stmt.analyse();
