@@ -100,7 +100,8 @@ public class AshError extends Exception {
 
         PRIMTIVE_CANNOT_BE_OPTIONAL("A primitive type cannot be optional (%s)"),
         CANNOT_ASSIGN("Cannot assign %s to %s"),
-        NO_INTERFACE_FOR_CLOSURE_FOUND("None of the imported interfaces have a function that is applicable to the given arguments");
+        CLOSURE_TYPE_NOT_INTERFACE("The type used is not an interface"),
+        NO_INTERFACE_FOR_CLOSURE_FOUND("None of the imported interfaces have a function that is applicable to the given arguments and return type");
 
         public String format;
 

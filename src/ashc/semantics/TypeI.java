@@ -193,6 +193,10 @@ public class TypeI {
                 && (shortName.equals(exprType.shortName) || (exprType.isNull() && !EnumPrimitive.isNumeric(shortName)) || Semantics.typeHasSuper(exprType.shortName, shortName));
     }
 
+    public boolean isClassType() {
+        return !isTuple() && !isArray() && !isPrimitive();
+    }
+
     public boolean isNull() {
         return !isTuple() ? shortName.equals("null") : false;
     }

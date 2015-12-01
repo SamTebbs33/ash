@@ -56,8 +56,8 @@ public class AshCompiler {
     }
 
     public void analyse() {
-        if (!defFile) fileNode.analyse();
-        else defFileNode.analyse();
+        if (!defFile) fileNode.analyse(null);
+        else defFileNode.analyse(null);
     }
 
     public void generate() {

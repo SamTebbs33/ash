@@ -3714,24 +3714,37 @@ public abstract class Node {
         @Override
         public void analyse(TypeI typeContext) {
             super.analyse(typeContext);
-            // Check if any of the known interfaces has a function that is compatible with this closure.
-            for(Type t : Semantics.types.values()){
-                // Ensure the type is an interface
-                if(t.type == EnumType.INTERFACE){
-                    // Loop through each of the interface's functions
-                    for(LinkedList<Function> list : t.functions.values()){
-                        for(Function f : list) {
-                            // Check if the function's args and return type are identical to this closure's
-                            if (f.parameters.equals(argTypes) && f.returnType.equals(typeI)) {
-                                id = t.interfaceClosures++;
-                                interfaceFunc = f;
-                                break;
-                            }
-                        }
-                    }
+            if (typeContext == null) {
+                // Check if any of the known interfaces has a function that is compatible with this closure.
+                for (Type t : Semantics.types.values())
+                    // Ensure the type is an interface
+                    if (t.type == EnumType.INTERFACE)
+                        // Loop through each of the interface's functions
+                        for (LinkedList<Function> list : t.functions.values())
+                            for (Function f : list)
+                                if (checkIfMatchesFunction(f, t)) break;
+            } else {
+                if (!typeContext.isClassType()) semanticError(this, line, column, CLOSURE_TYPE_NOT_INTERFACE);
+                else {
+                    Type type = Semantics.getType(typeContext.shortName).get();
+                    if (type.type == EnumType.INTERFACE)
+                        for (LinkedList<Function> list : type.functions.values())
+                            for (Function f : list)
+                                if (checkIfMatchesFunction(f, type)) break;
+
                 }
             }
             if(interfaceFunc == null) semanticError(this, args.line, args.column, NO_INTERFACE_FOR_CLOSURE_FOUND);
+        }
+
+        private boolean checkIfMatchesFunction(Function f, Type ifc) {
+            // Check if the function's args and return type are identical to this closure's
+            if (f.parameters.equals(argTypes) && f.returnType.equals(typeI)) {
+                id = ifc.interfaceClosures++;
+                interfaceFunc = f;
+                return true;
+            }
+            return false;
         }
 
         @Override
