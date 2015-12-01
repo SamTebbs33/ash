@@ -17,10 +17,6 @@ The language itself will soon be ready for a useable release, more details will 
 If you'd like to contribute (such as adding test files or proposing ideas), please take a look at the [Contributing](CONTRIBUTING.md) page.
 
 This repo uses the [GitHub flow](https://guides.github.com/introduction/flow/) workflow.
-
 This repo includes the Java ASM library (found within the "lib" folder) it's license can be found here: http://asm.ow2.org/license.html
-
-This project adheres to the [Open Code of Conduct][code-of-conduct]. By participating, you are expected to honor this code.
-[code-of-conduct]: http://todogroup.org/opencodeofconduct/#Ash-lang/samuel.tebbs@yahoo.com
 
 Date of repo creation: 23/05/15
