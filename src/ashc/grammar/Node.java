@@ -2998,8 +2998,8 @@ public abstract class Node {
 
         @Override
         public void analyse(TypeI typeContext) {
-            expr.analyse(null);
-            nodeType.analyse(null);
+            expr.analyse(typeContext);
+            nodeType.analyse(typeContext);
             if ((expr instanceof NodeVariable) && !((NodeVariable) expr).errored) {
                 final Field field = ((NodeVariable) expr).var;
                 if (field != null) if (!Scope.getScope().hasCastCheck(field, Semantics.getType(nodeType.id).get()))
