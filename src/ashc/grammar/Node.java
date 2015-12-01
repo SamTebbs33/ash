@@ -82,7 +82,7 @@ public abstract class Node {
     public void preAnalyse() {
     }
 
-    public void analyse() {
+    public void analyse(TypeI typeContext) {
     }
 
     public abstract void generate();
@@ -91,7 +91,7 @@ public abstract class Node {
 
         void generate();
 
-        void analyse();
+        void analyse(TypeI typeContext);
     }
 
     public interface IConstruct {
@@ -105,7 +105,7 @@ public abstract class Node {
 
         void generate();
 
-        void analyse();
+        void analyse(TypeI typeContext);
     }
 
     public static class NodeFile extends Node {
@@ -145,9 +145,9 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             if (typeDecs != null) for (final NodeTypeDec t : typeDecs)
-                t.analyse();
+                t.analyse(null);
         }
 
         @Override
@@ -182,16 +182,16 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             Semantics.enterDefFile("$Global" + AshCompiler.get().fileName);
             for (final NodeImport i : imports)
-                i.analyse();
+                i.analyse(null);
             for (final NodeInclude i : includes)
-                i.analyse();
+                i.analyse(null);
             for (final NodeOperatorDef d : operatorDefs)
-                d.analyse();
+                d.analyse(null);
             for (final NodeFuncDec f : funcs)
-                f.analyse();
+                f.analyse(null);
             Semantics.exitDefFile();
         }
 
@@ -396,11 +396,11 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             // Ensure the super-types are valid
             Semantics.enterType(type);
             if (types != null) {
-                types.analyse();
+                types.analyse(null);
                 boolean hasSuperClass = false;
                 for (final NodeType typeNode : types.types) {
                     final Optional<Type> typeOpt = Semantics.getType(typeNode.id);
@@ -433,7 +433,7 @@ public abstract class Node {
                 if (superArgs != null) {
                     // Super-class args are evaluated in the context of the default constructor, so push its scope.
                     Scope.push(defConstructorScope);
-                    superArgs.analyse();
+                    superArgs.analyse(null);
                     Scope.pop();
                     final Type superClass = type.getSuperClass();
                     if (superClass.getFunc(superClass.qualifiedName.shortName, superArgs, null) == null)
@@ -574,8 +574,8 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            super.analyse();
+        public void analyse(TypeI typeContext) {
+            super.analyse(null);
             if (args == null) {
                 // Check if there is a "consruct" block in this class where there is no default constructor
                 final LinkedList<NodeFuncBlock> cBlocks = ((NodeClassBlock) block).constructBlocks;
@@ -583,7 +583,7 @@ public abstract class Node {
                     semanticError(this, cBlocks.getFirst().line, cBlocks.getFirst().column, CONSTRUCT_BLOCK_NOT_ALLOWED);
             }
             if (((NodeClassBlock) block).hasConstructor) hasConstructor = true;
-            block.analyse();
+            block.analyse(null);
             Semantics.exitType();
         }
 
@@ -654,9 +654,9 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            super.analyse();
-            block.analyse();
+        public void analyse(TypeI typeContext) {
+            super.analyse(null);
+            block.analyse(null);
             Semantics.exitType();
         }
 
@@ -675,8 +675,8 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            type.analyse();
+        public void analyse(TypeI typeContext) {
+            type.analyse(null);
         }
 
         @Override
@@ -705,7 +705,7 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             final int size = args.size();
             for (int i = 0; i < size; i++) {
                 boolean hasDupes = false;
@@ -744,10 +744,10 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             int i = 0;
             for (final NodeType type : types) {
-                type.analyse();
+                type.analyse(null);
                 int j = 0;
                 for (final NodeType type2 : types)
                     if ((i++ != j++) && type.id.equals(type2.id))
@@ -790,19 +790,19 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             for (final NodeVarDec varDec : varDecs)
-                varDec.analyse();
+                varDec.analyse(null);
             for (final NodeFuncDec funcDec : funcDecs)
-                funcDec.analyse();
+                funcDec.analyse(null);
             Scope.push(new FuncScope(TypeI.getVoidType(), false, false, false));
             for (final NodeFuncBlock block : constructBlocks)
-                block.analyse();
+                block.analyse(null);
             Scope.pop();
             if (initBlocks.size() > 0) {
                 Scope.push(new FuncScope(TypeI.getVoidType(), false, true, false));
                 for (final NodeFuncBlock block : initBlocks) {
-                    block.analyse();
+                    block.analyse(null);
                     Scope.getScope().vars.clear();
                 }
                 Scope.pop();
@@ -917,10 +917,10 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             if(funcTypeArgs.size() > 0){
-                for(NodeType t : funcTypeArgs) t.analyse();
-                if(funcTypeReturn != null) funcTypeReturn.analyse();
+                for (NodeType t : funcTypeArgs) t.analyse(null);
+                if (funcTypeReturn != null) funcTypeReturn.analyse(null);
             }
             if (tupleTypes.size() == 0) {
                 if (!Semantics.typeExists(id)) semanticError(this, line, column, TYPE_DOES_NOT_EXIST, id);
@@ -937,7 +937,7 @@ public abstract class Node {
                 if (EnumPrimitive.isPrimitive(id) && optional && (arrDims == 0))
                     semanticError(this, line, column, PRIMTIVE_CANNOT_BE_OPTIONAL, id);
             } else for (int i = 0; i < tupleTypes.size(); i++)
-                tupleTypes.get(i).analyse();
+                tupleTypes.get(i).analyse(null);
 
         }
 
@@ -1119,12 +1119,12 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            args.analyse();
+        public void analyse(TypeI typeContext) {
+            args.analyse(null);
             if (id.equals("init")) isConstructor = true;
-            if (type != null) type.analyse();
+            if (type != null) type.analyse(null);
             if (throwsType != null) {
-                throwsType.analyse();
+                throwsType.analyse(null);
                 final Optional<Type> type = Semantics.getType(throwsType.id);
                 if (type.isPresent())
                     if (!type.get().hasSuper(new QualifiedName("").add("java").add("lang").add("Throwable")))
@@ -1138,10 +1138,10 @@ public abstract class Node {
             }
 
             Scope.push(scope);
-            block.analyse();
+            block.analyse(null);
             // If the return type is not "void", all code paths must have a
             // return statement
-            if (!returnType.isVoid() && !isMutFunc && !isConstructor)
+            if (!returnType.isVoid() && !isMutFunc && !isConstructor && Semantics.currentType().type != EnumType.INTERFACE)
                 if (!block.hasReturnStmt()) semanticError(this, line, column, NOT_ALL_PATHS_HAVE_RETURN);
             Scope.pop();
         }
@@ -1241,7 +1241,7 @@ public abstract class Node {
                 else if (Scope.getFuncScope() != null) semanticError(this, line, column, PROPERTY_IN_FUNC, id);
             if (getBlock != null) {
                 Scope.push(new PropertyScope(var));
-                getBlock.analyse();
+                getBlock.analyse(null);
                 Scope.pop();
             }
             if (setBlock != null) {
@@ -1249,13 +1249,13 @@ public abstract class Node {
                 final Variable newVar = new Variable("newVal", var.type);
                 newVar.localID = var.isStatic() ? 0 : 1;
                 Scope.getScope().addVar(newVar);
-                setBlock.analyse();
+                setBlock.analyse(null);
                 Scope.pop();
             }
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             // Only check if this var exists if we're in a scope, since variable
             // declarations in types are already handled
             if ((Scope.getScope() != null) && Semantics.varExists(id))
@@ -1317,18 +1317,18 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            super.analyse();
-            type.analyse();
-            if (expr != null) expr.analyse();
+        public void analyse(TypeI typeContext) {
+            super.analyse(null);
+            type.analyse(null);
             typeI = type.toTypeI();
-            if (expr == null) {
-                if (!type.optional && !(EnumPrimitive.isPrimitive(type.id) && (type.arrDims == 0)))
-                    semanticError(this, line, column, MISSING_ASSIGNMENT);
-            } else {
+            if (expr != null) {
+                expr.analyse(typeI);
                 final TypeI exprType = expr.getExprType();
                 if (exprType != null) if (!typeI.canBeAssignedTo(exprType))
                     semanticError(this, line, column, CANNOT_ASSIGN, exprType, typeI.toString());
+            } else {
+                if (!type.optional && !(EnumPrimitive.isPrimitive(type.id) && (type.arrDims == 0)))
+                    semanticError(this, line, column, MISSING_ASSIGNMENT);
             }
             if (var == null) {
                 var = new Variable(id, typeI);
@@ -1354,7 +1354,7 @@ public abstract class Node {
                 if (mod.asInt() == EnumModifier.STATIC.intVal) isStatic = true;
                 modifiers |= mod.asInt();
             }
-            expr.analyse();
+            expr.analyse(null);
             typeI = expr.getExprType();
             var = new Field(name, modifiers, typeI, setBlock != null, getBlock != null, Semantics.currentType());
             if (!Semantics.fieldExists(var)) Semantics.addField(var);
@@ -1362,9 +1362,9 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            super.analyse();
-            expr.analyse();
+        public void analyse(TypeI typeContext) {
+            super.analyse(null);
+            expr.analyse(null);
             if (!((Node) expr).errored) {
                 final TypeI type = Semantics.filterNullType(expr.getExprType());
                 if (var == null) {
@@ -1398,10 +1398,10 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             funcReturnType = Scope.getFuncScope().returnType;
             if (singleLineExpr != null) {
-                singleLineExpr.analyse();
+                singleLineExpr.analyse(null);
                 final FuncScope scope = Scope.getFuncScope();
                 final TypeI singleLineExprType = singleLineExpr.getExprType();
                 if(!ignoreFuncReturn) {
@@ -1414,9 +1414,9 @@ public abstract class Node {
                                 scope.returnType.toString(),
                                 singleLineExprType.toString());
                 }
-            } else if (singleLineStmt != null) singleLineStmt.analyse();
+            } else if (singleLineStmt != null) singleLineStmt.analyse(null);
             else for (final IFuncStmt stmt : stmts) {
-                    stmt.analyse();
+                    stmt.analyse(null);
                     if (stmt instanceof NodeFuncCall) if (((NodeFuncCall) stmt).isThisCall) hasThisCall = true;
                 }
         }
@@ -1476,9 +1476,9 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             for (final IExpression expr : exprs)
-                expr.analyse();
+                expr.analyse(null);
         }
 
         @Override
@@ -1583,10 +1583,10 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            args.analyse();
-            if (generics != null) generics.analyse();
-            if (prefix != null) prefix.analyse();
+        public void analyse(TypeI typeContext) {
+            args.analyse(null);
+            if (generics != null) generics.analyse(null);
+            if (prefix != null) prefix.analyse(null);
             // If it's a "this" call, change the id to the name of the current
             // type
             // If it's a "super" call, change the id to the name of the super
@@ -1695,7 +1695,7 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             if (id.equals("self") && Scope.inPropertyScope()) {
                 isSelf = true;
                 final PropertyScope scope = Scope.getPropertyScope();
@@ -1710,7 +1710,7 @@ public abstract class Node {
                 }
                 var = Semantics.getVar(id);
             } else {
-                prefix.analyse();
+                prefix.analyse(null);
                 prefixType = prefix.getExprType();
                 if (prefixType.isArray() && id.equals("length")) {
                     isArrayLength = true;
@@ -1771,10 +1771,10 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            expr.analyse();
+        public void analyse(TypeI typeContext) {
+            expr.analyse(null);
             final TypeI exprType = expr.getExprType();
-            var.analyse();
+            var.analyse(null);
             if (var.errored) errored = true;
             if (var.var != null) if (!var.var.type.canBeAssignedTo(expr.getExprType()))
                 semanticError(this, line, column, CANNOT_ASSIGN, var.var.type, exprType);
@@ -1841,11 +1841,11 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             final FuncScope scope = Scope.getFuncScope();
             if (scope.isMutFunc) semanticError(this, line, column, RETURN_IN_MUT_FUNC);
             if (expr != null) {
-                expr.analyse();
+                expr.analyse(null);
                 exprType = expr.getExprType();
                 if (scope.returnType.isVoid()) semanticError(this, line, column, RETURN_EXPR_IN_VOID_FUNC);
                 else if (!scope.returnType.canBeAssignedTo(exprType))
@@ -1987,7 +1987,7 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             int i = 0;
             boolean inVarName = false, inExpr = false;
             String varName = "";
@@ -2010,7 +2010,7 @@ public abstract class Node {
                         } catch (final GrammarException e) {
                             parser.handleException(e);
                         }
-                        if (expr != null) expr.analyse();
+                        if (expr != null) expr.analyse(null);
                     } catch (final IOException e) {
                         e.printStackTrace();
                     }
@@ -2118,10 +2118,10 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            expr.analyse();
-            exprTrue.analyse();
-            exprFalse.analyse();
+        public void analyse(TypeI typeContext) {
+            expr.analyse(null);
+            exprTrue.analyse(null);
+            exprFalse.analyse(null);
         }
 
         @Override
@@ -2193,9 +2193,9 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            expr1.analyse();
-            expr2.analyse();
+        public void analyse(TypeI typeContext) {
+            expr1.analyse(null);
+            expr2.analyse(null);
             errored = ((Node) expr1).errored || ((Node) expr1).errored;
             if (!errored) {
                 exprType1 = expr1.getExprType();
@@ -2292,8 +2292,8 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            expr.analyse();
+        public void analyse(TypeI typeContext) {
+            expr.analyse(null);
         }
 
         @Override
@@ -2344,7 +2344,7 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             if (Scope.inFuncScope()) {
                 final FuncScope scope = Scope.getFuncScope();
                 if (scope.isGlobal) {
@@ -2436,7 +2436,7 @@ public abstract class Node {
         @Override
         public void preAnalyse() {
             for (final IExpression expr : exprs)
-                expr.analyse();
+                expr.analyse(null);
         }
 
         @Override
@@ -2531,8 +2531,8 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            exprs.analyse();
+        public void analyse(TypeI typeContext) {
+            exprs.analyse(null);
         }
 
         @Override
@@ -2585,10 +2585,10 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             Scope.push(new Scope(false));
             if (expr != null) {
-                expr.analyse();
+                expr.analyse(null);
                 if (!((Node) expr).errored) {
                     final TypeI exprType = expr.getExprType();
                     if ((EnumPrimitive.getPrimitive(exprType.shortName) != EnumPrimitive.BOOL) || exprType.isArray())
@@ -2596,9 +2596,9 @@ public abstract class Node {
                 }
                 expr.registerScopedChecks();
             }
-            block.analyse();
+            block.analyse(null);
             Scope.pop();
-            if (elseStmt != null) elseStmt.analyse();
+            if (elseStmt != null) elseStmt.analyse(null);
         }
 
         @Override
@@ -2655,15 +2655,15 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            expr.analyse();
+        public void analyse(TypeI typeContext) {
+            expr.analyse(null);
             if (!((Node) expr).errored) {
                 final TypeI exprType = expr.getExprType();
                 if ((EnumPrimitive.getPrimitive(exprType.shortName) == EnumPrimitive.BOOL) && !exprType.isArray()) ;
                 else semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
             }
             Scope.push(new Scope(true));
-            block.analyse();
+            block.analyse(null);
             Scope.pop();
         }
 
@@ -2699,15 +2699,15 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            expr.analyse();
+        public void analyse(TypeI typeContext) {
+            expr.analyse(null);
             if (!((Node) expr).errored) {
                 exprType = expr.getExprType();
                 if (exprType.getPrimitive() != EnumPrimitive.BOOL)
                     semanticError(this, line, column, EXPECTED_BOOL_EXPR, exprType);
             }
             Scope.push(new Scope(true));
-            block.analyse();
+            block.analyse(null);
             Scope.pop();
         }
 
@@ -2728,16 +2728,16 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             if (initStmt != null) {
-                initStmt.analyse();
+                initStmt.analyse(null);
                 if (((Node) initStmt).errored) errored = true;
             }
             if (endStmt != null) {
-                endStmt.analyse();
+                endStmt.analyse(null);
                 if (((Node) endStmt).errored) errored = true;
             }
-            super.analyse();
+            super.analyse(null);
         }
 
         @Override
@@ -2769,8 +2769,8 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            expr.analyse();
+        public void analyse(TypeI typeContext) {
+            expr.analyse(null);
             // The only types that can be iterated over are arrays and those
             // that implement java.lang.Iterable
             exprType = expr.getExprType();
@@ -2792,7 +2792,7 @@ public abstract class Node {
             var = new Variable(varId, varType);
             Scope.getFuncScope().locals += exprType.isArray() ? 3 : 1; // Some local vars are reserved for use in the bytecode
             Semantics.addVar(var);
-            block.analyse();
+            block.analyse(null);
             Scope.pop();
         }
 
@@ -2877,8 +2877,8 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            type.analyse();
+        public void analyse(TypeI typeContext) {
+            type.analyse(null);
         }
 
         @Override
@@ -2896,8 +2896,8 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            expr.analyse();
+        public void analyse(TypeI typeContext) {
+            expr.analyse(null);
         }
 
         @Override
@@ -2915,8 +2915,8 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            expr.analyse();
+        public void analyse(TypeI typeContext) {
+            expr.analyse(null);
         }
 
         @Override
@@ -2948,9 +2948,9 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            expr.analyse();
-            nodeType.analyse();
+        public void analyse(TypeI typeContext) {
+            expr.analyse(null);
+            nodeType.analyse(null);
             if (!nodeType.errored && !((Node) expr).errored) type = Semantics.getType(nodeType.id).get();
             else errored = true;
         }
@@ -2997,9 +2997,9 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            expr.analyse();
-            nodeType.analyse();
+        public void analyse(TypeI typeContext) {
+            expr.analyse(null);
+            nodeType.analyse(null);
             if ((expr instanceof NodeVariable) && !((NodeVariable) expr).errored) {
                 final Field field = ((NodeVariable) expr).var;
                 if (field != null) if (!Scope.getScope().hasCastCheck(field, Semantics.getType(nodeType.id).get()))
@@ -3025,7 +3025,7 @@ public abstract class Node {
 
         @Override
         public void preAnalyse() {
-            type.analyse();
+            type.analyse(null);
             if (Semantics.typeExists(alias)) semanticError(this, line, column, TYPE_ALREADY_EXISTS, alias);
             else if (Semantics.aliases.containsKey(alias))
                 semanticError(this, line, column, ALIAS_ALREADY_EXISTS, alias);
@@ -3050,9 +3050,9 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            start.analyse();
-            end.analyse();
+        public void analyse(TypeI typeContext) {
+            start.analyse(null);
+            end.analyse(null);
         }
 
         @Override
@@ -3118,13 +3118,13 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             if (!hasDefaultCase) semanticError(this, line, column, MATCH_DOES_NOT_HAVE_DEFAULT);
-            expr.analyse();
+            expr.analyse(null);
             if (!((Node) expr).errored) {
                 exprType = expr.getExprType();
                 for (final NodeMatchCase matchCase : matchCases) {
-                    matchCase.analyse();
+                    matchCase.analyse(null);
                     if (!matchCase.isDefaultCase && !matchCase.errored) for (final IExpression expr : matchCase.exprs) {
                         TypeI t = expr.getExprType();
                         // The generic used for ranges must be extracted
@@ -3188,12 +3188,12 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             if (!isDefaultCase) for (final IExpression expr : exprs) {
-                expr.analyse();
+                expr.analyse(null);
                 if (((Node) expr).errored) errored = true;
             }
-            block.analyse();
+            block.analyse(null);
             if (block.errored) errored = true;
         }
 
@@ -3342,9 +3342,9 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            expr.analyse();
-            accessExpr.analyse();
+        public void analyse(TypeI typeContext) {
+            expr.analyse(null);
+            accessExpr.analyse(null);
             if (((Node) accessExpr).errored || ((Node) expr).errored) errored = true;
         }
 
@@ -3403,8 +3403,8 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            elementType.analyse();
+        public void analyse(TypeI typeContext) {
+            elementType.analyse(null);
             elementTypeI = elementType.toTypeI();
             final boolean isNumeric = elementTypeI.isNumeric();
             // Types that aren't primitives must be optional, as the array with be filled with null references
@@ -3413,7 +3413,7 @@ public abstract class Node {
             if (!elementTypeI.isValidArrayAccessor())
                 semanticError(this, line, column, ARRAY_INDEX_NOT_NUMERIC, elementTypeI);
             for (final IExpression expr : arrDims) {
-                expr.analyse();
+                expr.analyse(null);
                 if (!((Node) expr).errored) {
                     final TypeI exprType = expr.getExprType();
                     if (!exprType.isNumeric()) semanticError(this, line, column, ARRAY_INIT_SIZE_NOT_NUMERIC, exprType);
@@ -3484,8 +3484,8 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            elementType.analyse();
+        public void analyse(TypeI typeContext) {
+            elementType.analyse(null);
         }
 
         @Override
@@ -3586,7 +3586,7 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             if (!Scope.getScope().isLoop()) semanticError(this, line, column, BREAK_USED_OUTSIDE_LOOP);
         }
 
@@ -3606,7 +3606,7 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             if (!Scope.getScope().isLoop()) semanticError(this, line, column, CONTINUE_USED_OUTSIDE_LOOP);
         }
 
@@ -3634,16 +3634,16 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
+        public void analyse(TypeI typeContext) {
             body.inFunction = true;
-            args.analyse();
-            if (type != null) type.analyse();
+            args.analyse(null);
+            if (type != null) type.analyse(null);
             typeI = type == null ? TypeI.getVoidType() : type.toTypeI();
             argTypes = args.toTypeIList();
             Scope.push(new FuncScope(typeI, false, false, false));
             int i = 0;
             for (TypeI arg : argTypes) Scope.getScope().addVar(new Variable(args.args.get(i++).id, arg));
-            body.analyse();
+            body.analyse(null);
             Scope.pop();
         }
 
@@ -3712,8 +3712,8 @@ public abstract class Node {
         }
 
         @Override
-        public void analyse() {
-            super.analyse();
+        public void analyse(TypeI typeContext) {
+            super.analyse(typeContext);
             // Check if any of the known interfaces has a function that is compatible with this closure.
             for(Type t : Semantics.types.values()){
                 // Ensure the type is an interface
