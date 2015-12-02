@@ -319,8 +319,8 @@ public class Member {
 
     public static class Variable extends Field {
 
-        public Variable(final String id, final TypeI type) {
-            super(new QualifiedName(id), 0, type, false, false, Semantics.currentType());
+        public Variable(final String id, final TypeI type, boolean isConstant) {
+            super(new QualifiedName(id), 0, type, false, false, isConstant, Semantics.currentType());
             if (Scope.inFuncScope()) {
                 isLocal = true;
                 localID = ++Scope.getFuncScope().locals;
@@ -339,19 +339,20 @@ public class Member {
         public TypeI type;
         public String id;
         public int localID;
-        public boolean isSetProperty, isGetProperty;
+        public boolean isSetProperty, isGetProperty, isConstant;
 
-        public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type, final boolean isSetProperty, final boolean isGetProperty, final Type enclosingType) {
+        public Field(final QualifiedName qualifiedName, final int modifiers, final TypeI type, final boolean isSetProperty, final boolean isGetProperty, final boolean isConstant, final Type enclosingType) {
             super(qualifiedName, modifiers);
             id = qualifiedName.shortName;
             this.type = type;
             this.enclosingType = enclosingType;
             this.isGetProperty = isGetProperty;
             this.isSetProperty = isSetProperty;
+            this.isConstant = isConstant;
         }
 
         public Field(final FieldNode fNode, final Type enclosing) {
-            this(new QualifiedName(fNode.name.replace('/', '.')), fNode.access, TypeI.fromBytecodeName(fNode.desc.replace(";", "")), false, false, enclosing);
+            this(new QualifiedName(fNode.name.replace('/', '.')), fNode.access, TypeI.fromBytecodeName(fNode.desc.replace(";", "")), false, false, BitOp.or(fNode.access, EnumModifier.FINAL.intVal), enclosing);
         }
 
         @Override

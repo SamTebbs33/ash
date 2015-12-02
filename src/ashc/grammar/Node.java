@@ -380,10 +380,10 @@ public abstract class Node {
                     arg.preAnalyse();
                     if (!arg.errored) {
                         final TypeI argType = arg.type.toTypeI();
-                        final Variable local = new Variable(arg.id, argType);
+                        final Variable local = new Variable(arg.id, argType, false);
                         local.isLocal = true;
                         defConstructorScope.addVar(local);
-                        final Field field = new Field(Scope.getNamespace().copy().add(arg.id), EnumModifier.PUBLIC.intVal, argType, false, false, type);
+                        final Field field = new Field(Scope.getNamespace().copy().add(arg.id), EnumModifier.PUBLIC.intVal, argType, false, false, false, type);
                         type.addField(field);
                         argFields.add(field);
                         defConstructor.parameters.add(argType);
@@ -1069,7 +1069,7 @@ public abstract class Node {
             scope = new FuncScope(returnType, isMutFunc, isGlobal || func.isStatic(), isGlobal, extType);
             Scope.push(scope);
             for (final NodeArg arg : args.args)
-                Semantics.addVar(new Variable(arg.id, arg.type.toTypeI()));
+                Semantics.addVar(new Variable(arg.id, arg.type.toTypeI(), false));
 
             if (!isMutFunc && !isConstructor) {
                 if (!type.id.equals("void")) returnType = type.toTypeI();
@@ -1246,7 +1246,7 @@ public abstract class Node {
             }
             if (setBlock != null) {
                 Scope.push(new PropertyScope(var));
-                final Variable newVar = new Variable("newVal", var.type);
+                final Variable newVar = new Variable("newVal", var.type, false);
                 newVar.localID = var.isStatic() ? 0 : 1;
                 Scope.getScope().addVar(newVar);
                 setBlock.analyse(null);
@@ -1292,6 +1292,10 @@ public abstract class Node {
             }
         }
 
+        public boolean isConst() {
+            return keyword.equals("const");
+        }
+
     }
 
     public static class NodeVarDecExplicit extends NodeVarDec {
@@ -1311,7 +1315,7 @@ public abstract class Node {
                 if (mod.asInt() == EnumModifier.STATIC.intVal) isStatic = true;
                 modifiers |= mod.asInt();
             }
-            var = new Field(name, modifiers, type.toTypeI(), setBlock != null, getBlock != null, Semantics.currentType());
+            var = new Field(name, modifiers, type.toTypeI(), setBlock != null, getBlock != null, isConst(), Semantics.currentType());
             if (!Semantics.fieldExists(var)) Semantics.addField(var);
             else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
         }
@@ -1331,7 +1335,7 @@ public abstract class Node {
                     semanticError(this, line, column, MISSING_ASSIGNMENT);
             }
             if (var == null) {
-                var = new Variable(id, typeI);
+                var = new Variable(id, typeI, isConst());
                 Semantics.addVar((Variable) var);
             }
             analyseProperty(typeI);
@@ -1356,7 +1360,7 @@ public abstract class Node {
             }
             expr.analyse(null);
             typeI = expr.getExprType();
-            var = new Field(name, modifiers, typeI, setBlock != null, getBlock != null, Semantics.currentType());
+            var = new Field(name, modifiers, typeI, setBlock != null, getBlock != null, isConst(), Semantics.currentType());
             if (!Semantics.fieldExists(var)) Semantics.addField(var);
             else semanticError(this, line, column, FIELD_ALREADY_EXISTS, id);
         }
@@ -1368,7 +1372,7 @@ public abstract class Node {
             if (!((Node) expr).errored) {
                 final TypeI type = Semantics.filterNullType(expr.getExprType());
                 if (var == null) {
-                    var = new Variable(id, type);
+                    var = new Variable(id, type, isConst());
                     Semantics.addVar((Variable) var);
                 }
                 analyseProperty(type);
@@ -1775,6 +1779,8 @@ public abstract class Node {
             expr.analyse(null);
             final TypeI exprType = expr.getExprType();
             var.analyse(null);
+            Field v = Semantics.getVar(var.id);
+            if (v != null && v.isConstant) semanticError(this, var.line, var.column, ASSIGNMENT_OF_CONST, v.id);
             if (var.errored) errored = true;
             if (var.var != null) if (!var.var.type.canBeAssignedTo(expr.getExprType()))
                 semanticError(this, line, column, CANNOT_ASSIGN, var.var.type, exprType);
@@ -2789,7 +2795,7 @@ public abstract class Node {
                 } else semanticError(this, line, column, CANNOT_ITERATE_TYPE, exprType);
             }
             Scope.push(new Scope(true));
-            var = new Variable(varId, varType);
+            var = new Variable(varId, varType, false);
             Scope.getFuncScope().locals += exprType.isArray() ? 3 : 1; // Some local vars are reserved for use in the bytecode
             Semantics.addVar(var);
             block.analyse(null);
@@ -3642,7 +3648,7 @@ public abstract class Node {
             argTypes = args.toTypeIList();
             Scope.push(new FuncScope(typeI, false, false, false));
             int i = 0;
-            for (TypeI arg : argTypes) Scope.getScope().addVar(new Variable(args.args.get(i++).id, arg));
+            for (TypeI arg : argTypes) Scope.getScope().addVar(new Variable(args.args.get(i++).id, arg, false));
             body.analyse(null);
             Scope.pop();
         }

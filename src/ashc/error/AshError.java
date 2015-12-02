@@ -100,6 +100,7 @@ public class AshError extends Exception {
 
         PRIMTIVE_CANNOT_BE_OPTIONAL("A primitive type cannot be optional (%s)"),
         CANNOT_ASSIGN("Cannot assign %s to %s"),
+        ASSIGNMENT_OF_CONST("A const (\'%s\') cannot be reassigned"),
         CLOSURE_TYPE_NOT_INTERFACE("The type used is not an interface"),
         NO_INTERFACE_FOR_CLOSURE_FOUND("None of the imported interfaces have a function that is applicable to the given arguments and return type");
 

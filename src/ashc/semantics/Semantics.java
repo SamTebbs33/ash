@@ -123,7 +123,8 @@ public class Semantics {
     public static Field getVar(final String id, final TypeI type) {
         if (type.isTuple()) {
             for (final TypeI tupleType : type.tupleTypes)
-                if ((tupleType.tupleName != null) && tupleType.tupleName.equals(id)) return new Variable(id, tupleType);
+                if ((tupleType.tupleName != null) && tupleType.tupleName.equals(id))
+                    return new Variable(id, tupleType, false);
         } else {
             final Optional<Type> t = getType(type.shortName);
             if (t.isPresent()) return t.get().getField(id);
