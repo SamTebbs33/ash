@@ -12,7 +12,8 @@
 .mtj.tmp/
 
 # Binaries
-bin/*
+bin
+out
 
 # Package Files #
 *.war

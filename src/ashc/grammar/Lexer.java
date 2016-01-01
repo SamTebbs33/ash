@@ -112,7 +112,6 @@ public class Lexer {
         VAR("var", true),
         CONST("const", true),
         FUNC("func", true),
-        INIT("init", true),
         CONSTRUCT("construct", true),
         MUT("mut", true),
         ALIAS("alias", true),
@@ -142,8 +141,6 @@ public class Lexer {
         NULL("null", true),
         AS("as", true),
         IS("is", true),
-        GET("get", true),
-        SET("set", true),
         NEW("new", true),
         OPTYPE("binary|prefix|postfix", "operator type"),
 
@@ -239,12 +236,12 @@ public class Lexer {
             token = t;
         }
 
-        public UnexpectedTokenException(final Token next, final String tokenData) {
+        public UnexpectedTokenException(final Token next, final String...tokenData) {
             super(String.format("Unexpected %s, expected %s", next.type.typeName, tokenData), next.line, next.columnStart);
             token = next;
         }
 
-        public UnexpectedTokenException(final Token next, final String data, final TokenMatcher[] matchers) {
+        public UnexpectedTokenException(final Token next, final TokenMatcher[] matchers, final String...data) {
             super(String.format("Unexpected %s, expected %s, %s", next.type.typeName, data, asString(matchers)), next.line, next.columnStart);
             token = next;
         }

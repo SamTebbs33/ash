@@ -112,7 +112,7 @@ public class Parser {
         if (next.data.equals(data)) return next;
         for (final TokenMatcher matcher : matchers)
             if (matcher.matches(next)) return next;
-        throw new UnexpectedTokenException(next, data, matchers);
+        throw new UnexpectedTokenException(next, matchers, data);
     }
 
     private Token expect(final TokenMatcher... matchers) throws GrammarException {
@@ -122,9 +122,10 @@ public class Parser {
         throw new UnexpectedTokenException(token, matchers);
     }
 
-    private Token expect(final String tokenData) throws GrammarException {
+    private Token expectStr(final String...tokenData) throws GrammarException {
         final Token next = getNext();
-        if (!next.data.equals(tokenData) && !silenceErrors) throw new UnexpectedTokenException(next, tokenData);
+        for(String str : tokenData) if(str.equals(next.data)) return next;
+        if (!silenceErrors) throw new UnexpectedTokenException(next, tokenData);
         return next;
     }
 
@@ -262,19 +263,32 @@ public class Parser {
         return new NodeClassDec(id.line, id.columnStart, mods, types, args, id, block, generics, superArgs);
     }
 
-    private NodeClassBlock parseClassBlock(boolean funcsNeedBody) throws GrammarException {
+    private NodeClassBlock parseClassBlock(boolean funcNeedsBody) throws GrammarException {
+        return parseClassBlock(funcNeedsBody, new LinkedList<NodeModifier>());
+    }
+
+    private NodeClassBlock parseClassBlock(boolean funcsNeedBody, LinkedList<NodeModifier> modifiers) throws GrammarException {
         final NodeClassBlock block = new NodeClassBlock();
         if (getNext().type == TokenType.BRACEL) while (getNext().type != TokenType.BRACER) {
             rewind();
-            final LinkedList<NodeModifier> mods = parseMods();
-            final Token token = expect(TokenType.CONSTRUCT, TokenType.INIT, TokenType.FUNC, TokenType.OPTYPE, TokenType.MUT, TokenType.CONST, TokenType.VAR, TokenType.BRACER);
+            LinkedList<NodeModifier> mods = (LinkedList) modifiers.clone();
+            LinkedList<NodeModifier> mods2 = parseMods();
+            mods.addAll(mods2);
+            final Token token = expect(TokenType.BRACEL, TokenType.FUNC, TokenType.OPTYPE, TokenType.MUT, TokenType.CONST, TokenType.VAR, TokenType.BRACER);
             switch (token.type) {
-                case CONSTRUCT:
-                    block.addConstructBlock(parseFuncBlock(true, false));
+                case BRACEL:
+                    // If there were no modifiers then a constructor block is parsed, else a modifier block is parsed
+                    if(mods2.size() == 0) block.addConstructBlock(parseFuncBlock(true, false));
+                    else {
+                        rewind();
+                        NodeClassBlock modifierBlock = parseClassBlock(funcsNeedBody, mods);
+                        for(NodeVarDec varDec : modifierBlock.varDecs) block.varDecs.add(varDec);
+                        for(NodeFuncDec funcDec : modifierBlock.funcDecs) block.funcDecs.add(funcDec);
+                    }
                     break;
-                case INIT:
+                /*case INIT:
                     block.add(parseFuncBlock(true, false));
-                    break;
+                    break;*/
                 case VAR:
                 case CONST:
                     NodeVarDec dec = parseVarDec(mods, token, true);
@@ -329,7 +343,7 @@ public class Parser {
     }
 
     /**
-     * func id(args?) (: type)?
+     * func id(args?) (-> type)?
      */
     private NodeFuncDec parseFuncDec(final boolean allowExtensionFunc, final boolean needsBody, final LinkedList<NodeModifier> mods, EnumOperatorType opType) throws GrammarException {
         Token id;
@@ -370,14 +384,13 @@ public class Parser {
                 block = new NodeFuncBlock();
             }
         }
-
         return new NodeFuncDec(id.line, id.columnStart, mods, id.data, args, type, throwsType, block, types, extensionType, hasBody, opType);
     }
 
     public NodeTypes parseGenericsDecs() throws GrammarException {
         if (getNext().data.equals("<")) {
             final NodeTypes types = parseSuperTypes(false).a;
-            expect(">");
+            expectStr(">");
             return types;
         } else rewind();
         return new NodeTypes();
@@ -819,25 +832,25 @@ public class Parser {
                 // If neither a set block or get block have been defined yet,
                 // parse either
                 if ((setBlock == null) && (getBlock == null)) {
-                    next = expect(TokenType.GET, TokenType.SET);
-                    if (next.type == TokenType.SET) setBlock = parseFuncBlock(true, true);
+                    next = expectStr("get", "set");
+                    if (next.data.equals("set")) setBlock = parseFuncBlock(true, true);
                     else getBlock = parseFuncBlock(true, true);
                 }
                 next = getNext();
-                if (next.type == TokenType.GET) {
+                if (next.data.equals("get")) {
                     // If a get block has already been defined, throw errors
                     if (getBlock != null) {
                         // If a set block has not been defined, then say we
                         // expected a set block instead of another get block
-                        if (setBlock == null) throw new UnexpectedTokenException(next, TokenType.SET, TokenType.BRACER);
+                        if (setBlock == null) throw new UnexpectedTokenException(next, TokenType.BRACER);
                         else throw new UnexpectedTokenException(next, TokenType.BRACER);
                     } else getBlock = parseFuncBlock(true, true);
-                } else if (next.type == TokenType.SET) {
+                } else if (next.data.equals("set")) {
                     // If a set block has already been defined, throw errors
                     if (setBlock != null) {
                         // If a get block has not been defined, then say we
                         // expected a get block instead of another set block
-                        if (getBlock == null) throw new UnexpectedTokenException(next, TokenType.GET, TokenType.BRACER);
+                        if (getBlock == null) throw new UnexpectedTokenException(next, TokenType.BRACER);
                         else throw new UnexpectedTokenException(next, TokenType.BRACER);
                     } else setBlock = parseFuncBlock(true, true);
                 } else rewind();
@@ -943,6 +956,7 @@ public class Parser {
             if(getNext().type == TokenType.LAMBDAARROW) type.funcTypeReturn = parseType();
             else rewind();
         }else if (tokenType == TokenType.PARENL) {
+            type.id = "tuple";
             // Parse a tuple
             // Tuple types must have more then one type to avoid clashes between tuple expressions and bracketed expressions
             type.tupleTypes.add(parseType());

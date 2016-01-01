@@ -169,7 +169,7 @@ public class TypeI {
             if (tupleTypes.size() == exprType.tupleTypes.size()) {
                 for (int i = 0; i < exprType.tupleTypes.size(); i++) {
                     final TypeI tupleType1 = tupleTypes.get(i), tupleType2 = exprType.tupleTypes.get(i);
-                    if (!tupleType1.tupleName.equals(tupleType2.tupleName) || !tupleType1.canBeAssignedTo(tupleType2))
+                    if (!tupleType1.canBeAssignedTo(tupleType2))
                         return false;
                 }
                 return true;
