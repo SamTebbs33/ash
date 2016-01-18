@@ -1,28 +1,26 @@
-<project>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="build" name="Create Runnable Jar for Project Ash">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
 
-    <target name="clean">
-        <delete dir="build"/>
-        <delete dir="classes"/>
-    </target>
-
-    <path id="build-classpath">
-        <fileset dir="lib/">
-            <include name="*.jar"/>
-        </fileset>
+    <path id="lib">
+        <fileset dir="lib" includes="*.jar"/>
     </path>
 
-    <target name="compile">
+    <target name="build">
+        <delete dir="build"/>
+        <delete dir="bin"/>
         <mkdir dir="build"/>
-        <mkdir dir="classes"/>
-        <javac srcdir="src" destdir="build">
-            <classpath refid="build-classpath"/>
-        </javac>
-    </target>
-
-    <target name="test">
-        <exec executable="python" failonerror="true">
-            <arg value="test.py"/>
-        </exec>
+        <mkdir dir="bin"/>
+        <javac srcdir="src" destdir="bin" classpathref="lib" debug="on"/>
+        <jar destfile="/Users/samtebbs/Documents/GitRepos/ash/build/ash.jar" filesetmanifest="mergewithoutmain">
+            <zipgroupfileset dir="lib" includes="*.jar"/>
+            <manifest>
+                <attribute name="Main-Class" value="ashc.main.AshMain"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="/Users/samtebbs/Documents/GitRepos/ash/bin"/>
+        </jar>
     </target>
 
 </project>

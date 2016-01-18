@@ -21,8 +21,6 @@ public class Lexer {
     private static StringBuffer keywordRegex = new StringBuffer("");
 
     public interface TokenMatcher {
-        String getName();
-
         boolean matches(Token token);
     }
 
@@ -66,7 +64,7 @@ public class Lexer {
         }
 
         @Override
-        public String getName() {
+        public String toString() {
             return name;
         }
 
@@ -88,21 +86,21 @@ public class Lexer {
         CHAR("\'.\'", "character"),
         BOOL("true|false", "boolean"),
         PRIMITIVE("(bool|double|float|long|int|short|byte|ubyte|ushort|ulong|uint|char|void)", "primitive", true),
-        LAMBDAARROW("->", "lambda arrow"),
+        LAMBDAARROW("->", "->"),
 
         COMPOUNDASSIGNOP("-=|\\+=|\\*=|/=|%=|\\*\\*=|^=|&=|\\|=|<<=|>>>=|>>=", "compound assignment operator"),
         OP("[\\+|\\-|!|~|=|\\*|/|%|^|&|<|>|@|#|\\?]+", "operator"),
         ARRAYDIMENSION("\\[\\]", "array dimension"),
         WHITESPACE("[\n\t ]+", "whitespace"),
 
-        UNDERSCORE("_", "underscore"),
-        ARROW("=>", "throws arrow"),
-        PARENL("\\(", "left parenthesis"),
-        PARENR("\\)", "right parenthesis"),
-        BRACEL("\\{", "left brace"),
-        BRACER("\\}", "right brace"),
-        BRACKETL("\\[", "left bracket"),
-        BRACKETR("\\]", "right bracket"),
+        UNDERSCORE("_"),
+        ARROW("=>"),
+        PARENL("\\(", "("),
+        PARENR("\\)", ")"),
+        BRACEL("\\{", "{"),
+        BRACER("\\}", "}"),
+        BRACKETL("\\[", "["),
+        BRACKETR("\\]", "]"),
         ELLIPSIS("\\.\\.\\."),
         DOUBLEDOT("\\.\\.", "double dot"),
         DOT("\\.", "dot"),
@@ -184,7 +182,7 @@ public class Lexer {
         }
 
         @Override
-        public String getName() {
+        public String toString() {
             return typeName;
         }
     }
@@ -227,7 +225,7 @@ public class Lexer {
         public Token token;
 
         public UnexpectedTokenException(final Token found, final TokenMatcher... t) {
-            super(String.format("Expected %s, found %s", asString(t), found.type.typeName), found.line, found.columnStart);
+            super(String.format("Unexpected %s. Expected %s", found.type.typeName, asString(t)), found.line, found.columnStart);
             token = found;
         }
 
@@ -237,23 +235,23 @@ public class Lexer {
         }
 
         public UnexpectedTokenException(final Token next, final String...tokenData) {
-            super(String.format("Unexpected %s, expected %s", next.type.typeName, tokenData), next.line, next.columnStart);
+            super(String.format("Unexpected %s. Expected %s", next.type.typeName, asString(tokenData)), next.line, next.columnStart);
             token = next;
         }
 
         public UnexpectedTokenException(final Token next, final TokenMatcher[] matchers, final String...data) {
-            super(String.format("Unexpected %s, expected %s, %s", next.type.typeName, data, asString(matchers)), next.line, next.columnStart);
+            super(String.format("Unexpected %s. Expected %s" + (matchers.length > 1 ? ", " : " or ") + "%s", next.type.typeName, asString(data), asString(matchers)), next.line, next.columnStart);
             token = next;
         }
 
-        private static String asString(final TokenMatcher... t) {
-            final StringBuilder typesStr = new StringBuilder("");
-            for (int i = 0; i < t.length; i++) {
-                typesStr.append(t[i].getName());
-                if (i == (t.length - 2)) typesStr.append(" or ");
-                else if (i < (t.length - 1)) typesStr.append(", ");
+        private static String asString(final Object[] t) {
+            final StringBuilder str = new StringBuilder(t[0].toString());
+            for (int i = 1; i < t.length; i++) {
+                if (i == (t.length - 1)) if (t.length > 1) str.append(" or ");
+                else str.append(", ");
+                str.append(t[i].toString());
             }
-            return typesStr.toString();
+            return str.toString();
         }
 
         @Override

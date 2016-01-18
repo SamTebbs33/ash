@@ -23,7 +23,7 @@ public class Parser {
     public static class GrammarException extends Exception {
 
         public GrammarException(final String arg0, int line, int col) {
-            super("Error [" + line + ":" + col + "] " + arg0);
+            super(arg0);
         }
 
         public void print(final int lineOffset, final int columnOffset, final Lexer lexer) {
@@ -278,7 +278,10 @@ public class Parser {
             switch (token.type) {
                 case BRACEL:
                     // If there were no modifiers then a constructor block is parsed, else a modifier block is parsed
-                    if(mods2.size() == 0) block.addConstructBlock(parseFuncBlock(true, false));
+                    if(mods2.size() == 0){
+                        rewind();
+                        block.addConstructBlock(parseFuncBlock(true, false));
+                    }
                     else {
                         rewind();
                         NodeClassBlock modifierBlock = parseClassBlock(funcsNeedBody, mods);
