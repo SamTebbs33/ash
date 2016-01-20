@@ -1192,8 +1192,6 @@ public abstract class Node {
         public void generate() {
             final String name = OperatorDef.filterOperators(id), type = returnType.toBytecodeName();
             genNodeFunc = new GenNodeFunction(name, func.modifiers, type);
-            // TODO: Generate constructor calls if this function is a
-            // constructor
             genNodeFunc.params = new LinkedList<>();
             for (final TypeI param : func.parameters)
                 genNodeFunc.params.add(param);
@@ -3761,6 +3759,26 @@ public abstract class Node {
             int log2 = (int) (Math.log(Modifier.ABSTRACT) / Math.log(2));
             int mods = interfaceFunc.modifiers & ~(1 << log2);
             super.generate(name, name, new String[] {interfaceType.qualifiedName.toBytecodeName()}, interfaceFunc.qualifiedName.shortName, mods, interfaceFunc.returnType, false);
+        }
+    }
+
+    public static class NodeAssert extends Node {
+
+        public IExpression assertedExpr, printedExpr;
+
+        public NodeAssert(int line, int col, IExpression assertedExpr, IExpression printedExpr) {
+            super(line, col);
+            this.assertedExpr = aExpr;
+        }
+
+        @Override
+        public void analyse(TypeI typeContext) {
+            super.analyse(typeContext);
+        }
+
+        @Override
+        public void generate() {
+
         }
     }
 

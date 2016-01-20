@@ -123,6 +123,7 @@ public class Lexer {
         RETURN("return", true),
         BREAK("break", true),
         CONTINUE("continue", true),
+        ASSERT("assert", true),
 
         PUBLIC("public", true),
         PRIVATE("private", true),
@@ -133,6 +134,7 @@ public class Lexer {
         OVERRIDE("override", true),
         STANDARD("standard", true),
         STATIC("static", true),
+        SYNCHRONISED("synchronised", true),
         THIS("this", true),
         SUPER("super", true),
         SELF("self", true),

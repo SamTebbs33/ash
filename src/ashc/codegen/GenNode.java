@@ -403,7 +403,6 @@ public abstract class GenNode {
             this.operand = operand;
             this.varID = varID;
             addToStackRequirement(operand.size);
-            getCurrentFunction().getLocal(varID).updateUse();
         }
 
         @Override

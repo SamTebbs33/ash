@@ -222,7 +222,7 @@ public class Parser {
     private boolean isModifier(final TokenType type) {
         return (type == TokenType.PUBLIC) || (type == TokenType.PRIVATE) || (type == TokenType.PROTECTED) || (type == TokenType.FINAL)
                 || (type == TokenType.REQUIRED) || (type == TokenType.NATIVE) || (type == TokenType.OVERRIDE) || (type == TokenType.STANDARD)
-                || (type == TokenType.STATIC);
+                || (type == TokenType.STATIC || (type == TokenType.SYNCHRONISED);
     }
 
     private LinkedList<NodeModifier> parseMods() throws GrammarException {
@@ -420,8 +420,16 @@ public class Parser {
     }
 
     private IFuncStmt parseFuncStmt() throws GrammarException {
-        final Token token = expect(TokenTypeGroup.FUNC_CALL, TokenTypeGroup.VAR_DEC, TokenTypeGroup.CONTROL_STMT, TokenType.RETURN, TokenType.BREAK, TokenType.CONTINUE);
+        final Token token = expect(TokenTypeGroup.FUNC_CALL, TokenTypeGroup.VAR_DEC, TokenTypeGroup.CONTROL_STMT, TokenType.RETURN, TokenType.BREAK, TokenType.CONTINUE, TokenType.ASSERT);
         switch (token.type) {
+            case ASSERT:
+                IExpression expr = parseExpression();
+                Token next = getNext();
+                if(next.type == TokenType.COLON) return new NodeAssert(token.line, token.columnStart, expr, parseExpression());
+                else {
+                    rewind();
+                    return new NodeAssert(token.line, token.columnStart, expr);
+                }
             case BREAK:
                 return new NodeBreak(token.line, token.columnStart);
             case CONTINUE:
