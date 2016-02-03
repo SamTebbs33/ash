@@ -1,64 +1,35 @@
 package ashc.grammar;
 
-import static ashc.codegen.GenNode.*;
-import static ashc.error.AshError.*;
-import static ashc.error.AshError.EnumError.*;
-
-import java.io.*;
-import java.lang.reflect.*;
-import java.util.*;
-
-import org.objectweb.asm.*;
-
-import ashc.codegen.*;
-import ashc.codegen.GenNode.EnumInstructionOperand;
-import ashc.codegen.GenNode.GenNodeArrayIndexLoad;
-import ashc.codegen.GenNode.GenNodeBinary;
-import ashc.codegen.GenNode.GenNodeConditionalJump;
-import ashc.codegen.GenNode.GenNodeDouble;
-import ashc.codegen.GenNode.GenNodeField;
-import ashc.codegen.GenNode.GenNodeFieldLoad;
-import ashc.codegen.GenNode.GenNodeFieldStore;
-import ashc.codegen.GenNode.GenNodeFloat;
-import ashc.codegen.GenNode.GenNodeFuncCall;
-import ashc.codegen.GenNode.GenNodeFunction;
-import ashc.codegen.GenNode.GenNodeIncrement;
-import ashc.codegen.GenNode.GenNodeInt;
-import ashc.codegen.GenNode.GenNodeIntOpcode;
-import ashc.codegen.GenNode.GenNodeJump;
-import ashc.codegen.GenNode.GenNodeLabel;
-import ashc.codegen.GenNode.GenNodeLong;
-import ashc.codegen.GenNode.GenNodeMultiDimArray;
-import ashc.codegen.GenNode.GenNodeNew;
-import ashc.codegen.GenNode.GenNodeNull;
-import ashc.codegen.GenNode.GenNodeOpcode;
-import ashc.codegen.GenNode.GenNodePrimitiveCast;
-import ashc.codegen.GenNode.GenNodeReturn;
-import ashc.codegen.GenNode.GenNodeString;
-import ashc.codegen.GenNode.GenNodeThis;
-import ashc.codegen.GenNode.GenNodeType;
-import ashc.codegen.GenNode.GenNodeTypeOpcode;
-import ashc.codegen.GenNode.GenNodeUnary;
-import ashc.codegen.GenNode.GenNodeVar;
-import ashc.codegen.GenNode.GenNodeVarLoad;
-import ashc.codegen.GenNode.GenNodeVarStore;
+import ashc.codegen.GenNode;
+import ashc.codegen.GenNode.*;
 import ashc.grammar.Lexer.Token;
 import ashc.grammar.OperatorDef.EnumOperatorAssociativity;
 import ashc.grammar.OperatorDef.EnumOperatorType;
 import ashc.grammar.Parser.GrammarException;
-import ashc.load.*;
-import ashc.main.*;
+import ashc.load.TypeImporter;
+import ashc.main.AshCompiler;
 import ashc.semantics.*;
-import ashc.semantics.Member.EnumType;
-import ashc.semantics.Member.Field;
-import ashc.semantics.Member.Function;
-import ashc.semantics.Member.Type;
-import ashc.semantics.Member.Variable;
+import ashc.semantics.Member.*;
 import ashc.semantics.Scope.FuncScope;
 import ashc.semantics.Scope.PropertyScope;
 import ashc.semantics.Semantics.Operation;
-import ashc.util.*;
 import ashc.semantics.TypeI.FunctionTypeI;
+import ashc.util.BitOp;
+import ashc.util.Tuple;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.Modifier;
+import java.util.LinkedList;
+import java.util.Optional;
+
+import static ashc.codegen.GenNode.*;
+import static ashc.error.AshError.*;
+import static ashc.error.AshError.EnumError.*;
 
 /**
  * Ash
@@ -3762,18 +3733,35 @@ public abstract class Node {
         }
     }
 
-    public static class NodeAssert extends Node {
+    public static class NodeAssert extends Node implements IFuncStmt {
 
         public IExpression assertedExpr, printedExpr;
+        public TypeI assertedType, printedType;
 
         public NodeAssert(int line, int col, IExpression assertedExpr, IExpression printedExpr) {
             super(line, col);
-            this.assertedExpr = aExpr;
+            this.assertedExpr = assertedExpr;
         }
 
         @Override
         public void analyse(TypeI typeContext) {
-            super.analyse(typeContext);
+            assertedExpr.analyse(null);
+            Node a = (Node) assertedExpr;
+            if (!a.errored) {
+                assertedType = assertedExpr.getExprType();
+                EnumPrimitive p = assertedType.getPrimitive();
+                if (p != EnumPrimitive.BOOL)
+                    semanticError(this, a.line, a.column, EnumError.EXPECTED_BOOL_EXPR, assertedType);
+            } else this.errored = true;
+            if (printedExpr != null) {
+                printedExpr.analyse(null);
+                Node p = (Node) printedExpr;
+                if (!p.errored) {
+                    printedType = printedExpr.getExprType();
+                    if (!TypeI.getStringType().canBeAssignedTo(printedType))
+                        semanticError(this, p.line, p.column, EnumError.CANNOT_ASSIGN, TypeI.getStringType(), printedType);
+                } else this.errored = true;
+            }
         }
 
         @Override

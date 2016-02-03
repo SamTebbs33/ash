@@ -1,8 +1,10 @@
 package ashc.library;
 
-import java.io.*;
+import ashc.error.AshError;
 
-import ashc.error.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Ash
@@ -19,11 +21,9 @@ public abstract class Library {
         final String temp = String.class.getResource("/java/lang/String.class").getFile();
         final int rtIndex = temp.indexOf("rt.jar");
         if (rtIndex != -1) {
-            final int colonIndex = temp.lastIndexOf(':', rtIndex);
-            final String javaLib = temp.substring(colonIndex + 1, rtIndex + 6);
-            final File javaJar = new File(javaLib);
-            if (!javaJar.exists() || !javaJar.isFile())
-                throw new AshError("The Java rt.jar file does not exist at: " + javaLib);
+            final File javaJar = new File(temp);
+            if (!javaJar.exists())
+                throw new AshError("The Java rt.jar file does not exist at: " + temp);
             javaLibrary = new JarLibrary(javaJar);
         } else throw new AshError("Could not find rt.jar, please ensure that Java is correctly installed");
 
