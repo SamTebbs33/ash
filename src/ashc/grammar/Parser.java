@@ -16,21 +16,9 @@ public class Parser {
 
     private final LinkedList<Token> tokens = new LinkedList<Token>();
     private final Lexer lexer;
-    private int pointer = 0, pointerTemp = 0, line = 1, column = 1;
     public boolean silenceErrors = false;
     public int columnOffset, lineOffset;
-
-    public static class GrammarException extends Exception {
-
-        public GrammarException(final String arg0, int line, int col) {
-            super(arg0);
-        }
-
-        public void print(final int lineOffset, final int columnOffset, final Lexer lexer) {
-            System.err.println(getMessage());
-        }
-
-    }
+    private int pointer = 0, pointerTemp = 0, line = 1, column = 1;
 
     public Parser(final Lexer lexer) {
         this.lexer = lexer;
@@ -403,7 +391,6 @@ public class Parser {
         return parseFuncBlock(allowSingleLine, singleLineExpression, null);
     }
 
-
     private NodeFuncBlock parseFuncBlock(final boolean allowSingleLine, final boolean singleLineExpression, final TokenMatcher singleLineToken) throws GrammarException {
         final NodeFuncBlock block = new NodeFuncBlock();
         Token token = null;
@@ -422,16 +409,6 @@ public class Parser {
     private IFuncStmt parseFuncStmt() throws GrammarException {
         final Token token = expect(TokenTypeGroup.FUNC_CALL, TokenTypeGroup.VAR_DEC, TokenTypeGroup.CONTROL_STMT, TokenType.RETURN, TokenType.BREAK, TokenType.CONTINUE, TokenType.ASSERT);
         switch (token.type) {
-            case ASSERT: {
-                IExpression expr = parseExpression();
-                Token next = getNext();
-                if (next.type == TokenType.COLON)
-                    return new NodeAssert(token.line, token.columnStart, expr, parseExpression());
-                else {
-                    rewind();
-                    return new NodeAssert(token.line, token.columnStart, expr, null);
-                }
-            }
             case BREAK:
                 return new NodeBreak(token.line, token.columnStart);
             case CONTINUE:
@@ -1172,6 +1149,18 @@ public class Parser {
             includes.add(new NodeInclude(next.line, next.columnStart, parseQualifiedName()));
         rewind();
         return includes;
+    }
+
+    public static class GrammarException extends Exception {
+
+        public GrammarException(final String arg0, int line, int col) {
+            super(arg0);
+        }
+
+        public void print(final int lineOffset, final int columnOffset, final Lexer lexer) {
+            System.err.println(getMessage());
+        }
+
     }
 
 }
