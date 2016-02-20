@@ -1,11 +1,13 @@
 package ashc.grammar;
 
-import java.io.*;
-import java.util.*;
-import java.util.regex.*;
-
-import ashc.error.*;
+import ashc.error.AshError;
 import ashc.grammar.Parser.GrammarException;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Ash
@@ -14,14 +16,61 @@ import ashc.grammar.Parser.GrammarException;
  */
 public class Lexer {
 
+    public static final int TAB_SIZE = 4;
+    private static StringBuffer keywordRegex = new StringBuffer("");
     private final Matcher matcher;
     public LinkedList<String> lines = new LinkedList<String>();
     public int line = 1, column = 1, numLines = 0;
-    public static final int TAB_SIZE = 4;
-    private static StringBuffer keywordRegex = new StringBuffer("");
 
-    public interface TokenMatcher {
-        boolean matches(Token token);
+    public Lexer(final BufferedReader reader) throws IOException {
+        final StringBuffer lineBuffer = new StringBuffer();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            lines.add(line.replace("\t", "    "));
+            lineBuffer.append(line + "\n");
+            numLines++;
+        }
+        final StringBuffer patternsBuffer = new StringBuffer();
+        for (final TokenType type : TokenType.values())
+            patternsBuffer.append(String.format("|(?<%s>%s)", type.name(), type.regex));
+        final String patternStr = patternsBuffer.toString();
+        final Pattern patterns = Pattern.compile(patternStr.substring(1));
+
+        matcher = patterns.matcher(lineBuffer.toString());
+        reader.close();
+    }
+
+    public Token getNextToken() throws InvalidTokenException {
+        while (matcher.find())
+            for (final TokenType type : TokenType.values()) {
+                final String data = matcher.group(type.name());
+                if (data != null) {
+                    // Skip whitespace
+                    if (type == TokenType.WHITESPACE) {
+                        for (final char ch : data.toCharArray())
+                            switch (ch) {
+                                case '\n':
+                                    line++;
+                                    column = 1;
+                                    break;
+                                case '\t':
+                                    column += TAB_SIZE;
+                                    break;
+                                case ' ':
+                                    column++;
+                            }
+                        continue;
+                    } else if (type == TokenType.ERROR) throw new InvalidTokenException(data, line, column);
+                    else if (type == TokenType.COMMENT) {
+                        column += data.length();
+                        continue;
+                    }
+                    final Token t = new Token(type, data, line, column, column + data.length());
+                    column += data.length();
+                    return t;
+                }
+            }
+        return null;
     }
 
     public enum TokenTypeGroup implements TokenMatcher {
@@ -123,7 +172,6 @@ public class Lexer {
         RETURN("return", true),
         BREAK("break", true),
         CONTINUE("continue", true),
-        ASSERT("assert", true),
 
         PUBLIC("public", true),
         PRIVATE("private", true),
@@ -189,6 +237,10 @@ public class Lexer {
         }
     }
 
+    public interface TokenMatcher {
+        boolean matches(Token token);
+    }
+
     public static class Token {
         public TokenType type;
         public String data;
@@ -236,7 +288,7 @@ public class Lexer {
             token = t;
         }
 
-        public UnexpectedTokenException(final Token next, final String...tokenData) {
+        public UnexpectedTokenException(final Token next, final String... tokenData) {
             super(String.format("Unexpected %s. Expected %s", next.type.typeName, asString(tokenData)), next.line, next.columnStart);
             token = next;
         }
@@ -276,57 +328,6 @@ public class Lexer {
             }
         }
 
-    }
-
-    public Lexer(final BufferedReader reader) throws IOException {
-        final StringBuffer lineBuffer = new StringBuffer();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            lines.add(line.replace("\t", "    "));
-            lineBuffer.append(line + "\n");
-            numLines++;
-        }
-        final StringBuffer patternsBuffer = new StringBuffer();
-        for (final TokenType type : TokenType.values())
-            patternsBuffer.append(String.format("|(?<%s>%s)", type.name(), type.regex));
-        final String patternStr = patternsBuffer.toString();
-        final Pattern patterns = Pattern.compile(patternStr.substring(1));
-
-        matcher = patterns.matcher(lineBuffer.toString());
-        reader.close();
-    }
-
-    public Token getNextToken() throws InvalidTokenException {
-        while (matcher.find())
-            for (final TokenType type : TokenType.values()) {
-                final String data = matcher.group(type.name());
-                if (data != null) {
-                    // Skip whitespace
-                    if (type == TokenType.WHITESPACE) {
-                        for (final char ch : data.toCharArray())
-                            switch (ch) {
-                                case '\n':
-                                    line++;
-                                    column = 1;
-                                    break;
-                                case '\t':
-                                    column += TAB_SIZE;
-                                    break;
-                                case ' ':
-                                    column++;
-                            }
-                        continue;
-                    } else if (type == TokenType.ERROR) throw new InvalidTokenException(data, line, column);
-                    else if (type == TokenType.COMMENT) {
-                        column += data.length();
-                        continue;
-                    }
-                    final Token t = new Token(type, data, line, column, column + data.length());
-                    column += data.length();
-                    return t;
-                }
-            }
-        return null;
     }
 
 }

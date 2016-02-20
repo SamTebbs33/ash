@@ -81,23 +81,22 @@ public abstract class Node {
 
     public static class NodeFile extends Node {
 
-        @Override
-        public String toString() {
-            return "NodeFile [pkg=" + pkg + ", imports=" + imports + ", typeDecs=" + typeDecs + "]";
-        }
-
         public NodePackage pkg;
         public LinkedList<NodeInclude> includes;
         public LinkedList<NodeImport> imports;
         public LinkedList<NodeTypeDec> typeDecs;
         public LinkedList<NodeAlias> aliases;
-
         public NodeFile(final NodePackage pkg, final LinkedList<NodeInclude> includes, final LinkedList<NodeImport> imports, final LinkedList<NodeAlias> aliases, final LinkedList<NodeTypeDec> typeDecs) {
             this.pkg = pkg;
             this.includes = includes;
             this.imports = imports;
             this.typeDecs = typeDecs;
             this.aliases = aliases;
+        }
+
+        @Override
+        public String toString() {
+            return "NodeFile [pkg=" + pkg + ", imports=" + imports + ", typeDecs=" + typeDecs + "]";
         }
 
         @Override
@@ -848,11 +847,6 @@ public abstract class Node {
 
     public static class NodeType extends Node {
 
-        @Override
-        public String toString() {
-            return "NodeType [id=" + id + ", arrDims=" + arrDims + ", optional=" + optional + ", tupleTypes=" + tupleTypes + ", generics=" + generics + "]";
-        }
-
         public String id;
         public int arrDims;
         public boolean optional;
@@ -860,13 +854,17 @@ public abstract class Node {
         public LinkedList<NodeType> funcTypeArgs = new LinkedList<>();
         public NodeType funcTypeReturn;
         public NodeTypes generics = new NodeTypes();
-
         public NodeType(final int line, final int column, final String data) {
             super(line, column);
             id = data;
         }
 
         public NodeType() {
+        }
+
+        @Override
+        public String toString() {
+            return "NodeType [id=" + id + ", arrDims=" + arrDims + ", optional=" + optional + ", tupleTypes=" + tupleTypes + ", generics=" + generics + "]";
         }
 
         public TypeI toTypeI(){
@@ -924,8 +922,8 @@ public abstract class Node {
 
     public static class NodeQualifiedName extends Node {
 
-        LinkedList<String> paths = new LinkedList<String>();
         public String shortName;
+        LinkedList<String> paths = new LinkedList<String>();
 
         public NodeQualifiedName(final int line, final int column) {
             super(line, column);
@@ -1010,6 +1008,22 @@ public abstract class Node {
         public NodeFuncDec(final int line, final int columnStart, final LinkedList<NodeModifier> mods2, final String data, final NodeArgs args2, final NodeType throwsType2, final NodeFuncBlock block2, final NodeTypes nodeTypes, final boolean isMutFunc, boolean hasBody) {
             this(line, columnStart, mods2, data, args2, null, throwsType2, block2, nodeTypes, null, hasBody, null);
             this.isMutFunc = true;
+        }
+
+        public static void initialiseVarDecs(final LinkedList<NodeVarDec> varDecs) {
+            for (final NodeVarDec dec : varDecs) {
+                if (dec.isStatic) continue; // Static vars are initialised in
+                // the static init block
+                IExpression expr = null;
+                if (dec instanceof NodeVarDecImplicit) expr = ((NodeVarDecImplicit) dec).expr;
+                else expr = ((NodeVarDecExplicit) dec).expr;
+
+                if (expr == null) expr = dec.var.type.getDefaultValue();
+
+                addFuncStmt(new GenNodeThis());
+                expr.generate();
+                addFuncStmt(new GenNodeFieldStore(dec.var.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName(), dec.var.isStatic()));
+            }
         }
 
         public void preAnalyseGlobal() {
@@ -1141,22 +1155,6 @@ public abstract class Node {
             block.generate();
             GenNode.addFuncStmt(new GenNodeReturn());
             GenNode.exitGenNodeFunction();
-        }
-
-        public static void initialiseVarDecs(final LinkedList<NodeVarDec> varDecs) {
-            for (final NodeVarDec dec : varDecs) {
-                if (dec.isStatic) continue; // Static vars are initialised in
-                // the static init block
-                IExpression expr = null;
-                if (dec instanceof NodeVarDecImplicit) expr = ((NodeVarDecImplicit) dec).expr;
-                else expr = ((NodeVarDecExplicit) dec).expr;
-
-                if (expr == null) expr = dec.var.type.getDefaultValue();
-
-                addFuncStmt(new GenNodeThis());
-                expr.generate();
-                addFuncStmt(new GenNodeFieldStore(dec.var.id, dec.var.enclosingType.qualifiedName.toBytecodeName(), dec.var.type.toBytecodeName(), dec.var.isStatic()));
-            }
         }
 
         @Override
@@ -1354,9 +1352,9 @@ public abstract class Node {
 
         public IExpression singleLineExpr;
         public TypeI funcReturnType;
-        LinkedList<IFuncStmt> stmts = new LinkedList<IFuncStmt>();
         public IFuncStmt singleLineStmt;
         public boolean inFunction = false, hasThisCall, ignoreFuncReturn = true;
+        LinkedList<IFuncStmt> stmts = new LinkedList<IFuncStmt>();
 
         public void add(final IFuncStmt funcStmt) {
             stmts.add(funcStmt);
@@ -2545,10 +2543,6 @@ public abstract class Node {
         public NodeIf elseStmt;
         public EnumIfType type;
 
-        public enum EnumIfType {
-            IF, ELSE, ELSEIF
-        }
-
         public NodeIf(final int line, final int column, final IExpression expr, final NodeFuncBlock block, final boolean isElse, final boolean isElseIf) {
             super(line, column);
             this.expr = expr;
@@ -2615,6 +2609,10 @@ public abstract class Node {
                     elseStmt.generate(endLabel);
                 }
             } else block.generate();
+        }
+
+        public enum EnumIfType {
+            IF, ELSE, ELSEIF
         }
 
     }
@@ -3490,9 +3488,9 @@ public abstract class Node {
 
     public static class NodeList extends NodeArray implements IExpression {
 
-        LinkedList<IExpression> mapValues = new LinkedList<>();
         public boolean isHashMap = false;
         public TypeI exprType;
+        LinkedList<IExpression> mapValues = new LinkedList<>();
 
         public NodeList(final int line, final int column) {
             super(line, column);
@@ -3730,43 +3728,6 @@ public abstract class Node {
             int log2 = (int) (Math.log(Modifier.ABSTRACT) / Math.log(2));
             int mods = interfaceFunc.modifiers & ~(1 << log2);
             super.generate(name, name, new String[] {interfaceType.qualifiedName.toBytecodeName()}, interfaceFunc.qualifiedName.shortName, mods, interfaceFunc.returnType, false);
-        }
-    }
-
-    public static class NodeAssert extends Node implements IFuncStmt {
-
-        public IExpression assertedExpr, printedExpr;
-        public TypeI assertedType, printedType;
-
-        public NodeAssert(int line, int col, IExpression assertedExpr, IExpression printedExpr) {
-            super(line, col);
-            this.assertedExpr = assertedExpr;
-        }
-
-        @Override
-        public void analyse(TypeI typeContext) {
-            assertedExpr.analyse(null);
-            Node a = (Node) assertedExpr;
-            if (!a.errored) {
-                assertedType = assertedExpr.getExprType();
-                EnumPrimitive p = assertedType.getPrimitive();
-                if (p != EnumPrimitive.BOOL)
-                    semanticError(this, a.line, a.column, EnumError.EXPECTED_BOOL_EXPR, assertedType);
-            } else this.errored = true;
-            if (printedExpr != null) {
-                printedExpr.analyse(null);
-                Node p = (Node) printedExpr;
-                if (!p.errored) {
-                    printedType = printedExpr.getExprType();
-                    if (!TypeI.getStringType().canBeAssignedTo(printedType))
-                        semanticError(this, p.line, p.column, EnumError.CANNOT_ASSIGN, TypeI.getStringType(), printedType);
-                } else this.errored = true;
-            }
-        }
-
-        @Override
-        public void generate() {
-
         }
     }
 
