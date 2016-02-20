@@ -1,15 +1,17 @@
 package ashc.main;
 
-import java.io.*;
-import java.nio.file.*;
-
-import ashc.error.*;
-import ashc.grammar.*;
-import ashc.library.*;
-import ashc.load.*;
-import ashc.semantics.*;
+import ashc.error.AshError;
+import ashc.grammar.EnumModifier;
+import ashc.library.Library;
+import ashc.load.TypeImporter;
 import ashc.semantics.Member.EnumType;
 import ashc.semantics.Member.Type;
+import ashc.semantics.QualifiedName;
+import ashc.semantics.Semantics;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
 
 /**
  * AshMain
@@ -23,7 +25,6 @@ public class AshMain {
 
     public static void main(final String[] args) throws IOException, AshError {
         Library.findLibs();
-        // System.out.println(System.getProperty("sun.boot.class.path"));
         Semantics.addType(new Type(new QualifiedName("ash.lang.Range"), EnumModifier.PUBLIC.intVal, EnumType.CLASS), false);
         TypeImporter.loadClass("java.lang.String", "String");
         TypeImporter.loadClass("java.lang.Integer", "Integer");

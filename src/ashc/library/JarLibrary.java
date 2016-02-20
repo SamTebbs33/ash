@@ -1,8 +1,12 @@
 package ashc.library;
 
-import java.io.*;
-import java.util.*;
-import java.util.jar.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * Ash
@@ -16,12 +20,14 @@ public class JarLibrary extends Library {
     public HashMap<String, JarEntry> entryMap = new HashMap<String, JarEntry>();
 
     public JarLibrary(final File file) throws IOException {
-        this.file = file;
-        jarFile = new JarFile(file);
-        final Enumeration<JarEntry> it = jarFile.entries();
-        while (it.hasMoreElements()) {
-            final JarEntry entry = it.nextElement();
-            entryMap.put(entry.getName().replace(File.separatorChar, '.').replace(".class", ""), entry);
+        if (file.exists()) {
+            this.file = file;
+            jarFile = new JarFile(file);
+            final Enumeration<JarEntry> it = jarFile.entries();
+            while (it.hasMoreElements()) {
+                final JarEntry entry = it.nextElement();
+                entryMap.put(entry.getName().replace('/', '.').replace(".class", ""), entry);
+            }
         }
     }
 

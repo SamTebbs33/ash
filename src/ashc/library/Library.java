@@ -13,19 +13,15 @@ import java.io.InputStream;
  */
 public abstract class Library {
 
-    public static Library ashLibrary, javaLibrary;
+    public static Library ashLibrary;
+    public static Library[] javaLibraries;
 
     public static void findLibs() throws AshError, IOException {
 
         // Find the Java rt.jar
-        final String temp = String.class.getResource("/java/lang/String.class").getFile();
-        final int rtIndex = temp.indexOf("rt.jar");
-        if (rtIndex != -1) {
-            final File javaJar = new File(temp);
-            if (!javaJar.exists())
-                throw new AshError("The Java rt.jar file does not exist at: " + temp);
-            javaLibrary = new JarLibrary(javaJar);
-        } else throw new AshError("Could not find rt.jar, please ensure that Java is correctly installed");
+        String[] jarLocations = System.getProperty("sun.boot.class.path").split(";");
+        javaLibraries = new Library[jarLocations.length];
+        for (int i = 0; i < jarLocations.length; i++) javaLibraries[i] = new JarLibrary(new File(jarLocations[i]));
 
         // Find the Ash standard library jar, disabled until I actually add this
     /*
@@ -35,11 +31,14 @@ public abstract class Library {
 	 */
     }
 
-    public abstract InputStream getStream(String classQualifiedName) throws IOException;
-
     public static InputStream getClassStream(final String classQualifiedName) throws IOException {
-        final InputStream is = javaLibrary.getStream(classQualifiedName);
-        return is != null ? is : (ashLibrary != null ? ashLibrary.getStream(classQualifiedName) : null);
+        for (Library lib : javaLibraries) {
+            final InputStream is = lib.getStream(classQualifiedName);
+            if (is != null) return is;
+        }
+        return null;
     }
+
+    public abstract InputStream getStream(String classQualifiedName) throws IOException;
 
 }
