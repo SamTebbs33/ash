@@ -1,30 +1,14 @@
 package ashc.semantics;
 
-import java.util.*;
-
-import org.objectweb.asm.*;
-
-import ashc.codegen.*;
-import ashc.codegen.GenNode.EnumInstructionOperand;
-import ashc.codegen.GenNode.GenNodeField;
-import ashc.codegen.GenNode.GenNodeFieldStore;
-import ashc.codegen.GenNode.GenNodeFuncCall;
-import ashc.codegen.GenNode.GenNodeFunction;
-import ashc.codegen.GenNode.GenNodeReturn;
-import ashc.codegen.GenNode.GenNodeThis;
-import ashc.codegen.GenNode.GenNodeType;
-import ashc.codegen.GenNode.GenNodeVar;
-import ashc.codegen.GenNode.GenNodeVarLoad;
-import ashc.grammar.Node.IExpression;
-import ashc.grammar.Node.NodeBool;
-import ashc.grammar.Node.NodeDouble;
-import ashc.grammar.Node.NodeFloat;
-import ashc.grammar.Node.NodeInteger;
-import ashc.grammar.Node.NodeLong;
-import ashc.grammar.Node.NodeNull;
-import ashc.grammar.Node.NodeTupleType;
-import ashc.grammar.Node.NodeType;
+import ashc.codegen.GenNode;
+import ashc.codegen.GenNode.*;
+import ashc.grammar.Node.*;
 import ashc.semantics.Member.Type;
+import org.objectweb.asm.Opcodes;
+
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.Optional;
 
 public class TypeI {
 
@@ -34,55 +18,6 @@ public class TypeI {
     public boolean optional;
     public LinkedList<TypeI> tupleTypes, genericTypes;
     public QualifiedName qualifiedName;
-
-    public static class FunctionTypeI extends TypeI {
-
-        public TypeI type;
-        public LinkedList<TypeI> args;
-        public boolean hasDefExpr;
-        public IExpression defExpr;
-        public int closureID = ++numClosures;
-        public static int numClosures = 0;
-
-        public FunctionTypeI(TypeI type, LinkedList<TypeI> args, IExpression defExpr) {
-            super("func", 0, false);
-            this.type = type;
-            this.hasDefExpr = defExpr != null;
-            this.defExpr = defExpr;
-            this.args = args;
-        }
-
-        @Override
-        public boolean canBeAssignedTo(TypeI type) {
-            if (type instanceof FunctionTypeI) {
-                FunctionTypeI funcType = (FunctionTypeI) type;
-                if (type.canBeAssignedTo(funcType.type)) {
-                    int i = 0;
-                    if (funcType.args.size() != args.size()) return false;
-                    for (TypeI t : funcType.args) if (!args.get(i++).canBeAssignedTo(t)) return false;
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public String toClassName() {
-            return "$Closure" + closureID;
-        }
-
-        @Override
-        public String toBytecodeName() {
-            return "LClosure" + closureID + ";";
-        }
-
-        @Override
-        public String toString() {
-            StringBuffer sb = new StringBuffer();
-            int c = 0;
-            for(TypeI argType : args) sb.append(argType.toString() + (c < args.size() - 1 ? ", " : ""));
-            return "(" + sb.toString() + ") -> " + type.toString();
-        }
-    }
 
     public TypeI(final String shortName, final int arrDims, final boolean optional) {
         this.shortName = shortName;
@@ -129,6 +64,63 @@ public class TypeI {
             default:
                 return TypeI.getVoidType();
         }
+    }
+
+    public static TypeI getVoidType() {
+        return voidType;
+    }
+
+    public static TypeI getObjectType() {
+        return objectType;
+    }
+
+    public static TypeI getStringType() {
+        return stringType;
+    }
+
+    public static TypeI fromBytecodeName(String name) {
+        TypeI type = new TypeI("", 0, true);
+        if (name.equals("V")) return TypeI.getVoidType();
+        else {
+            type = new TypeI("", 0, true);
+            while (name.charAt(0) == '[') {
+                type.addArrDims(1);
+                name = name.substring(1);
+            }
+            if (name.charAt(0) == 'L') {
+                if (name.charAt(name.length() - 1) == ';')
+                    name = name.substring(1, name.length() - 1); // Remove semi-colon
+                else name = name.substring(1);
+                final int lastSlash = name.lastIndexOf('/');
+                type.shortName = lastSlash > -1 ? name.substring(lastSlash + 1) : name;
+                type.qualifiedName = new QualifiedName(name.replace('/', '.'));
+            } else {
+                final EnumPrimitive p = EnumPrimitive.getFromBytecodePrimitive(name.charAt(0));
+                type = new TypeI(p, type.arrDims);
+            }
+        }
+        return type;
+    }
+
+    public static TypeI getPrecedentType(final TypeI type1, final TypeI type2) {
+        if (type1.equals(type2)) return type1;
+        final String name1 = type1.shortName, name2 = type2.shortName;
+
+        if ((name1.equals("String") && (type1.arrDims == 0)) || (name2.equals("String") && (type2.arrDims == 0)))
+            return new TypeI("String", 0, false);
+
+        // The values in EnumPrimitive are ordered by precedence
+        for (final EnumPrimitive p : EnumPrimitive.values())
+            if (p.ashName.equals(name1) || p.ashName.equals(name2)) return new TypeI(p);
+
+        return TypeI.getObjectType().setOptional(type1.optional || type2.optional);
+    }
+
+    public static TypeI getPrecedentType(final LinkedList<IExpression> exprs) {
+        TypeI result = exprs.getFirst().getExprType();
+        for (int i = 1; i < exprs.size(); i++)
+            result = TypeI.getPrecedentType(result, exprs.get(i).getExprType());
+        return result;
     }
 
     @Override
@@ -205,20 +197,12 @@ public class TypeI {
         return (tupleTypes != null) && (tupleTypes.size() > 0);
     }
 
-    public static TypeI getVoidType() {
-        return voidType;
-    }
-
     public boolean isArray() {
         return arrDims > 0;
     }
 
     public TypeI copy() {
         return new TypeI(shortName, arrDims, optional);
-    }
-
-    public static TypeI getObjectType() {
-        return objectType;
     }
 
     public TypeI setArrDims(final int i) {
@@ -233,10 +217,6 @@ public class TypeI {
 
     public boolean isNumeric() {
         return EnumPrimitive.isNumeric(shortName) && (arrDims == 0);
-    }
-
-    public static TypeI getStringType() {
-        return stringType;
     }
 
     public boolean isPrimitive() {
@@ -263,7 +243,7 @@ public class TypeI {
                 int tupleTypeNum = 1;
                 char tupleFieldName = 'a', tupleFieldType = 'A';
                 tupleConstructor.stmts.add(new GenNodeThis());
-                tupleConstructor.stmts.add(new GenNodeFuncCall("java/lang/Object", "<init>", "()V", false, false, false, true));
+                tupleConstructor.stmts.add(new GenNodeFuncCall("java/lang/Object", "<init>", "()V", false, false, false, true, 0));
                 for (final TypeI tupleType : tupleTypes) {
                     final String tupleFieldNameStr = String.valueOf(tupleFieldName), tupleFieldTypeStr = String.valueOf(tupleFieldType);
                     tupleClass.generics.add(tupleFieldTypeStr);
@@ -272,13 +252,13 @@ public class TypeI {
                     tupleConstructor.stmts.add(new GenNodeThis());
                     tupleConstructor.stmts.add(new GenNodeVar(tupleFieldName + "Arg", "Ljava/lang/Object;", tupleTypeNum, "T" + tupleType.toBytecodeName()
                             + ";"));
-                    tupleConstructor.stmts.add(new GenNodeVarLoad(EnumInstructionOperand.REFERENCE, tupleTypeNum));
-                    tupleConstructor.stmts.add(new GenNodeFieldStore(tupleFieldNameStr, tupleClassName, "Ljava/lang/Object;", false));
+                    tupleConstructor.stmts.add(new GenNodeVarLoad(EnumInstructionOperand.REFERENCE, tupleTypeNum, 0));
+                    tupleConstructor.stmts.add(new GenNodeFieldStore(tupleFieldNameStr, tupleClassName, "Ljava/lang/Object;", false, 0));
                     tupleTypeNum++;
                     tupleFieldName++;
                     tupleFieldType++;
                 }
-                tupleConstructor.stmts.add(new GenNodeReturn());
+                tupleConstructor.stmts.add(new GenNodeReturn(0));
                 GenNode.exitGenNodeFunction();
                 GenNode.exitGenNodeType();
                 GenNode.generatedTupleClasses.add(tupleClassName);
@@ -330,57 +310,61 @@ public class TypeI {
         return this;
     }
 
-    public static TypeI fromBytecodeName(String name) {
-        TypeI type = new TypeI("", 0, true);
-        if (name.equals("V")) return TypeI.getVoidType();
-        else {
-            type = new TypeI("", 0, true);
-            while (name.charAt(0) == '[') {
-                type.addArrDims(1);
-                name = name.substring(1);
-            }
-            if (name.charAt(0) == 'L') {
-                if (name.charAt(name.length() - 1) == ';')
-                    name = name.substring(1, name.length() - 1); // Remove semi-colon
-                else name = name.substring(1);
-                final int lastSlash = name.lastIndexOf('/');
-                type.shortName = lastSlash > -1 ? name.substring(lastSlash + 1) : name;
-                type.qualifiedName = new QualifiedName(name.replace('/', '.'));
-            } else {
-                final EnumPrimitive p = EnumPrimitive.getFromBytecodePrimitive(name.charAt(0));
-                type = new TypeI(p, type.arrDims);
-            }
-        }
-        return type;
-    }
-
     public TypeI setQualifiedName(final QualifiedName qualifiedName2) {
         qualifiedName = qualifiedName2;
         return this;
     }
 
-    public static TypeI getPrecedentType(final TypeI type1, final TypeI type2) {
-        if (type1.equals(type2)) return type1;
-        final String name1 = type1.shortName, name2 = type2.shortName;
-
-        if ((name1.equals("String") && (type1.arrDims == 0)) || (name2.equals("String") && (type2.arrDims == 0)))
-            return new TypeI("String", 0, false);
-
-        // The values in EnumPrimitive are ordered by precedence
-        for (final EnumPrimitive p : EnumPrimitive.values())
-            if (p.ashName.equals(name1) || p.ashName.equals(name2)) return new TypeI(p);
-
-        return TypeI.getObjectType().setOptional(type1.optional || type2.optional);
-    }
-
-    public static TypeI getPrecedentType(final LinkedList<IExpression> exprs) {
-        TypeI result = exprs.getFirst().getExprType();
-        for (int i = 1; i < exprs.size(); i++)
-            result = TypeI.getPrecedentType(result, exprs.get(i).getExprType());
-        return result;
-    }
-
     public EnumPrimitive getPrimitive() {
         return EnumPrimitive.getPrimitive(shortName);
+    }
+
+    public static class FunctionTypeI extends TypeI {
+
+        public static int numClosures = 0;
+        public TypeI type;
+        public LinkedList<TypeI> args;
+        public boolean hasDefExpr;
+        public IExpression defExpr;
+        public int closureID = ++numClosures;
+
+        public FunctionTypeI(TypeI type, LinkedList<TypeI> args, IExpression defExpr) {
+            super("func", 0, false);
+            this.type = type;
+            this.hasDefExpr = defExpr != null;
+            this.defExpr = defExpr;
+            this.args = args;
+        }
+
+        @Override
+        public boolean canBeAssignedTo(TypeI type) {
+            if (type instanceof FunctionTypeI) {
+                FunctionTypeI funcType = (FunctionTypeI) type;
+                if (type.canBeAssignedTo(funcType.type)) {
+                    int i = 0;
+                    if (funcType.args.size() != args.size()) return false;
+                    for (TypeI t : funcType.args) if (!args.get(i++).canBeAssignedTo(t)) return false;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public String toClassName() {
+            return "$Closure" + closureID;
+        }
+
+        @Override
+        public String toBytecodeName() {
+            return "LClosure" + closureID + ";";
+        }
+
+        @Override
+        public String toString() {
+            StringBuffer sb = new StringBuffer();
+            int c = 0;
+            for (TypeI argType : args) sb.append(argType.toString() + (c < args.size() - 1 ? ", " : ""));
+            return "(" + sb.toString() + ") -> " + type.toString();
+        }
     }
 }

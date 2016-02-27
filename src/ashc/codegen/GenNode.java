@@ -1,24 +1,26 @@
 package ashc.codegen;
 
-import static org.objectweb.asm.Opcodes.*;
-
-import java.io.*;
-import java.util.*;
-
-import org.objectweb.asm.*;
-import org.objectweb.asm.util.*;
-
 import ashc.codegen.GenNode.GenNodeFunction.LocalVariable;
-import ashc.error.*;
+import ashc.error.AshError;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeBinary;
-import ashc.grammar.*;
+import ashc.grammar.OperatorDef;
 import ashc.grammar.OperatorDef.EnumOperation;
 import ashc.grammar.OperatorDef.OperatorDefNative;
 import ashc.grammar.OperatorDef.OperatorDefNative.NativeOpInfo;
-import ashc.main.*;
+import ashc.main.AshMain;
 import ashc.semantics.Member.Field;
-import ashc.semantics.*;
+import ashc.semantics.TypeI;
+import org.objectweb.asm.*;
+import org.objectweb.asm.util.CheckClassAdapter;
+
+import java.io.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Stack;
+
+import static org.objectweb.asm.Opcodes.*;
 
 /**
  * Ash
@@ -30,11 +32,17 @@ public abstract class GenNode {
     public static LinkedList<GenNodeType> types = new LinkedList<GenNodeType>();
     public static Stack<GenNodeType> typeStack = new Stack<GenNodeType>();
     public static HashSet<String> generatedTupleClasses = new HashSet<String>();
-    private static Stack<GenNodeFunction> functionStack = new Stack<GenNodeFunction>();
     public static Label loopStartLabel, loopEndLabel;
-    public static int numClosureClasses = 0;
+    private static Stack<GenNodeFunction> functionStack = new Stack<GenNodeFunction>();
+    public int lineNo;
 
-    public abstract void generate(Object visitor);
+    public GenNode(int lineNo) {
+        this.lineNo = lineNo;
+    }
+
+    public GenNode() {
+        this(0);
+    }
 
     public static void generate() {
         for (final GenNodeType type : types)
@@ -80,13 +88,13 @@ public abstract class GenNode {
         return functionStack.peek();
     }
 
-    public interface IGenNodeStmt {
-
+    protected void generateLineNo(MethodVisitor mw) {
+        Label label = new Label();
+        mw.visitLabel(label);
+        mw.visitLineNumber(lineNo, label);
     }
 
-    public interface IGenNodeExpr {
-
-    }
+    public abstract void generate(Object visitor);
 
     public enum EnumInstructionOperand {
         REFERENCE(1), BOOL(1), BYTE(1), CHAR(1), INT(1), LONG(2, Opcodes.LCMP), FLOAT(1, Opcodes.FCMPG), DOUBLE(2, Opcodes.DCMPG), ARRAY(1), SHORT(1), VOID(0);
@@ -104,14 +112,22 @@ public abstract class GenNode {
         }
     }
 
+    public interface IGenNodeStmt {
+
+    }
+
+    public interface IGenNodeExpr {
+
+    }
+
     public static class GenNodeType extends GenNode {
 
+        public final LinkedList<String> generics = new LinkedList<String>();
+        private final LinkedList<GenNodeField> fields = new LinkedList<GenNodeField>();
+        private final LinkedList<GenNodeFunction> functions = new LinkedList<GenNodeFunction>();
         public String name, superclass, shortName;
         public String[] interfaces;
         public int modifiers;
-        private final LinkedList<GenNodeField> fields = new LinkedList<GenNodeField>();
-        private final LinkedList<GenNodeFunction> functions = new LinkedList<GenNodeFunction>();
-        public final LinkedList<String> generics = new LinkedList<String>();
         public boolean isInterface;
 
         public GenNodeType(final String name, final String shortName, final String superclass, final String[] interfaces, final int modifiers, boolean isInterface) {
@@ -189,34 +205,13 @@ public abstract class GenNode {
 
     public static class GenNodeFunction extends GenNode {
 
-        public static class LocalVariable {
-            public String name, type;
-            public int id;
-            public boolean endLabelGenerated = true;
-            public GenNodeLabel end = new GenNodeLabel(new Label());
-
-            public LocalVariable(final String name, final String type, final int id) {
-                this.name = name;
-                this.type = type;
-                this.id = id;
-                addFuncStmt(end);
-            }
-
-            public void updateUse() {
-                // endLabelGenerated = true;
-                // addFuncStmt(end);
-            }
-
-        }
-
+        private final HashMap<Integer, LocalVariable> locals = new HashMap<Integer, LocalVariable>();
         public String name, enclosingTypeName;
         public int modifiers;
         public String type;
         public LinkedList<TypeI> params = new LinkedList<TypeI>();
         public LinkedList<GenNode> stmts = new LinkedList<GenNode>();
         public int stack, maxStack;
-        private final HashMap<Integer, LocalVariable> locals = new HashMap<Integer, LocalVariable>();
-
         public GenNodeFunction(final String name, final int modifiers, final String type) {
             this.name = name;
             this.modifiers = modifiers;
@@ -254,6 +249,26 @@ public abstract class GenNode {
 
         public LocalVariable getLocal(final int id) {
             return locals.get(id);
+        }
+
+        public static class LocalVariable {
+            public String name, type;
+            public int id;
+            public boolean endLabelGenerated = true;
+            public GenNodeLabel end = new GenNodeLabel(new Label());
+
+            public LocalVariable(final String name, final String type, final int id) {
+                this.name = name;
+                this.type = type;
+                this.id = id;
+                addFuncStmt(end);
+            }
+
+            public void updateUse() {
+                // endLabelGenerated = true;
+                // addFuncStmt(end);
+            }
+
         }
 
     }
@@ -318,7 +333,8 @@ public abstract class GenNode {
         public String varName, enclosingType, type;
         boolean isStatic;
 
-        public GenNodeFieldLoad(final String varName, final String enclosingType, final String type, final boolean isStatic) {
+        public GenNodeFieldLoad(final String varName, final String enclosingType, final String type, final boolean isStatic, int lineNo) {
+            super(lineNo);
             this.varName = varName;
             this.enclosingType = enclosingType;
             this.type = type;
@@ -329,6 +345,7 @@ public abstract class GenNode {
         @Override
         public void generate(final Object visitor) {
             final MethodVisitor mv = (MethodVisitor) visitor;
+            this.generateLineNo(mv);
             mv.visitFieldInsn(isStatic ? GETSTATIC : GETFIELD, enclosingType, varName, type);
         }
 
@@ -339,7 +356,8 @@ public abstract class GenNode {
         public String varName, enclosingType, type;
         public boolean isStatic;
 
-        public GenNodeFieldStore(final String varName, final String enclosingType, final String type, final boolean isStatic) {
+        public GenNodeFieldStore(final String varName, final String enclosingType, final String type, final boolean isStatic, int lineNo) {
+            super(lineNo);
             this.varName = varName;
             this.enclosingType = enclosingType;
             this.type = type;
@@ -348,7 +366,9 @@ public abstract class GenNode {
 
         @Override
         public void generate(final Object visitor) {
-            ((MethodVisitor) visitor).visitFieldInsn(isStatic ? PUTSTATIC : PUTFIELD, enclosingType, varName, type);
+            MethodVisitor mv = ((MethodVisitor) visitor);
+            generateLineNo(mv);
+            mv.visitFieldInsn(isStatic ? PUTSTATIC : PUTFIELD, enclosingType, varName, type);
         }
 
     }
@@ -358,7 +378,8 @@ public abstract class GenNode {
         public EnumInstructionOperand operand;
         public int varID;
 
-        public GenNodeVarStore(final EnumInstructionOperand instructionType, final int localID) {
+        public GenNodeVarStore(final EnumInstructionOperand instructionType, final int localID, int lineNo) {
+            super(lineNo);
             operand = instructionType;
             varID = localID;
             addToStackRequirement(-operand.size);
@@ -389,7 +410,9 @@ public abstract class GenNode {
                 case REFERENCE:
                     opcode = ASTORE;
             }
-            ((MethodVisitor) visitor).visitVarInsn(opcode, varID);
+            MethodVisitor mv = ((MethodVisitor) visitor);
+            generateLineNo(mv);
+            mv.visitVarInsn(opcode, varID);
         }
 
     }
@@ -399,7 +422,8 @@ public abstract class GenNode {
         public EnumInstructionOperand operand;
         public int varID;
 
-        public GenNodeVarLoad(final EnumInstructionOperand operand, final int varID) {
+        public GenNodeVarLoad(final EnumInstructionOperand operand, final int varID, int lineNo) {
+            super(lineNo);
             this.operand = operand;
             this.varID = varID;
             addToStackRequirement(operand.size);
@@ -431,6 +455,7 @@ public abstract class GenNode {
                     opcode = LLOAD;
                     break;
             }
+            this.generateLineNo(mv);
             mv.visitVarInsn(opcode, varID);
         }
 
@@ -441,7 +466,8 @@ public abstract class GenNode {
         public String enclosingType, name, signature;
         public boolean interfaceFunc, privateFunc, staticFunc, constructor;
 
-        public GenNodeFuncCall(final String enclosingType, final String name, final String signature, final boolean interfaceFunc, final boolean privateFunc, final boolean staticFunc, final boolean constructor) {
+        public GenNodeFuncCall(final String enclosingType, final String name, final String signature, final boolean interfaceFunc, final boolean privateFunc, final boolean staticFunc, final boolean constructor, int lineNo) {
+            super(lineNo);
             this.enclosingType = enclosingType;
             this.name = name;
             this.signature = signature;
@@ -462,6 +488,7 @@ public abstract class GenNode {
             // INVOKESPECIAL for constructors and private methods,
             // INVOKEINTERFACE for methods overriden from interfaces and
             // INVOKEVIRTUAL for others
+            generateLineNo(mv);
             mv.visitMethodInsn(opcode, enclosingType, name, signature, interfaceFunc);
         }
 
@@ -599,13 +626,14 @@ public abstract class GenNode {
 
         EnumInstructionOperand type;
 
-        public GenNodeReturn(final EnumInstructionOperand type) {
+        public GenNodeReturn(final EnumInstructionOperand type, int lineNo) {
+            super(lineNo);
             this.type = type;
             addToStackRequirement(type.size);
         }
 
-        public GenNodeReturn() {
-            this(EnumInstructionOperand.VOID);
+        public GenNodeReturn(int lineNo) {
+            this(EnumInstructionOperand.VOID, lineNo);
         }
 
         @Override
@@ -636,7 +664,9 @@ public abstract class GenNode {
                     opcode = RETURN;
                     break;
             }
-            ((MethodVisitor) visitor).visitInsn(opcode);
+            MethodVisitor mv = ((MethodVisitor) visitor);
+            generateLineNo(mv);
+            mv.visitInsn(opcode);
         }
 
     }
@@ -664,15 +694,16 @@ public abstract class GenNode {
 
         LinkedList<Integer> extraOpcodes = new LinkedList<Integer>();
 
-        public GenNodeConditionalJump(final IExpression expr, final Label label) {
+        public GenNodeConditionalJump(final IExpression expr, final Label label, int lineNo) {
+            super(lineNo);
             this.expr = expr;
             this.label = label;
             if (expr != null) compute();
             addToStackRequirement(-1);
         }
 
-        public GenNodeConditionalJump(final int opcode, final Label label) {
-            this(null, label);
+        public GenNodeConditionalJump(final int opcode, final Label label, int lineNo) {
+            this(null, label, lineNo);
             this.opcode = opcode;
         }
 
@@ -842,6 +873,7 @@ public abstract class GenNode {
         @Override
         public void generate(final Object visitor) {
             final MethodVisitor mv = (MethodVisitor) visitor;
+            generateLineNo(mv);
             for (final Integer i : extraOpcodes)
                 mv.visitInsn(i);
             mv.visitJumpInsn(opcode, label);
@@ -1046,7 +1078,7 @@ public abstract class GenNode {
                         switch (operation) {
                             case POW:
                                 // Only doubles should be using this
-                                final GenNodeFuncCall powCall = new GenNodeFuncCall("java/lang/Math", "pow", "(DD)D", false, false, true, false);
+                                final GenNodeFuncCall powCall = new GenNodeFuncCall("java/lang/Math", "pow", "(DD)D", false, false, true, false, lineNo);
                                 powCall.generate(mv);
                                 return; // No more to do here
                             case EQUAL:
@@ -1167,7 +1199,8 @@ public abstract class GenNode {
     public static class GenNodeArrayIndexLoad extends GenNode {
         public EnumInstructionOperand type;
 
-        public GenNodeArrayIndexLoad(final EnumInstructionOperand type) {
+        public GenNodeArrayIndexLoad(final EnumInstructionOperand type, int lineNo) {
+            super(lineNo);
             this.type = type;
             addToStackRequirement(type.size - 1);
         }
@@ -1204,7 +1237,9 @@ public abstract class GenNode {
                     opcode = DALOAD;
                     break;
             }
-            ((MethodVisitor) visitor).visitInsn(opcode);
+            MethodVisitor mv = ((MethodVisitor) visitor);
+            generateLineNo(mv);
+            mv.visitInsn(opcode);
         }
     }
 

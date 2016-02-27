@@ -1,6 +1,10 @@
 // Ash, 9 lines
-public class Person(age : int, name : String) {
+public class Test {
 
-
+    public static func main(args : [String]) {
+        var greetingFunc = func(name : String) = System.out.println(name)
+        var name = null
+        greetingFunc(name.toString()!)
+    }
 
 }
