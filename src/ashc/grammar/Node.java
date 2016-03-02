@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Modifier;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 
 import static ashc.codegen.GenNode.*;
@@ -1403,8 +1404,12 @@ public abstract class Node {
                 if (inFunction)
                     addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID, ((Node) singleLineStmt).line));
             } else {
-                for (final IFuncStmt stmt : stmts)
-                    stmt.generate();
+                List<IFuncStmt> deferStmts = new LinkedList<>();
+                for (final IFuncStmt stmt : stmts) {
+                    if (stmt instanceof NodeDefer) deferStmts.add(stmt);
+                    else stmt.generate();
+                }
+                deferStmts.stream().forEach(s -> s.generate());
                 // Add a return statement if the func is void
                 if (inFunction && (funcReturnType != null) && funcReturnType.isVoid())
                     addFuncStmt(new GenNodeReturn(EnumInstructionOperand.VOID, line));
@@ -3731,6 +3736,28 @@ public abstract class Node {
             int log2 = (int) (Math.log(Modifier.ABSTRACT) / Math.log(2));
             int mods = interfaceFunc.modifiers & ~(1 << log2);
             super.generate(name, name, new String[] {interfaceType.qualifiedName.toBytecodeName()}, interfaceFunc.qualifiedName.shortName, mods, interfaceFunc.returnType, false);
+        }
+    }
+
+    public static class NodeDefer extends Node implements IFuncStmt {
+
+        public NodeFuncBlock block;
+
+        public NodeDefer(int line, int column, NodeFuncBlock block) {
+            super(line, column);
+            this.block = block;
+        }
+
+        @Override
+        public void analyse(TypeI typeContext) {
+            Scope.push(new Scope(false));
+            block.analyse(null);
+            Scope.pop();
+        }
+
+        @Override
+        public void generate() {
+            block.generate();
         }
     }
 

@@ -172,6 +172,7 @@ public class Lexer {
         RETURN("return", true),
         BREAK("break", true),
         CONTINUE("continue", true),
+        DEFER("defer", true),
 
         PUBLIC("public", true),
         PRIVATE("private", true),

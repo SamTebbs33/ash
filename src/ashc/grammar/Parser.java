@@ -407,8 +407,10 @@ public class Parser {
     }
 
     private IFuncStmt parseFuncStmt() throws GrammarException {
-        final Token token = expect(TokenTypeGroup.FUNC_CALL, TokenTypeGroup.VAR_DEC, TokenTypeGroup.CONTROL_STMT, TokenType.RETURN, TokenType.BREAK, TokenType.CONTINUE);
+        final Token token = expect(TokenTypeGroup.FUNC_CALL, TokenTypeGroup.VAR_DEC, TokenTypeGroup.CONTROL_STMT, TokenType.RETURN, TokenType.BREAK, TokenType.CONTINUE, TokenType.DEFER);
         switch (token.type) {
+            case DEFER:
+                return new NodeDefer(token.line, token.columnStart, parseConstructBlock());
             case BREAK:
                 return new NodeBreak(token.line, token.columnStart);
             case CONTINUE:
