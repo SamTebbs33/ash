@@ -16,6 +16,7 @@ import ashc.semantics.Semantics.Operation;
 import ashc.semantics.TypeI.FunctionTypeI;
 import ashc.util.BitOp;
 import ashc.util.Tuple;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 
@@ -421,7 +422,7 @@ public abstract class Node {
                 for (Type interfc : type.interfaces) {
                     for (LinkedList<Function> funcs : interfc.functions.values()) {
                         for (Function func : funcs) {
-                            Function implementingFunc = type.getFunc(func.qualifiedName.shortName, func.parameters, func.opType);
+                            Function implementingFunc = type.getFunc(func.qualifiedName.shortName, func.parameters.getTypeIList(), func.opType);
                             if (!func.hasImplementation) {
                                 if (implementingFunc == null)
                                     semanticError(this, line, column, MISSING_FUNC_IMPLEMENTATION, func, interfc.qualifiedName.shortName);
@@ -452,9 +453,8 @@ public abstract class Node {
 
             // Build the costructor
             if (defConstructor != null) {
-                final GenNodeFunction func = new GenNodeFunction("<init>", defConstructor.modifiers, "V");
+                final GenNodeFunction func = new GenNodeFunction("<init>", defConstructor.modifiers, "V", defConstructor.parameters);
                 GenNode.addGenNodeFunction(func);
-                func.params = defConstructor.parameters;
                 int argID = 1;
 
                 GenNode.addFuncStmt(new GenNodeThis());
@@ -700,10 +700,10 @@ public abstract class Node {
         public void generate() {
         }
 
-        public LinkedList<TypeI> toTypeIList() {
-            LinkedList<TypeI> result = new LinkedList<>();
-            for (NodeArg arg : args) result.add(arg.type.toTypeI());
-            return result;
+        public Parameters toParameters() {
+            Parameters params = new Parameters();
+            for (NodeArg arg : args) params.add(arg.type.toTypeI());
+            return params;
         }
     }
 
@@ -791,7 +791,7 @@ public abstract class Node {
                 if (dec.isStatic) staticVars.add(dec);
             }
             if ((staticVars.size() > 0) || (initBlocks.size() > 0)) {
-                final GenNodeFunction staticFunc = new GenNodeFunction("<clinit>", EnumModifier.STATIC.intVal, "V");
+                final GenNodeFunction staticFunc = new GenNodeFunction("<clinit>", EnumModifier.STATIC.intVal, "V", new Parameters());
                 addGenNodeFunction(staticFunc);
                 for (final NodeVarDec dec : staticVars) {
                     if (dec.expr != null) dec.expr.generate();
@@ -871,7 +871,7 @@ public abstract class Node {
         public TypeI toTypeI(){
             TypeI type;
             if(funcTypeArgs.size() > 0){
-                type = new FunctionTypeI(funcTypeReturn == null ? TypeI.getVoidType() : funcTypeReturn.toTypeI(), new LinkedList<>(), null);
+                type = new FunctionTypeI(funcTypeReturn == null ? TypeI.getVoidType() : funcTypeReturn.toTypeI(), new Parameters(), null);
                 for(NodeType t : funcTypeArgs) ((FunctionTypeI)type).args.add(t.toTypeI());
             }else{
                 type = new TypeI(id, arrDims, optional);
@@ -1073,7 +1073,7 @@ public abstract class Node {
             if (extensionType == null) {
                 if (!Semantics.funcExists(func)) Semantics.addFunc(func);
                 else semanticError(this, line, column, FUNC_ALREADY_EXISTS, id);
-            } else if (extType != null) if (extType.getFunc(id, func.parameters, func.opType) != null)
+            } else if (extType != null) if (extType.getFunc(id, func.parameters.getTypeIList(), func.opType) != null)
                 semanticError(this, line, column, FUNC_ALREADY_EXISTS_IN_TYPE, id, extType.qualifiedName);
             else extType.addFunction(func);
 
@@ -1119,7 +1119,7 @@ public abstract class Node {
 
             // Ensure that overriding is handled properly
             if (Semantics.currentType().hasSuperClass()) {
-                Function superFunc = Semantics.currentType().getSuperClass().getFunc(id, args.toTypeIList(), func.opType);
+                Function superFunc = Semantics.currentType().getSuperClass().getFunc(id, args.toParameters().getTypeIList(), func.opType);
                 if (superFunc != null) Semantics.checkOverride(func, superFunc, this);
             }
 
@@ -1134,14 +1134,13 @@ public abstract class Node {
 
         public void generateConstructor(final LinkedList<NodeVarDec> varDecs) {
             final String name = "<init>", type = "V";
-            genNodeFunc = new GenNodeFunction(name, func.modifiers, type);
+            genNodeFunc = new GenNodeFunction(name, func.modifiers, type, func.parameters);
             // TODO: Generate constructor calls if this function is a
             // constructor
-            genNodeFunc.params = func.parameters;
             GenNode.addGenNodeFunction(genNodeFunc);
             int argID = 0;
-            for (final TypeI arg : func.parameters) {
-                GenNode.addFuncStmt(new GenNodeVar("arg" + argID, arg.toBytecodeName(), argID + 1, null)); // TODO:
+            for (final Parameter param : func.parameters) {
+                GenNode.addFuncStmt(new GenNodeVar("arg" + argID, param.type.toBytecodeName(), argID + 1, null)); // TODO:
                 // generics
                 argID++;
             }
@@ -1161,15 +1160,13 @@ public abstract class Node {
         @Override
         public void generate() {
             final String name = OperatorDef.filterOperators(id), type = returnType.toBytecodeName();
-            genNodeFunc = new GenNodeFunction(name, func.modifiers, type);
-            genNodeFunc.params = new LinkedList<>();
-            for (final TypeI param : func.parameters)
-                genNodeFunc.params.add(param);
+            genNodeFunc = new GenNodeFunction(name, func.modifiers, type, new Parameters());
+            func.parameters.forEach(param -> genNodeFunc.params.add(param));
             if (extType != null) genNodeFunc.params.addFirst(new TypeI(extType));
             GenNode.addGenNodeFunction(genNodeFunc);
             int argID = 0;
-            for (final TypeI arg : func.parameters) {
-                GenNode.addFuncStmt(new GenNodeVar("arg" + argID, arg.toBytecodeName(), argID + (func.isStatic() ? 0 : 1), null)); // TODO:
+            for (final Parameter param : func.parameters) {
+                GenNode.addFuncStmt(new GenNodeVar("arg" + argID, param.type.toBytecodeName(), argID + (func.isStatic() ? 0 : 1), null)); // TODO:
                 argID++;
             }
             // generics
@@ -1245,13 +1242,13 @@ public abstract class Node {
                 }
             }
             if (getBlock != null) {
-                final GenNodeFunction getFunc = new GenNodeFunction("$get" + id, var.modifiers, var.type.toBytecodeName());
+                final GenNodeFunction getFunc = new GenNodeFunction("$get" + id, var.modifiers, var.type.toBytecodeName(), new Parameters());
                 GenNode.addGenNodeFunction(getFunc);
                 getBlock.generate();
                 GenNode.exitGenNodeFunction();
             }
             if (setBlock != null) {
-                final GenNodeFunction setFunc = new GenNodeFunction("$set" + id, var.modifiers, var.type.toBytecodeName());
+                final GenNodeFunction setFunc = new GenNodeFunction("$set" + id, var.modifiers, var.type.toBytecodeName(), new Parameters());
                 setFunc.params.add(var.type);
                 GenNode.addGenNodeFunction(setFunc);
                 addFuncStmt(new GenNodeVar("newVal", var.type.toBytecodeName(), var.isStatic() ? 0 : 1, null));
@@ -1475,10 +1472,10 @@ public abstract class Node {
             return sb.toString();
         }
 
-        public LinkedList<TypeI> toTypeIList() {
-            LinkedList<TypeI> list = new LinkedList();
-            for (IExpression expr : exprs) list.add(expr.getExprType());
-            return list;
+        public Parameters toParameters() {
+            Parameters params = new Parameters();
+            for (IExpression expr : exprs) params.add(expr.getExprType());
+            return params;
         }
 
     }
@@ -1530,8 +1527,8 @@ public abstract class Node {
                     int i = 0;
                     for (final String g : func.generics) {
                         int paramIndex = 0;
-                        for (final TypeI t : func.parameters) {
-                            if (t.shortName.equals(g)) {
+                        for (final Parameter param : func.parameters) {
+                            if (param.type.shortName.equals(g)) {
                                 funcType.genericTypes.set(i, args.exprs.get(paramIndex).getExprType());
                                 break;
                             }
@@ -1575,11 +1572,13 @@ public abstract class Node {
                 func = Semantics.getFunc(id, args, null);
                 if (func == null) {
                     closureVar = Semantics.getVar(id);
-                    if (closureVar.type instanceof FunctionTypeI) {
-                        FunctionTypeI closureType = (FunctionTypeI) closureVar.type;
-                        if (!Semantics.paramsAreEqual(closureType.hasDefExpr, closureType.args, args.toTypeIList()))
-                            closureVar = null;
-                    } else closureVar = null;
+                    if (closureVar != null) {
+                        if (closureVar.type instanceof FunctionTypeI) {
+                            FunctionTypeI closureType = (FunctionTypeI) closureVar.type;
+                            if (!closureType.args.equals(args.toParameters()))
+                                closureVar = null;
+                        } else closureVar = null;
+                    } else semanticError(this, line, column, FUNC_DOES_NOT_EXIST, id);
                 }
             }
             else {
@@ -1613,10 +1612,7 @@ public abstract class Node {
                 else
                     addFuncStmt(new GenNodeFieldLoad(closureVar.id, closureType.toBytecodeName(), returnType, false, line));
 
-                final StringBuffer sb = new StringBuffer("(");
-                for (final TypeI type : closureType.args)
-                    sb.append(type.toBytecodeName());
-                sb.append(")" + returnType);
+                String sb = "(" + closureType.args.toBytecodeName() + ")" + returnType;
 
                 // Call the closure function with the arguments
                 for (final IExpression expr : args.exprs)
@@ -1628,8 +1624,7 @@ public abstract class Node {
             } else {
                 final StringBuffer sb = new StringBuffer("(");
                 if (func.extType != null) sb.append("L" + func.extType.qualifiedName.toBytecodeName() + ";");
-                for (final TypeI type : func.parameters)
-                    sb.append(type.toBytecodeName());
+                func.parameters.forEach(param -> sb.append(param.type.toBytecodeName()));
                 sb.append(")" + (func.isConstructor() ? "V" : func.returnType.toBytecodeName()));
                 // Create a new object for constructor calls
                 // However, don't do this if we're calling "this" or "super"
@@ -3341,9 +3336,9 @@ public abstract class Node {
                     else semanticError(this, line, column, ARRAY_INDEX_NOT_NUMERIC, accessType);
                 } else {
                     // Find an operator overload
-                    final LinkedList<TypeI> params = new LinkedList<TypeI>();
+                    Parameters params = new Parameters();
                     params.add(accessExpr.getExprType());
-                    overloadFunc = Semantics.getType(exprType.shortName).get().getFunc("[]", params, null);
+                    overloadFunc = Semantics.getType(exprType.shortName).get().getFunc("[]", params.getTypeIList(), null);
                     if (overloadFunc == null) semanticError(this, line, column, FUNC_DOES_NOT_EXIST, "[]", exprType);
                     else if (!overloadFunc.isVisible()) semanticError(this, line, column, FUNC_IS_NOT_VISIBLE, "[]");
                     else return overloadFunc.returnType;
@@ -3603,7 +3598,7 @@ public abstract class Node {
         public NodeArgs args;
         public NodeType type;
         public TypeI typeI;
-        public LinkedList<TypeI> argTypes;
+        public Parameters argTypes;
         public NodeFuncBlock body;
 
         public NodeClosure(int line, int column) {
@@ -3620,21 +3615,22 @@ public abstract class Node {
             args.analyse(null);
             if (type != null) type.analyse(null);
             typeI = type == null ? TypeI.getVoidType() : type.toTypeI();
-            argTypes = args.toTypeIList();
+            argTypes = args.toParameters();
             Scope.push(new FuncScope(typeI, false, false, false));
             int i = 0;
-            for (TypeI arg : argTypes) Scope.getScope().addVar(new Variable(args.args.get(i++).id, arg, false));
+            for (Parameter param : argTypes)
+                Scope.getScope().addVar(new Variable(args.args.get(i++).id, param.type, false));
             body.analyse(null);
             Scope.pop();
         }
 
         public void generate(String shortName, String qualifiedName, String[] interfaces, String funcName, int mods, TypeI retType, boolean isInterface) {
             GenNode.addGenNodeType(new GenNodeType(qualifiedName, shortName, "java/lang/Object", interfaces, EnumModifier.PUBLIC.intVal, isInterface));
-            GenNodeFunction func = new GenNodeFunction(funcName, mods, retType.toBytecodeName());
+            GenNodeFunction func = new GenNodeFunction(funcName, mods, retType.toBytecodeName(), new Parameters());
             int i = 1;
-            for (TypeI arg : argTypes) {
-                func.params.add(arg);
-                func.addLocal(new GenNodeFunction.LocalVariable(args.args.get(i - 1).id, arg.toBytecodeName(), i));
+            for (Parameter param : argTypes) {
+                func.params.add(param);
+                func.addLocal(new GenNodeFunction.LocalVariable(args.args.get(i - 1).id, param.type.toBytecodeName(), i));
                 i++;
             }
             GenNode.addGenNodeFunction(func);
@@ -3642,7 +3638,7 @@ public abstract class Node {
             GenNode.exitGenNodeFunction();
 
             // Generate the class' constructor
-            GenNode.addGenNodeFunction(new GenNodeFunction("<init>", EnumModifier.PUBLIC.intVal, "V"));
+            GenNode.addGenNodeFunction(new GenNodeFunction("<init>", EnumModifier.PUBLIC.intVal, "V", new Parameters()));
             addFuncStmt(new GenNodeThis());
             addFuncStmt(new GenNodeFuncCall("java/lang/Object", "<init>", "()V", false, false, false, true, line));
             addFuncStmt(new GenNodeReturn(line));
@@ -3730,16 +3726,22 @@ public abstract class Node {
 
         @Override
         public void generate() {
-            Type interfaceType = interfaceFunc.enclosingType;
-            String name = "$" + interfaceType.qualifiedName.shortName + id;
-            // Strip the "abstract" modifier from the function, as this is used in the interface but not the class
-            int log2 = (int) (Math.log(Modifier.ABSTRACT) / Math.log(2));
-            int mods = interfaceFunc.modifiers & ~(1 << log2);
-            super.generate(name, name, new String[] {interfaceType.qualifiedName.toBytecodeName()}, interfaceFunc.qualifiedName.shortName, mods, interfaceFunc.returnType, false);
+            String funcName = interfaceFunc.qualifiedName.shortName;
+            String interfaceClass = interfaceFunc.enclosingType.qualifiedName.toBytecodeName();
+            Object[] argTypes = new Object[interfaceFunc.parameters.size()];
+            for (int i = 0; i < interfaceFunc.parameters.size(); i++)
+                argTypes[i] = interfaceFunc.parameters.get(i).type.qualifiedName.toBytecodeName();
+            Handle methodHandle = new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "metafactory", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;");
+
+            addFuncStmt(new GenNodeAlt(line, mv -> {
+                String currentClassName = GenNode.typeStack.peek().name;
+                String lambdaName = String.format("lambda$%s$%d", GenNode.getCurrentFunction().name, GenNode.getCurrentFunction().lambdas++);
+                mv.visitInvokeDynamicInsn(funcName, interfaceClass, methodHandle, org.objectweb.asm.Type.getType("(Ljava/lang/Object;)V"), new Handle(Opcodes.H_INVOKESTATIC, currentClassName, lambdaName, "(Ljava/lang/Object;)V"), org.objectweb.asm.Type.getType("(Ljava/lang/Object;)V"));
+            }));
         }
     }
 
-    public static class NodeDefer extends Node implements IFuncStmt {
+    public static class NodeDefer extends Node implements Node.IFuncStmt {
 
         public NodeFuncBlock block;
 

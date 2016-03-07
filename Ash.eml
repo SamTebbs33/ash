@@ -3,7 +3,7 @@
 	<output-test url="file://$MODULE_DIR$/out/test/Ash"/>
 	<exclude-output/>
 	<contentEntry url="file://$MODULE_DIR$"/>
-	<lib name="asm-5.0.4.jar" scope="COMPILE">
-		<srcroot url="jar://$MODULE_DIR$/../../Programming/Java/lib/asm-5.0.4/src.zip!/"/>
-	</lib>
+	<levels>
+		<level name="asm-5.0.4" value="project"/>
+	</levels>
 </component>

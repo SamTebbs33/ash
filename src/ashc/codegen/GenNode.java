@@ -10,7 +10,7 @@ import ashc.grammar.OperatorDef.OperatorDefNative;
 import ashc.grammar.OperatorDef.OperatorDefNative.NativeOpInfo;
 import ashc.main.AshMain;
 import ashc.semantics.Member.Field;
-import ashc.semantics.TypeI;
+import ashc.semantics.Parameters;
 import org.objectweb.asm.*;
 import org.objectweb.asm.util.CheckClassAdapter;
 
@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Stack;
+import java.util.function.Consumer;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -209,29 +210,30 @@ public abstract class GenNode {
         public String name, enclosingTypeName;
         public int modifiers;
         public String type;
-        public LinkedList<TypeI> params = new LinkedList<TypeI>();
+        public Parameters params;
         public LinkedList<GenNode> stmts = new LinkedList<GenNode>();
         public int stack, maxStack;
-        public GenNodeFunction(final String name, final int modifiers, final String type) {
+        public int lambdas = 0;
+
+        public GenNodeFunction(final String name, final int modifiers, final String type, Parameters params) {
             this.name = name;
             this.modifiers = modifiers;
             this.type = type;
             enclosingTypeName = typeStack.peek().name;
+            this.params = params;
         }
 
         @Override
         public void generate(final Object visitor) {
             final ClassWriter cw = (ClassWriter) visitor;
-            final StringBuffer signature = new StringBuffer("(");
-            if (params != null) for (final TypeI type : params)
-                signature.append(type.toBytecodeName());
-            signature.append(")" + type);
+            final StringBuffer signature = new StringBuffer("(").append(params.toBytecodeName()).append(")").append(type);
             final MethodVisitor mv = cw.visitMethod(modifiers, name, signature.toString(), null, null);
+            params.forEach(param -> mv.visitParameter(param.name, param.mods));
             mv.visitCode();
-            for (int i = 0; i < stmts.size(); i++)
-                stmts.get(i).generate(mv);
-            for (final LocalVariable local : locals.values())
+            stmts.forEach(stmt -> stmt.generate(mv));
+            locals.forEach((i, local) -> {
                 if (!local.endLabelGenerated) mv.visitLabel(local.end.label);
+            });
 
             try {
                 mv.visitMaxs(-1, -1);
@@ -1274,6 +1276,21 @@ public abstract class GenNode {
             ((MethodVisitor) visitor).visitMultiANewArrayInsn(type, dims);
         }
 
+    }
+
+    public static class GenNodeAlt extends GenNode {
+
+        Consumer<MethodVisitor> consumer;
+
+        public GenNodeAlt(int lineNo, Consumer<MethodVisitor> consumer) {
+            super(lineNo);
+            this.consumer = consumer;
+        }
+
+        @Override
+        public void generate(Object visitor) {
+            consumer.accept((MethodVisitor) visitor);
+        }
     }
 
 }

@@ -238,7 +238,7 @@ public class TypeI {
             if (!GenNode.generatedTupleClasses.contains(tupleClassName)) {
                 final GenNodeType tupleClass = new GenNodeType(tupleClassName, tupleClassName, "Ljava/lang/Object;", null, Opcodes.ACC_PUBLIC, false);
                 GenNode.addGenNodeType(tupleClass);
-                final GenNodeFunction tupleConstructor = new GenNodeFunction("<init>", Opcodes.ACC_PUBLIC, "V");
+                final GenNodeFunction tupleConstructor = new GenNodeFunction("<init>", Opcodes.ACC_PUBLIC, "V", new Parameters());
                 GenNode.addGenNodeFunction(tupleConstructor);
                 int tupleTypeNum = 1;
                 char tupleFieldName = 'a', tupleFieldType = 'A';
@@ -323,12 +323,12 @@ public class TypeI {
 
         public static int numClosures = 0;
         public TypeI type;
-        public LinkedList<TypeI> args;
+        public Parameters args;
         public boolean hasDefExpr;
         public IExpression defExpr;
         public int closureID = ++numClosures;
 
-        public FunctionTypeI(TypeI type, LinkedList<TypeI> args, IExpression defExpr) {
+        public FunctionTypeI(TypeI type, Parameters args, IExpression defExpr) {
             super("func", 0, false);
             this.type = type;
             this.hasDefExpr = defExpr != null;
@@ -343,7 +343,7 @@ public class TypeI {
                 if (type.canBeAssignedTo(funcType.type)) {
                     int i = 0;
                     if (funcType.args.size() != args.size()) return false;
-                    for (TypeI t : funcType.args) if (!args.get(i++).canBeAssignedTo(t)) return false;
+                    for (Parameter p : funcType.args) if (!args.get(i++).type.canBeAssignedTo(p.type)) return false;
                     return true;
                 }
             }
@@ -363,7 +363,7 @@ public class TypeI {
         public String toString() {
             StringBuffer sb = new StringBuffer();
             int c = 0;
-            for (TypeI argType : args) sb.append(argType.toString() + (c < args.size() - 1 ? ", " : ""));
+            for (Parameter param : args) sb.append(param.type.toString() + (c < args.size() - 1 ? ", " : ""));
             return "(" + sb.toString() + ") -> " + type.toString();
         }
     }

@@ -1,24 +1,27 @@
 package ashc.semantics;
 
-import static ashc.error.AshError.*;
-import static ashc.error.AshError.EnumError.*;
-
-import java.util.*;
-
-import ashc.grammar.*;
+import ashc.grammar.EnumModifier;
+import ashc.grammar.Node;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeExprs;
 import ashc.grammar.Node.NodeVariable;
+import ashc.grammar.OperatorDef;
 import ashc.grammar.OperatorDef.EnumOperatorType;
 import ashc.grammar.OperatorDef.OperatorDefNative;
 import ashc.grammar.OperatorDef.OperatorDefNative.NativeOpInfo;
-import ashc.load.*;
-import ashc.semantics.Member.EnumType;
-import ashc.semantics.Member.Field;
-import ashc.semantics.Member.Function;
-import ashc.semantics.Member.Type;
-import ashc.semantics.Member.Variable;
-import ashc.util.*;
+import ashc.load.TypeImporter;
+import ashc.semantics.Member.*;
+import ashc.util.BitOp;
+import ashc.util.Tuple;
+
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Optional;
+import java.util.Stack;
+
+import static ashc.error.AshError.EnumError.*;
+import static ashc.error.AshError.semanticError;
+import static ashc.error.AshError.semanticWarning;
 
 /**
  * Ash
@@ -33,16 +36,6 @@ public class Semantics {
     public static Stack<Type> typeStack = new Stack<Type>();
     public static LinkedList<Type> globalTypes = new LinkedList<>();
     public static boolean inGlobal = false;
-
-    public static class Operation {
-        public Function overloadFunc;
-        public TypeI type;
-
-        public Operation(final Function overloadFunc, final TypeI type) {
-            this.overloadFunc = overloadFunc;
-            this.type = type;
-        }
-    }
 
     public static int getNumGenericsForType(final String typeID) {
         if (EnumPrimitive.isPrimitive(typeID)) return 0;
@@ -102,8 +95,8 @@ public class Semantics {
         final Optional<Type> type = getType(func.qualifiedName.shortName);
         // Check if it is a constructor for an existing type
         if (type.isPresent())
-            return type.get().getFunc(func.qualifiedName.shortName, func.parameters, func.opType) != null;
-        return typeStack.peek().getFunc(func.qualifiedName.shortName, func.parameters, func.opType) != null;
+            return type.get().getFunc(func.qualifiedName.shortName, func.parameters.getTypeIList(), func.opType) != null;
+        return typeStack.peek().getFunc(func.qualifiedName.shortName, func.parameters.getTypeIList(), func.opType) != null;
     }
 
     public static void addFunc(final Function func) {
@@ -168,9 +161,9 @@ public class Semantics {
         return null;
     }
 
-    public static Function getFunc(final String id, final TypeI type, final LinkedList<TypeI> args, EnumOperatorType opType) {
+    public static Function getFunc(final String id, final TypeI type, Parameters args, EnumOperatorType opType) {
         final Optional<Type> t = type.qualifiedName != null ? getType(type.shortName, type.qualifiedName) : getType(type.shortName);
-        if (t.isPresent()) return t.get().getFunc(id, args, opType);
+        if (t.isPresent()) return t.get().getFunc(id, args.getTypeIList(), opType);
         return null;
     }
 
@@ -188,15 +181,15 @@ public class Semantics {
         return getFunc(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args, opType);
     }
 
-    public static Function getFunc(String id, final LinkedList<TypeI> args, EnumOperatorType opType) {
+    public static Function getFunc(String id, Parameters args, EnumOperatorType opType) {
         final Optional<Type> type = getType(id);
         // Check if it is a constructor for an existing type
         if (type.isPresent()) {
             id = type.get().qualifiedName.shortName;
-            return type.get().getFunc(id, args, opType);
+            return type.get().getFunc(id, args.getTypeIList(), opType);
         }
         for (final Type gType : globalTypes) {
-            final Function func = gType.getFunc(id, args, opType);
+            final Function func = gType.getFunc(id, args.getTypeIList(), opType);
             if (func != null) return func;
         }
         return getFunc(id, new TypeI(typeStack.peek().qualifiedName.shortName, 0, false), args, opType);
@@ -269,7 +262,7 @@ public class Semantics {
         else if (type2.isArray() || type2.isTuple() || type2.isVoid() || type2.isNull()) return null;
 
         // Check for operator overloads, start with type 1
-        final LinkedList<TypeI> parameters = new LinkedList<TypeI>();
+        Parameters parameters = new Parameters();
         Type type;
 
         // Check if there is a global overload for the types.
@@ -283,7 +276,7 @@ public class Semantics {
             parameters.clear();
             parameters.add(type2);
             type = Semantics.getType(type1.shortName).get();
-            func = type.getFunc(operator.id, parameters, operator.type);
+            func = type.getFunc(operator.id, parameters.getTypeIList(), operator.type);
             if (func != null) return new Tuple<TypeI, Function>(func.returnType, func);
         }
         if (!type2.isPrimitive()) {
@@ -291,7 +284,7 @@ public class Semantics {
             parameters.clear();
             parameters.add(type1);
             type = Semantics.getType(type2.shortName).get();
-            func = type.getFunc(operator.id, parameters, operator.type);
+            func = type.getFunc(operator.id, parameters.getTypeIList(), operator.type);
             if (func != null) return new Tuple<TypeI, Function>(func.returnType, func);
         }
         return null;
@@ -302,14 +295,14 @@ public class Semantics {
 
         // Search for an operator overload declared in the type
         if (!type.isPrimitive()) {
-            Function func = getFunc(operator.id, type, new LinkedList<>(), operator.type);
+            Function func = getFunc(operator.id, type, new Parameters(), operator.type);
             if (func != null) return new Operation(func, func.returnType);
         }
 
         // Search for a global operator overload
-        LinkedList<TypeI> param = new LinkedList<>();
-        param.add(type);
-        Function func = getFunc(operator.id, param, operator.type);
+        Parameters params = new Parameters();
+        params.add(type);
+        Function func = getFunc(operator.id, params, operator.type);
         if (func != null) return new Operation(func, func.returnType);
         else return null;
     }
@@ -341,18 +334,14 @@ public class Semantics {
         } else if (hasOverrideMod) semanticError(node, node.line, node.column, OVERRIDEN_FUNC_DOES_NOT_EXIST);
     }
 
-    public static boolean paramsAreEqual(boolean params1DefExpr, final LinkedList<TypeI> params, final LinkedList<TypeI> params2) {
-        if ((params.size() == 0) && (params2.size() == 0)) return true;
-        // If the function has a default parameter expression and the size
-        // of parmas2 is 1 less than params then allow it
-        if ((params.size() != params2.size()) && !(params1DefExpr && (params.size() == (params2.size() + 1))))
-            return false;
-        final int len = Math.min(params.size(), params2.size());
-        for (int i = 0; i < len; i++) {
-            // If it is a generic, continue
-            if (!params.get(i).canBeAssignedTo(params2.get(i))) return false;
+    public static class Operation {
+        public Function overloadFunc;
+        public TypeI type;
+
+        public Operation(final Function overloadFunc, final TypeI type) {
+            this.overloadFunc = overloadFunc;
+            this.type = type;
         }
-        return true;
     }
 
 }

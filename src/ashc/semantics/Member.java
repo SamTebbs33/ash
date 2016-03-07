@@ -1,17 +1,19 @@
 package ashc.semantics;
 
-import java.util.*;
-
-import org.objectweb.asm.*;
-import org.objectweb.asm.tree.*;
-
-import ashc.grammar.*;
+import ashc.grammar.EnumModifier;
 import ashc.grammar.Node.IExpression;
 import ashc.grammar.Node.NodeExprs;
 import ashc.grammar.OperatorDef.EnumOperatorType;
-import ashc.load.*;
-import ashc.semantics.Member.Function;
-import ashc.util.*;
+import ashc.load.TypeImporter;
+import ashc.util.BitOp;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.MethodNode;
+
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Ash
@@ -86,10 +88,6 @@ public class Member {
             this.type = type;
         }
 
-        public boolean hasSuper(QualifiedName qualifiedName) {
-            return hasSuperInterface(qualifiedName) || (hasSuperClass() && superClass.qualifiedName.equals(qualifiedName));
-        }
-
         public Type(final ClassNode node) {
             this(new QualifiedName(node.name.replace('/', '.')), node.access, EnumType.isEnum(node.access) ? EnumType.ENUM
                     : (EnumType.isInterface(node.access) ? EnumType.INTERFACE : EnumType.CLASS));
@@ -122,6 +120,10 @@ public class Member {
                 final FieldNode fNode = (FieldNode) obj;
                 addField(new Field(fNode, this));
             }
+        }
+
+        public boolean hasSuper(QualifiedName qualifiedName) {
+            return hasSuperInterface(qualifiedName) || (hasSuperClass() && superClass.qualifiedName.equals(qualifiedName));
         }
 
         public void addField(final Field field) {
@@ -162,11 +164,10 @@ public class Member {
         }
 
         public TypeI getFuncType(final String id, final NodeExprs args) {
-            final LinkedList<TypeI> parameters = new LinkedList<TypeI>();
-            for (final IExpression arg : args.exprs)
-                parameters.add(arg.getExprType());
+            LinkedList<TypeI> types = new LinkedList<>();
+            args.exprs.forEach(expr -> types.add(expr.getExprType()));
             if (functions.containsKey(id)) for (final Function func : functions.get(id))
-                if (Semantics.paramsAreEqual(func.hasDefExpr, func.parameters, parameters)) return func.returnType;
+                if (func.parameters.getTypeIList().equals(types)) return func.returnType;
             return null;
         }
 
@@ -178,16 +179,15 @@ public class Member {
         }
 
         public Function getFunc(final String id, final NodeExprs args, EnumOperatorType opType) {
-            final LinkedList<TypeI> parameters = new LinkedList<TypeI>();
-            for (final IExpression arg : args.exprs)
-                parameters.add(arg.getExprType());
-            return getFunc(id, parameters, opType);
+            LinkedList<TypeI> list = new LinkedList<>();
+            args.exprs.forEach(expr -> list.add(expr.getExprType()));
+            return getFunc(id, list, opType);
         }
 
-        public Function getFunc(final String id, final LinkedList<TypeI> parameters, EnumOperatorType opType) {
+        public Function getFunc(final String id, final List<TypeI> parameters, EnumOperatorType opType) {
             if (functions.containsKey(id)) {
                 for (final Function func : functions.get(id)) {
-                    if (func.opType == opType && Semantics.paramsAreEqual(func.hasDefExpr, func.parameters, parameters))
+                    if (func.opType == opType && func.parameters.getTypeIList().equals(parameters))
                         return func;
                 }
             }
@@ -227,7 +227,7 @@ public class Member {
 
     public static class Function extends Member {
 
-        public LinkedList<TypeI> parameters = new LinkedList<TypeI>();
+        public Parameters parameters = new Parameters();
         public boolean hasDefExpr = false, isGlobal, hasImplementation;
         public TypeI returnType;
         public LinkedList<String> generics = new LinkedList<String>();
@@ -288,7 +288,7 @@ public class Member {
         public boolean equals(final Object obj) {
             if (obj instanceof Function) {
                 final Function func = (Function) obj;
-                return qualifiedName.equals(func.qualifiedName) && Semantics.paramsAreEqual(this.hasDefExpr, this.parameters, func.parameters);
+                return qualifiedName.equals(func.qualifiedName) && this.parameters.equals(func.parameters);
             }
             return false;
         }
