@@ -1,4 +1,4 @@
-package ash.grammar.ash.grammar.node;
+package ash.grammar.node;
 
 import ash.Ash;
 import org.antlr.v4.runtime.ParserRuleContext;

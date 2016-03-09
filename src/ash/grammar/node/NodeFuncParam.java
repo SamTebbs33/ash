@@ -1,4 +1,4 @@
-package ash.grammar.ash.grammar.node;
+package ash.grammar.node;
 
 import ash.grammar.AshParser;
 

@@ -2,8 +2,8 @@ package ash;
 
 import ash.grammar.AshLexer;
 import ash.grammar.AshParser;
-import ash.grammar.ash.grammar.node.AshParserVisitor;
-import ash.grammar.ash.grammar.node.NodeFile;
+import ash.grammar.node.AshParserVisitor;
+import ash.grammar.node.NodeFile;
 import org.antlr.v4.runtime.ANTLRFileStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 

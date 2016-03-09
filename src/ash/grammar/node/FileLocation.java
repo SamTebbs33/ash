@@ -1,4 +1,4 @@
-package ash.grammar.ash.grammar.node;
+package ash.grammar.node;
 
 /**
  * Created by samtebbs on 09/03/2016.
