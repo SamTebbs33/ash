@@ -1,7 +1,8 @@
-package ash.grammar.node;
+package ash.grammar;
 
-import ash.grammar.AshParser;
-import ash.grammar.AshVisitor;
+import ash.grammar.antlr.AshParser;
+import ash.grammar.antlr.AshVisitor;
+import ash.grammar.node.*;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
@@ -34,6 +35,14 @@ public class AshParserVisitor implements AshVisitor {
     @Override
     public Node visitErrorNode(ErrorNode errorNode) {
         return null;
+    }
+
+    public <T extends ParseTree, R> List<R> visit(List<T> contexts, Function<T, R> converter) {
+        return contexts.stream().map(converter).collect(Collectors.toList());
+    }
+
+    public <T extends ParseTree, R> R visitOrNull(T ctx, Function<T, R> func) {
+        return ctx == null ? null : func.apply(ctx);
     }
 
     /**
@@ -179,7 +188,4 @@ public class AshParserVisitor implements AshVisitor {
         return visit(ctx.MODIFIER(), this::visitTerminal);
     }
 
-    public <T, R> List<R> visit(List<T> contexts, Function<T, R> func) {
-        return contexts.stream().map(func).collect(Collectors.toList());
-    }
 }

@@ -1,6 +1,7 @@
 package ash.grammar.node;
 
-import ash.grammar.AshParser;
+import ash.grammar.AshParserVisitor;
+import ash.grammar.antlr.AshParser;
 
 import java.util.List;
 
@@ -15,7 +16,7 @@ public class NodeFile extends Node<AshParser.FileContext> {
 
     public NodeFile(AshParser.FileContext context, AshParserVisitor visitor) {
         super(context, visitor);
-        this.packageDec = visitor.visitPackageDec(context.packageDec());
+        this.packageDec = visitor.visitOrNull(context.packageDec(), visitor::visitPackageDec);
         this.imports = visitor.visit(context.importDec(), visitor::visitImportDec);
         this.typeDecs = visitor.visit(context.typeDec(), visitor::visitTypeDec);
     }

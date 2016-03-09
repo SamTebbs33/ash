@@ -1,6 +1,7 @@
 package ash.grammar.node;
 
 import ash.Ash;
+import ash.grammar.AshParserVisitor;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
@@ -15,8 +16,7 @@ public abstract class Node<Ctx extends ParserRuleContext> {
     public Node(Ctx context, AshParserVisitor visitor) {
         Interval interval = context.getSourceInterval();
         Token token = Ash.tokenStream.get(interval.a);
-        int column = token.getCharPositionInLine();
-        location = new FileLocation(token.getLine(), column, interval.b - column);
+        location = new FileLocation(token);
     }
 
 }

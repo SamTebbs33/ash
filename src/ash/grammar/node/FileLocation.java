@@ -1,5 +1,7 @@
 package ash.grammar.node;
 
+import org.antlr.v4.runtime.Token;
+
 /**
  * Created by samtebbs on 09/03/2016.
  */
@@ -13,4 +15,11 @@ public class FileLocation {
         this.length = length;
     }
 
+    public FileLocation(Token token) {
+        this(token.getLine(), token.getCharPositionInLine(), token.getStopIndex() - token.getStartIndex() + token.getCharPositionInLine());
+    }
+
+    public int getEndColumn() {
+        return column + length;
+    }
 }

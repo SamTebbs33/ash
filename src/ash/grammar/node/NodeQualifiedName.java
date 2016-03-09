@@ -1,6 +1,7 @@
 package ash.grammar.node;
 
-import ash.grammar.AshParser;
+import ash.grammar.AshParserVisitor;
+import ash.grammar.antlr.AshParser;
 
 import java.util.List;
 

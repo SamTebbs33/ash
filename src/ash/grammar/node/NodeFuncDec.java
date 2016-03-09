@@ -1,6 +1,7 @@
 package ash.grammar.node;
 
-import ash.grammar.AshParser;
+import ash.grammar.AshParserVisitor;
+import ash.grammar.antlr.AshParser;
 
 /**
  * Created by samtebbs on 09/03/2016.
