@@ -1,4 +1,5 @@
 // Generated from Ash.g by ANTLR 4.5.2
+package ash.grammar;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -15,13 +16,233 @@ public class AshBaseListener implements AshListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterStart(AshParser.StartContext ctx) { }
+	@Override
+	public void enterFile(AshParser.FileContext ctx) {
+	}
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitStart(AshParser.StartContext ctx) { }
+	@Override
+	public void exitFile(AshParser.FileContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void enterPackageDec(AshParser.PackageDecContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void exitPackageDec(AshParser.PackageDecContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void enterQualifiedName(AshParser.QualifiedNameContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void exitQualifiedName(AshParser.QualifiedNameContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void enterImportDec(AshParser.ImportDecContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void exitImportDec(AshParser.ImportDecContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void enterTypeDec(AshParser.TypeDecContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void exitTypeDec(AshParser.TypeDecContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void enterClassDec(AshParser.ClassDecContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void exitClassDec(AshParser.ClassDecContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void enterTypeDecParams(AshParser.TypeDecParamsContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void exitTypeDecParams(AshParser.TypeDecParamsContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void enterTypeDecSupers(AshParser.TypeDecSupersContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void exitTypeDecSupers(AshParser.TypeDecSupersContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void enterClassBlock(AshParser.ClassBlockContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void exitClassBlock(AshParser.ClassBlockContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void enterVarDec(AshParser.VarDecContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void exitVarDec(AshParser.VarDecContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void enterFuncDec(AshParser.FuncDecContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void exitFuncDec(AshParser.FuncDecContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void enterFuncParam(AshParser.FuncParamContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void exitFuncParam(AshParser.FuncParamContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void enterMods(AshParser.ModsContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override
+	public void exitMods(AshParser.ModsContext ctx) {
+	}
 
 	/**
 	 * {@inheritDoc}
