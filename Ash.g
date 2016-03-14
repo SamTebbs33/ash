@@ -8,7 +8,7 @@ typeDec : mods classDec ;
 classDec : CLASS ID typeDecParams? typeDecSupers? classBlock? ;
 typeDecParams : PARENL funcParam (COMMA funcParam)* PARENR ;
 typeDecSupers : COLON qualifiedName (COMMA qualifiedName)* ;
-classBlock : BRACEL varDec* funcDec* BRACER ;
+classBlock : BRACEL (varDec | funcDec)* BRACER ;
 varDec : mods (VAR | CONST) ID ;
 funcDec : mods FUNC ID ;
 funcParam : ID COLON ID ;
