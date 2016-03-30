@@ -1,4 +1,4 @@
-package ash.grammar;
+package ash.error;
 
 import ash.grammar.node.FileLocation;
 import org.antlr.v4.runtime.*;
@@ -13,7 +13,7 @@ import java.util.BitSet;
  */
 public class AshParserErrorListener implements ANTLRErrorListener {
 
-    private void report(AshErrorType errorType, FileLocation location, String msg) {
+    public static void report(AshErrorType errorType, FileLocation location, String msg) {
         errorType.out.printf("%s [%d:%d-%d] %s%n", errorType.str, location.line, location.column,
                 location.getEndColumn(), msg);
     }
@@ -39,7 +39,7 @@ public class AshParserErrorListener implements ANTLRErrorListener {
     }
 
     public enum AshErrorType {
-        SYNTAX("Syntax error", System.err), WARNING("Warning", System.out);
+        SYNTAX("Syntax error", System.err), WARNING("Warning", System.out), SEMANTIC("Error", System.err);
 
         String str;
         PrintStream out;

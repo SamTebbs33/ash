@@ -1,38 +1,73 @@
 grammar Ash;
 
-file : packageDec? importDec* typeDec+ EOF ;
+WS : [ \t\r\n]+ -> skip ;
+
+file : packageDec? importDec* classDec+ EOF ;
 packageDec : PACKAGE qualifiedName ;
 qualifiedName : ID (DOT ID)* ;
 importDec : IMPORT qualifiedName ;
-typeDec : mods classDec ;
-classDec : CLASS ID typeDecParams? typeDecSupers? classBlock? ;
+type : (qualifiedName | PRIMITIVE) ARRAY_DIM*  ;
+classDec : mods CLASS ID typeDecParams? typeDecSupers? classBlock? ;
 typeDecParams : PARENL funcParam (COMMA funcParam)* PARENR ;
 typeDecSupers : COLON qualifiedName (COMMA qualifiedName)* ;
-classBlock : BRACEL varDec* funcDec* BRACER ;
-varDec : mods (VAR | CONST) ID ;
-funcDec : mods FUNC ID ;
-funcParam : ID COLON ID ;
+classBlock : BRACEL (varDec | funcDec)* BRACER ;
+varDec : mods VAR ID (COLON type)? ('=' expr)? ;
+funcDec : mods FUNC ID (PARENL (funcParam (COMMA funcParam)*) PARENR)? (LAMBDA type)? funcBlock;
+funcBlock : bracedBlock | (ASSIGN_OP (expr | stmt)) ;
+bracedBlock : (BRACEL stmt* BRACER) ;
+funcParam : ID COLON type ;
 mods : MODIFIER* ;
+expr : INT
+    | HEX_INT
+    | OCT_INT
+    | BIN_INT
+    | FLOAT
+    | DOUBLE
+    | STRING
+    | CHAR
+    | BOOL
+    | PARENL bracketed=expr PARENR
+    | expr binaryOp=OP expr
+    | prefixOp=OP expr
+    | expr postfixOp=OP
+    | var
+    | funcCall
+    | expr QUESTION expr COLON expr ;
+stmt : varAssignment
+    | funcCall
+    | ifStmt
+    | returnStmt
+    | bracedBlock ;
+ifStmt : IF expr bracedBlock elseIfStmt? elseStmt? ;
+elseIfStmt : ELSE ifStmt ;
+elseStmt : ELSE bracedBlock ;
+returnStmt : RETURN expr? ;
+suffix : DOT (var | funcCall) ;
+var : ID suffix? ;
+varAssignment : var (ASSIGN_OP | COMPOUND_ASSIGN_OP) expr ;
+funcCall : ID PARENL (expr (COMMA expr)*)? PARENR suffix? ;
 
 // skip spaces, tabs, newlines
-WS : [ \t\r\n]+ -> skip ;
 OCT_INT : '0o' [0-7]+ ;
 BIN_INT : '0b' [0|1]+ ;
 HEX_INT : '0x' [0-9a-fA-F]+ ;
 INT : '-'? [0-9]+ ;
 
+ASSIGN_OP : '=' ;
+QUESTION : '?' ;
 DOT : '.' ;
 FLOAT : '-'? [0-9]+ '.' [0-9]+ 'f' ;
 DOUBLE : '-'? [0-9]+ '.' [0-9]+ ;
-STRING : '"' [^"]* '"' ;
+STRING : '"' ~["\\]* '"' ;
 CHAR : '\'' . '\'' ;
 BOOL : 'true' | 'false' ;
-TYPE : 'bool' | 'double' | 'float' | 'long' | 'int' | 'short' | 'byte' | 'char' ;
+PRIMITIVE : 'bool' | 'double' | 'float' | 'long' | 'int' | 'short' | 'byte' | 'char' ;
 LAMBDA : '->' ;
-COMPOUND_ASSIGN_OP : '-=' | '+=' | '*=' | '/=' | '%=' | '**=' | '^=' | '&=' | '|=' | '<<=' | '||=' ;
-OP : ['..'+ | '+' | '-' | '!' | '~' | '=' | '*' | '/' | '%' | '^' | '&' | '<' | '>' | '@' | '#' | '?']+;
-ARRAY_DIM : '[]' ;
 
+COMPOUND_ASSIGN_OP : '-=' | '+=' | '*=' | '/=' | '%=' | '**=' | '^=' | '&=' | '|=' | '<<=' | '||=' ;
+OP : ['..' | '+' | '-' | '!' | '~' | ASSIGN_OP | '*' | '/' | '%' | '\^' | '&' | '<' | '>' | '@' | '#' | '?']+;
+
+ARRAY_DIM : '[]' ;
 
 ARROW : '=>' ;
 PARENL : '(' ;

@@ -1,6 +1,6 @@
 package ash;
 
-import ash.grammar.AshParserErrorListener;
+import ash.error.AshParserErrorListener;
 import ash.grammar.AshParserVisitor;
 import ash.grammar.antlr.AshLexer;
 import ash.grammar.antlr.AshParser;
@@ -26,6 +26,8 @@ public class Ash {
         AshParser.FileContext tree = parser.file(); // parse a start rule
         AshParserVisitor visitor = new AshParserVisitor();
         NodeFile file = visitor.visitFile(tree);
+        file.preAnalyse();
+        file.analyse();
     }
 
 }

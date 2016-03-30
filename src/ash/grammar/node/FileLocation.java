@@ -16,10 +16,19 @@ public class FileLocation {
     }
 
     public FileLocation(Token token) {
-        this(token.getLine(), token.getCharPositionInLine(), token.getStopIndex() - token.getStartIndex() + token.getCharPositionInLine());
+        this(token.getLine(), token.getCharPositionInLine(), token.getText().length());
     }
 
     public int getEndColumn() {
         return column + length;
+    }
+
+    @Override
+    public String toString() {
+        return "FileLocation{" +
+                "line=" + line +
+                ", column=" + column +
+                ", length=" + length +
+                '}';
     }
 }

@@ -1,2 +1,5 @@
-class Test
-class Test2
+class Test {
+    func foo {
+        a = "hi" + 2 * 4
+    }
+}
