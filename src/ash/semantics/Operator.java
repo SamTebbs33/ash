@@ -1,4 +1,4 @@
-package ash.grammar.semantics;
+package ash.semantics;
 
 import java.util.Optional;
 

@@ -2,7 +2,7 @@ package ash.grammar.node;
 
 import ash.grammar.AshParserVisitor;
 import ash.grammar.antlr.AshParser;
-import ash.grammar.semantics.QualifiedName;
+import ash.semantics.QualifiedName;
 
 /**
  * Created by samtebbs on 09/03/2016.

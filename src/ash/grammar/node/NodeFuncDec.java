@@ -21,7 +21,7 @@ public class NodeFuncDec extends NodeDeclaration<AshParser.FuncDecContext> {
         super(context, visitor);
         this.id = visitor.visitTerminal(context.ID());
         this.mods = visitor.visitMods(context.mods());
-        this.params = visitor.visit(context.funcParam(), visitor::visitFuncParam);
+        this.params = visitor.visitParams(context.params());
         this.block = visitor.visitFuncBlock(context.funcBlock());
         this.type = visitor.visitOrNull(context.type(), visitor::visitType);
     }

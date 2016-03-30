@@ -1,6 +1,6 @@
 package ash.grammar.node;
 
-import ash.grammar.semantics.TypeInstance;
+import ash.semantics.TypeInstance;
 
 /**
  * Created by samtebbs on 15/03/2016.

@@ -3,8 +3,8 @@ package ash.grammar.node;
 import ash.error.Error;
 import ash.grammar.AshParserVisitor;
 import ash.grammar.antlr.AshParser;
-import ash.grammar.semantics.Operator;
-import ash.grammar.semantics.TypeInstance;
+import ash.semantics.Operator;
+import ash.semantics.TypeInstance;
 
 import java.util.Optional;
 

@@ -115,6 +115,18 @@ public class AshParserVisitor implements AshVisitor {
         return new NodeImport(ctx, this);
     }
 
+    @Override
+    @Deprecated
+    public Object visitAliasedImport(AshParser.AliasedImportContext ctx) {
+        return null;
+    }
+
+    @Override
+    @Deprecated
+    public Object visitMultiImport(AshParser.MultiImportContext ctx) {
+        return null;
+    }
+
     /**
      * Visit a parse tree produced by {@link AshParser#type}.
      *
@@ -137,14 +149,8 @@ public class AshParserVisitor implements AshVisitor {
         return new NodeClassDec(ctx, this);
     }
 
-    /**
-     * Visit a parse tree produced by {@link AshParser#typeDecParams}.
-     *
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
     @Override
-    public List<NodeFuncParam> visitTypeDecParams(AshParser.TypeDecParamsContext ctx) {
+    public List<NodeFuncParam> visitParams(AshParser.ParamsContext ctx) {
         return visit(ctx.funcParam(), this::visitFuncParam);
     }
 
@@ -236,6 +242,11 @@ public class AshParserVisitor implements AshVisitor {
         return visit(ctx.MODIFIER(), this::visitTerminal);
     }
 
+    @Override
+    public NodeType visitTypeDef(AshParser.TypeDefContext ctx) {
+        return new NodeType(ctx.type(), this);
+    }
+
     /**
      * Visit a parse tree produced by {@link AshParser#expr}.
      *
@@ -277,6 +288,7 @@ public class AshParserVisitor implements AshVisitor {
         else if(ctx.ifStmt() != null) return visitIfStmt(ctx.ifStmt());
         else if(ctx.returnStmt() != null) return visitReturnStmt(ctx.returnStmt());
         else if(ctx.bracedBlock() != null) return visitBracedBlock(ctx.bracedBlock());
+        else if(ctx.varDec() != null) return visitVarDec(ctx.varDec());
         return null; // TODO
     }
 

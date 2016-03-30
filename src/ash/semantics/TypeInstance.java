@@ -1,6 +1,6 @@
-package ash.grammar.semantics;
+package ash.semantics;
 
-import ash.grammar.semantics.member.Type;
+import ash.semantics.member.Type;
 
 /**
  * Created by samtebbs on 19/03/2016.
@@ -37,5 +37,14 @@ public class TypeInstance {
 
     public static TypeInstance fromType(Type type) {
         return new TypeInstance(type.name);
+    }
+
+    public static TypeInstance fromASMType(jdk.internal.org.objectweb.asm.Type type) {
+        int arrayDims = 0;
+        if(type.getSort() == jdk.internal.org.objectweb.asm.Type.ARRAY) {
+            arrayDims = type.getDimensions();
+            type = type.getElementType();
+        }
+        return new TypeInstance(arrayDims, new QualifiedName(type.getClassName()));
     }
 }

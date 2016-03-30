@@ -1,21 +1,25 @@
 grammar Ash;
 
-WS : [ \t\r\n]+ -> skip ;
+STRING : '"' ~["\\]* '"' ;
+WS : (' ' | '\t' | '\r' | '\n')+ -> skip ;
 
+typeDef : COLON type ;
 file : packageDec? importDec* classDec+ EOF ;
 packageDec : PACKAGE qualifiedName ;
 qualifiedName : ID (DOT ID)* ;
-importDec : IMPORT qualifiedName ;
-type : (qualifiedName | PRIMITIVE) ARRAY_DIM*  ;
-classDec : mods CLASS ID typeDecParams? typeDecSupers? classBlock? ;
-typeDecParams : PARENL funcParam (COMMA funcParam)* PARENR ;
+importDec : IMPORT qualifiedName (aliasedImport | multiImport)? ;
+aliasedImport : AS ID ;
+multiImport : (COMMA ID)+ ;
+type : (ID | qualifiedName | PRIMITIVE) ARRAY_DIM*  ;
+classDec : mods CLASS ID params? typeDecSupers? classBlock? ;
+params : PARENL funcParam (COMMA funcParam)* PARENR ;
 typeDecSupers : COLON qualifiedName (COMMA qualifiedName)* ;
 classBlock : BRACEL (varDec | funcDec)* BRACER ;
-varDec : mods VAR ID (COLON type)? ('=' expr)? ;
-funcDec : mods FUNC ID (PARENL (funcParam (COMMA funcParam)*) PARENR)? (LAMBDA type)? funcBlock;
+varDec : mods VAR ID typeDef? ('=' expr)? ;
+funcDec : mods FUNC ID params? (LAMBDA type)? funcBlock;
 funcBlock : bracedBlock | (ASSIGN_OP (expr | stmt)) ;
-bracedBlock : (BRACEL stmt* BRACER) ;
-funcParam : ID COLON type ;
+bracedBlock : BRACEL stmt* BRACER ;
+funcParam : ID typeDef ;
 mods : MODIFIER* ;
 expr : INT
     | HEX_INT
@@ -32,12 +36,14 @@ expr : INT
     | expr postfixOp=OP
     | var
     | funcCall
+    | BRACEL (expr (list=COMMA expr)*)? BRACER
     | expr QUESTION expr COLON expr ;
 stmt : varAssignment
     | funcCall
     | ifStmt
     | returnStmt
-    | bracedBlock ;
+    | bracedBlock
+    | varDec ;
 ifStmt : IF expr bracedBlock elseIfStmt? elseStmt? ;
 elseIfStmt : ELSE ifStmt ;
 elseStmt : ELSE bracedBlock ;
@@ -58,7 +64,6 @@ QUESTION : '?' ;
 DOT : '.' ;
 FLOAT : '-'? [0-9]+ '.' [0-9]+ 'f' ;
 DOUBLE : '-'? [0-9]+ '.' [0-9]+ ;
-STRING : '"' ~["\\]* '"' ;
 CHAR : '\'' . '\'' ;
 BOOL : 'true' | 'false' ;
 PRIMITIVE : 'bool' | 'double' | 'float' | 'long' | 'int' | 'short' | 'byte' | 'char' ;

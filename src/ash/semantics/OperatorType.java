@@ -1,4 +1,4 @@
-package ash.grammar.semantics;
+package ash.semantics;
 
 /**
  * Created by samtebbs on 16/03/2016.

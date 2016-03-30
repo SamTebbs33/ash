@@ -13,9 +13,12 @@ import java.util.BitSet;
  */
 public class AshParserErrorListener implements ANTLRErrorListener {
 
-    public static void report(AshErrorType errorType, FileLocation location, String msg) {
+    public int numErrors;
+
+    public void report(AshErrorType errorType, FileLocation location, String msg) {
         errorType.out.printf("%s [%d:%d-%d] %s%n", errorType.str, location.line, location.column,
                 location.getEndColumn(), msg);
+        if(errorType.isError) numErrors++;
     }
 
     @Override
@@ -39,14 +42,16 @@ public class AshParserErrorListener implements ANTLRErrorListener {
     }
 
     public enum AshErrorType {
-        SYNTAX("Syntax error", System.err), WARNING("Warning", System.out), SEMANTIC("Error", System.err);
+        SYNTAX("Syntax error", System.err, true), WARNING("Warning", System.out, false), SEMANTIC("Error", System.err, true);
 
         String str;
         PrintStream out;
+        public boolean isError;
 
-        AshErrorType(String str, PrintStream out) {
+        AshErrorType(String str, PrintStream out, boolean isError) {
             this.str = str;
             this.out = out;
+            this.isError = isError;
         }
 
     }

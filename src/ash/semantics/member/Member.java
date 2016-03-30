@@ -1,9 +1,8 @@
-package ash.grammar.semantics.member;
+package ash.semantics.member;
 
-import ash.grammar.semantics.Modifier;
-import ash.grammar.semantics.QualifiedName;
+import ash.semantics.Modifier;
+import ash.semantics.QualifiedName;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**

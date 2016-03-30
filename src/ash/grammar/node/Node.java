@@ -33,7 +33,7 @@ public abstract class Node<C extends ParserRuleContext> implements Analysable {
     }
 
     protected void error(Error error, Object... args) {
-        AshParserErrorListener.report(AshParserErrorListener.AshErrorType.SEMANTIC, this.location, String.format(error.format, args));
+        Ash.errorListeners.peek().report(AshParserErrorListener.AshErrorType.SEMANTIC, this.location, String.format(error.format, args));
         setErrored();
     }
 

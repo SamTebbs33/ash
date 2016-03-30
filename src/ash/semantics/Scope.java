@@ -1,5 +1,9 @@
-package ash.grammar.semantics;
+package ash.semantics;
 
+import ash.semantics.member.Variable;
+
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Stack;
 
 /**
@@ -8,6 +12,7 @@ import java.util.Stack;
 public class Scope {
 
     private static final Stack<Scope> scopeStack = new Stack<>();
+    public final List<Variable> vars = new LinkedList<>();
 
     public static void push(Scope scope) {
         scopeStack.push(scope);
@@ -21,4 +26,7 @@ public class Scope {
         return scopeStack.peek();
     }
 
+    public void addVar(Variable var) {
+        vars.add(var);
+    }
 }

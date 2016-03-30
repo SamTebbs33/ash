@@ -2,7 +2,7 @@ package ash.grammar.node;
 
 import ash.grammar.AshParserVisitor;
 import ash.grammar.antlr.AshParser;
-import ash.grammar.semantics.Scope;
+import ash.semantics.Scope;
 
 import java.util.List;
 

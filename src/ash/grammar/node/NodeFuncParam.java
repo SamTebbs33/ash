@@ -14,7 +14,7 @@ public class NodeFuncParam extends Node<AshParser.FuncParamContext> {
     public NodeFuncParam(AshParser.FuncParamContext context, AshParserVisitor visitor) {
         super(context, visitor);
         this.id = visitor.visitTerminal(context.ID());
-        this.type = visitor.visitType(context.type());
+        this.type = visitor.visitTypeDef(context.typeDef());
     }
 
     @Override

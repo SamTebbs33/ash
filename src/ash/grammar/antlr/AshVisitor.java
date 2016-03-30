@@ -1,4 +1,4 @@
-// Generated from Ash.g by ANTLR 4.5.2
+// Generated from Ash.g by ANTLR 4.5.3
 package ash.grammar.antlr;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -10,6 +10,12 @@ import org.antlr.v4.runtime.tree.ParseTreeVisitor;
  * operations with no return type.
  */
 public interface AshVisitor<T> extends ParseTreeVisitor<T> {
+	/**
+	 * Visit a parse tree produced by {@link AshParser#typeDef}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTypeDef(AshParser.TypeDefContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link AshParser#file}.
 	 * @param ctx the parse tree
@@ -35,6 +41,18 @@ public interface AshVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitImportDec(AshParser.ImportDecContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link AshParser#aliasedImport}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAliasedImport(AshParser.AliasedImportContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AshParser#multiImport}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMultiImport(AshParser.MultiImportContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link AshParser#type}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -47,11 +65,11 @@ public interface AshVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitClassDec(AshParser.ClassDecContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link AshParser#typeDecParams}.
+	 * Visit a parse tree produced by {@link AshParser#params}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitTypeDecParams(AshParser.TypeDecParamsContext ctx);
+	T visitParams(AshParser.ParamsContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link AshParser#typeDecSupers}.
 	 * @param ctx the parse tree

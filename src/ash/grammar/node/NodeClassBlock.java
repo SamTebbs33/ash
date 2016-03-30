@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Created by samtebbs on 09/03/2016.
  */
-public class NodeClassBlock extends Node<AshParser.ClassBlockContext> {
+public class NodeClassBlock extends Node<AshParser.ClassBlockContext> implements PreAnalysable {
 
     List<NodeVarDec> varDecs;
     List<NodeFuncDec> funcDecs;
@@ -31,5 +31,11 @@ public class NodeClassBlock extends Node<AshParser.ClassBlockContext> {
                 "varDecs=" + varDecs +
                 ", funcDecs=" + funcDecs +
                 '}';
+    }
+
+    @Override
+    public void preAnalyse() {
+        preAnalyse(varDecs);
+        preAnalyse(funcDecs);
     }
 }
