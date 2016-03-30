@@ -16,6 +16,9 @@ funcDec : mods FUNC ID (PARENL (funcParam (COMMA funcParam)*) PARENR)? (LAMBDA t
 funcBlock : bracedBlock | (ASSIGN_OP (expr | stmt)) ;
 bracedBlock : (BRACEL stmt* BRACER) ;
 funcParam : ID COLON type ;
+varDec : mods (VAR | CONST) ID ;
+funcDec : mods FUNC ID ;
+funcParam : ID COLON ID ;
 mods : MODIFIER* ;
 expr : INT
     | HEX_INT
