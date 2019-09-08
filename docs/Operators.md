@@ -1,0 +1,52 @@
+# Operators
+The operators that are defined by the compiler or standard libarary are as follows:
+
+| Operator | Bytecode name       | Type   | Operand/s                                    | Description                                                                       |
+|----------|---------------------|--------|----------------------------------------------|-----------------------------------------------------------------------------------|
+| +        | add                 | Binary | Any numeric type                             | Performs addition on the operands                                                 |
+| -        | minus               | Binary | Any numeric type                             | Performs subtraction on the operands                                              |
+| *        | multiply            | Binary | Any numeric type                             | Performs multiplication on the operands                                           |
+| **       | pow                 | Binary | Doubles                                      | Raises the first operand to the power of the other                                |
+| /        | divide              | Binary | Any numeric type                             | Performs division on the operands                                                 |
+| %        | mod                 | Binary | Any numeric type                             | Calculates the remainder of the operands                                          |
+| !        | optional_unwrap     |        | An optional value                            | Unwraps the optional value                                                        |
+| !        | bool_not            |        | A boolean                                    | Inverts the operand                                                               |
+| \|\|       | or                  | Binary | Booleans                                     | Returns true if either of the operands are true                                   |
+| &&       | and                 | Binary | Booleans                                     | Returns true if both of the operands are true                                     |
+| \|        | bit_or              | Binary | Any numeric type                             | Returns the bitwise OR result of the operands                                     |
+| ^        | bit_xor             | Binary | Any numeric type                             | Returns the bitwise XOR result of the operands                                    |
+| &        | bit_and             | Binary | Any numeric type                             | Returns the bitwise AND result of the operands                                    |
+| ==       | equal               | Binary | Any type                                     | Returns true if the operands are equal to each other                              |
+| !=       | not_equal           | Binary | Any type                                     | Returns true if the operands are not equal to each other                          |
+| <        | less                | Binary | Any numeric type                             | Returns true if the first operand is less than the second                         |
+| >        | greater             | Binary | Any numeric type                             | Returns true if the first operand is greater than the second                      |
+| <=       | less_equal          | Binary | Any numeric type                             | Returns true if the first operand is less than or equal to the second             |
+| >=       | greater_equal       | Binary | Any numeric type                             | Returns true if the first operand is greater than or equal to the second          |
+| <<       | left_shift          | Binary | Integers                                     | Shifts the first operand left by a number of bits, denoted by the second operand  |
+| >>       | right_shift         | Binary | Integers                                     | Shifts the first operand right by a number of bits, denoted by the second operand |
+| >>>      | logical_right_shift | Binary | Integers                                     | The same as the right shift but performs an arithmetic shift instead              |
+| ===      | value_equality      | Binary | Either optional or non-optional Objects      | Returns operand1.equals(operand2). It handles null cases too.                     |
+| ??       | not_null            | Binary | An optional object and a non-optional object | Returns the first operand if it is not null, else it returns the second operand   |
+
+## Operator types
+An operator can either be binary, postfix or prefix. Binary operators appear in between two expressions. Prefix operators appear on the left of a single expression, and postfix operators appear on the right.
+
+## Operator bytecode names
+The operator bytecode name is the name that an operator's overloads take in the generated bytecode. The operators themselves (such as `+`) are not accepted as valid names by the JVM.
+
+## Operator definitions
+You can create your own operators and overload them. An operator definition is denoted by the `operator` keyword, the operator itself (e.g. `++`), an equals sign, a type and then the bytecode name. Binary operators must then also provide an associativity and then a precedence.
+
+```
+operator ! = type: prefix, name: bool_not
+```
+
+The above example is the deifnition of the boolean NOT operator in the standard library.
+
+```
+operator ** = type: binary, name: pow, assoc: none, prec: 120
+```
+
+The above example is the deifnition of the "pow" operator in the standard library.
+
+Operator definitions can only be present in [definition files](Definition_files.md) and custom operators are overloaded in the same way as normal operator overloads. An opeator can be defined as prefix, binary and postfix.
